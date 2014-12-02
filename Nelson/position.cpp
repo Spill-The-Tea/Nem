@@ -89,9 +89,11 @@ bool position::ApplyMove(Move move) {
 	}
 	SideToMove ^= 1;
 	attackedByUs = calculateAttacks(SideToMove);
-	if (attackedByUs & PieceBB(KING, Color(SideToMove ^ 1))) return false;
-	attackedByThem = calculateAttacks(Color(SideToMove ^1));
-	return true;
+	attackedByThem = 0ull;
+	return !(attackedByUs & PieceBB(KING, Color(SideToMove ^ 1)));
+	//if (attackedByUs & PieceBB(KING, Color(SideToMove ^ 1))) return false;
+	//attackedByThem = calculateAttacks(Color(SideToMove ^1));
+	//return true;
 }
 
 void position::set(const Piece piece, const Square square) {

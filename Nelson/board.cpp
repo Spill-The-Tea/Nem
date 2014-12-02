@@ -92,6 +92,45 @@ void InitializePawnAttacks() {
 	}
 }
 
+//Bitboard AffectedBy[64];
+//void InitializeAffectedBy() {
+//	for (int row = 0; row < 8; ++row) {
+//		for (int col = 0; col < 8; ++col) {
+//			int square = 8 * row + col;
+//			AffectedBy[square] = 1ull << square;
+//			if ((col == 0 || col == 7) && (row == 0 || row == 7)) continue; //Corner squares don't affect any other attack
+//			if (row == 0) { AffectedBy[square] = RANK1; continue; } //Squares on border only affect the other squares on the same border
+//			if (row == 7) { AffectedBy[square] = RANK8; continue; }
+//			if (col == 0)  { AffectedBy[square] = A_FILE; continue; }
+//			if (col == 7)  { AffectedBy[square] = H_FILE; continue; }
+//			//Remaining fields (all non-border squares affect fields in all 8 directions
+//			AffectedBy[square] = RANKS[row] | FILES[col]; 
+//			//Now the diagonals
+//			for (int target = square + 9; target < 64; target += 9) {
+//				if (target > 63) break;
+//				if ((target & 7) == 0) break;
+//				AffectedBy[square] |= 1ull << target;
+//			}
+//			for (int target = square + 7; target < 64; target += 7) {
+//				if (target > 63) break;
+//				if ((target & 7) == 7) break;
+//				AffectedBy[square] |= 1ull << target;
+//			}
+//			for (int target = square -9; target >= 0; target -= 9) {
+//				if (target < 0) break;
+//				if ((target & 7) == 7) break;
+//				AffectedBy[square] |= 1ull << target;
+//			}
+//			for (int target = square -7; target >= 0; target -= 7) {
+//				if (target < 0) break;
+//				if ((target & 7) == 0) break;
+//				AffectedBy[square] |= 1ull << target;
+//			}
+//		}
+//	}
+//
+//}
+
 int BishopShift[] = { 59, 60, 59, 59, 59, 59, 60, 59, 60, 60, 59, 59, 59, //a1 - e2
 59, 60, 60, 60, 60, 57, 57, 57, 57, 60, 60, 59, 59, 57, 55, 55, 57, //f2 - f4
 59, 59, 59, 59, 57, 55, 55, 57, 59, 59, 60, 60, 57, 57, 57, 57, 60, //g4 - g6
@@ -321,5 +360,6 @@ void Initialize() {
 	InitializeKingAttacks();
 	InitializeKnightAttacks();
 	InitializePawnAttacks();
+//	InitializeAffectedBy();
 	InitializeMagic();
 }

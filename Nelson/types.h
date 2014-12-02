@@ -1,5 +1,6 @@
 #pragma once
 #include <string>
+#include <intrin.h>
 #include <inttypes.h>
 
 typedef uint64_t Bitboard;
@@ -124,7 +125,13 @@ inline uint64_t GetEPAttackersForToField(int to) { return EPAttackersForToField[
 
 inline int popcount(Bitboard bb) { return (int)_mm_popcnt_u64(bb); }
 
-inline Square lsb(Bitboard bb) { return Square(popcount((bb & (0 - bb)) - 1)); }
+//inline Square lsb(Bitboard bb) { return Square(popcount((bb & (0 - bb)) - 1)); }
+
+inline Square lsb(Bitboard bb) {
+	unsigned long  index;  
+	_BitScanForward64(&index, bb);
+	return Square(index);
+}
 
 inline Bitboard ToBitboard(Square square) { return 1ull << square; }
 inline Bitboard ToBitboard(int square) { return 1ull << square; }
