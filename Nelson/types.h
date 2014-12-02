@@ -35,7 +35,6 @@ inline PieceType GetPieceType(Piece piece) { return PieceType(piece >> 1); }
 inline Piece GetPiece(PieceType pieceType, Color color) { return Piece(2 * pieceType + color); }
 inline Color GetColor(Piece piece) { return Color(piece & 1); }
 
-
 enum Square : unsigned char {
 	A1, B1, C1, D1, E1, F1, G1, H1,
 	A2, B2, C2, D2, E2, F2, G2, H2,

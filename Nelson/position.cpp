@@ -240,7 +240,6 @@ void position::setFromFEN(const string& fen) {
 	std::fill_n(attacks, 64, 0ull);
 	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	attackedByUs = calculateAttacks(SideToMove);
-	movepointer = 0;
 }
 
 string position::fen() const {

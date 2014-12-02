@@ -6,11 +6,61 @@
 
 using namespace std;
 
-long perft(position &pos, int depth) {
+long perft2(position &pos, int depth) {
 	if (depth == 0) return 1;
-	Move * moves = pos.GenerateMoves<ALL>();
 	Move move;
 	long result = 0;
+	Move * moves = pos.GenerateMoves<ALL>();
+	while ((move = *moves)) {
+		position next = position(pos);
+		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		++moves;
+	}
+	return result;
+}
+
+long perft1(position &pos, int depth) {
+	if (depth == 0) return 1;
+	Move move;
+	long result = 0;
+	Move * moves = pos.GenerateMoves<TACTICAL>();
+	while ((move = *moves)) {
+		position next = position(pos);
+		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		++moves;
+	}
+	moves = pos.GenerateMoves<QUIETS>();
+	while ((move = *moves)) {
+		position next = position(pos);
+		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		++moves;
+	}
+	return result;
+}
+
+long perft(position &pos, int depth) {
+	if (depth == 0) return 1;
+	Move move;
+	long result = 0;
+	Move * moves = pos.GenerateMoves<WINNING_CAPTURES>();
+	while ((move = *moves)) {
+		position next = position(pos);
+		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		++moves;
+	}
+	moves = pos.GenerateMoves<EQUAL_CAPTURES>();
+	while ((move = *moves)) {
+		position next = position(pos);
+		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		++moves;
+	}
+	moves = pos.GenerateMoves<LOOSING_CAPTURES>();
+	while ((move = *moves)) {
+		position next = position(pos);
+		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		++moves;
+	}
+	moves = pos.GenerateMoves<QUIETS>();
 	while ((move = *moves)) {
 		position next = position(pos);
 		if (next.ApplyMove(move)) result += perft(next, depth - 1);
