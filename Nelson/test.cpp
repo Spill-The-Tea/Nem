@@ -6,10 +6,10 @@
 
 using namespace std;
 
-long perft2(position &pos, int depth) {
+uint64_t perft(position &pos, int depth) {
 	if (depth == 0) return 1;
 	Move move;
-	long result = 0;
+	uint64_t result = 0;
 	Move * moves = pos.GenerateMoves<ALL>();
 	while ((move = *moves)) {
 		position next = position(pos);
@@ -19,10 +19,10 @@ long perft2(position &pos, int depth) {
 	return result;
 }
 
-long perft1(position &pos, int depth) {
+uint64_t perft1(position &pos, int depth) {
 	if (depth == 0) return 1;
 	Move move;
-	long result = 0;
+	uint64_t result = 0;
 	Move * moves = pos.GenerateMoves<TACTICAL>();
 	while ((move = *moves)) {
 		position next = position(pos);
@@ -38,10 +38,10 @@ long perft1(position &pos, int depth) {
 	return result;
 }
 
-long perft(position &pos, int depth) {
+uint64_t perft2(position &pos, int depth) {
 	if (depth == 0) return 1;
 	Move move;
-	long result = 0;
+	uint64_t result = 0;
 	Move * moves = pos.GenerateMoves<WINNING_CAPTURES>();
 	while ((move = *moves)) {
 		position next = position(pos);
@@ -72,21 +72,25 @@ long perft(position &pos, int depth) {
 void divide(position &pos, int depth) {
 	Move * moves = pos.GenerateMoves<ALL>();
 	Move move;
+	uint64_t total = 0;
 	while ((move = *moves)) {
 		position next = position(pos);
 		if (next.ApplyMove(move)) {
-			cout << toString(move) << "\t" << perft(next, depth - 1) << "\t" << next.fen() << endl;
+			uint64_t p = perft(next, depth - 1);
+			cout << toString(move) << "\t" << p << "\t" << next.fen() << endl;
+			total += p;
 		}
 		++moves;
 	}
+	cout << "Total: " << total << endl;
 }
 
-long perftNodes = 0;
+uint64_t perftNodes = 0;
 chrono::microseconds perftRuntime;
-bool checkPerft(string fen, int depth, long expectedResult) {
+bool checkPerft(string fen, int depth, uint64_t expectedResult) {
 	position pos(fen);
 	chrono::system_clock::time_point begin = chrono::high_resolution_clock::now();
-	long perftResult = perft(pos, depth);
+	uint64_t perftResult = perft(pos, depth);
 	chrono::system_clock::time_point end = chrono::high_resolution_clock::now();
 	auto runtime = end - begin;
 	chrono::microseconds runtimeMS = chrono::duration_cast<chrono::microseconds>(runtime);
@@ -109,6 +113,22 @@ bool checkPerft(string fen, int depth, long expectedResult) {
 
 bool testPerft() {
 	bool result = true;
+	perftRuntime = perftRuntime.zero();
+	//Chess960 positions
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 1, 19);
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 2, 361);
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 3, 7735);
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 4, 164966);
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 5, 3962549);
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 6, 94328606);
+	result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 1, 33);
+	result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 2, 1072);
+	result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 3, 35141);
+	result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 4, 1111449);
+	result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 5, 37095094);
+	result = result && checkPerft("2rkr3/5PP1/8/5Q2/5q2/8/5pp1/2RKR3 w KQkq - 0 1", 5, 94370149);
+	result = result && checkPerft("rqkrbnnb/pppppppp/8/8/8/8/PPPPPPPP/RQKRBNNB w KQkq - 0 1", 6, 111825069);
+	//Standard Chess positions
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 1, 20);
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 2, 400);
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 3, 8902);

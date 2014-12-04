@@ -178,22 +178,22 @@ template<MoveGenerationType MGT> Move * position::GenerateMoves() {
 		}
 		if (MGT == ALL || MGT == QUIETS) {
 			if (CastlingOptions & CastlesbyColor[SideToMove] //Castle allowed at all
-				&& (PieceBB(KING, SideToMove) & InitialKingSquare[SideToMove])) //King is on initial square
+				&& (PieceBB(KING, SideToMove) & InitialKingSquareBB[SideToMove])) //King is on initial square
 			{
 				//King-side castles
 				if ((CastlingOptions & (1 << (2 * SideToMove))) //Short castle allowed
-					&& (InitialRookSquare[2 * SideToMove] & PieceBB(ROOK, SideToMove)) //Rook on initial square
+					&& (InitialRookSquareBB[2 * SideToMove] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 					&& !(SquaresToBeEmpty[2 * SideToMove] & OccupiedBB()) //Fields between Rook and King are empty
 					&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 					&& !(SquaresToBeUnattacked[2 * SideToMove] & attackedByThem)) //Fields passed by the king are unattacked
-					AddMove(createMove<CASTLING>(kingSquare, Square(kingSquare + 2)));
+					AddMove(createMove<CASTLING>(kingSquare, Square(G1 + SideToMove * 56)));
 				//Queen-side castles
 				if ((CastlingOptions & (1 << (2 * SideToMove + 1))) //Short castle allowed
-					&& (InitialRookSquare[2 * SideToMove + 1] & PieceBB(ROOK, SideToMove)) //Rook on initial square
+					&& (InitialRookSquareBB[2 * SideToMove + 1] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 					&& !(SquaresToBeEmpty[2 * SideToMove + 1] & OccupiedBB()) //Fields between Rook and King are empty
 					& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 					&& !(SquaresToBeUnattacked[2 * SideToMove + 1] & attackedByThem)) //Fields passed by the king are unattacked
-					AddMove(createMove<CASTLING>(kingSquare, Square(kingSquare - 2)));
+					AddMove(createMove<CASTLING>(kingSquare, Square(C1 + SideToMove * 56)));
 			}
 		}
 	}

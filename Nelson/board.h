@@ -25,10 +25,13 @@ const Bitboard RANK8 = 0xff00000000000000;
 const Bitboard RANKS[] = { RANK1, RANK2, RANK3, RANK4, RANK5, RANK6, RANK7, RANK8 };
 const Bitboard RANK1and8 = RANK1 | RANK8;
 
-const Bitboard InitialKingSquare[] = { 1ull << E1, 1ull << E8 };
-const Bitboard InitialRookSquare[] = { 1ull << H1, 1ull << A1, 1ull << H8, 1ull << A8 };
-const Bitboard SquaresToBeUnattacked[] = { 0x70ull, 0x1cull, 0x7000000000000000ull, 0x1c00000000000000ull };
-const Bitboard SquaresToBeEmpty[] = { 0x60ull, 0xeull, 0x6000000000000000ull, 0xe00000000000000ull };
+extern Bitboard InitialKingSquareBB[2];
+extern Square InitialKingSquare[2];
+extern Bitboard InitialRookSquareBB[4];
+extern Square InitialRookSquare[4];
+extern Bitboard SquaresToBeUnattacked[4];
+extern Bitboard SquaresToBeEmpty[4];
+extern bool Chess960;
 
 extern Bitboard MagicMovesRook[88576];
 extern Bitboard MagicMovesBishop[4800];

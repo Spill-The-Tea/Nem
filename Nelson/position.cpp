@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <iostream>
 #include <cstdlib>
+#include <algorithm>
 #include "position.h"
 
 static const string PieceToChar("QqRrBbNnPpKk ");
@@ -67,17 +68,17 @@ bool position::ApplyMove(Move move) {
 		DrawPlyCount = 0;
 		break;
 	case CASTLING:
-		if (toSquare > fromSquare) {
+		if (toSquare == G1 + (SideToMove * 56)) {
 			//short castling
+			remove(InitialRookSquare[2 * SideToMove]); //remove rook
 			set(moving, toSquare); //Place king
-			remove(Square(toSquare + 1)); //remove rook
 			set(Piece(WROOK + SideToMove),
 				Square(toSquare - 1)); //Place rook
 		}
 		else {
 			//long castling
+			remove(InitialRookSquare[2 * SideToMove + 1]); //remove rook
 			set(moving, toSquare); //Place king
-			remove(Square(toSquare - 2)); //remove rook
 			set(Piece(WROOK + SideToMove),
 				Square(toSquare + 1)); //Place rook
 		}
@@ -116,14 +117,14 @@ void position::remove(const Square square){
 }
 
 void position::updateCastleFlags(Square fromSquare, Square toSquare) {
-	if (fromSquare == E1 + (56 * SideToMove)) {
+	if (fromSquare == InitialKingSquare[SideToMove]) {
 		RemoveCastlingOption(CastleFlag(W0_0 << (2 * SideToMove)));
 		RemoveCastlingOption(CastleFlag(W0_0_0 << (2 * SideToMove)));
 	}
-	else if (fromSquare == H1 + 56 * SideToMove || toSquare == H1 + 56 * SideToMove) {
+	else if (fromSquare == InitialRookSquare[2 * SideToMove] || toSquare == InitialRookSquare[2 * SideToMove]) {
 		RemoveCastlingOption(CastleFlag(W0_0 << (2 * SideToMove)));
 	}
-	else if (fromSquare == A1 + 56 * SideToMove || toSquare == A1 + 56 * SideToMove) {
+	else if (fromSquare == InitialRookSquare[2 * SideToMove + 1] || toSquare == InitialRookSquare[2 * SideToMove + 1]) {
 		RemoveCastlingOption(CastleFlag(W0_0_0 << (2 * SideToMove)));
 	}
 }
@@ -172,7 +173,6 @@ Bitboard position::calculateAttacks(Color color) {
 	return result;
 }
 
-
 //"Copied" from Stockfish source code
 void position::setFromFEN(const string& fen) {
 	std::fill_n(Board, 64, BLANK);
@@ -203,19 +203,107 @@ void position::setFromFEN(const string& fen) {
 	if (token != 'w') SideToMove = BLACK;
 
 	//Castles
+	CastlingOptions = 0;
+	Chess960 = false;
 	ss >> token;
 	while ((ss >> token) && !isspace(token)) {
 
-		if (token == 'K')
+		if (token == 'K') {
 			AddCastlingOption(W0_0);
-		else if (token == 'Q')
+			InitialKingSquareBB[WHITE] = PieceBB(KING, WHITE);
+			InitialKingSquare[WHITE] = lsb(InitialKingSquareBB[WHITE]);
+			for (Square k = InitialKingSquare[WHITE]; k <= H1; ++k) {
+				if (Board[k] == WROOK) {
+					InitialRookSquare[0] = k;
+					break;
+				}
+			}
+		}
+		else if (token == 'Q') {
 			AddCastlingOption(W0_0_0);
-		else if (token == 'k')
+			InitialKingSquareBB[WHITE] = PieceBB(KING, WHITE);
+			InitialKingSquare[WHITE] = lsb(InitialKingSquareBB[WHITE]);
+			for (Square k = InitialKingSquare[WHITE]; k >= A1; --k) {
+				if (Board[k] == WROOK) {
+					InitialRookSquare[1] = k;
+					break;
+				}
+			}
+		}
+		else if (token == 'k') {
 			AddCastlingOption(B0_0);
-		else if (token == 'q')
+			InitialKingSquareBB[BLACK] = PieceBB(KING, BLACK);
+			InitialKingSquare[BLACK] = lsb(InitialKingSquareBB[BLACK]);
+			for (Square k = InitialKingSquare[BLACK]; k <= H8; ++k) {
+				if (Board[k] == BROOK) {
+					InitialRookSquare[2] = k;
+					break;
+				}
+			}
+		}
+		else if (token == 'q') {
 			AddCastlingOption(B0_0_0);
-		else
-			continue;
+			InitialKingSquareBB[BLACK] = PieceBB(KING, BLACK);
+			InitialKingSquare[BLACK] = lsb(InitialKingSquareBB[BLACK]);
+			for (Square k = InitialKingSquare[BLACK]; k >= A8; --k) {
+				if (Board[k] == BROOK) {
+					InitialRookSquare[3] = k;
+					break;
+				}
+			}
+
+		}
+		else if (token == '-') continue;
+		else {
+			File kingFile = File(lsb(PieceBB(KING, SideToMove)) & 7);
+			if (token >= 'A' && token <= 'H') {
+				InitialKingSquareBB[WHITE] = PieceBB(KING, WHITE);
+				InitialKingSquare[WHITE] = lsb(InitialKingSquareBB[WHITE]);
+				File rookFile = File((int)token - (int)'A');
+				if (rookFile < kingFile) {
+					AddCastlingOption(W0_0_0);
+					InitialRookSquare[1] = Square(rookFile);
+				}
+				else {
+					AddCastlingOption(W0_0);
+					InitialRookSquare[0] = Square(rookFile);
+				}
+			}
+			else if (token >= 'a' && token <= 'h') {
+				InitialKingSquareBB[BLACK] = PieceBB(KING, BLACK);
+				InitialKingSquare[BLACK] = lsb(InitialKingSquareBB[BLACK]);
+				File rookFile = File((int)token - (int)'a');
+				if (rookFile < kingFile) {
+					AddCastlingOption(B0_0_0);
+					InitialRookSquare[3] = Square(rookFile + 56);
+				}
+				else {
+					AddCastlingOption(B0_0);
+					InitialRookSquare[2] = Square(rookFile + 56);
+				}
+			}
+		}
+	}
+	if (CastlingOptions) {
+		Chess960 = (InitialKingSquare[WHITE] != E1) || (InitialRookSquare[0] != H1) || (InitialRookSquare[1] != A1);
+		for (int i = 0; i < 4; ++i) InitialRookSquareBB[i] = 1ull << InitialRookSquare[i];
+		Square ks;
+		Square kt[4] = { G1, C1, G8, C8 };
+		Square rt[4] = { F1, D1, F8, D8 };
+		for (int i = 0; i < 4; ++i) {
+			SquaresToBeEmpty[i] = 0ull;
+			SquaresToBeUnattacked[i] = 0ull;
+			if ((i & 1) == 0) ks = lsb(InitialKingSquareBB[i / 2]);
+			for (int j = std::min(ks, kt[i]); j <= std::max(ks, kt[i]); ++j) SquaresToBeUnattacked[i] |= 1ull << j;
+			for (int j = std::min(InitialRookSquare[i], rt[i]); j <= std::max(InitialRookSquare[i], rt[i]); ++j) {
+				SquaresToBeEmpty[i] |= 1ull << j;
+			}
+			for (int j = std::min(ks, kt[i]); j <= std::max(ks, kt[i]); ++j) {
+				SquaresToBeEmpty[i] |= 1ull << j;
+			}
+			SquaresToBeEmpty[i] &= ~InitialKingSquareBB[i / 2];
+			SquaresToBeEmpty[i] &= ~InitialRookSquareBB[i];
+		}
 	}
 
 	//EP-square
@@ -266,6 +354,32 @@ string position::fen() const {
 
 	if (CastlingOptions == NoCastles)
 		ss << '-';
+	else if (Chess960) {
+		if (W0_0 & CastlingOptions) {
+			Bitboard sideOfKing = 0ull;
+			for (int i = InitialKingSquare[WHITE] + 1; i < 8; ++i) sideOfKing |= 1ull << i;
+			sideOfKing &= ~InitialRookSquareBB[0];
+			if (sideOfKing & PieceBB(ROOK, WHITE)) ss << char((int)'A' + InitialRookSquare[0]); else ss << 'K';
+		}
+		if (W0_0_0 & CastlingOptions) {
+			Bitboard sideOfKing = 0ull;
+			for (int i = InitialKingSquare[WHITE] + 1; i >= 0; --i) sideOfKing |= 1ull << i;
+			sideOfKing &= ~InitialRookSquareBB[1];
+			if (sideOfKing & PieceBB(ROOK, WHITE)) ss << char((int)'A' + InitialRookSquare[1]); else ss << 'Q';
+		}
+		if (B0_0 & CastlingOptions) {
+			Bitboard sideOfKing = 0ull;
+			for (int i = InitialKingSquare[BLACK] + 1; i < 64; ++i) sideOfKing |= 1ull << i;
+			sideOfKing &= ~InitialRookSquareBB[2];
+			if (sideOfKing & PieceBB(ROOK, BLACK)) ss << char((int)'a' + (InitialRookSquare[2] & 7)); else ss << 'k';
+		}
+		if (B0_0_0 & CastlingOptions) {
+			Bitboard sideOfKing = 0ull;
+			for (int i = InitialKingSquare[BLACK] + 1; i >= A8; --i) sideOfKing |= 1ull << i;
+			sideOfKing &= ~InitialRookSquareBB[3];
+			if (sideOfKing & PieceBB(ROOK, BLACK)) ss << char((int)'a' + (InitialRookSquare[3] & 7)); else ss << 'q';
+		}
+	}
 	else {
 		if (W0_0 & CastlingOptions)
 			ss << 'K';

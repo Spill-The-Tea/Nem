@@ -1,6 +1,14 @@
 #include "board.h"
 #include <vector>
 
+Bitboard InitialKingSquareBB[2];
+Square InitialKingSquare[2];
+Bitboard InitialRookSquareBB[4];
+Square InitialRookSquare[4];
+Bitboard SquaresToBeUnattacked[4];
+Bitboard SquaresToBeEmpty[4];
+bool Chess960 = false;
+
 Bitboard InBetweenFields[64][64];
 
 void InitializeInBetweenFields() {
