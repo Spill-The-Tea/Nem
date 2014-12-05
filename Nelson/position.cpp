@@ -47,7 +47,7 @@ bool position::ApplyMove(Move move) {
 			SetEPSquare(Square(toSquare - PawnStep()));
 		}
 		else
-			SetEPSquare(EPSquare = OUTSIDE);
+			SetEPSquare(OUTSIDE);
 		if (GetPieceType(moving) == PAWN || captured != BLANK)
 			DrawPlyCount = 0;
 		else
@@ -88,7 +88,7 @@ bool position::ApplyMove(Move move) {
 		++DrawPlyCount;
 		break;
 	}
-	SideToMove ^= 1;
+	SwitchSideToMove();
 	attackedByUs = calculateAttacks(SideToMove);
 	attackedByThem = 0ull;
 	return !(attackedByUs & PieceBB(KING, Color(SideToMove ^ 1)));
@@ -103,10 +103,12 @@ void position::set(const Piece piece, const Square square) {
 	if ((captured = Board[square]) != BLANK) {
 		OccupiedByPieceType[GetPieceType(captured)] &= ~squareBB;
 		OccupiedByColor[GetColor(captured)] &= ~squareBB;
+		Hash ^= ZobristKeys[captured][square];
 	}
 	OccupiedByPieceType[GetPieceType(piece)] |= squareBB;
 	OccupiedByColor[GetColor(piece)] |= squareBB;
 	Board[square] = piece;
+	Hash ^= ZobristKeys[piece][square];
 }
 void position::remove(const Square square){
 	Bitboard NotSquareBB = ~(1ull << square);
@@ -114,6 +116,7 @@ void position::remove(const Square square){
 	Board[square] = BLANK;
 	OccupiedByPieceType[GetPieceType(piece)] &= NotSquareBB;
 	OccupiedByColor[GetColor(piece)] &= NotSquareBB;
+	Hash ^= ZobristKeys[piece][square];
 }
 
 void position::updateCastleFlags(Square fromSquare, Square toSquare) {
@@ -180,6 +183,7 @@ void position::setFromFEN(const string& fen) {
 	std::fill_n(OccupiedByPieceType, 6, 0ull);
 	EPSquare = OUTSIDE;
 	SideToMove = WHITE;
+	Hash = ZobristMoveColor;
 	istringstream ss(fen);
 	ss >> noskipws;
 	char token;
@@ -200,7 +204,7 @@ void position::setFromFEN(const string& fen) {
 
 	//Side to Move
 	ss >> token;
-	if (token != 'w') SideToMove = BLACK;
+	if (token != 'w') SwitchSideToMove();
 
 	//Castles
 	CastlingOptions = 0;
@@ -322,6 +326,7 @@ void position::setFromFEN(const string& fen) {
 			if ((GetEPAttackersForToField(to) & PieceBB(PAWN, WHITE)) == 0)
 				EPSquare = OUTSIDE;
 		}
+		if (EPSquare != OUTSIDE) Hash ^= ZobristEnPassant[EPSquare & 7];
 	}
 
 	ss >> skipws >> DrawPlyCount;

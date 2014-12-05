@@ -85,6 +85,36 @@ void divide(position &pos, int depth) {
 	cout << "Total: " << total << endl;
 }
 
+void testPolyglotKey() {
+	uint64_t key = 0x463b96181691fc9c;
+	position pos;
+	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	Move move = createMove(E2, E4);
+	pos.ApplyMove(move);
+	key = 0x823c9b50fd114196;
+	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	move = createMove(D7, D5);
+	pos.ApplyMove(move);
+	key = 0x0756b94461c50fb0;
+	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	move = createMove(E4, E5);
+	pos.ApplyMove(move);
+	key = 0x662fafb965db29d4;
+	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	move = createMove(F7, F5);
+	pos.ApplyMove(move);
+	key = 0x22a48b5a8e47ff78;
+	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	move = createMove(E1, E2);
+	pos.ApplyMove(move);
+	key = 0x652a607ca3f242c1;
+	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	move = createMove(E8, F7);
+	pos.ApplyMove(move);
+	key = 0x00fdd303c946bdd9;
+	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+}
+
 uint64_t perftNodes = 0;
 chrono::microseconds perftRuntime;
 bool checkPerft(string fen, int depth, uint64_t expectedResult) {

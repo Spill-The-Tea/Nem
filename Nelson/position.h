@@ -23,9 +23,11 @@ public:
 	bool ApplyMove(Move move); //Applies a pseudo-legal move and returns true if move is legal
 	static inline position UndoMove(position &pos) { return *pos.previous; }
 	template<MoveGenerationType MGT> Move * GenerateMoves();
+	inline uint64_t GetHash() { return Hash; }
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
+	uint64_t Hash = ZobristMoveColor;
 	Square EPSquare;
 	unsigned char CastlingOptions;
 	unsigned char DrawPlyCount;
@@ -42,11 +44,25 @@ private:
 
 	void set(const Piece piece, const Square square);
 	void remove(const Square square);
-	inline void AddCastlingOption(const CastleFlag castleFlag) { CastlingOptions |= castleFlag; }
-	inline void RemoveCastlingOption(const CastleFlag castleFlag) { CastlingOptions &= ~castleFlag; }
-	inline void SetEPSquare(const Square square) { EPSquare = square; }
+	inline void AddCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions]; CastlingOptions |= castleFlag; Hash ^= ZobristCastles[CastlingOptions]; }
+	inline void RemoveCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions]; CastlingOptions &= ~castleFlag; Hash ^= ZobristCastles[CastlingOptions]; }
+	inline void SetEPSquare(const Square square) {
+		if (EPSquare != square) {
+			if (EPSquare != OUTSIDE) {
+				Hash ^= ZobristEnPassant[EPSquare & 7];
+				EPSquare = square;
+				if (EPSquare != OUTSIDE)
+					Hash ^= ZobristEnPassant[EPSquare & 7];
+			}
+			else {
+				EPSquare = square;
+				Hash ^= ZobristEnPassant[EPSquare & 7];
+			}
+		}
+	}
 	inline const int PawnStep() const { return 8 - 16 * SideToMove; }
 	inline void AddMove(Move move) { moves[movepointer] = move; ++movepointer; }
+	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
 	void updateCastleFlags(Square fromSquare, Square toSquare);
 	Bitboard calculateAttacks(Color color);
 };

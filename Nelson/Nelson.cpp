@@ -9,9 +9,13 @@
 
 
 int main(int argc, const char* argv[]) {
-	Initialize();
-	//testPerft();
+	string input = "";
+	//testPolyglotKey();
+	//std::getline(cin, input);
 	//return 0;
+	Initialize();
+	testPerft();
+	return 0;
 	std::cout << sizeof(position) << std::endl;
 	position pos;
 	while (true) {
@@ -36,7 +40,6 @@ int main(int argc, const char* argv[]) {
 			std::cout << "Perft:\t" << perft(pos, depth) << "\t" << pos.fen() << std::endl;
 		}
 	}
-	string input = "";
 	std::getline(cin, input);
 	return 0;
 }
