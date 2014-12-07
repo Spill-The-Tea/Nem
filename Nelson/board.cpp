@@ -1,5 +1,13 @@
-#include "board.h"
 #include <vector>
+#include <stdio.h>
+#include <iostream>
+#include <chrono>
+#include <iomanip>
+#include "board.h"
+#include "types.h"
+#include "material.h"
+
+using namespace std;
 
 Bitboard InitialKingSquareBB[2];
 Square InitialKingSquare[2];
@@ -364,10 +372,16 @@ void InitializeMagic() {
 }
 
 void Initialize() {
+	chrono::system_clock::time_point begin = chrono::high_resolution_clock::now();
 	InitializeInBetweenFields();
 	InitializeKingAttacks();
 	InitializeKnightAttacks();
 	InitializePawnAttacks();
 //	InitializeAffectedBy();
 	InitializeMagic();
+	InitializeMaterialTable();
+	chrono::system_clock::time_point end = chrono::high_resolution_clock::now();
+	auto runtime = end - begin;
+	chrono::microseconds runtimeMS = chrono::duration_cast<chrono::microseconds>(runtime);
+	cout << "Initialization Time: " << runtimeMS.count() / 1000 << "ms" << endl;
 }

@@ -13,11 +13,12 @@ int main(int argc, const char* argv[]) {
 	//testPolyglotKey();
 	//std::getline(cin, input);
 	//return 0;
-	Initialize();
-	testPerft();
-	return 0;
+	Initialize();	
+	//testPerft();
+	//return 0;
 	std::cout << sizeof(position) << std::endl;
 	position pos;
+	std::cout << pos.GetMaterialKey() << std::endl;
 	while (true) {
 		string input = "";
 		std::getline(cin, input);

@@ -146,13 +146,16 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="board.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="Nelson.cpp" />
     <ClCompile Include="position.cpp" />
     <ClCompile Include="test.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="board.h" />
+    <ClInclude Include="material.h" />
     <ClInclude Include="position.h" />
+    <ClInclude Include="settings.h" />
     <ClInclude Include="test.h" />
     <ClInclude Include="types.h" />
   </ItemGroup>

@@ -23,11 +23,13 @@ public:
 	bool ApplyMove(Move move); //Applies a pseudo-legal move and returns true if move is legal
 	static inline position UndoMove(position &pos) { return *pos.previous; }
 	template<MoveGenerationType MGT> Move * GenerateMoves();
-	inline uint64_t GetHash() { return Hash; }
+	inline uint64_t GetHash() const { return Hash; }
+	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
 	uint64_t Hash = ZobristMoveColor;
+	MaterialKey_t MaterialKey;
 	Square EPSquare;
 	unsigned char CastlingOptions;
 	unsigned char DrawPlyCount;
@@ -42,7 +44,7 @@ private:
 	Bitboard attackedByThem;
 	Bitboard attackedByUs;
 
-	void set(const Piece piece, const Square square);
+	template<bool SquareIsEmpty> void set(const Piece piece, const Square square);
 	void remove(const Square square);
 	inline void AddCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions]; CastlingOptions |= castleFlag; Hash ^= ZobristCastles[CastlingOptions]; }
 	inline void RemoveCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions]; CastlingOptions &= ~castleFlag; Hash ^= ZobristCastles[CastlingOptions]; }
@@ -65,6 +67,7 @@ private:
 	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
 	void updateCastleFlags(Square fromSquare, Square toSquare);
 	Bitboard calculateAttacks(Color color);
+	MaterialKey_t calculateMaterialKey();
 };
 
 inline Bitboard position::PieceBB(const PieceType pt, const Color c) const { return OccupiedByColor[c] & OccupiedByPieceType[pt]; }

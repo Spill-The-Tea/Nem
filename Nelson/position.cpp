@@ -7,6 +7,7 @@
 #include <cstdlib>
 #include <algorithm>
 #include "position.h"
+#include "material.h"
 
 static const string PieceToChar("QqRrBbNnPpKk ");
 
@@ -38,7 +39,7 @@ bool position::ApplyMove(Move move) {
 	MoveType moveType = type(move);
 	switch (moveType) {
 	case NORMAL:
-		set(moving, toSquare);
+		set<false>(moving, toSquare);
 		//update epField
 		if ((GetPieceType(moving) == PAWN)
 			&& (abs(int(toSquare) - int(fromSquare)) == 16)
@@ -56,13 +57,15 @@ bool position::ApplyMove(Move move) {
 		if (CastlingOptions != 0) updateCastleFlags(fromSquare, toSquare);
 		break;
 	case ENPASSANT:
-		set(moving, toSquare);
+		set<true>(moving, toSquare);
 		remove(Square(toSquare - PawnStep()));
+		MaterialKey -= materialKeyFactors[BPAWN - SideToMove];
 		SetEPSquare(OUTSIDE);
 		DrawPlyCount = 0;
 		break;
 	case PROMOTION:
-		set(GetPiece(promotionType(move), SideToMove), toSquare);
+		set<false>(GetPiece(promotionType(move), SideToMove), toSquare);
+		MaterialKey += materialKeyFactors[GetPiece(promotionType(move), SideToMove)] - materialKeyFactors[moving];
 		if (CastlingOptions != 0) updateCastleFlags(fromSquare, toSquare);
 		SetEPSquare(OUTSIDE);
 		DrawPlyCount = 0;
@@ -71,15 +74,15 @@ bool position::ApplyMove(Move move) {
 		if (toSquare == G1 + (SideToMove * 56)) {
 			//short castling
 			remove(InitialRookSquare[2 * SideToMove]); //remove rook
-			set(moving, toSquare); //Place king
-			set(Piece(WROOK + SideToMove),
+			set<true>(moving, toSquare); //Place king
+			set<true>(Piece(WROOK + SideToMove),
 				Square(toSquare - 1)); //Place rook
 		}
 		else {
 			//long castling
 			remove(InitialRookSquare[2 * SideToMove + 1]); //remove rook
-			set(moving, toSquare); //Place king
-			set(Piece(WROOK + SideToMove),
+			set<true>(moving, toSquare); //Place king
+			set<true>(Piece(WROOK + SideToMove),
 				Square(toSquare + 1)); //Place rook
 		}
 		RemoveCastlingOption(CastleFlag(W0_0 << (2 * SideToMove)));
@@ -91,19 +94,21 @@ bool position::ApplyMove(Move move) {
 	SwitchSideToMove();
 	attackedByUs = calculateAttacks(SideToMove);
 	attackedByThem = 0ull;
+	assert(MaterialKey == calculateMaterialKey());
 	return !(attackedByUs & PieceBB(KING, Color(SideToMove ^ 1)));
 	//if (attackedByUs & PieceBB(KING, Color(SideToMove ^ 1))) return false;
 	//attackedByThem = calculateAttacks(Color(SideToMove ^1));
 	//return true;
 }
 
-void position::set(const Piece piece, const Square square) {
+template<bool SquareIsEmpty> void position::set(const Piece piece, const Square square) {
 	Bitboard squareBB = 1ull << square;
 	Piece captured;
-	if ((captured = Board[square]) != BLANK) {
+	if (!SquareIsEmpty && (captured = Board[square]) != BLANK) {
 		OccupiedByPieceType[GetPieceType(captured)] &= ~squareBB;
 		OccupiedByColor[GetColor(captured)] &= ~squareBB;
 		Hash ^= ZobristKeys[captured][square];
+		MaterialKey -= materialKeyFactors[captured];
 	}
 	OccupiedByPieceType[GetPieceType(piece)] |= squareBB;
 	OccupiedByColor[GetColor(piece)] |= squareBB;
@@ -197,7 +202,7 @@ void position::setFromFEN(const string& fen) {
 		else if (token == '/')
 			square -= 16;
 		else if ((piece = PieceToChar.find(token)) != string::npos) {
-			set((Piece)piece, (Square)square);
+			set<true>((Piece)piece, (Square)square);
 			square++;
 		}
 	}
@@ -331,6 +336,7 @@ void position::setFromFEN(const string& fen) {
 
 	ss >> skipws >> DrawPlyCount;
 	std::fill_n(attacks, 64, 0ull);
+	MaterialKey = calculateMaterialKey();
 	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	attackedByUs = calculateAttacks(SideToMove);
 }
@@ -419,4 +425,11 @@ string position::print() const {
 		//<< "\nMaterial Hash:   " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << _material_hash 
 		<< "\n";
 	return ss.str();
+}
+
+MaterialKey_t position::calculateMaterialKey() {
+	MaterialKey_t key = MATERIAL_KEY_OFFSET;
+	for (int i = WQUEEN; i <= BPAWN; ++i) 
+		key += materialKeyFactors[i] * popcount(PieceBB(PieceType(i / 2), Color(i & 1)));
+	return key;
 }

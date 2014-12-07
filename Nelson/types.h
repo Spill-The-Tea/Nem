@@ -1,4 +1,5 @@
 #pragma once
+#include <assert.h> 
 #include <string>
 #include <intrin.h>
 #include <inttypes.h>
@@ -64,6 +65,22 @@ enum MoveGenerationType {
 	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, TACTICAL, QUIETS, ALL
 };
 
+enum Value : int16_t {
+	VALUE_NOTYETDETERMINED = 0 - 32767,
+	VALUE_MIN = SHRT_MIN + 2,
+	VALUE_DRAW = 0,
+	VALUE_ZERO = 0,
+	VALUE_KNOWN_WIN = 10000,
+	VALUE_MATE = 32000,
+	VALUE_MATE_THRESHOLD = 31000,
+	VALUE_MAX = SHRT_MAX - 2
+};
+
+inline Value operator*(const float f, const Value v) { return Value(int(round(int(v) * f))); }
+
+typedef uint32_t MaterialKey_t;
+typedef uint16_t Phase_t;
+
 #define ENABLE_BASE_OPERATORS_ON(T)                                             \
 	inline T operator+(const T d1, const T d2) { return T(int(d1) + int(d2)); } \
 	inline T operator-(const T d1, const T d2) { return T(int(d1) - int(d2)); } \
@@ -84,6 +101,8 @@ enum MoveGenerationType {
 ENABLE_FULL_OPERATORS_ON(Rank)
 ENABLE_FULL_OPERATORS_ON(File)
 ENABLE_FULL_OPERATORS_ON(Square);
+ENABLE_FULL_OPERATORS_ON(Value);
+
 
 inline Color& operator^=(Color& col, int i) { return col = Color(((int)col) ^ 1); }
 
@@ -150,3 +169,53 @@ inline std::string toString(Move move) {
 		return ch;
 	}
 }
+
+struct eval {
+
+	Value mgScore = Value(0);
+	Value egScore = Value(0);
+
+	eval() {
+
+	}
+
+	eval(Value mgValue, Value egValue) {
+		mgScore = mgValue;
+		egScore = egValue;
+	}
+
+	eval(int mgValue, int egValue) {
+		mgScore = Value(mgValue);
+		egScore = Value(egValue);
+	}
+
+	inline Value getScore(uint16_t phase) {
+		return Value(((((int)mgScore) * (256 - phase)) + (phase * (int)egScore)) / 256);
+	}
+};
+
+inline eval operator-(const eval e) { return eval(-e.mgScore, -e.egScore); }
+inline eval operator+(const eval e1, const eval e2) { return eval(e1.mgScore + e2.mgScore, e1.egScore + e2.egScore); }
+inline eval operator+=(eval& e1, const eval e2) {
+	e1.mgScore += e2.mgScore;
+	e1.egScore += e2.egScore;
+	return e1;
+}
+
+inline eval operator+=(eval& e1, const Value v) {
+	e1.mgScore += v;
+	e1.egScore += v;
+	return e1;
+}
+
+inline eval operator-=(eval& e1, const eval e2) {
+	e1.mgScore -= e2.mgScore;
+	e1.egScore -= e2.egScore;
+	return e1;
+}
+inline eval operator-(const eval& e1, const eval e2) {
+	return eval(e1.mgScore - e2.mgScore, e1.egScore - e2.egScore);
+}
+inline eval operator*(const eval e, const int i) { return eval(e.mgScore * i, e.egScore * i); }
+inline eval operator/(const eval e, const int i) { return eval(e.mgScore / i, e.egScore / i); }
+inline eval operator*(const float f, const eval e) { return eval(f * e.mgScore, f * e.egScore); }
