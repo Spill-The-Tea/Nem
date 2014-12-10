@@ -108,6 +108,68 @@ void InitializePawnAttacks() {
 	}
 }
 
+Bitboard SlidingAttacksRookTo[64];
+Bitboard SlidingAttacksBishopTo[64];
+void InitializeSlidingAttacksTo() {
+	for (int row = 0; row < 8; ++row) {
+		for (int col = 0; col < 8; ++col) {
+			int square = 8 * row + col;
+			SlidingAttacksRookTo[square] = RANKS[row] | FILES[col];
+			SlidingAttacksRookTo[square] &= ~(1ull << square);
+			//Now the diagonals
+			SlidingAttacksBishopTo[square] = 0ull;
+			for (int target = square + 9; target < 64; target += 9) {
+				if (target > 63) break;
+				if ((target & 7) == 0) break;
+				SlidingAttacksBishopTo[square] |= 1ull << target;
+			}
+			for (int target = square + 7; target < 64; target += 7) {
+				if (target > 63) break;
+				if ((target & 7) == 7) break;
+				SlidingAttacksBishopTo[square] |= 1ull << target;
+			}
+			for (int target = square - 9; target >= 0; target -= 9) {
+				if (target < 0) break;
+				if ((target & 7) == 7) break;
+				SlidingAttacksBishopTo[square] |= 1ull << target;
+			}
+			for (int target = square - 7; target >= 0; target -= 7) {
+				if (target < 0) break;
+				if ((target & 7) == 0) break;
+				SlidingAttacksBishopTo[square] |= 1ull << target;
+			}
+		}
+	}
+}
+
+Bitboard RaysBySquares[64][64];
+
+void Ray2RayBySquares(Bitboard ray) {
+	Bitboard b1 = ray;
+	while (b1) {
+		Square s1 = lsb(b1);
+		b1 &= b1 - 1;
+		Bitboard b2 = b1;
+		while (b2) {
+			Square s2 = lsb(b2);
+			b2 &= b2 - 1;
+			RaysBySquares[s1][s2] = RaysBySquares[s2][s1] = ray;
+		}
+	}
+}
+
+void InitializeRaysBySquares() {
+	for (int i = 0; i < 64; ++i) {
+		for (int j = 0; j < 64; ++j) {
+			RaysBySquares[i][j] = 0ull;
+		}
+	}
+	for (int i = 0; i < 8; i++) Ray2RayBySquares(FILES[i]);
+	for (int i = 0; i < 8; i++) Ray2RayBySquares(RANKS[i]);
+	for (int i = 0; i < 13; i++) Ray2RayBySquares(Diagonals[i]);
+	for (int i = 0; i < 13; i++) Ray2RayBySquares(AntiDiagonals[i]);
+}
+
 //Bitboard AffectedBy[64];
 //void InitializeAffectedBy() {
 //	for (int row = 0; row < 8; ++row) {
@@ -146,6 +208,96 @@ void InitializePawnAttacks() {
 //	}
 //
 //}
+
+Bitboard ShadowedFields[64][64];
+void InitializeShadowedFields()
+{
+	Bitboard border = FileA | FileH | Rank1 | Rank8;
+	for (int square = 0; square < 64; square++)
+	{
+		for (int i = 0; i < 64; i++) ShadowedFields[square][i] = 0;
+	}
+	for (int square = 0; square < 64; square++)
+	{
+		int col = square & 7;
+		int row = square >> 3;
+		Bitboard squareMask = ToBitboard(square);
+		//North
+		for (int blocker = square + 8; blocker <= 55; blocker += 8)
+		{
+			Bitboard mask = 0;
+			for (int i = blocker + 8; i <= 63; i += 8) mask |= ToBitboard(i);
+			ShadowedFields[square][blocker] = mask;
+		}
+		//South
+		for (int blocker = square - 8; blocker >= 8; blocker -= 8)
+		{
+			Bitboard mask = 0;
+			for (int i = blocker - 8; i >= 0; i -= 8) mask |= ToBitboard(i);
+			ShadowedFields[square][blocker] = mask;
+		}
+		//East
+		if (col < 6)
+		{
+			for (int blocker = square + 1; (blocker & 7) > col; blocker++)
+			{
+				Bitboard mask = 0;
+				for (int i = blocker + 1; (i & 7) > (blocker & 7); i++) mask |= ToBitboard(i);
+				ShadowedFields[square][blocker] = mask;
+			}
+		}
+		//West
+		if (col > 1)
+		{
+			for (int blocker = square - 1; (blocker & 7) < col; blocker--)
+			{
+				Bitboard mask = 0;
+				for (int i = blocker - 1; (i & 7) < (blocker & 7); i--) mask |= ToBitboard(i);
+				ShadowedFields[square][blocker] = mask;
+			}
+		}
+		//NorthEast
+		if (col < 6 && square < 48)
+		{
+			for (int blocker = square + 9; ((blocker & 7) > col) && blocker < 55; blocker += 9)
+			{
+				Bitboard mask = 0;
+				for (int i = blocker + 9; (i & 7) > col && i <= 63; i += 9) mask |= ToBitboard(i);
+				ShadowedFields[square][blocker] = mask;
+			}
+		}
+		//NorthWest
+		if (col > 1 && square < 48)
+		{
+			for (int blocker = square + 7; ((blocker & 7) < col) && blocker < 55; blocker += 7)
+			{
+				Bitboard mask = 0;
+				for (int i = blocker + 7; (i & 7) < col && i <= 63; i += 7) mask |= ToBitboard(i);
+				ShadowedFields[square][blocker] = mask;
+			}
+		}
+		//SouthEast
+		if (col < 6 && square > 15)
+		{
+			for (int blocker = square - 7; ((blocker & 7) > col) && blocker > 7; blocker -= 7)
+			{
+				Bitboard mask = 0;
+				for (int i = blocker - 7; (i & 7) > col && i >= 0; i -= 7) mask |= ToBitboard(i);
+				ShadowedFields[square][blocker] = mask;
+			}
+		}
+		//SouthWest
+		if (col > 1 && square > 15)
+		{
+			for (int blocker = square - 9; ((blocker & 7) < col) && blocker > 7; blocker -= 9)
+			{
+				Bitboard mask = 0;
+				for (int i = blocker - 9; (i & 7) < col && i >= 0; i -= 9) mask |= ToBitboard(i);
+				ShadowedFields[square][blocker] = mask;
+			}
+		}
+	}
+}
 
 int BishopShift[] = { 59, 60, 59, 59, 59, 59, 60, 59, 60, 60, 59, 59, 59, //a1 - e2
 59, 60, 60, 60, 60, 57, 57, 57, 57, 60, 60, 59, 59, 57, 55, 55, 57, //f2 - f4
@@ -377,9 +529,12 @@ void Initialize() {
 	InitializeKingAttacks();
 	InitializeKnightAttacks();
 	InitializePawnAttacks();
-//	InitializeAffectedBy();
+	//	InitializeAffectedBy();
+	InitializeSlidingAttacksTo();
+	InitializeRaysBySquares();
 	InitializeMagic();
 	InitializeMaterialTable();
+	InitializeShadowedFields();
 	chrono::system_clock::time_point end = chrono::high_resolution_clock::now();
 	auto runtime = end - begin;
 	chrono::microseconds runtimeMS = chrono::duration_cast<chrono::microseconds>(runtime);

@@ -5,6 +5,9 @@
 
 using namespace std;
 
+const MoveGenerationType generationPhases[9] = { WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIETS, NONE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE };
+const int generationPhaseOffset[] = { 0, 5 };
+
 struct position
 {
 public:
@@ -22,9 +25,12 @@ public:
 	void setFromFEN(const string& fen);
 	bool ApplyMove(Move move); //Applies a pseudo-legal move and returns true if move is legal
 	static inline position UndoMove(position &pos) { return *pos.previous; }
-	template<MoveGenerationType MGT> Move * GenerateMoves();
+	template<MoveGenerationType MGT> ValuatedMove * GenerateMoves();
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator();
+	Move NextMove();
+	const Value position::SEE(Square from, const Square to);
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -38,11 +44,16 @@ private:
 
 	position * previous;
 
-	Move moves[256];
+	ValuatedMove moves[256];
 	int movepointer = 0;
 	Bitboard attacks[64];
 	Bitboard attackedByThem;
 	Bitboard attackedByUs;
+	int moveIterationPointer;
+	int generationPhase;
+
+	//Bitboard pinned;
+	//Bitboard pinner;
 
 	template<bool SquareIsEmpty> void set(const Piece piece, const Square square);
 	void remove(const Square square);
@@ -63,11 +74,20 @@ private:
 		}
 	}
 	inline const int PawnStep() const { return 8 - 16 * SideToMove; }
-	inline void AddMove(Move move) { moves[movepointer] = move; ++movepointer; }
+	inline void AddMove(Move move) { moves[movepointer].move = move; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
+	inline void AddMove(Move move, Value score) { moves[movepointer].move = move; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
 	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
 	void updateCastleFlags(Square fromSquare, Square toSquare);
 	Bitboard calculateAttacks(Color color);
+	void calculatePinned();
 	MaterialKey_t calculateMaterialKey();
+	void evaluateByMVVLVA();
+	void evaluateBySEE();
+	Move getBestMove(int startIndex);
+	void insertionSort(ValuatedMove* begin, ValuatedMove* end);
+	const Bitboard considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from);
+	const Bitboard AttacksOfField(const Bitboard occupancy, const Square targetField);
+	const Bitboard getSquareOfLeastValuablePiece(const Bitboard attadef, const int side);
 };
 
 inline Bitboard position::PieceBB(const PieceType pt, const Color c) const { return OccupiedByColor[c] & OccupiedByPieceType[pt]; }
@@ -75,7 +95,7 @@ inline Bitboard position::ColorBB(const Color c) const { return OccupiedByColor[
 inline Bitboard position::ColorBB(const int c) const { return OccupiedByColor[c]; }
 inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | OccupiedByColor[BLACK]; }
 
-template<MoveGenerationType MGT> Move * position::GenerateMoves() {
+template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 	//Rooksliders
 	Bitboard targets;
 	movepointer = 0;
@@ -342,5 +362,8 @@ template<MoveGenerationType MGT> Move * position::GenerateMoves() {
 	return &moves[0];
 }
 
-
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator() {
+	moveIterationPointer = -1;
+	generationPhase = generationPhaseOffset[SMGT];
+}
 

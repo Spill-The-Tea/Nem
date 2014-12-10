@@ -14,8 +14,8 @@ int main(int argc, const char* argv[]) {
 	//std::getline(cin, input);
 	//return 0;
 	Initialize();	
-	//testPerft();
-	//return 0;
+	testPerft();
+	return 0;
 	std::cout << sizeof(position) << std::endl;
 	position pos;
 	std::cout << pos.GetMaterialKey() << std::endl;
@@ -39,6 +39,9 @@ int main(int argc, const char* argv[]) {
 		else if (!input.compare(0, 6, "perft ")) {
 			int depth = atoi(input.substr(6).c_str());
 			std::cout << "Perft:\t" << perft(pos, depth) << "\t" << pos.fen() << std::endl;
+		}
+		else if (!input.compare(0, 3, "SEE")) {
+			testSEE();
 		}
 	}
 	std::getline(cin, input);

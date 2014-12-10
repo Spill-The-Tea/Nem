@@ -8,6 +8,7 @@
 #include <algorithm>
 #include "position.h"
 #include "material.h"
+#include "settings.h"
 
 static const string PieceToChar("QqRrBbNnPpKk ");
 
@@ -93,12 +94,83 @@ bool position::ApplyMove(Move move) {
 	}
 	SwitchSideToMove();
 	attackedByUs = calculateAttacks(SideToMove);
+	//calculatePinned();
 	attackedByThem = 0ull;
 	assert(MaterialKey == calculateMaterialKey());
 	return !(attackedByUs & PieceBB(KING, Color(SideToMove ^ 1)));
 	//if (attackedByUs & PieceBB(KING, Color(SideToMove ^ 1))) return false;
 	//attackedByThem = calculateAttacks(Color(SideToMove ^1));
 	//return true;
+}
+
+Move position::NextMove() {
+	if (generationPhases[generationPhase] == NONE) return MOVE_NONE;
+	do {
+		if (moveIterationPointer < 0) {
+			switch (generationPhases[generationPhase]) {
+			case WINNING_CAPTURES:
+				GenerateMoves<WINNING_CAPTURES>();
+				evaluateByMVVLVA();
+				break;
+			case EQUAL_CAPTURES:
+				GenerateMoves<EQUAL_CAPTURES>(); 
+				evaluateBySEE();
+				break;
+			case LOOSING_CAPTURES:
+				GenerateMoves<LOOSING_CAPTURES>();
+				evaluateBySEE();
+				break;
+			case QUIETS:
+				GenerateMoves<QUIETS>(); break;
+				break;
+			}
+			moveIterationPointer = 0;
+		}
+		Move move = getBestMove(moveIterationPointer);
+		if (move) {
+			++moveIterationPointer;
+			return move;
+		}
+		else {
+			++generationPhase;
+			moveIterationPointer = -1;
+		}
+	} while (generationPhases[generationPhase] != NONE);
+	return MOVE_NONE;
+}
+
+void position::insertionSort(ValuatedMove* begin, ValuatedMove* end)
+{
+	ValuatedMove tmp, *p, *q;
+	for (p = begin + 1; p < end; ++p)
+	{
+		tmp = *p;
+		for (q = p; q != begin && *(q - 1) < tmp; --q)
+			*q = *(q - 1);
+		*q = tmp;
+	}
+}
+
+void position::evaluateByMVVLVA() {
+	for (int i = 0; i < movepointer - 1; ++i) {
+		moves[i].score = (PieceValuesMG[GetPieceType(Board[to(moves[i].move)])] * 10) - PieceValuesMG[GetPieceType(Board[from(moves[i].move)])];
+	}
+}
+
+void position::evaluateBySEE() {
+	for (int i = 0; i < movepointer - 1; ++i) moves[i].score = SEE(from(moves[i].move), to(moves[i].move));
+}
+
+Move position::getBestMove(int startIndex) {
+	ValuatedMove bestmove = moves[startIndex];
+	for (int i = startIndex + 1; i < movepointer - 1; ++i) {
+		if (bestmove < moves[i]) {
+			moves[startIndex] = moves[i];
+			moves[i] = bestmove;
+			bestmove = moves[startIndex];
+		}
+	}
+	return moves[startIndex].move;
 }
 
 template<bool SquareIsEmpty> void position::set(const Piece piece, const Square square) {
@@ -180,6 +252,103 @@ Bitboard position::calculateAttacks(Color color) {
 	}
 	return result;
 }
+
+//Calculates the pinned Pieces as needed for move generation
+//void position::calculatePinned() {
+//	pinned = pinner = EMPTY;
+//	Square kingSquare = lsb(PieceBB(KING, SideToMove));
+//	Bitboard potentialPinner = (PieceBB(ROOK, Color(SideToMove ^ 1)) | PieceBB(QUEEN, Color(SideToMove ^ 1))) & SlidingAttacksRookTo[kingSquare];
+//	potentialPinner |= (PieceBB(BISHOP, Color(SideToMove ^ 1)) | PieceBB(QUEEN, Color(SideToMove ^ 1))) & SlidingAttacksBishopTo[kingSquare];
+//	while (potentialPinner) {
+//		Square pinnersSquare = lsb(potentialPinner);
+//		Bitboard potentiallyPinned = InBetweenFields[pinnersSquare][kingSquare];
+//		if ((potentiallyPinned & ColorBB(SideToMove)) && popcount(potentiallyPinned) == 1) {
+//			pinned |= potentiallyPinned;
+//			pinner |= ToBitboard(pinnersSquare);
+//		}
+//		potentialPinner &= potentialPinner - 1;
+//	}
+//}
+
+const Bitboard position::considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from)
+{
+	if ((fromSet & (SlidingAttacksRookTo[to] | SlidingAttacksBishopTo[to])) == 0) return 0;
+	Bitboard shadowed = ShadowedFields[to][from];
+	if ((shadowed & occ) == 0) return 0;
+	Bitboard attack = SlidingAttacksRookTo[to] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
+	attack |= SlidingAttacksBishopTo[to] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
+	attack &= shadowed;
+	while (attack != 0)
+	{
+		int attackingField = lsb(attack);
+		if ((InBetweenFields[attackingField][to] & occ) == 0) return ToBitboard(attackingField);
+		attack &= attack - 1;
+	}
+	return 0;
+}
+
+const Bitboard position::AttacksOfField(const Bitboard occupancy, const Square targetField)
+{
+	//sliding attacks
+	Bitboard attacks = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
+	attacks |= SlidingAttacksBishopTo[targetField] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
+	//Check for blockers
+	Bitboard tmpAttacks = attacks;
+	while (tmpAttacks != 0)
+	{
+		Square from = lsb(tmpAttacks);
+		Bitboard blocker = InBetweenFields[from][targetField] & occupancy;
+		if (blocker) attacks &= ~ToBitboard(from);
+		tmpAttacks &= tmpAttacks - 1;
+	}
+	//non-sliding attacks
+	attacks |= KnightAttacks[targetField] & OccupiedByPieceType[KNIGHT];
+	attacks |= KingAttacks[targetField] & OccupiedByPieceType[KING];
+	Bitboard targetBB = ToBitboard(targetField);
+	attacks |= ((targetBB >> 7) & NOT_A_FILE) & PieceBB(PAWN, WHITE);
+	attacks |= ((targetBB >> 9) & NOT_H_FILE) & PieceBB(PAWN, WHITE);
+	attacks |= ((targetBB << 7) & NOT_H_FILE) & PieceBB(PAWN, BLACK);
+	attacks |= ((targetBB << 9) & NOT_A_FILE) & PieceBB(PAWN, BLACK);
+	return attacks;
+}
+
+const Bitboard position::getSquareOfLeastValuablePiece(const Bitboard attadef, const int side)
+{
+	Color diff = Color((SideToMove + side) & 1);
+     Bitboard subset = attadef & PieceBB(PAWN, diff); if (subset) return subset & (0 - subset); // single bit
+	 subset = attadef & PieceBB(KNIGHT, diff); if (subset) return subset & (0 - subset); // single bit
+	 subset = attadef & PieceBB(BISHOP, diff); if (subset) return subset & (0 - subset); // single bit
+	 subset = attadef & PieceBB(ROOK, diff); if (subset) return subset & (0 - subset); // single bit
+	 subset = attadef & PieceBB(QUEEN, diff); if (subset) return subset & (0 - subset); // single bit
+	return 0; // empty set
+}
+
+const Value position::SEE(Square from, const Square to)
+{
+	Value gain[32];
+	int d = 0;
+	Bitboard mayXray = OccupiedByPieceType[BISHOP] | OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN];
+	Bitboard fromSet = ToBitboard(from);
+	Bitboard occ = OccupiedBB();
+	Bitboard attadef = AttacksOfField(occ, to);
+	gain[d] = PieceValuesMG[GetPieceType(Board[to])];
+	do
+	{
+		d++; // next depth and side
+		gain[d] = PieceValuesMG[GetPieceType(Board[from])] - gain[d - 1]; // speculative store, if defended
+		if (max(-gain[d - 1], gain[d]) < 0) break; // pruning does not influence the result
+		attadef ^= fromSet; // reset bit in set to traverse
+		occ ^= fromSet; // reset bit in temporary occupancy (for x-Rays)
+		if ((fromSet & mayXray) != 0)
+			attadef |= considerXrays(occ, to, fromSet, from);
+		fromSet = getSquareOfLeastValuablePiece(attadef, d & 1);
+		from = lsb(fromSet);
+	} while (fromSet != 0);
+	while (--d != 0)
+		gain[d - 1] = -max(-gain[d - 1], gain[d]);
+	return gain[0];
+}
+
 
 //"Copied" from Stockfish source code
 void position::setFromFEN(const string& fen) {
@@ -429,7 +598,7 @@ string position::print() const {
 
 MaterialKey_t position::calculateMaterialKey() {
 	MaterialKey_t key = MATERIAL_KEY_OFFSET;
-	for (int i = WQUEEN; i <= BPAWN; ++i) 
+	for (int i = WQUEEN; i <= BPAWN; ++i)
 		key += materialKeyFactors[i] * popcount(PieceBB(PieceType(i / 2), Color(i & 1)));
 	return key;
 }

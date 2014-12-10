@@ -6,78 +6,98 @@
 
 using namespace std;
 
-uint64_t perft(position &pos, int depth) {
+uint64_t nodeCount = 0;
+
+uint64_t perft2(position &pos, int depth) {
+	nodeCount++;
 	if (depth == 0) return 1;
-	Move move;
+	ValuatedMove move;
 	uint64_t result = 0;
-	Move * moves = pos.GenerateMoves<ALL>();
-	while ((move = *moves)) {
+	ValuatedMove * moves = pos.GenerateMoves<ALL>();
+	while ((move = *moves).move) {
 		position next = position(pos);
-		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		if (next.ApplyMove(move.move)) result += perft2(next, depth - 1);
 		++moves;
 	}
 	return result;
 }
 
 uint64_t perft1(position &pos, int depth) {
+	nodeCount++;
 	if (depth == 0) return 1;
-	Move move;
+	ValuatedMove move;
 	uint64_t result = 0;
-	Move * moves = pos.GenerateMoves<TACTICAL>();
-	while ((move = *moves)) {
+	ValuatedMove * moves = pos.GenerateMoves<TACTICAL>();
+	while ((move = *moves).move) {
 		position next = position(pos);
-		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		if (next.ApplyMove(move.move)) result += perft1(next, depth - 1);
 		++moves;
 	}
 	moves = pos.GenerateMoves<QUIETS>();
-	while ((move = *moves)) {
+	while ((move = *moves).move) {
 		position next = position(pos);
-		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		if (next.ApplyMove(move.move)) result += perft1(next, depth - 1);
 		++moves;
 	}
 	return result;
 }
 
-uint64_t perft2(position &pos, int depth) {
+uint64_t perft3(position &pos, int depth) {
+	nodeCount++;
 	if (depth == 0) return 1;
-	Move move;
+	ValuatedMove move;
 	uint64_t result = 0;
-	Move * moves = pos.GenerateMoves<WINNING_CAPTURES>();
-	while ((move = *moves)) {
+	ValuatedMove * moves = pos.GenerateMoves<WINNING_CAPTURES>();
+	while ((move = *moves).move) {
 		position next = position(pos);
-		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		if (next.ApplyMove(move.move)) result += perft3(next, depth - 1);
 		++moves;
 	}
 	moves = pos.GenerateMoves<EQUAL_CAPTURES>();
-	while ((move = *moves)) {
+	while ((move = *moves).move) {
 		position next = position(pos);
-		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		if (next.ApplyMove(move.move)) result += perft3(next, depth - 1);
 		++moves;
 	}
 	moves = pos.GenerateMoves<LOOSING_CAPTURES>();
-	while ((move = *moves)) {
+	while ((move = *moves).move) {
 		position next = position(pos);
-		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		if (next.ApplyMove(move.move)) result += perft3(next, depth - 1);
 		++moves;
 	}
 	moves = pos.GenerateMoves<QUIETS>();
-	while ((move = *moves)) {
+	while ((move = *moves).move) {
 		position next = position(pos);
-		if (next.ApplyMove(move)) result += perft(next, depth - 1);
+		if (next.ApplyMove(move.move)) result += perft3(next, depth - 1);
 		++moves;
+	}
+	return result;
+}
+
+uint64_t perft(position &pos, int depth) {
+	nodeCount++;
+	if (depth == 0) return 1;
+	uint64_t result = 0;
+	pos.InitializeMoveIterator<MAIN_SEARCH>();
+	Move move;
+	while ((move = pos.NextMove())) {
+		position next = position(pos);
+		if (next.ApplyMove(move)) {
+			result += perft(next, depth - 1);
+		}
 	}
 	return result;
 }
 
 void divide(position &pos, int depth) {
-	Move * moves = pos.GenerateMoves<ALL>();
-	Move move;
+	ValuatedMove * moves = pos.GenerateMoves<ALL>();
+	ValuatedMove move;
 	uint64_t total = 0;
-	while ((move = *moves)) {
+	while ((move = *moves).move) {
 		position next = position(pos);
-		if (next.ApplyMove(move)) {
+		if (next.ApplyMove(move.move)) {
 			uint64_t p = perft(next, depth - 1);
-			cout << toString(move) << "\t" << p << "\t" << next.fen() << endl;
+			cout << toString(move.move) << "\t" << p << "\t" << next.fen() << endl;
 			total += p;
 		}
 		++moves;
@@ -116,8 +136,10 @@ void testPolyglotKey() {
 }
 
 uint64_t perftNodes = 0;
+uint64_t testCount = 0;
 chrono::microseconds perftRuntime;
 bool checkPerft(string fen, int depth, uint64_t expectedResult) {
+	testCount++;
 	position pos(fen);
 	chrono::system_clock::time_point begin = chrono::high_resolution_clock::now();
 	uint64_t perftResult = perft(pos, depth);
@@ -128,15 +150,15 @@ bool checkPerft(string fen, int depth, uint64_t expectedResult) {
 	perftNodes += expectedResult;
 	if (perftResult == expectedResult) {
 		if (runtimeMS.count() > 0) {
-			cout << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << expectedResult / runtimeMS.count() << " MNodes/s\t" << fen << endl;
+			cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << expectedResult / runtimeMS.count() << " MNodes/s\t" << endl << "\t" <<  fen << endl;
 		}
 		else {
-			cout << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << fen << endl;
+			cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << endl << "\t" << fen << endl;
 		}
 		return true;
 	}
 	else {
-		cout << "Error\t" << depth << "\t" << perftResult << "\texpected\t" << expectedResult << "\t" << fen << endl;
+		cout << testCount << "\t" << "Error\t" << depth << "\t" << perftResult << "\texpected\t" << expectedResult << "\t" << fen << endl;
 		return false;
 	}
 }
@@ -917,6 +939,58 @@ bool testPerft() {
 	if (result) cout << "Done OK" << endl; else cout << "Error!" << endl;
 	cout << "Runtime: " << setprecision(3) << perftRuntime.count() / 1000000.0 << " s" << endl;
 	cout << "Count:   " << setprecision(3) << perftNodes / 1000000.0 << " MNodes" << endl;
-	cout << setprecision(3) << (1.0 * perftNodes) / perftRuntime.count() << " MNodes/s" << endl;
+	cout << "Leafs: " << setprecision(3) << (1.0 * perftNodes) / perftRuntime.count() << " MNodes/s" << endl;
+	cout << "Nodes: " << setprecision(3) << (1.0 * nodeCount) / perftRuntime.count() << " MNodes/s" << endl;
+	return result;
+}
+
+bool testSEE() {
+	position pos("1k1r4/1pp4p/p7/4p3/8/P5P1/1PP4P/2K1R3 w - - ");
+	Value see = pos.SEE(E1, E5);
+	bool result = true;
+	if (see > 0) cout << "OK\t"; else {
+		cout << "ERROR\t";
+		result = false;
+	}
+	cout << "SEE: " << see << "\t1k1r4/1pp4p/p7/4p3/8/P5P1/1PP4P/2K1R3 w - - \t" << toString(createMove(E1, E5)) << endl;
+	position pos2("1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - -");
+	see = pos2.SEE(D3, E5);
+	if (see < 0) cout << "OK\t"; else {
+		cout << "ERROR\t";
+		result = false;
+	}
+	cout << "SEE: " << see << "\t1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - \t" << toString(createMove(D3, E5)) << endl;
+
+	position pos3("2k1r3/1pp4p/p5p1/8/4P3/P7/1PP4P/1K1R4 b - - 0 1");
+	see = pos3.SEE(E8, E4);
+	if (see > 0) cout << "OK\t"; else {
+		cout << "ERROR\t";
+		result = false;
+	}
+	cout << "SEE: " << see << "\t2k1r3/1pp4p/p5p1/8/4P3/P7/1PP4P/1K1R4 b - - 0 1\t" << toString(createMove(E8, E4)) << endl;
+
+	position pos4("2k1q3/1pp1r1bp/p2n2p1/8/4P3/P4B2/1PPN3P/1K1R3Q b - - 0 1");
+	see = pos4.SEE(D6, E4);
+	if (see < 0) cout << "OK\t"; else {
+		cout << "ERROR\t";
+		result = false;
+	}
+	cout << "SEE: " << see << "\t2k1q3/1pp1r1bp/p2n2p1/8/4P3/P4B2/1PPN3P/1K1R3Q b - - 0 1 \t" << toString(createMove(D6, E4)) << endl;
+
+	position pos5("1k6/8/8/3pRrRr/8/8/8/1K6 w - - 0 1");
+	see = pos5.SEE(E5, D5);
+	if (see < 0) cout << "OK\t"; else {
+		cout << "ERROR\t";
+		result = false;
+	}
+	cout << "SEE: " << see << "\t1k6/8/8/3pRrRr/8/8/8/1K6 w - - 0 1  \t" << toString(createMove(E5, D5)) << endl;
+
+	position pos6("1k6/8/8/8/3PrRrR/8/8/1K6 b - - 0 1");
+	see = pos6.SEE(E4, D4);
+	if (see < 0) cout << "OK\t"; else {
+		cout << "ERROR\t";
+		result = false;
+	}
+	cout << "SEE: " << see << "\t1k6/8/8/8/3PrRrR/8/8/1K6 b - - 0 1 \t" << toString(createMove(E4, D4)) << endl;
 	return result;
 }

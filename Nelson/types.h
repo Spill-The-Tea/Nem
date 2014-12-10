@@ -62,7 +62,11 @@ enum CastleFlag {
 const int CastlesbyColor[] = {W0_0 | W0_0_0, B0_0 | B0_0_0};
 
 enum MoveGenerationType {
-	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, TACTICAL, QUIETS, ALL
+	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, TACTICAL, QUIETS, ALL, NONE
+};
+
+enum StagedMoveGenerationType {
+	MAIN_SEARCH, QSEARCH
 };
 
 enum Value : int16_t {
@@ -102,6 +106,8 @@ ENABLE_FULL_OPERATORS_ON(Rank)
 ENABLE_FULL_OPERATORS_ON(File)
 ENABLE_FULL_OPERATORS_ON(Square);
 ENABLE_FULL_OPERATORS_ON(Value);
+ENABLE_FULL_OPERATORS_ON(PieceType);
+ENABLE_FULL_OPERATORS_ON(Piece);
 
 
 inline Color& operator^=(Color& col, int i) { return col = Color(((int)col) ^ 1); }
@@ -219,3 +225,12 @@ inline eval operator-(const eval& e1, const eval e2) {
 inline eval operator*(const eval e, const int i) { return eval(e.mgScore * i, e.egScore * i); }
 inline eval operator/(const eval e, const int i) { return eval(e.mgScore / i, e.egScore / i); }
 inline eval operator*(const float f, const eval e) { return eval(f * e.mgScore, f * e.egScore); }
+
+struct ValuatedMove {
+	Move move;
+	Value score;
+};
+
+inline bool operator<(const ValuatedMove& f, const ValuatedMove& s) {
+	return f.score < s.score;
+}

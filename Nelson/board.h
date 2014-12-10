@@ -3,6 +3,7 @@
 #include "types.h"
 
 const Bitboard ALL_SQUARES = 0xffffffffffffffff;
+const Bitboard EMPTY = 0x00;
 const Bitboard NOT_H_FILE = 0x7f7f7f7f7f7f7f7f;
 const Bitboard NOT_A_FILE = 0xfefefefefefefefe;
 const Bitboard A_FILE = 0x101010101010101;
@@ -24,13 +25,20 @@ const Bitboard RANK7 = 0xff000000000000;
 const Bitboard RANK8 = 0xff00000000000000;
 const Bitboard RANKS[] = { RANK1, RANK2, RANK3, RANK4, RANK5, RANK6, RANK7, RANK8 };
 const Bitboard RANK1and8 = RANK1 | RANK8;
-
+const Bitboard AntiDiagonals[] = { 0x102, 0x10204, 0x1020408, 0x102040810, 0x10204081020,
+                 0x1020408102040, 0x102040810204080, 0x204081020408000, 0x408102040800000,
+                 0x810204080000000, 0x1020408000000000, 0x2040800000000000, 0x4080000000000000 };
+const Bitboard Diagonals[] = { 0x8040, 0x804020, 0x80402010, 0x8040201008, 0x804020100804,
+                 0x80402010080402, 0x8040201008040201, 0x4020100804020100, 0x2010080402010000,
+                 0x1008040201000000, 0x804020100000000, 0x402010000000000, 0x201000000000000 };
 extern Bitboard InitialKingSquareBB[2];
 extern Square InitialKingSquare[2];
 extern Bitboard InitialRookSquareBB[4];
 extern Square InitialRookSquare[4];
 extern Bitboard SquaresToBeUnattacked[4];
 extern Bitboard SquaresToBeEmpty[4];
+extern Bitboard SlidingAttacksRookTo[64];
+extern Bitboard SlidingAttacksBishopTo[64];
 extern bool Chess960;
 
 extern Bitboard MagicMovesRook[88576];
@@ -44,6 +52,8 @@ extern int IndexOffsetBishop[64];
 extern uint64_t RookMagics[64];
 extern uint64_t BishopMagics[64];
 extern Bitboard InBetweenFields[64][64];
+extern Bitboard RaysBySquares[64][64];
+extern Bitboard ShadowedFields[64][64];
 extern Bitboard KnightAttacks[64];
 extern Bitboard KingAttacks[64];
 extern Bitboard PawnAttacks[2][64];
