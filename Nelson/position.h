@@ -1,12 +1,14 @@
 #pragma once
 #include "types.h"
 #include "board.h"
+#include "material.h"
 #include <string>
 
 using namespace std;
 
-const MoveGenerationType generationPhases[9] = { WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIETS, NONE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE };
-const int generationPhaseOffset[] = { 0, 5 };
+const MoveGenerationType generationPhases[10] = { WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, //Main Search Phases
+                                                  WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE };                                 //QSearch Phases
+const int generationPhaseOffset[] = { 0, 6 };
 
 struct position
 {
@@ -40,6 +42,7 @@ private:
 	unsigned char CastlingOptions;
 	unsigned char DrawPlyCount;
 	Color SideToMove;
+	MaterialTableEntry * material;
 	Piece Board[64];
 
 	position * previous;
@@ -51,7 +54,7 @@ private:
 	Bitboard attackedByUs;
 	int moveIterationPointer;
 	int generationPhase;
-
+	
 	//Bitboard pinned;
 	//Bitboard pinner;
 
@@ -83,6 +86,7 @@ private:
 	MaterialKey_t calculateMaterialKey();
 	void evaluateByMVVLVA();
 	void evaluateBySEE();
+	void evaluateByPSQ();
 	Move getBestMove(int startIndex);
 	void insertionSort(ValuatedMove* begin, ValuatedMove* end);
 	const Bitboard considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from);

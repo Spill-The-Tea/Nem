@@ -61,12 +61,14 @@ bool position::ApplyMove(Move move) {
 		set<true>(moving, toSquare);
 		remove(Square(toSquare - PawnStep()));
 		MaterialKey -= materialKeyFactors[BPAWN - SideToMove];
+		material = &MaterialTable[MaterialKey];
 		SetEPSquare(OUTSIDE);
 		DrawPlyCount = 0;
 		break;
 	case PROMOTION:
 		set<false>(GetPiece(promotionType(move), SideToMove), toSquare);
 		MaterialKey += materialKeyFactors[GetPiece(promotionType(move), SideToMove)] - materialKeyFactors[moving];
+		material = &MaterialTable[MaterialKey];
 		if (CastlingOptions != 0) updateCastleFlags(fromSquare, toSquare);
 		SetEPSquare(OUTSIDE);
 		DrawPlyCount = 0;
@@ -111,34 +113,57 @@ Move position::NextMove() {
 			case WINNING_CAPTURES:
 				GenerateMoves<WINNING_CAPTURES>();
 				evaluateByMVVLVA();
+				moveIterationPointer = 0;
 				break;
 			case EQUAL_CAPTURES:
 				GenerateMoves<EQUAL_CAPTURES>(); 
 				evaluateBySEE();
+				moveIterationPointer = 0;
 				break;
 			case LOOSING_CAPTURES:
 				GenerateMoves<LOOSING_CAPTURES>();
 				evaluateBySEE();
+				moveIterationPointer = 0;
 				break;
-			case QUIETS:
-				GenerateMoves<QUIETS>(); break;
+			case QUIETS_POSITIVE:
+				GenerateMoves<QUIETS>(); 
+				evaluateByPSQ();
+			    ValuatedMove * lastPositive = std::partition(moves, &moves[movepointer-1], positiveScore);
+				insertionSort(moves, lastPositive);
+				moveIterationPointer = 0;
 				break;
 			}
-			moveIterationPointer = 0;
+
 		}
-		Move move = getBestMove(moveIterationPointer);
-		if (move) {
-			++moveIterationPointer;
-			return move;
-		}
-		else {
-			++generationPhase;
-			moveIterationPointer = -1;
+		Move move;
+		switch (generationPhases[generationPhase]) {
+		case WINNING_CAPTURES: case EQUAL_CAPTURES: case LOOSING_CAPTURES: case QUIETS_NEGATIVE:
+			move = getBestMove(moveIterationPointer);
+			if (move) {
+				++moveIterationPointer;
+				return move;
+			}
+			else {
+				++generationPhase;
+				moveIterationPointer = -1;
+			}
+			break;
+		case QUIETS_POSITIVE:
+			move = moves[moveIterationPointer].move;
+			if (move) {
+				++moveIterationPointer;
+				return move;
+			}
+			else {
+				++generationPhase;
+			}
+			break;
 		}
 	} while (generationPhases[generationPhase] != NONE);
 	return MOVE_NONE;
 }
 
+//copied from Stockfish
 void position::insertionSort(ValuatedMove* begin, ValuatedMove* end)
 {
 	ValuatedMove tmp, *p, *q;
@@ -161,6 +186,13 @@ void position::evaluateBySEE() {
 	for (int i = 0; i < movepointer - 1; ++i) moves[i].score = SEE(from(moves[i].move), to(moves[i].move));
 }
 
+void position::evaluateByPSQ() {
+	for (int i = 0; i < movepointer - 1; ++i) {
+		moves[i].score = (PSQ[Board[from(moves[i].move)]][to(moves[i].move)] - PSQ[Board[from(moves[i].move)]][from(moves[i].move)]).getScore(material->Phase);
+		//moves[i].score = (PSQ[Board[from(moves[i].move)]][to(moves[i].move)]).mgScore - (PSQ[Board[from(moves[i].move)]][from(moves[i].move)]).mgScore;
+	}
+}
+
 Move position::getBestMove(int startIndex) {
 	ValuatedMove bestmove = moves[startIndex];
 	for (int i = startIndex + 1; i < movepointer - 1; ++i) {
@@ -181,6 +213,7 @@ template<bool SquareIsEmpty> void position::set(const Piece piece, const Square 
 		OccupiedByColor[GetColor(captured)] &= ~squareBB;
 		Hash ^= ZobristKeys[captured][square];
 		MaterialKey -= materialKeyFactors[captured];
+		material = &MaterialTable[MaterialKey];
 	}
 	OccupiedByPieceType[GetPieceType(piece)] |= squareBB;
 	OccupiedByColor[GetColor(piece)] |= squareBB;
@@ -506,6 +539,7 @@ void position::setFromFEN(const string& fen) {
 	ss >> skipws >> DrawPlyCount;
 	std::fill_n(attacks, 64, 0ull);
 	MaterialKey = calculateMaterialKey();
+	material = &MaterialTable[MaterialKey];
 	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	attackedByUs = calculateAttacks(SideToMove);
 }

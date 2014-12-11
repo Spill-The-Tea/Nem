@@ -62,7 +62,7 @@ enum CastleFlag {
 const int CastlesbyColor[] = {W0_0 | W0_0_0, B0_0 | B0_0_0};
 
 enum MoveGenerationType {
-	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, TACTICAL, QUIETS, ALL, NONE
+	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, TACTICAL, QUIETS, QUIETS_POSITIVE, QUIETS_NEGATIVE, ALL, NONE
 };
 
 enum StagedMoveGenerationType {
@@ -230,6 +230,8 @@ struct ValuatedMove {
 	Move move;
 	Value score;
 };
+
+inline bool positiveScore(const ValuatedMove& vm) { return vm.score > 0; }
 
 inline bool operator<(const ValuatedMove& f, const ValuatedMove& s) {
 	return f.score < s.score;

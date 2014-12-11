@@ -299,6 +299,18 @@ void InitializeShadowedFields()
 	}
 }
 
+eval PSQ[12][64];
+void InitializePSQ() {
+	for (PieceType pt = QUEEN; pt <= KING; ++pt) {
+		for (Square sq = A1; sq <= H8; ++sq) {
+			int mgValue = PSQT[pt][sq].mgScore * 10 / 25;
+			int egValue = PSQT[pt][sq].egScore * 10 / 25;
+			PSQ[2 * pt][sq] = eval(Value(mgValue), Value(egValue));
+			PSQ[2 * pt + 1][sq ^ 56] = -PSQ[2 * pt][sq];
+		}
+	}
+}
+
 int BishopShift[] = { 59, 60, 59, 59, 59, 59, 60, 59, 60, 60, 59, 59, 59, //a1 - e2
 59, 60, 60, 60, 60, 57, 57, 57, 57, 60, 60, 59, 59, 57, 55, 55, 57, //f2 - f4
 59, 59, 59, 59, 57, 55, 55, 57, 59, 59, 60, 60, 57, 57, 57, 57, 60, //g4 - g6
@@ -535,6 +547,7 @@ void Initialize() {
 	InitializeMagic();
 	InitializeMaterialTable();
 	InitializeShadowedFields();
+	InitializePSQ();
 	chrono::system_clock::time_point end = chrono::high_resolution_clock::now();
 	auto runtime = end - begin;
 	chrono::microseconds runtimeMS = chrono::duration_cast<chrono::microseconds>(runtime);
