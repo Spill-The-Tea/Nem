@@ -116,7 +116,7 @@ Move position::NextMove() {
 				moveIterationPointer = 0;
 				break;
 			case EQUAL_CAPTURES:
-				GenerateMoves<EQUAL_CAPTURES>(); 
+				GenerateMoves<EQUAL_CAPTURES>();
 				evaluateBySEE();
 				moveIterationPointer = 0;
 				break;
@@ -126,10 +126,14 @@ Move position::NextMove() {
 				moveIterationPointer = 0;
 				break;
 			case QUIETS_POSITIVE:
-				GenerateMoves<QUIETS>(); 
+				GenerateMoves<QUIETS>();
 				evaluateByPSQ();
-			    ValuatedMove * lastPositive = std::partition(moves, &moves[movepointer-1], positiveScore);
+				lastPositive = std::partition(moves, &moves[movepointer - 1], positiveScore);
 				insertionSort(moves, lastPositive);
+				moveIterationPointer = 0;
+				break;
+			case CHECK_EVASION:
+				GenerateMoves<CHECK_EVASION>();
 				moveIterationPointer = 0;
 				break;
 			}
@@ -148,16 +152,16 @@ Move position::NextMove() {
 				moveIterationPointer = -1;
 			}
 			break;
+		case CHECK_EVASION:
+			move = moves[moveIterationPointer].move;
+			++moveIterationPointer;
+			generationPhase += (move == MOVE_NONE);
+			return move;
 		case QUIETS_POSITIVE:
 			move = moves[moveIterationPointer].move;
-			if (move) {
-				++moveIterationPointer;
-				return move;
-			}
-			else {
-				++generationPhase;
-			}
-			break;
+			++moveIterationPointer;
+			generationPhase += (move == lastPositive->move);
+			return move;
 		}
 	} while (generationPhases[generationPhase] != NONE);
 	return MOVE_NONE;
@@ -286,6 +290,22 @@ Bitboard position::calculateAttacks(Color color) {
 	return result;
 }
 
+Bitboard position::checkBlocker(Color colorOfBlocker, Color kingColor) {
+	Bitboard result = EMPTY;
+	Square kingSquare = lsb(PieceBB(KING, kingColor));
+	Bitboard pinner = (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]) & SlidingAttacksRookTo[kingSquare];
+	pinner |= (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]) & SlidingAttacksBishopTo[kingSquare];
+	pinner &= OccupiedByColor[kingColor ^ 1];
+	Bitboard occ = OccupiedBB();
+	while (pinner)
+	{
+		Bitboard blocker = InBetweenFields[lsb(pinner)][kingSquare] & occ;
+		if (popcount(blocker) == 1) result |= blocker & OccupiedByColor[colorOfBlocker];
+		pinner &= pinner - 1;
+	}
+	return result;
+}
+
 //Calculates the pinned Pieces as needed for move generation
 //void position::calculatePinned() {
 //	pinned = pinner = EMPTY;
@@ -320,7 +340,7 @@ const Bitboard position::considerXrays(const Bitboard occ, const Square to, cons
 	return 0;
 }
 
-const Bitboard position::AttacksOfField(const Bitboard occupancy, const Square targetField)
+const Bitboard position::AttacksOfField(const Square targetField)
 {
 	//sliding attacks
 	Bitboard attacks = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
@@ -330,7 +350,7 @@ const Bitboard position::AttacksOfField(const Bitboard occupancy, const Square t
 	while (tmpAttacks != 0)
 	{
 		Square from = lsb(tmpAttacks);
-		Bitboard blocker = InBetweenFields[from][targetField] & occupancy;
+		Bitboard blocker = InBetweenFields[from][targetField] & OccupiedBB();
 		if (blocker) attacks &= ~ToBitboard(from);
 		tmpAttacks &= tmpAttacks - 1;
 	}
@@ -345,14 +365,40 @@ const Bitboard position::AttacksOfField(const Bitboard occupancy, const Square t
 	return attacks;
 }
 
+const Bitboard position::AttacksOfField(const Square targetField, const Color attackingSide) {
+	//sliding attacks
+	Bitboard attacks = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
+	attacks |= SlidingAttacksBishopTo[targetField] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
+	attacks &= OccupiedByColor[attackingSide];
+	//Check for blockers
+	Bitboard tmpAttacks = attacks;
+	while (tmpAttacks != 0)
+	{
+		Square from = lsb(tmpAttacks);
+		Bitboard blocker = InBetweenFields[from][targetField] & OccupiedBB();
+		if (blocker) attacks &= ~ToBitboard(from);
+		tmpAttacks &= tmpAttacks - 1;
+	}
+	//non-sliding attacks
+	attacks |= KnightAttacks[targetField] & OccupiedByPieceType[KNIGHT];
+	attacks |= KingAttacks[targetField] & OccupiedByPieceType[KING];
+	Bitboard targetBB = ToBitboard(targetField);
+	attacks |= ((targetBB >> 7) & NOT_A_FILE) & PieceBB(PAWN, WHITE);
+	attacks |= ((targetBB >> 9) & NOT_H_FILE) & PieceBB(PAWN, WHITE);
+	attacks |= ((targetBB << 7) & NOT_H_FILE) & PieceBB(PAWN, BLACK);
+	attacks |= ((targetBB << 9) & NOT_A_FILE) & PieceBB(PAWN, BLACK);
+	attacks &= OccupiedByColor[attackingSide];
+	return attacks;
+}
+
 const Bitboard position::getSquareOfLeastValuablePiece(const Bitboard attadef, const int side)
 {
 	Color diff = Color((SideToMove + side) & 1);
-     Bitboard subset = attadef & PieceBB(PAWN, diff); if (subset) return subset & (0 - subset); // single bit
-	 subset = attadef & PieceBB(KNIGHT, diff); if (subset) return subset & (0 - subset); // single bit
-	 subset = attadef & PieceBB(BISHOP, diff); if (subset) return subset & (0 - subset); // single bit
-	 subset = attadef & PieceBB(ROOK, diff); if (subset) return subset & (0 - subset); // single bit
-	 subset = attadef & PieceBB(QUEEN, diff); if (subset) return subset & (0 - subset); // single bit
+	Bitboard subset = attadef & PieceBB(PAWN, diff); if (subset) return subset & (0 - subset); // single bit
+	subset = attadef & PieceBB(KNIGHT, diff); if (subset) return subset & (0 - subset); // single bit
+	subset = attadef & PieceBB(BISHOP, diff); if (subset) return subset & (0 - subset); // single bit
+	subset = attadef & PieceBB(ROOK, diff); if (subset) return subset & (0 - subset); // single bit
+	subset = attadef & PieceBB(QUEEN, diff); if (subset) return subset & (0 - subset); // single bit
 	return 0; // empty set
 }
 
@@ -363,7 +409,7 @@ const Value position::SEE(Square from, const Square to)
 	Bitboard mayXray = OccupiedByPieceType[BISHOP] | OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN];
 	Bitboard fromSet = ToBitboard(from);
 	Bitboard occ = OccupiedBB();
-	Bitboard attadef = AttacksOfField(occ, to);
+	Bitboard attadef = AttacksOfField(to);
 	gain[d] = PieceValuesMG[GetPieceType(Board[to])];
 	do
 	{
@@ -611,7 +657,7 @@ string position::fen() const {
 	return ss.str();
 }
 
-string position::print() const {
+string position::print() {
 	std::ostringstream ss;
 
 	ss << "\n +---+---+---+---+---+---+---+---+\n";
@@ -622,7 +668,8 @@ string position::print() const {
 
 		ss << " |\n +---+---+---+---+---+---+---+---+\n";
 	}
-	ss << "\nFen: " << fen()
+	ss << "\nChecked:         " << boolalpha << IsCheck() << noboolalpha
+		<< "\nFen:             " << fen()
 		//<< "\nHash:            " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << _hash
 		//<< "\nNormalized Hash: " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << GetNormalizedHash()
 		//<< "\nMaterial Hash:   " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << _material_hash 

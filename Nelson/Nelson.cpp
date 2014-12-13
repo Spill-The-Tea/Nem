@@ -10,12 +10,12 @@
 
 int main(int argc, const char* argv[]) {
 	string input = "";
-	//testPolyglotKey();
-	//std::getline(cin, input);
+	Initialize();
+	//testCheckQuietCheckMoveGeneration();
 	//return 0;
-	Initialize();	
-	testPerft();
-	return 0;
+	//std::getline(cin, input);
+	//testPerft();
+	//return 0;
 	std::cout << sizeof(position) << std::endl;
 	position pos;
 	std::cout << pos.GetMaterialKey() << std::endl;
@@ -34,7 +34,12 @@ int main(int argc, const char* argv[]) {
 			divide(pos, depth);
 		}
 		else if (!input.compare(0, 10, "perftSuite")) {
-			testPerft();
+			PerftType pt = BASIC;
+			if (input.length() > 11) {
+				int pti = atoi(input.substr(11).c_str());
+				pt = PerftType(pti);
+			}
+			testPerft(pt);
 		}
 		else if (!input.compare(0, 6, "perft ")) {
 			int depth = atoi(input.substr(6).c_str());
@@ -42,6 +47,9 @@ int main(int argc, const char* argv[]) {
 		}
 		else if (!input.compare(0, 3, "SEE")) {
 			testSEE();
+		}
+		else if (!input.compare(0, 5, "print")) {
+			cout << pos.print() << endl;
 		}
 	}
 	std::getline(cin, input);
