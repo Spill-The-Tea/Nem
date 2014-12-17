@@ -11,8 +11,8 @@
 int main(int argc, const char* argv[]) {
 	string input = "";
 	Initialize();
-	//testCheckQuietCheckMoveGeneration();
-	//return 0;
+	testResult();
+	return 0;
 	//std::getline(cin, input);
 	//testPerft();
 	//return 0;
@@ -50,6 +50,19 @@ int main(int argc, const char* argv[]) {
 		}
 		else if (!input.compare(0, 5, "print")) {
 			cout << pos.print() << endl;
+		}
+		else if (!input.compare(0, 3, "qcg")) {
+			testCheckQuietCheckMoveGeneration();
+		}
+		else if (!input.compare(0, 3, "tmg")) {
+			testTacticalMoveGeneration();
+		}
+		else if (!input.compare(0, 7, "search ")) {
+			int depth = atoi(input.substr(7).c_str());
+			testSearch(pos, depth);
+		}
+		else if (!input.compare(0, 6, "result")) {
+			testResult();
 		}
 	}
 	std::getline(cin, input);

@@ -1,5 +1,6 @@
 #include "material.h"
 #include "settings.h"
+#include "evaluation.h"
 
 using namespace std;
 
@@ -58,6 +59,7 @@ void InitializeMaterialTable() {
 											assert(MaterialTable[key].Score == VALUE_NOTYETDETERMINED);
 											MaterialTable[key].Score = evaluation.getScore(phase);
 											MaterialTable[key].Phase = phase;
+											MaterialTable[key].EvaluationFunction = &evaluate;
 										}
 									}
 								}

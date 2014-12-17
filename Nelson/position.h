@@ -2,13 +2,14 @@
 #include "types.h"
 #include "board.h"
 #include "material.h"
+#include "evaluation.h"
 #include <string>
 
 using namespace std;
 
 const MoveGenerationType generationPhases[12] = { WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, //Main Search Phases
-                                                  WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
-                                                  CHECK_EVASION, NONE};                                 
+WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
+CHECK_EVASION, NONE };
 const int generationPhaseOffset[] = { 0, 6, 10 };
 
 struct position
@@ -24,18 +25,25 @@ public:
 	Bitboard ColorBB(const int c) const;
 	Bitboard OccupiedBB() const;
 	string print();
+	string printGeneratedMoves();
 	string fen() const;
 	void setFromFEN(const string& fen);
 	bool ApplyMove(Move move); //Applies a pseudo-legal move and returns true if move is legal
 	static inline position UndoMove(position &pos) { return *pos.previous; }
 	template<MoveGenerationType MGT> ValuatedMove * GenerateMoves();
 	template<> ValuatedMove* GenerateMoves<QUIET_CHECKS>();
+	template<> ValuatedMove* GenerateMoves<LEGAL>();
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator();
 	Move NextMove();
 	const Value position::SEE(Square from, const Square to);
-	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))) && IsCheck()); }
+	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
+	friend evaluation evaluate(position& pos);
+	inline Value evaluate() { return material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove); }
+	inline int GeneratedMoveCount() { return movepointer - 1; }
+	inline int GetPliesFromRoot() { return pliesFromRoot; }
+	Result GetResult();
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -45,6 +53,7 @@ private:
 	unsigned char CastlingOptions;
 	unsigned char DrawPlyCount;
 	Color SideToMove;
+	int pliesFromRoot;
 	MaterialTableEntry * material;
 	Piece Board[64];
 
@@ -57,8 +66,9 @@ private:
 	Bitboard attackedByUs;
 	int moveIterationPointer;
 	int generationPhase;
+	Result result = RESULT_UNKNOWN;
 	ValuatedMove * lastPositive;
-	
+
 	//Bitboard pinned;
 	//Bitboard pinner;
 
@@ -98,12 +108,132 @@ private:
 	const Bitboard AttacksOfField(const Square targetField, const Color attackingSide);
 	const Bitboard getSquareOfLeastValuablePiece(const Bitboard attadef, const int side);
 	inline bool IsCheck() { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
+	inline bool isValid(Move move) { position next(*this); return next.ApplyMove(move); }
+	template<bool CHECKED> bool CheckValidMoveExists();
 };
 
 inline Bitboard position::PieceBB(const PieceType pt, const Color c) const { return OccupiedByColor[c] & OccupiedByPieceType[pt]; }
 inline Bitboard position::ColorBB(const Color c) const { return OccupiedByColor[c]; }
 inline Bitboard position::ColorBB(const int c) const { return OccupiedByColor[c]; }
 inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | OccupiedByColor[BLACK]; }
+
+//Tries to find one valid move as fast as possible
+template<bool CHECKED> bool position::CheckValidMoveExists() {
+	assert(attackedByThem); //should have been already calculated 
+	//Start with king (Castling need not be considered - as there is always another legal move available with castling
+	//In Chess960 this might be different
+	Square kingSquare = lsb(PieceBB(KING, SideToMove));
+	Bitboard kingTargets = KingAttacks[kingSquare] & ~OccupiedByColor[SideToMove] & ~attackedByThem;
+	if (CHECKED && kingTargets) {
+		if (popcount(kingTargets) > 2) return true; //unfortunately 8/5p2/5kp1/8/4p3/R4n2/1r3K2/4q3 w - - shows that king can even block 2 sliders
+		else {
+			//unfortunately king could be "blocker" e.g. in 8/8/1R2k3/K7/8/8/8/8 w square f6 is not attacked by white
+			//however if king moves to f6 it's still check
+			Square to = lsb(kingTargets);
+			kingTargets &= kingTargets - 1;
+			if (isValid(createMove(kingSquare, to)) || (kingTargets && isValid(createMove(kingSquare, lsb(kingTargets))))) return true;
+		}
+	}
+	else if (kingTargets) return true; //No need to check
+	if (CHECKED) {
+		Bitboard checker = AttacksOfField(kingSquare, Color(SideToMove ^ 1));
+		if (popcount(checker) != 1) return false; //double check and no king move => MATE
+		//All valid moves are now either capturing the checker or blocking the check
+		Bitboard blockingSquares = checker | InBetweenFields[kingSquare][lsb(checker)];
+		Bitboard pinned = checkBlocker(SideToMove, SideToMove);
+		//Sliders and knights can't move if pinned (as we are in check) => therefore only check the unpinned pieces
+		Bitboard sliderAndKnight = OccupiedByColor[SideToMove] & ~OccupiedByPieceType[KING] & ~OccupiedByPieceType[PAWN] & ~pinned;
+		while (sliderAndKnight) {
+			if (attacks[lsb(sliderAndKnight)] & ~OccupiedByColor[SideToMove] & blockingSquares) return true;
+			sliderAndKnight &= sliderAndKnight - 1;
+		}
+		//Pawns
+		Bitboard singleStepTargets;
+		Bitboard pawns = PieceBB(PAWN, SideToMove) & ~pinned;
+		if (SideToMove == WHITE) {
+			if ((singleStepTargets = ((pawns << 8) & ~OccupiedBB())) & blockingSquares) return true;
+			if (((singleStepTargets & RANK3)<< 8) & ~OccupiedBB() & blockingSquares) return true;
+		}
+		else {
+			if ((singleStepTargets = ((pawns >> 8) & ~OccupiedBB())) & blockingSquares) return true;
+			if (((singleStepTargets&RANK6) >> 8) & ~OccupiedBB() & blockingSquares) return true;
+		}
+		//Pawn captures
+		while (pawns) {
+			Square from = lsb(pawns);
+			if (checker & attacks[from]) return true;
+			pawns &= pawns - 1;
+		}
+	}
+	else {
+		//Now we need the pinned pieces
+		Bitboard pinned = checkBlocker(SideToMove, SideToMove);
+		//Now first check all unpinned pieces
+		Bitboard sliderAndKnight = OccupiedByColor[SideToMove] & ~OccupiedByPieceType[KING] & ~OccupiedByPieceType[PAWN] & ~pinned;
+		while (sliderAndKnight) {
+			if (attacks[lsb(sliderAndKnight)] & ~OccupiedByColor[SideToMove]) return true;
+			sliderAndKnight &= sliderAndKnight - 1;
+		}
+		//Pawns
+		Bitboard pawns = PieceBB(PAWN, SideToMove) & ~pinned;
+		Bitboard pawnTargets;
+		//normal pawn move
+		if (SideToMove == WHITE) pawnTargets = (pawns << 8) & ~OccupiedBB(); else pawnTargets = (pawns >> 8) & ~OccupiedBB();
+		if (pawnTargets) return true;
+		//pawn capture
+		if (SideToMove == WHITE) pawnTargets = (((pawns << 9) & NOT_A_FILE) | ((pawns << 7) & NOT_H_FILE)) & OccupiedByColor[SideToMove ^ 1];
+		else pawnTargets = (((pawns >> 9) & NOT_H_FILE) | ((pawns >> 7) & NOT_A_FILE)) & OccupiedByColor[SideToMove ^ 1];
+		if (pawnTargets) return true;
+		//Now let's deal with pinned pieces
+		Bitboard pinnedSlider = (PieceBB(QUEEN, SideToMove) | PieceBB(ROOK, SideToMove) | PieceBB(BISHOP, SideToMove)) & pinned;
+		while (pinnedSlider) {
+			Square from = lsb(pinnedSlider);
+			if (attacks[from] & (InBetweenFields[from][kingSquare] | ShadowedFields[kingSquare][from])) return true;
+			pinnedSlider &= pinnedSlider - 1;
+		}
+		//pinned knights must not move and pinned kings don't exist => remains pinned pawns
+		Bitboard pinnedPawns = PieceBB(PAWN, SideToMove) & pinned;
+		Bitboard pinnedPawnsAllowedToMove = pinnedPawns & FILES[kingSquare & 7];
+		if (pinnedPawnsAllowedToMove) {
+			if (SideToMove == WHITE && ((pinnedPawnsAllowedToMove << 8) & ~OccupiedBB())) return true;
+			else if (SideToMove == BLACK && ((pinnedPawnsAllowedToMove >> 8) & ~OccupiedBB())) return true;
+		}
+		//Now there remains only pinned pawn captures
+		while (pinnedPawns) {
+			Square from = lsb(pinnedPawns);
+			Bitboard pawnTargets = ColorBB(SideToMove ^ 1) & attacks[from];
+			while (pawnTargets) {
+				if (isolateLSB(pawnTargets) & (InBetweenFields[from][kingSquare] | ShadowedFields[kingSquare][from])) return true;
+				pawnTargets &= pawnTargets - 1;
+			}
+			pinnedPawns &= pinnedPawns - 1;
+		}
+	}
+	//ep-captures are difficult as 3 squares are involved => therefore simply apply and check it
+	Bitboard epAttacker;
+	if (EPSquare != OUTSIDE && (epAttacker = (GetEPAttackersForToField(EPSquare - PawnStep()) & PieceBB(PAWN, SideToMove)))) {
+		while (epAttacker) {
+			if (isValid(createMove<ENPASSANT>(lsb(epAttacker), EPSquare))) return true;
+			epAttacker &= epAttacker - 1;
+		}
+	}
+	return false;
+}
+
+
+// Generates all legal moves (by first generating all pseudo-legal moves and then eliminating all invalid moves
+//Should only be used at the root as implementation is slow!
+template<> ValuatedMove* position::GenerateMoves<LEGAL>() {
+	GenerateMoves<ALL>();
+	for (int i = 0; i < movepointer - 1; ++i) {
+		if (isValid(moves[i].move)) {
+			moves[i] = moves[movepointer - 2];
+			--movepointer;
+			--i;
+		}
+	}
+	return &moves[0];
+}
 
 //Generates all quiet moves giving check
 template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
@@ -219,7 +349,7 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 		pawnFrom = pawnTargets >> 8;
 		dblPawnFrom = ((pawnFrom & targets & RANK3) >> 8) & PieceBB(PAWN, WHITE);
 		pawnFrom &= PieceBB(PAWN, WHITE);
-	} 
+	}
 	else {
 		pawnTargets = targets & (((PieceBB(KING, Color(SideToMove ^ 1)) << 7) & NOT_H_FILE) | ((PieceBB(KING, Color(SideToMove ^ 1)) << 9) & NOT_A_FILE));
 		pawnFrom = pawnTargets << 8;
@@ -245,7 +375,7 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 			&& !(SquaresToBeEmpty[2 * SideToMove] & OccupiedBB()) //Fields between Rook and King are empty
 			&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 			&& !(SquaresToBeUnattacked[2 * SideToMove] & attackedByThem) //Fields passed by the king are unattacked
-			&& (RookTargets(opposedKingSquare, ~targets) & RookSquareAfterCastling[2 * SideToMove])) //Rook is giving check after castling
+			&& (RookTargets(opposedKingSquare, ~targets & ~PieceBB(KING, SideToMove)) & RookSquareAfterCastling[2 * SideToMove])) //Rook is giving check after castling
 			AddMove(createMove<CASTLING>(kingSquare, Square(G1 + SideToMove * 56)));
 		//Queen-side castles
 		if ((CastlingOptions & (1 << (2 * SideToMove + 1))) //Short castle allowed
@@ -253,7 +383,7 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 			&& !(SquaresToBeEmpty[2 * SideToMove + 1] & OccupiedBB()) //Fields between Rook and King are empty
 			& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 			&& !(SquaresToBeUnattacked[2 * SideToMove + 1] & attackedByThem) //Fields passed by the king are unattacked
-			&& (RookTargets(opposedKingSquare, ~targets) & RookSquareAfterCastling[2 * SideToMove + 1])) //Rook is giving check after castling
+			&& (RookTargets(opposedKingSquare, ~targets & ~PieceBB(KING, SideToMove)) & RookSquareAfterCastling[2 * SideToMove + 1])) //Rook is giving check after castling
 			AddMove(createMove<CASTLING>(kingSquare, Square(C1 + SideToMove * 56)));
 	}
 	AddMove(MOVE_NONE);
@@ -273,12 +403,13 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 			if (popcount(checker) == 1) {
 				checkBlocker = checker | InBetweenFields[kingSquare][lsb(checker)];
 			}
+			else doubleCheck = true;
 		}
 		Bitboard empty = ~ColorBB(BLACK) & ~ColorBB(WHITE);
 		if (MGT == ALL) targets = ~ColorBB(SideToMove);
 		else if (MGT == TACTICAL) targets = ColorBB(SideToMove ^ 1);
 		else if (MGT == QUIETS) targets = empty;
-		else if (MGT == CHECK_EVASION) targets = ~ColorBB(SideToMove) & checkBlocker;
+		else if (MGT == CHECK_EVASION && !doubleCheck) targets = ~ColorBB(SideToMove) & checkBlocker;
 		//Kings
 		Bitboard kingTargets;
 		if (MGT == CHECK_EVASION) kingTargets = KingAttacks[kingSquare] & ~OccupiedByColor[SideToMove] & ~attackedByThem;
@@ -542,7 +673,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 			}
 			//King Captures are always winning as kings can only capture uncovered pieces
 			Square kingSquare = lsb(PieceBB(KING, SideToMove));
-			Bitboard kingTargets = KingAttacks[kingSquare] & ColorBB(SideToMove ^1) & ~attackedByThem;
+			Bitboard kingTargets = KingAttacks[kingSquare] & ColorBB(SideToMove ^ 1) & ~attackedByThem;
 			while (kingTargets) {
 				AddMove(createMove(kingSquare, lsb(kingTargets)));
 				kingTargets &= kingTargets - 1;

@@ -3,6 +3,7 @@
 #include <string>
 #include <intrin.h>
 #include <inttypes.h>
+#include <chrono>
 
 typedef uint64_t Bitboard;
 
@@ -62,12 +63,14 @@ enum CastleFlag {
 const int CastlesbyColor[] = {W0_0 | W0_0_0, B0_0 | B0_0_0};
 
 enum MoveGenerationType {
-	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, TACTICAL, QUIETS, QUIETS_POSITIVE, QUIETS_NEGATIVE, CHECK_EVASION, QUIET_CHECKS, ALL, NONE
+	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, TACTICAL, QUIETS, QUIETS_POSITIVE, QUIETS_NEGATIVE, CHECK_EVASION, QUIET_CHECKS, ALL, LEGAL, FIND_ANY, FIND_ANY_CHECKED, NONE
 };
 
 enum StagedMoveGenerationType {
 	MAIN_SEARCH, QSEARCH, CHECK
 };
+
+enum Result { RESULT_UNKNOWN, OPEN, STALEMATE, MATE };
 
 enum Value : int16_t {
 	VALUE_NOTYETDETERMINED = 0 - 32767,
@@ -93,7 +96,7 @@ typedef uint16_t Phase_t;
 	inline T operator-(const T d) { return T(-int(d)); }                        \
 	inline T& operator+=(T& d1, const T d2) { return d1 = d1 + d2; }            \
 	inline T& operator-=(T& d1, const T d2) { return d1 = d1 - d2; }            \
-	inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }
+	inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }             
 
 #define ENABLE_FULL_OPERATORS_ON(T)                                             \
 	ENABLE_BASE_OPERATORS_ON(T)                                                 \
@@ -148,6 +151,7 @@ inline uint64_t GetEPAttackersForToField(Square to) { return EPAttackersForToFie
 inline uint64_t GetEPAttackersForToField(int to) { return EPAttackersForToField[to - A4]; }
 
 inline int popcount(Bitboard bb) { return (int)_mm_popcnt_u64(bb); }
+inline Bitboard isolateLSB(Bitboard bb) { return bb & (0-bb); }
 
 //inline Square lsb(Bitboard bb) { return Square(popcount((bb & (0 - bb)) - 1)); }
 
@@ -235,4 +239,22 @@ inline bool positiveScore(const ValuatedMove& vm) { return vm.score > 0; }
 
 inline bool operator<(const ValuatedMove& f, const ValuatedMove& s) {
 	return f.score < s.score;
+}
+
+inline bool sortByScore(const ValuatedMove m1, const ValuatedMove m2) { return m1.score > m2.score;  }
+
+struct SearchStopCriteria {
+	int64_t MaxNumberOfNodes = INT64_MAX;
+	int MaxDepth = 128;
+	int64_t StartTime = 0;
+	int64_t HardStopTime = INT64_MAX;
+	int64_t SoftStopTime = INT64_MAX;
+};
+
+
+struct position;
+
+inline int64_t now() {
+	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+	//return GetTickCount64();
 }

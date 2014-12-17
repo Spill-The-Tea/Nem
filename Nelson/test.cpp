@@ -3,7 +3,9 @@
 #include <chrono>
 #include <iomanip>
 #include <fstream>
+#include <string>
 #include "test.h"
+#include "search.h"
 
 using namespace std;
 
@@ -106,70 +108,260 @@ void divide(position &pos, int depth) {
 	cout << "Total: " << total << endl;
 }
 
+void testSearch(position &pos, int depth) {
+	SearchStopCriteria ssc;
+	ssc.MaxDepth = depth;
+	search engine;
+	ValuatedMove vm = engine.Think(pos, ssc);
+	cout << "Best Move: " << toString(vm.move) << " " << vm.score << endl;
+}
+
+void testTacticalMoveGeneration() {
+	vector<string> lines;
+	ifstream s;
+	s.open("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/ccrl.epd");
+	string l;
+	if (s.is_open())
+	{
+		long lineCount = 0;
+		while (s)
+		{
+			getline(s, l);
+			lines.push_back(l);
+			lineCount++;
+			if ((lineCount & 8191) == 0) cout << ".";
+			if (((lineCount & 65535) == 0) || !s) {
+				cout << lineCount << " Lines read from File - starting to analyze" << endl;
+				long count = 0;
+				for (vector<string>::iterator it = lines.begin(); it != lines.end(); ++it) {
+					string line = *it;
+					if (line.length() < 10) continue;
+					size_t indx = line.find(" c0");
+					string fen = line.substr(0, indx);
+					position p1(fen);
+					ValuatedMove * tacticalMoves = p1.GenerateMoves<TACTICAL>();
+					position p2(fen);
+					ValuatedMove * allMoves = p2.GenerateMoves<ALL>();
+					ValuatedMove * tm = tacticalMoves;
+					ValuatedMove * am;
+					Move move;
+					//check move is really tactical
+					while ((move = tm->move)) {
+						position p3(p1);
+						if (p3.ApplyMove(move)) {
+							if (p3.GetMaterialKey() == p1.GetMaterialKey()) {
+								cout << endl << "Move " << toString(move) << " doesn't change Material key: " << fen << endl;
+								__debugbreak();
+							}
+							bool found = false;
+							Move amove;
+							am = allMoves;
+							while ((amove = am->move)) {
+								if (amove == move) {
+									found = true;
+									break;
+								}
+								am++;
+							}
+							if (!found) {
+								cout << endl << "Move " << toString(move) << " not part of all moves: " << fen << endl;
+								__debugbreak();
+							};
+						}
+						tm++;
+					}
+					//check for completeness
+					am = allMoves;
+					while ((move = am->move)) {
+						position p3(p1);
+						if (p3.GetMaterialKey() != p1.GetMaterialKey()) {
+							tm = tacticalMoves;
+							Move tmove;
+							bool found = false;
+							while ((tmove = tm->move)) {
+								if (tmove == move) {
+									found = true;
+									break;
+								}
+								tm++;
+							}
+							if (!found) {
+								cout << endl << "Move " << toString(move) << " isn't detected as tactical: " << fen << endl;
+								__debugbreak();
+							};
+						}
+						am++;
+					}
+					//if ((count & 1023) == 0) cout << endl << count << "\t";
+					++count;
+				}
+				lines.clear();
+			}
+		}
+		s.close();
+		cout << endl;
+		cout << lineCount << " lines read!" << endl;
+	}
+	else
+	{
+		cout << "Unable to open file" << std::endl;
+	}
+}
+
+void testResult(string filename, Result result) {
+	vector<string> lines;
+	ifstream s;
+	s.open(filename);
+	string l;
+	if (s.is_open())
+	{
+		long lineCount = 0;
+		while (s)
+		{
+			getline(s, l);
+
+			if ((lineCount & 32767) == 0) cout << ".";
+			if (l.length() < 10 || !s) {
+				long count = 0;
+				for (vector<string>::iterator it = lines.begin(); it != lines.end(); ++it) {
+					++count;
+					string line = *it;
+					size_t indx = line.find(" c0");
+					string fen = line.substr(0, indx);
+					position p1(fen);
+					if (count < lines.size()) {
+						if (p1.GetResult() != OPEN) {
+							cout << "Expected: Open Actual: " << p1.GetResult() << "\t" << p1.fen() << endl;
+							__debugbreak();
+							position p2(fen);
+							p2.GetResult();
+						}
+					}
+					else {
+						if (p1.GetResult() != result) {
+							cout << "Expected: " << result << " Actual: " << p1.GetResult() << "\t" << p1.fen() << endl;
+							__debugbreak();
+							position p2(fen);
+							p2.GetResult();
+						}
+					}					
+				}
+				lines.clear();
+			}
+			else {
+				lines.push_back(l);
+				lineCount++;
+			}
+		}
+		s.close();
+		cout << endl;
+		cout << lineCount << " lines read!" << endl;
+	}
+	else
+	{
+		cout << "Unable to open file" << std::endl;
+	}
+}
+
+void testResult() {
+	chrono::system_clock::time_point begin = chrono::high_resolution_clock::now();
+	testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/stalemate.epd", STALEMATE);
+	testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/mate.epd", MATE);
+	chrono::system_clock::time_point end = chrono::high_resolution_clock::now();
+	auto runtime = end - begin;
+	chrono::microseconds runtimeMS = chrono::duration_cast<chrono::microseconds>(runtime);
+	cout << "Runtime: " << runtimeMS.count() / 1000000.0 << " s" << endl;
+}
+
 void testCheckQuietCheckMoveGeneration() {
-	vector<string> lines = readTextFile("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/twic1048.epd");
-	long count = 0;
-	for (vector<string>::iterator it = lines.begin(); it != lines.end(); ++it) {
-		string line = *it;
-		if (line.length() < 10) continue;
-		size_t indx = line.find(" c0");
-		string fen = line.substr(0, indx);
-		position p1(fen);
-		ValuatedMove * checkGivingMoves = p1.GenerateMoves<QUIET_CHECKS>();
-		position p2(fen);
-		ValuatedMove * quietMoves = p2.GenerateMoves<QUIETS>();
-		ValuatedMove * cgm = checkGivingMoves;
-		ValuatedMove * qm;
-		Move move;
-		//check quiet check move
-		while ((move = cgm->move)) {
-			position p3(p1);
-			if (p3.ApplyMove(move)) {
-				if (!p3.Checked()) {
-					cout << endl << "Move " << toString(move) << " doesn't give check: " << fen << endl;
-					__debugbreak();
-				}
-				bool found = false;
-				Move qmove;
-				qm = quietMoves;
-				while ((qmove = qm->move)) {
-					if (qmove == move) {
-						found = true;
-						break;
+	vector<string> lines;
+	ifstream s;
+	s.open("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/ccrl.epd");
+	string l;
+	if (s.is_open())
+	{
+		long lineCount = 0;
+		while (s)
+		{
+			getline(s, l);
+			lines.push_back(l);
+			lineCount++;
+			if ((lineCount & 8191) == 0) cout << ".";
+			if (((lineCount & 65535) == 0) || !s) {
+				cout << lineCount << " Lines read from File - starting to analyze" << endl;
+				long count = 0;
+				for (vector<string>::iterator it = lines.begin(); it != lines.end(); ++it) {
+					string line = *it;
+					if (line.length() < 10) continue;
+					size_t indx = line.find(" c0");
+					string fen = line.substr(0, indx);
+					position p1(fen);
+					ValuatedMove * checkGivingMoves = p1.GenerateMoves<QUIET_CHECKS>();
+					position p2(fen);
+					ValuatedMove * quietMoves = p2.GenerateMoves<QUIETS>();
+					ValuatedMove * cgm = checkGivingMoves;
+					ValuatedMove * qm;
+					Move move;
+					//check quiet check move
+					while ((move = cgm->move)) {
+						position p3(p1);
+						if (p3.ApplyMove(move)) {
+							if (!p3.Checked()) {
+								cout << endl << "Move " << toString(move) << " doesn't give check: " << fen << endl;
+								__debugbreak();
+							}
+							bool found = false;
+							Move qmove;
+							qm = quietMoves;
+							while ((qmove = qm->move)) {
+								if (qmove == move) {
+									found = true;
+									break;
+								}
+								qm++;
+							}
+							if (!found) {
+								cout << endl << "Move " << toString(move) << " not part of quiet moves: " << fen << endl;
+								__debugbreak();
+							};
+						}
+						cgm++;
 					}
-					qm++;
-				}
-				if (!found) {
-					cout << endl << "Move " << toString(move) << " not part of quiet moves: " << fen << endl;
-					__debugbreak();
-				};
-			}
-			cgm++;
-		}
-		//check for completeness
-		qm = quietMoves;
-		while ((move = qm->move)) {
-			position p3(p1);
-			if (p3.ApplyMove(move) && p3.Checked()) {
-				cgm = checkGivingMoves;
-				Move tmove;
-				bool found = false;
-				while ((tmove = cgm->move)) {
-					if (tmove == move) {
-						found = true;
-						break;
+					//check for completeness
+					qm = quietMoves;
+					while ((move = qm->move)) {
+						position p3(p1);
+						if (p3.ApplyMove(move) && p3.Checked()) {
+							cgm = checkGivingMoves;
+							Move tmove;
+							bool found = false;
+							while ((tmove = cgm->move)) {
+								if (tmove == move) {
+									found = true;
+									break;
+								}
+								cgm++;
+							}
+							if (!found) {
+								cout << endl << "Move " << toString(move) << " not part of check giving moves: " << fen << endl;
+								__debugbreak();
+							};
+						}
+						qm++;
 					}
-					cgm++;
+					//if ((count & 1023) == 0) cout << endl << count << "\t";
+					++count;
 				}
-				if (!found) {
-					cout << endl << "Move " << toString(move) << " not part of check giving moves: " << fen << endl;
-					__debugbreak();
-				};
+				lines.clear();
 			}
-			qm++;
 		}
-		if ((count & 1023) == 0) cout << endl << count << "\t";
-		++count;
+		s.close();
+		cout << endl;
+		cout << lineCount << " lines read!" << endl;
+	}
+	else
+	{
+		cout << "Unable to open file" << std::endl;
 	}
 }
 
@@ -228,7 +420,7 @@ bool checkPerft(string fen, int depth, uint64_t expectedResult, PerftType perftT
 	perftNodes += expectedResult;
 	if (perftResult == expectedResult) {
 		if (runtimeMS.count() > 0) {
-			cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << expectedResult / runtimeMS.count() << " MNodes/s\t" << endl << "\t" <<  fen << endl;
+			cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << expectedResult / runtimeMS.count() << " MNodes/s\t" << endl << "\t" << fen << endl;
 		}
 		else {
 			cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << endl << "\t" << fen << endl;
@@ -245,6 +437,7 @@ bool testPerft(PerftType perftType) {
 	cout << "Starting Perft Suite in Mode " << perftType << endl;
 	bool result = true;
 	testCount = 0;
+	perftNodes = 0;
 	perftRuntime = perftRuntime.zero();
 	cout << "Initial Position" << endl;
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 1, 20, perftType);

@@ -32,6 +32,7 @@ position::~position()
 }
 
 bool position::ApplyMove(Move move) {
+	pliesFromRoot++;
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
 	Piece moving = Board[fromSquare];
@@ -588,6 +589,7 @@ void position::setFromFEN(const string& fen) {
 	material = &MaterialTable[MaterialKey];
 	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	attackedByUs = calculateAttacks(SideToMove);
+	pliesFromRoot = 0;
 }
 
 string position::fen() const {
@@ -669,11 +671,20 @@ string position::print() {
 		ss << " |\n +---+---+---+---+---+---+---+---+\n";
 	}
 	ss << "\nChecked:         " << boolalpha << IsCheck() << noboolalpha
+		<< "\nEvaluation:      " << this->evaluate()
 		<< "\nFen:             " << fen()
-		//<< "\nHash:            " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << _hash
+		<< "\nHash:            " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << Hash
 		//<< "\nNormalized Hash: " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << GetNormalizedHash()
-		//<< "\nMaterial Hash:   " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << _material_hash 
+		<< "\nMaterial Key:    " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << MaterialKey
 		<< "\n";
+	return ss.str();
+}
+
+string position::printGeneratedMoves() {
+	std::ostringstream ss;
+	for (int i = 0; i < movepointer - 1; ++i) {
+		ss << toString(moves[i].move) << "\t" << moves[i].score << "\n";
+	}
 	return ss.str();
 }
 
@@ -682,4 +693,16 @@ MaterialKey_t position::calculateMaterialKey() {
 	for (int i = WQUEEN; i <= BPAWN; ++i)
 		key += materialKeyFactors[i] * popcount(PieceBB(PieceType(i / 2), Color(i & 1)));
 	return key;
+}
+
+Result position::GetResult() {
+	if (!result) {
+			if (Checked()) {
+				if (CheckValidMoveExists<true>()) result = OPEN; else result = MATE;
+			}
+			else {
+				if (CheckValidMoveExists<false>()) result = OPEN; else result = STALEMATE;
+			}
+	}
+	return result;
 }

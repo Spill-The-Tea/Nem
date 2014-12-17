@@ -18,3 +18,6 @@ void testPolyglotKey();
 bool testSEE();
 vector<string> readTextFile(string file);
 void testCheckQuietCheckMoveGeneration();
+void testTacticalMoveGeneration();
+void testSearch(position &pos, int depth);
+void testResult();
