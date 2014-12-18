@@ -9,10 +9,9 @@
 
 
 int main(int argc, const char* argv[]) {
+	cout << "Compiled on: " << __DATE__ << " " << __TIME__ << endl;
 	string input = "";
 	Initialize();
-	testResult();
-	return 0;
 	//std::getline(cin, input);
 	//testPerft();
 	//return 0;
@@ -63,6 +62,9 @@ int main(int argc, const char* argv[]) {
 		}
 		else if (!input.compare(0, 6, "result")) {
 			testResult();
+		}
+		else if (!input.compare(0, 8, "findmate")) {
+			testFindMate();
 		}
 	}
 	std::getline(cin, input);

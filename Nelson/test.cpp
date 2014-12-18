@@ -4,6 +4,7 @@
 #include <iomanip>
 #include <fstream>
 #include <string>
+#include <map>
 #include "test.h"
 #include "search.h"
 
@@ -114,6 +115,52 @@ void testSearch(position &pos, int depth) {
 	search engine;
 	ValuatedMove vm = engine.Think(pos, ssc);
 	cout << "Best Move: " << toString(vm.move) << " " << vm.score << endl;
+}
+
+void testFindMate() {
+	std::map<string, Move> puzzles;
+	//Mate in 2
+	puzzles["2@2bqkbn1/2pppp2/np2N3/r3P1p1/p2N2B1/5Q2/PPPPKPP1/RNB2r2 w KQkq - 0 1"] = createMove(F3, F7);
+	puzzles["2@8/6K1/1p1B1RB1/8/2Q5/2n1kP1N/3b4/4n3 w - - 0 1"] = createMove(D6, A3);
+	puzzles["2@B7/K1B1p1Q1/5r2/7p/1P1kp1bR/3P3R/1P1NP3/2n5 w - - 0 1"] = createMove(A8, C6);
+	puzzles["2@1r6/4b2k/1q1pNrpp/p2Pp3/4P3/1P1R3Q/5PPP/5RK1 w - - 0 1"] = createMove(H3, H6);
+	puzzles["2@3r1b1k/5Q1p/p2p1P2/5R2/4q2P/1P2P3/PB5K/8 w - - 0 1"] = createMove(F7, G8);
+	puzzles["2@r1bq2r1/b4pk1/p1pp1p2/1p2pP2/1P2P1PB/3P4/1PPQ2P1/R3K2R w - - 0 1"] = createMove(D2, H6);
+	puzzles["2@8/8/8/r2p4/kp6/1R1Q4/8/K7 w - - 0 1"] = createMove(B3, B2);
+	puzzles["2@7B/2R1KnQ1/1p1PP3/3k4/2N5/r3p1N1/4n3/1q6 w - - 0 1"] = createMove(G7, A1);
+	//Mate in 3
+	puzzles["3@1r3r1k/5Bpp/8/8/P2qQ3/5R2/1b4PP/5K2 w - - 0 1"] = createMove(E4, H7);
+	puzzles["3@r1b1r1k1/1pq1bp1p/p3pBp1/3pR3/7Q/2PB4/PP3PPP/5RK1 w - - 0 1"] = createMove(H4, H7);
+	puzzles["3@r5rk/5p1p/5R2/4B3/8/8/7P/7K w - - 0 1"] = createMove(F6, A6);
+	puzzles["3@5B2/6P1/1p6/8/1N6/kP6/2K5/8 w - - 0 1"] = createMove<PROMOTION>(G7, G8, KNIGHT);
+	puzzles["3@8/R7/4kPP1/3ppp2/3B1P2/1K1P1P2/8/8 w - - 0 1"] = createMove(F6, F7);
+	puzzles["3@3r1r1k/1p3p1p/p2p4/4n1NN/6bQ/1BPq4/P3p1PP/1R5K w - - 0 1"] = createMove(G5, F7);
+	puzzles["3@rn4k1/3q2r1/p2P3Q/2p1p2P/Pp2P3/1P1B4/2P2P2/2K3R1 w - -"] = createMove(D3, C4);
+	puzzles["3@6k1/5pp1/7p/3n4/8/2P5/KQq4P/4R3 b - - 0 1"] = createMove(D5, C3);
+	//Mate in 4
+	puzzles["4@r5r1/5b1k/2p2p1p/1pP2P2/1P1pRq2/8/1QB3PP/4R1K1 b - -"] = createMove(G8, G2);
+	puzzles["4@2q1kr2/6R1/2p1p2Q/ppP2p1P/3P4/8/PP6/1K6 w - - 0 1"] = createMove(H6, G6);
+	puzzles["4@r1k4r/4Pp1p/p2Q4/1p2p3/2q1b2P/P7/1PP5/2KR3R w - - 0 1"] = createMove(D6, D8);
+	puzzles["4@8/5p1p/4p3/1Q6/P2k4/2p5/7q/2K5 b - - 0 1"] = createMove(H2, D2);
+	//Mate in 5
+	puzzles["5@6r1/p3p1rk/1p1pPp1p/q3n2R/4P3/3BR2P/PPP2QP1/7K w - -"] = createMove(H5, H6);
+	puzzles["5@2q1nk1r/4Rp2/1ppp1P2/6Pp/3p1B2/3P3P/PPP1Q3/6K1 w - - 0 1"] = createMove(E7, E8);
+	search engine;
+	std::map<string, Move>::iterator iter;
+	int count = 0;
+	for (iter = puzzles.begin(); iter != puzzles.end(); iter++) {
+		engine.Reset();
+		string mateIn = iter->first.substr(0, 1);
+		string fen = iter->first.substr(2, string::npos);
+		SearchStopCriteria ssc;
+		ssc.MaxDepth = 2 * atoi(mateIn.c_str()) - 1;
+		position pos(fen);
+		ValuatedMove vm = engine.Think(pos, ssc);
+		cout << ((vm.move == iter->second) && (vm.score == VALUE_MATE - ssc.MaxDepth) ? "OK    " : "ERROR ") << "\t" << toString(vm.move) << "/" << toString(iter->second)
+			<< "\t" << vm.score << "/" << VALUE_MATE - ssc.MaxDepth << "\t" << fen << endl;
+		count++;
+	}
+
 }
 
 void testTacticalMoveGeneration() {

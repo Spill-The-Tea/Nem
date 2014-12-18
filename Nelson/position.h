@@ -40,7 +40,7 @@ public:
 	const Value position::SEE(Square from, const Square to);
 	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
 	friend evaluation evaluate(position& pos);
-	inline Value evaluate() { return material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove); }
+	inline Value evaluate();
 	inline int GeneratedMoveCount() { return movepointer - 1; }
 	inline int GetPliesFromRoot() { return pliesFromRoot; }
 	Result GetResult();
@@ -116,6 +116,11 @@ inline Bitboard position::PieceBB(const PieceType pt, const Color c) const { ret
 inline Bitboard position::ColorBB(const Color c) const { return OccupiedByColor[c]; }
 inline Bitboard position::ColorBB(const int c) const { return OccupiedByColor[c]; }
 inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | OccupiedByColor[BLACK]; }
+
+inline Value position::evaluate() { 
+	if (GetResult() == OPEN) return material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove); 
+	else return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
+}
 
 //Tries to find one valid move as fast as possible
 template<bool CHECKED> bool position::CheckValidMoveExists() {
@@ -226,7 +231,7 @@ template<bool CHECKED> bool position::CheckValidMoveExists() {
 template<> ValuatedMove* position::GenerateMoves<LEGAL>() {
 	GenerateMoves<ALL>();
 	for (int i = 0; i < movepointer - 1; ++i) {
-		if (isValid(moves[i].move)) {
+		if (!isValid(moves[i].move)) {
 			moves[i] = moves[movepointer - 2];
 			--movepointer;
 			--i;
