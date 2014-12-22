@@ -2,6 +2,8 @@
 
 #include "types.h"
 
+extern bool Chess960;
+
 const Bitboard ALL_SQUARES = 0xffffffffffffffff;
 const Bitboard EMPTY = 0x00;
 const Bitboard NOT_H_FILE = 0x7f7f7f7f7f7f7f7f;
@@ -40,7 +42,6 @@ extern Bitboard SquaresToBeEmpty[4];
 extern Bitboard SlidingAttacksRookTo[64];
 extern Bitboard SlidingAttacksBishopTo[64];
 const Bitboard RookSquareAfterCastling[4] = { ToBitboard(F1), ToBitboard(D1), ToBitboard(F8), ToBitboard(D8) };
-extern bool Chess960;
 
 extern Bitboard MagicMovesRook[88576];
 extern Bitboard MagicMovesBishop[4800];
@@ -61,6 +62,23 @@ extern Bitboard PawnAttacks[2][64];
 extern eval PSQ[12][64];
 
 void Initialize();
+
+inline std::string toString(Move move) {
+	Square fromSquare = from(move);
+	Square toSquare = to(move);
+	if (type(move) == PROMOTION) {
+		char ch[] = { toChar(File(fromSquare & 7)), toChar(Rank(fromSquare >> 3)),
+			toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)),
+			"QRBN"[promotionType(move)], 0 };
+		return ch;
+	}
+	if (Chess960 && type(move) == CASTLING) {
+		toSquare = InitialRookSquare[2 * (fromSquare > H4) + (toSquare < fromSquare)];
+	}
+	char ch[] = { toChar(File(fromSquare & 7)), toChar(Rank(fromSquare >> 3)),
+		toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)), 0 };
+	return ch;
+}
 
 inline Bitboard RookTargets(Square rookSquare, Bitboard occupied) {
 	int index = (int)(((OccupancyMaskRook[rookSquare] & occupied) * RookMagics[rookSquare]) >> RookShift[rookSquare]);

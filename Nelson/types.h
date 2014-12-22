@@ -60,7 +60,7 @@ enum CastleFlag {
 	NoCastles, W0_0, W0_0_0, B0_0 = 4, B0_0_0 = 8
 };
 
-const int CastlesbyColor[] = {W0_0 | W0_0_0, B0_0 | B0_0_0};
+const int CastlesbyColor[] = { W0_0 | W0_0_0, B0_0 | B0_0_0 };
 
 enum MoveGenerationType {
 	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, TACTICAL, QUIETS, QUIETS_POSITIVE, QUIETS_NEGATIVE, CHECK_EVASION, QUIET_CHECKS, ALL, LEGAL, FIND_ANY, FIND_ANY_CHECKED, NONE
@@ -151,34 +151,18 @@ inline uint64_t GetEPAttackersForToField(Square to) { return EPAttackersForToFie
 inline uint64_t GetEPAttackersForToField(int to) { return EPAttackersForToField[to - A4]; }
 
 inline int popcount(Bitboard bb) { return (int)_mm_popcnt_u64(bb); }
-inline Bitboard isolateLSB(Bitboard bb) { return bb & (0-bb); }
+inline Bitboard isolateLSB(Bitboard bb) { return bb & (0 - bb); }
 
 //inline Square lsb(Bitboard bb) { return Square(popcount((bb & (0 - bb)) - 1)); }
 
 inline Square lsb(Bitboard bb) {
-	unsigned long  index;  
+	unsigned long  index;
 	_BitScanForward64(&index, bb);
 	return Square(index);
 }
 
 inline Bitboard ToBitboard(Square square) { return 1ull << square; }
 inline Bitboard ToBitboard(int square) { return 1ull << square; }
-
-inline std::string toString(Move move) {
-	Square fromSquare = from(move);
-	Square toSquare = to(move);
-	if (type(move) == PROMOTION) {
-		char ch[] = { toChar(File(fromSquare & 7)), toChar(Rank(fromSquare >> 3)),
-			toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)),
-			"QRBN"[promotionType(move)], 0 };
-		return ch;
-	}
-	else {
-		char ch[] = { toChar(File(fromSquare & 7)), toChar(Rank(fromSquare >> 3)),
-			toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)), 0 };
-		return ch;
-	}
-}
 
 struct eval {
 
@@ -241,7 +225,7 @@ inline bool operator<(const ValuatedMove& f, const ValuatedMove& s) {
 	return f.score < s.score;
 }
 
-inline bool sortByScore(const ValuatedMove m1, const ValuatedMove m2) { return m1.score > m2.score;  }
+inline bool sortByScore(const ValuatedMove m1, const ValuatedMove m2) { return m1.score > m2.score; }
 
 struct SearchStopCriteria {
 	int64_t MaxNumberOfNodes = INT64_MAX;

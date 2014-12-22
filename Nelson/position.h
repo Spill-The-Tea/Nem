@@ -40,9 +40,13 @@ public:
 	const Value position::SEE(Square from, const Square to);
 	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
 	friend evaluation evaluate(position& pos);
+	friend evaluation evaluateFromScratch(position &pos);
 	inline Value evaluate();
-	inline int GeneratedMoveCount() { return movepointer - 1; }
-	inline int GetPliesFromRoot() { return pliesFromRoot; }
+	inline int GeneratedMoveCount() const { return movepointer - 1; }
+	inline int GetPliesFromRoot() const { return pliesFromRoot; }
+	inline Color GetSideToMove() const { return SideToMove; }
+	inline Piece GetPieceOnSquare(Square square) const { return Board[square]; }
+	inline Square GetEPSquare() const { return EPSquare; }
 	Result GetResult();
 private:
 	Bitboard OccupiedByColor[2];
@@ -111,6 +115,8 @@ private:
 	inline bool isValid(Move move) { position next(*this); return next.ApplyMove(move); }
 	template<bool CHECKED> bool CheckValidMoveExists();
 };
+
+Move parseMoveInUCINotation(const string& uciMove, const position& pos);
 
 inline Bitboard position::PieceBB(const PieceType pt, const Color c) const { return OccupiedByColor[c] & OccupiedByPieceType[pt]; }
 inline Bitboard position::ColorBB(const Color c) const { return OccupiedByColor[c]; }

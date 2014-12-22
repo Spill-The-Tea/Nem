@@ -39,6 +39,12 @@
     <ClCompile Include="search.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="uci.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="pgn.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="types.h">
@@ -63,6 +69,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="search.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="uci.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="pgn.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

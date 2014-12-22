@@ -6,6 +6,8 @@
 #include <iostream>
 #include <cstdlib>
 #include <algorithm>
+#include <ctype.h>
+#include <regex>
 #include "position.h"
 #include "material.h"
 #include "settings.h"
@@ -432,6 +434,7 @@ const Value position::SEE(Square from, const Square to)
 
 //"Copied" from Stockfish source code
 void position::setFromFEN(const string& fen) {
+	material = nullptr;
 	std::fill_n(Board, 64, BLANK);
 	OccupiedByColor[WHITE] = OccupiedByColor[BLACK] = 0ull;
 	std::fill_n(OccupiedByPieceType, 6, 0ull);
@@ -697,12 +700,13 @@ MaterialKey_t position::calculateMaterialKey() {
 
 Result position::GetResult() {
 	if (!result) {
-			if (Checked()) {
-				if (CheckValidMoveExists<true>()) result = OPEN; else result = MATE;
-			}
-			else {
-				if (CheckValidMoveExists<false>()) result = OPEN; else result = STALEMATE;
-			}
+		if (Checked()) {
+			if (CheckValidMoveExists<true>()) result = OPEN; else result = MATE;
+		}
+		else {
+			if (CheckValidMoveExists<false>()) result = OPEN; else result = STALEMATE;
+		}
 	}
 	return result;
 }
+

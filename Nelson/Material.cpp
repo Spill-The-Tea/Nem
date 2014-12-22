@@ -6,15 +6,6 @@ using namespace std;
 
 MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 1];
 
-//Phase is 0 in starting position and grows up to 256 when only kings are left
-const Phase_t Phase(int nWQ, int nBQ, int nWR, int nBR, int nWB, int nBB, int nWN, int nBN) {
-	int phase = 24 - (nWQ + nBQ) * 4
-		- (nWR + nBR) * 2
-		- nWB - nBB - nWN - nBN;
-	phase = (phase * 256 + 12) / 24;
-	return Phase_t(phase);
-}
-
 MaterialKey_t calculateMaterialKey(int * pieceCounts) {
 	MaterialKey_t key = MATERIAL_KEY_OFFSET;
 	for (int i = WQUEEN; i <= BPAWN; ++i)
@@ -26,6 +17,7 @@ void InitializeMaterialTable() {
 	MaterialTableEntry undetermined;
 	undetermined.Score = VALUE_NOTYETDETERMINED;
 	undetermined.Phase = 128;
+	undetermined.EvaluationFunction = nullptr;
 	std::fill_n(MaterialTable, MATERIAL_KEY_MAX + 1, undetermined);
 	int pieceCounts[10];
 	for (int nWQ = 0; nWQ <= 1; ++nWQ) {
@@ -69,6 +61,9 @@ void InitializeMaterialTable() {
 				}
 			}
 		}
+	}
+	for (int i = 0; i < MATERIAL_KEY_MAX + 1; ++i) {
+		if (MaterialTable[i].EvaluationFunction == nullptr) MaterialTable[i].EvaluationFunction = &evaluateFromScratch;
 	}
 
 }

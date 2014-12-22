@@ -6,8 +6,11 @@
 #include "board.h"
 #include "types.h"
 #include "material.h"
+#include "position.h"
 
 using namespace std;
+
+bool Chess960 = false;
 
 Bitboard InitialKingSquareBB[2];
 Square InitialKingSquare[2];
@@ -15,7 +18,6 @@ Bitboard InitialRookSquareBB[4];
 Square InitialRookSquare[4];
 Bitboard SquaresToBeUnattacked[4];
 Bitboard SquaresToBeEmpty[4];
-bool Chess960 = false;
 
 Bitboard InBetweenFields[64][64];
 
@@ -648,6 +650,7 @@ void InitializeMagic() {
 }
 
 void Initialize() {
+	Chess960 = false;
 	chrono::system_clock::time_point begin = chrono::high_resolution_clock::now();
 	InitializeInBetweenFields();
 	InitializeKingAttacks();
@@ -664,4 +667,39 @@ void Initialize() {
 	auto runtime = end - begin;
 	chrono::microseconds runtimeMS = chrono::duration_cast<chrono::microseconds>(runtime);
 	cout << "Initialization Time: " << runtimeMS.count() / 1000 << "ms" << endl;
+}
+
+Move parseMoveInUCINotation(const string& uciMove, const position& pos) {
+	Square fromSquare = Square(uciMove[0] - 'a' + 8 * (uciMove[1] - '1'));
+	Square toSquare = Square(uciMove[2] - 'a' + 8 * (uciMove[3] - '1'));
+	if (uciMove.length() > 4) {
+		switch (uciMove[4]) {
+		case 'q':
+			return createMove<PROMOTION>(fromSquare, toSquare, QUEEN);
+		case 'r':
+			return createMove<PROMOTION>(fromSquare, toSquare, ROOK);
+		case 'b':
+			return createMove<PROMOTION>(fromSquare, toSquare, BISHOP);
+		case 'n':
+			return createMove<PROMOTION>(fromSquare, toSquare, KNIGHT);
+		}
+	}
+	if (Chess960 && GetPieceType(pos.GetPieceOnSquare(fromSquare)) == KING && GetPieceType(pos.GetPieceOnSquare(toSquare)) == ROOK) {
+		if (fromSquare < toSquare) {
+			return createMove<CASTLING>(InitialKingSquare[pos.GetSideToMove()], Square(G1 + 56 * pos.GetSideToMove()));
+		}
+		else {
+			return createMove<CASTLING>(InitialKingSquare[pos.GetSideToMove()], Square(C1 + 56 * pos.GetSideToMove()));
+		}
+	}
+	else {
+		if ((fromSquare == E1 && pos.GetPieceOnSquare(fromSquare) == WKING
+			&& (toSquare == G1 || toSquare == C1))
+			|| (fromSquare == E8 && pos.GetPieceOnSquare(fromSquare) == BKING
+			&& (toSquare == G8 || toSquare == C8))) {
+			return createMove<CASTLING>(fromSquare, toSquare);
+		}
+	}
+	if (toSquare == pos.GetEPSquare() && GetPieceType(pos.GetPieceOnSquare(fromSquare)) == PAWN) return createMove<ENPASSANT>(fromSquare, toSquare);
+	return createMove(fromSquare, toSquare);
 }
