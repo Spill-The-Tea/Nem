@@ -242,3 +242,21 @@ inline int64_t now() {
 	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
 	//return GetTickCount64();
 }
+
+struct HistoryStats {
+public:
+	static const Value MAX_HISTORY_VALUE = Value(2000); //blindly copied from SF
+	inline void update(Value v, Piece p, Square s) {
+		if (abs(Table[p][s]) < MAX_HISTORY_VALUE) {
+			Table[p][s] += v;
+		}
+	}
+	inline Value const getValue(const Piece p, const Square s) { return Table[p][s]; }
+	inline void initialize() {
+		for (int p = 0; p < 12; ++p) {
+			for (int s = 0; s < 64; ++s) Table[p][s] = VALUE_ZERO;
+		}
+	}
+private:
+	Value Table[12][64];
+};

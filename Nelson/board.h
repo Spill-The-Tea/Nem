@@ -59,7 +59,6 @@ extern Bitboard ShadowedFields[64][64];
 extern Bitboard KnightAttacks[64];
 extern Bitboard KingAttacks[64];
 extern Bitboard PawnAttacks[2][64];
-extern eval PSQ[12][64];
 
 void Initialize();
 

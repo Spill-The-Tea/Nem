@@ -55,6 +55,11 @@ int main(int argc, const char* argv[]) {
 					int depth = atoi(input.substr(6).c_str());
 					std::cout << "Perft:\t" << perft(pos, depth) << "\t" << pos.fen() << std::endl;
 				}
+				else if (!input.compare(0, 6, "bench2")) {
+					int depth = 7;
+					if (input.length() > 7) depth = atoi(input.substr(7).c_str());
+					bench2(depth);
+				}
 				else if (!input.compare(0, 5, "bench")) {
 					int depth = 7;
 					if (input.length() > 6) depth = atoi(input.substr(6).c_str());

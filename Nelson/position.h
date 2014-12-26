@@ -35,7 +35,7 @@ public:
 	template<> ValuatedMove* GenerateMoves<LEGAL>();
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator();
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history);
 	Move NextMove();
 	const Value position::SEE(Square from, const Square to);
 	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
@@ -47,6 +47,9 @@ public:
 	inline Color GetSideToMove() const { return SideToMove; }
 	inline Piece GetPieceOnSquare(Square square) const { return Board[square]; }
 	inline Square GetEPSquare() const { return EPSquare; }
+	inline MoveGenerationType GetMoveGenerationType() const { return generationPhases[generationPhase]; }
+	inline ValuatedMove * GetMovesOfCurrentPhase() { return &moves[phaseStartIndex]; }
+	inline int GetMoveNumberInPhase() const { return moveIterationPointer;  }
 	Result GetResult();
 private:
 	Bitboard OccupiedByColor[2];
@@ -69,9 +72,11 @@ private:
 	Bitboard attackedByThem;
 	Bitboard attackedByUs;
 	int moveIterationPointer;
+	int phaseStartIndex;
 	int generationPhase;
 	Result result = RESULT_UNKNOWN;
 	ValuatedMove * lastPositive;
+	HistoryStats * history;
 
 	//Bitboard pinned;
 	//Bitboard pinner;
@@ -103,8 +108,8 @@ private:
 	Bitboard checkBlocker(Color colorOfBlocker, Color kingColor);
 	MaterialKey_t calculateMaterialKey();
 	void evaluateByMVVLVA();
-	void evaluateBySEE();
-	void evaluateByPSQ();
+	void evaluateBySEE(int startIndex);
+	void evaluateByHistory(int startIndex);
 	Move getBestMove(int startIndex);
 	void insertionSort(ValuatedMove* begin, ValuatedMove* end);
 	const Bitboard considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from);
@@ -248,7 +253,8 @@ template<> ValuatedMove* position::GenerateMoves<LEGAL>() {
 
 //Generates all quiet moves giving check
 template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
-	movepointer = 0;
+	movepointer -= (movepointer != 0);
+	ValuatedMove * result = &moves[movepointer];
 	//There are 2 options to give check: Either give check with the moving piece, or a discovered check by 
 	//moving a check blocking piece
 	Square opposedKingSquare = lsb(PieceBB(KING, Color(SideToMove ^ 1)));
@@ -398,13 +404,14 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 			AddMove(createMove<CASTLING>(kingSquare, Square(C1 + SideToMove * 56)));
 	}
 	AddMove(MOVE_NONE);
-	return &moves[0];
+	return result;
 }
 
 template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
+	movepointer -= (movepointer != 0);
+	ValuatedMove * result = &moves[movepointer];
 	//Rooksliders
 	Bitboard targets;
-	movepointer = 0;
 	if (MGT == ALL || MGT == TACTICAL || MGT == QUIETS || MGT == CHECK_EVASION) {
 		Square kingSquare = lsb(PieceBB(KING, SideToMove));
 		Bitboard checkBlocker;
@@ -692,13 +699,15 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 		}
 	}
 	AddMove(MOVE_NONE);
-	return &moves[0];
+	return result;
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator() {
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats) {
 	if (!attackedByThem) attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	moveIterationPointer = -1;
+	phaseStartIndex = 0;
+	history = historyStats;
 	if (IsCheck()) generationPhase = generationPhaseOffset[CHECK];
 	else generationPhase = generationPhaseOffset[SMGT];
 }

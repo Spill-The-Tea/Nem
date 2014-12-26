@@ -19,22 +19,27 @@ public:
 
 	ValuatedMove Think(position &pos, SearchStopCriteria ssc);
 	string PrincipalVariation(int depth = PV_MAX_LENGTH);
-
-	inline void Reset() {
-		BestMove.move = MOVE_NONE;
-		BestMove.score = VALUE_ZERO;
-		NodeCount = 0;
-		QNodeCount = 0;
-		Stop = false;
-	}
+	inline void Reset();
 
 private:
 	SearchStopCriteria searchStopCriteria;
 	int rootMoveCount;
 	ValuatedMove * rootMoves;
 	Move PVMoves[PV_MAX_LENGTH];
+	HistoryStats History;
+
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<> Value Search<ROOT>(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<NodeType NT> Value QSearch(Value alpha, Value beta, position &pos, int depth);
+	void updateCutoffStats(const Move cutoffMove, int depth, position &pos);
 
 };
+
+inline void search::Reset() {
+	BestMove.move = MOVE_NONE;
+	BestMove.score = VALUE_ZERO;
+	NodeCount = 0;
+	QNodeCount = 0;
+	Stop = false;
+	History.initialize();
+}

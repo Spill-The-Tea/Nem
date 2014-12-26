@@ -58,6 +58,7 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 		score = -Search<PV>(-beta, -alpha, next, depth - 1, &subpv[0]);
 		rootMoves[i].score = score;
 		if (score >= beta) {
+			updateCutoffStats(rootMoves[i].move, depth, pos);
 			return score;
 		}
 		if (score > bestScore) {
@@ -88,13 +89,14 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	Value bestScore = -VALUE_MATE;
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
-	pos.InitializeMoveIterator<MAIN_SEARCH>();
+	pos.InitializeMoveIterator<MAIN_SEARCH>(&History);
 	Move move;
 	while ((move = pos.NextMove())) {
 		position next(pos);
 		if (next.ApplyMove(move)) {
 			score = -Search<PV>(-beta, -alpha, next, depth - 1, &subpv[0]);
 			if (score >= beta) {
+				updateCutoffStats(move, depth, pos);
 				return score;
 			}
 			if (score > bestScore) {
@@ -119,7 +121,7 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 	Value standPat = pos.evaluate();
 	if (standPat > beta || pos.GetResult() != OPEN) return beta;
 	if (alpha < standPat) alpha = standPat;
-	pos.InitializeMoveIterator<QSEARCH>();
+	pos.InitializeMoveIterator<QSEARCH>(&History);
 	Move move;
 	Value score;
 	while ((move = pos.NextMove())) {
@@ -135,6 +137,24 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 		}
 	}
 	return alpha;
+}
+
+void search::updateCutoffStats(const Move cutoffMove, int depth, position &pos) {
+	Piece movingPiece;
+	Square toSquare;
+	if (pos.GetMoveGenerationType() >= QUIETS_POSITIVE) {
+		movingPiece = pos.GetPieceOnSquare(from(cutoffMove));
+		toSquare = to(cutoffMove);
+		Value v = Value(depth * depth);
+		History.update(v, movingPiece, toSquare);
+		ValuatedMove * alreadyProcessedQuiets = pos.GetMovesOfCurrentPhase();
+		for (int i = 0; i < pos.GetMoveNumberInPhase() - 1; ++i) {
+			movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedQuiets->move));
+			toSquare = to(alreadyProcessedQuiets->move);
+			History.update(v, movingPiece, toSquare);
+			alreadyProcessedQuiets++;
+		}
+	}
 }
 
 string search::PrincipalVariation(int depth) {

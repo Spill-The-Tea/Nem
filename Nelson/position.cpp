@@ -98,6 +98,7 @@ bool position::ApplyMove(Move move) {
 		break;
 	}
 	SwitchSideToMove();
+	movepointer = 0;
 	attackedByUs = calculateAttacks(SideToMove);
 	//calculatePinned();
 	attackedByThem = 0ull;
@@ -112,27 +113,28 @@ Move position::NextMove() {
 	if (generationPhases[generationPhase] == NONE) return MOVE_NONE;
 	do {
 		if (moveIterationPointer < 0) {
+			phaseStartIndex = movepointer - (movepointer != 0);			
 			switch (generationPhases[generationPhase]) {
-			case WINNING_CAPTURES:
+			case WINNING_CAPTURES:				
 				GenerateMoves<WINNING_CAPTURES>();
 				evaluateByMVVLVA();
 				moveIterationPointer = 0;
 				break;
 			case EQUAL_CAPTURES:
 				GenerateMoves<EQUAL_CAPTURES>();
-				evaluateBySEE();
+				evaluateBySEE(phaseStartIndex);
 				moveIterationPointer = 0;
 				break;
 			case LOOSING_CAPTURES:
 				GenerateMoves<LOOSING_CAPTURES>();
-				evaluateBySEE();
+				evaluateBySEE(phaseStartIndex);
 				moveIterationPointer = 0;
 				break;
 			case QUIETS_POSITIVE:
 				GenerateMoves<QUIETS>();
-				evaluateByPSQ();
-				lastPositive = std::partition(moves, &moves[movepointer - 1], positiveScore);
-				insertionSort(moves, lastPositive);
+				evaluateByHistory(phaseStartIndex);
+				lastPositive = std::partition(moves + phaseStartIndex, &moves[movepointer - 1], positiveScore);
+				insertionSort(moves + phaseStartIndex, lastPositive);
 				moveIterationPointer = 0;
 				break;
 			case CHECK_EVASION:
@@ -145,7 +147,7 @@ Move position::NextMove() {
 		Move move;
 		switch (generationPhases[generationPhase]) {
 		case WINNING_CAPTURES: case EQUAL_CAPTURES: case LOOSING_CAPTURES: case QUIETS_NEGATIVE:
-			move = getBestMove(moveIterationPointer);
+			move = getBestMove(phaseStartIndex + moveIterationPointer);
 			if (move) {
 				++moveIterationPointer;
 				return move;
@@ -156,12 +158,12 @@ Move position::NextMove() {
 			}
 			break;
 		case CHECK_EVASION:
-			move = moves[moveIterationPointer].move;
+			move = moves[phaseStartIndex + moveIterationPointer].move;
 			++moveIterationPointer;
 			generationPhase += (move == MOVE_NONE);
 			return move;
 		case QUIETS_POSITIVE:
-			move = moves[moveIterationPointer].move;
+			move = moves[phaseStartIndex + moveIterationPointer].move;
 			++moveIterationPointer;
 			generationPhase += (move == lastPositive->move);
 			return move;
@@ -189,14 +191,15 @@ void position::evaluateByMVVLVA() {
 	}
 }
 
-void position::evaluateBySEE() {
-	for (int i = 0; i < movepointer - 1; ++i) moves[i].score = SEE(from(moves[i].move), to(moves[i].move));
+void position::evaluateBySEE(int startIndex) {
+	for (int i = startIndex; i < movepointer - 1; ++i) moves[i].score = SEE(from(moves[i].move), to(moves[i].move));
 }
 
-void position::evaluateByPSQ() {
-	for (int i = 0; i < movepointer - 1; ++i) {
-		moves[i].score = (PSQ[Board[from(moves[i].move)]][to(moves[i].move)] - PSQ[Board[from(moves[i].move)]][from(moves[i].move)]).getScore(material->Phase);
-		//moves[i].score = (PSQ[Board[from(moves[i].move)]][to(moves[i].move)]).mgScore - (PSQ[Board[from(moves[i].move)]][from(moves[i].move)]).mgScore;
+void position::evaluateByHistory(int startIndex) {
+	for (int i = startIndex; i < movepointer - 1; ++i) {
+		Square toSquare = to(moves[i].move);
+		Piece p = Board[from(moves[i].move)];
+		moves[i].score = history->getValue(p, toSquare);
 	}
 }
 

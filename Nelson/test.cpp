@@ -80,6 +80,148 @@ int64_t bench(int depth) {
 	return totalNodes;
 }
 
+int64_t bench2(int depth) {
+	string sfBenchmarks[] = {
+		"5r2/4r1kp/1pnb2p1/p4p2/1P1P4/1NPBpRPP/1P6/5RK1 w - a6",
+		"1Q6/8/2N2k2/8/2p4p/6bK/1P6/5n2 b - -",
+		"8/1B2k3/8/1p5R/5n1p/PKP2N1r/1P6/8 b - -",
+		"r3kb1r/pp5p/q3p1p1/2p1Np2/1n2P2P/3PBQ2/P4PP1/1R3K1R w - f6",
+		"8/2R2p2/4pk2/2pr3p/8/5K1P/5PP1/8 w - -",
+		"8/5p2/b5p1/3p4/3k4/1R3P1P/6P1/6K1 w - -",
+		"rnbqk2r/pp2ppbp/2p2np1/3p4/2PP4/1QN3P1/PP2PPBP/R1B1K1NR b KQkq -",
+		"2b2r2/5k1p/1p6/p1pP1pp1/B1P5/1P6/P5PP/4R1K1 w - g6",
+		"r1bq1rk1/2p2pp1/p1n2n1p/P1b1p3/1p2P3/1B3N2/1PPN1PPP/R1BQR1K1 w - -",
+		"r1bqr1k1/1pp2pp1/1bnp1n1p/p3p3/2P5/P1NP2PP/1PN1PPB1/1RBQ1RK1 b - -",
+		"rnbqkbnr/pp2pppp/8/2pp4/4P3/2P5/PP1P1PPP/RNBQKBNR w KQkq d6",
+		"4Q1k1/p4p2/1qp1p1p1/2p4p/2P4P/2P1P1P1/P4PK1/8 b - -",
+		"4k2r/pR1n1Np1/1n6/1rBp4/3Pp3/4P3/P2K1P1P/6R1 b k -",
+		"1k1r3r/p1q1np1P/1p2p3/2n1P3/3p1PP1/P1p4R/2P1N1Q1/1RB1K3 b - -",
+		"1rbqr1k1/p2nbppp/2p5/3p4/5B2/1PNB1Q1P/P1P2PP1/3R1RK1 b - -",
+		"r1bq1rk1/5pbp/p2ppnp1/1p6/3BPP2/1BN2Q2/PPP3PP/R3K2R w KQ b6",
+		"r7/5k1p/6p1/2R1B3/1P2P3/4K3/6bP/8 w - -",
+		"rnbq1rk1/p4ppp/1p2pn2/6B1/1bBP4/2N2N2/PP3PPP/R2Q1RK1 b - -",
+		"5rk1/p1r1b1pp/bp2Nn2/8/1P6/P7/1B3PPP/R3R1K1 b - -",
+		"8/4bk2/p7/1p4P1/1PbB2n1/P5Pp/7P/4R1K1 b - -",
+		"q2rr1k1/pb2bppp/1p2p1n1/8/2PP2n1/PQ3NPP/1B1N1P2/3RRBK1 b - -",
+		"7k/p1r3p1/1p2P1Qp/5P2/8/P3q3/5RK1/8 b - -",
+		"r1bq1rk1/2p1npbp/p2p2p1/np6/3PP3/2N2N1P/PPB2PP1/R1BQ1RK1 b - -",
+		"2r3k1/5p2/6p1/R6p/1p3B2/1qb1QP1P/6PK/8 b - -",
+		"2rqr1k1/1pB2pp1/p1n3b1/8/1P1pP1P1/P2B1N2/3Q1PK1/3RR3 b - -",
+		"r3r1k1/pbqn1pbp/1pp2np1/2P5/3pP3/2N1BN1P/P1Q2PP1/3RRBK1 w - -",
+		"2r2rk1/1p3pp1/p6p/q2n4/2n1N3/3Q1PP1/PP1B1R1P/R4K2 b - -",
+		"2k4r/2qr1p2/p2p4/2p4p/P1N1P1p1/1Q6/2P2PPb/1R2R2K b - -",
+		"5n1k/p6p/5N1q/2Pp4/8/PP1r2b1/1B4P1/RQ5K w - -",
+		"r2qkb1r/pp1n1ppp/2p5/2p1p2b/4P3/3P1N1P/PPP2PP1/R1BQKN1R w KQkq e6",
+		"r1b2rk1/3nbppp/nqp1p3/p1N5/1p1PN3/1P2Q1P1/1B2PPBP/R4RK1 w - -",
+		"6k1/5bp1/8/2K1BP2/5P2/8/1R6/6r1 b - -",
+		"6k1/6p1/8/2K1BP1b/5P2/8/1R6/6r1 w - -",
+		"rnbqkbnr/pppp1ppp/8/4p3/4P3/8/PPPP1PPP/RNBQKBNR w KQkq e6",
+		"rnbqk2r/1p2bppp/p2p1n2/4p3/4P3/1NN5/PPP1BPPP/R1BQ1RK1 b kq -",
+		"r5k1/5ppp/pr2pn2/8/2P5/5NP1/P4PP1/1R3RK1 b - -",
+		"rn2k2r/ppp3pp/3n4/4q3/4P3/P2B1P2/1PQ4P/R1B1K2R b KQkq -",
+		"6k1/2p5/1p1p2q1/p2P1b1p/2P1p2B/KP3rP1/P7/2Q1R3 w - -",
+		"2b2rk1/Q1R2ppp/4p3/8/4q3/1B4P1/P4PKP/8 w - -",
+		"r1bq1rk1/pp2ppbp/2n2np1/2pp4/8/P1NP1NP1/1PP1PPBP/R1BQ1RK1 w - d6",
+		"3kr3/1p1r4/p1p2p2/P1P3p1/1P2PbP1/7P/2K1R3/4NB2 w - -",
+		"8/6k1/6p1/R4p2/Pp5p/5B2/1Pq5/3NK3 b - -",
+		"1r4k1/3qnppp/1r6/pp1pP3/2pP1P2/P1P2B2/1R1Q2PP/1R5K w - -",
+		"3rr1k1/1p3p2/1pp3p1/8/2q1P1pP/P1R3P1/1PQ2P2/4R1K1 b - -",
+		"r1bq1rk1/pp2bppp/2n1p3/2pn4/3P4/2NBPN2/PP3PPP/R1BQ1RK1 w - -",
+		"2k5/8/p2pN1p1/3P2P1/1P6/3K3n/8/8 w - -",
+		"rnbqkb1r/p2p1ppp/1p2p3/4P3/3P4/2P2N2/P4PPP/R1BQKB1R b KQkq -",
+		"r1bqr1k1/1pp2pb1/p1n2npp/3pp3/4P3/2PP1B1P/PPQ2PPN/R1B1RNK1 b - -",
+		"r1rq2k1/1b1nbppp/3p1n2/p2Pp3/PpN1P3/3BBN2/1P2QPPP/2R2RK1 w - -",
+		"8/5ppk/5n1p/5Q2/2q3P1/7P/5BK1/8 b - -",
+		"rnbqnrk1/2p1ppbp/pp1p2p1/4P3/P2P4/2N2N2/1PP1BPPP/R1BQR1K1 b - -",
+		"r1bqnrk1/2p1ppbp/ppnp2p1/4P3/P2P4/2N2N2/1PP1BPPP/R1BQR1K1 w - -",
+		"8/5k2/8/8/5PK1/6p1/8/8 w - -",
+		"8/2q3k1/1ppbb1pp/2p1p3/2P1P3/P5P1/1P3PN1/3Q1BK1 b - -",
+		"r3qrk1/p7/2p1b3/5pp1/1nNPp3/4P3/P1Q2BPP/R4RK1 w - -",
+		"7r/2R4P/p7/Pp6/8/1k6/3p2K1/8 w - -",
+		"8/pp3n1p/2p1kp1P/2P1p1p1/1P2P3/3KNPP1/P7/8 w - -",
+		"8/pp3n1p/2p1kp1P/2P1pNp1/1P2P3/3K1PP1/P7/8 b - -",
+		"8/6k1/8/1R6/5PKP/8/8/r7 b - -",
+		"1k6/6R1/1P6/5K1p/5P1r/8/8/8 b - -",
+		"8/6k1/K1PR3p/8/8/8/8/1r6 b - -",
+		"rnbqkb1r/pppppppp/5n2/8/8/5N2/PPPPPPPP/RNBQKB1R w KQkq -",
+		"2r1k2r/2qb1pb1/1p2p1pn/nP1pP2p/P2B3P/3B1N1Q/3N1PP1/R4RK1 w k -",
+		"rn2r1k1/1pp1p1bp/p3Rpp1/8/3q4/5B2/P1PN1PPP/R2Q2K1 w - -",
+		"rnbqkbnr/ppp1pppp/8/3p4/5P2/5N2/PPPPP1PP/RNBQKB1R b KQkq -",
+		"4qr2/6kp/2r1n1p1/2nRp1P1/4P2P/2p1B1Q1/2P3BK/5R2 b - -",
+		"8/6pk/7p/1p1rpq2/1P2R3/Pp3P1P/5QPK/8 w - -",
+		"r7/8/1R1pk1p1/4P2p/2p2K1P/5PP1/8/8 b - -",
+		"rn1q1rk1/p3ppbp/1p1p2p1/8/2PN4/1PB1P1P1/P4PKP/2RQ1R2 b - -",
+		"1rbqk1nr/3nppbp/p2p2p1/1p2P3/3BBP2/2N2N2/PPP3PP/R2QK2R b KQk -",
+		"r4r1k/5ppp/8/p1q1p3/1p1nP3/P2B4/1PPQ1RPP/R5K1 w - -",
+		"8/3k4/1P4p1/p2P3p/P1K1p2P/8/6P1/8 b - -",
+		"r1bqk1nr/pp1pppbp/2n3p1/2p5/2P5/2N2NP1/PP1PPPBP/R1BQK2R b KQkq -",
+		"6r1/4pr1k/pQ1pR1Np/1b1P3n/1Pp2P2/6PP/P2qR1BK/8 b - -",
+		"1q2r1k1/3r1p1p/1p1pp1p1/pPn1b1B1/2B1P3/1P2QPP1/P6P/1R1R2K1 w - -",
+		"rnbqkb1r/ppp2ppp/4pn2/8/2pP4/5NP1/PP2PPBP/RNBQK2R b KQkq -",
+		"r1b1k2r/1pqpbppp/p1n1pn2/8/3NP3/P1N1B3/1PP1BPPP/R2QK2R w KQkq -",
+		"5bk1/1b1q2p1/p3p3/3pBpp1/Pp1P4/1PrBP2P/5P2/3Q2RK w - -",
+		"rn1qkbnr/pp2ppp1/2p3bp/8/3P3P/5NN1/PPP2PP1/R1BQKB1R b KQkq -",
+		"4r3/p3kp2/2qb1p1B/1pnR4/8/P1P2P2/1PQ5/2K4R w - -",
+		"r2qk2r/pp1b1ppp/4pn2/2b5/8/P2B2N1/1PP2PPP/R1BQ1RK1 w kq -",
+		"2kr1bnr/ppp1qp2/3p2p1/3Pn3/2P1PPPp/2N4P/PP2B3/R1BQK2R b KQ f3",
+		"8/5pk1/p7/1p1pr1P1/2p4P/P1P5/1P3RP1/7K b - -",
+		"4r3/2r3k1/4R1p1/4Kp1p/P1B2P2/bP1R2P1/7P/8 b - -",
+		"5rk1/2p4p/2b5/pp6/1P2pP2/P1N3P1/5K1P/3R4 b - -",
+		"r7/pp3Q2/2np2pk/2p1pb1q/8/PBB1P3/1P1KN3/8 w - -",
+		"3r4/6p1/pN1r1p2/Pbk1p3/7p/1K1P1P2/3R2PP/3R4 w - -",
+		"2r5/1p5p/4kp2/1p1p1R2/6P1/1P1KP2P/P7/8 b - -",
+		"1Q6/5pk1/5Np1/7p/4PP2/8/2n2KPP/q7 w - -",
+		"r1bqk2r/pp1nbppp/2p1pn2/3p2B1/2PP4/2NBPN2/PP3PPP/R2QK2R b KQkq -",
+		"2rq1rk1/p3bppp/B1p5/2pp1b2/3Pn3/1P2PN2/PB3PPP/R2Q1RK1 b - -",
+		"1r1r2k1/pbpnqppp/2n1pb2/2Pp4/Pp1P3P/1P1N1NP1/1BQ1PPB1/3RR1K1 b - h3",
+		"r1bq1rk1/ppp3pp/2n1p3/3pPp2/2PPn3/P1PQ2P1/4NP1P/R1B1KB1R b KQ -",
+		"1rr3k1/p3pp2/3p2p1/1qpP2N1/4P1n1/6P1/PPQB1P2/1R4K1 w - -",
+		"6n1/bp3pk1/2p3p1/p1q1p2p/P3P3/1PP2BP1/3Q1PKP/2B5 w - -",
+		"r1b1kbnr/1pp3pp/5p2/p1n1p3/P1B1P3/2P2N2/1P3PPP/RNB2RK1 w - -",
+		"5rk1/4qpp1/1r2pn1p/8/Q2P4/P3P1B1/5PPP/2R2K2 w - -",
+		"3R4/2q2pp1/p1k2b2/1n3Q2/1p1p4/1P4P1/PB3P2/1K2R3 b - -",
+		"1q1rr1k1/1p3pp1/pbn3bp/3p4/P2N4/1PP1B2P/3QBPP1/3RRK2 w - -",
+		"rnbqkbnr/pp2pppp/2p5/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq -"
+	};
+	cout << "Benchmark" << endl;
+	cout << "------------------------------------------------------------------------" << endl;
+	SearchStopCriteria ssc;
+	ssc.MaxDepth = depth;
+	int64_t totalTime = 0;
+	int64_t totalNodes = 0;
+	int64_t totalQNodes = 0;
+	double avgBF = 0.0;
+	cout << left << setw(5) << "Nr" << setw(7) << "Time" << setw(10) << "Nodes" << setw(6) << "Speed" << setw(6) << "BF" << setw(46) << "PV" << endl;
+	for (int i = 0; i < 100; i++) {
+		position* pos = new position(sfBenchmarks[i]);
+		search srch;
+		//srch.uciOutput = false;
+		srch.Reset();
+		ssc.StartTime = now();
+		srch.Think(*pos, ssc);
+		int64_t endTime = now();
+		totalTime += endTime - ssc.StartTime;
+		totalNodes += srch.NodeCount;
+		totalQNodes += srch.QNodeCount;
+		avgBF += srch.BranchingFactor * (srch.NodeCount - srch.QNodeCount);
+		int64_t runtime = endTime - ssc.StartTime;
+		int64_t rt = runtime;
+		if (rt == 0) rt = 1;
+		cout << left << setw(5) << i << setw(7) << runtime << setw(10) << srch.NodeCount << setw(6)
+			<< srch.NodeCount / rt << setw(6) << setprecision(4) << srch.BranchingFactor << setw(46) << srch.PrincipalVariation(depth) << endl;
+		delete(pos);
+	}
+	avgBF = avgBF / (totalNodes - totalQNodes);
+	cout << "------------------------------------------------------------------------" << endl;
+	cout << "Total:\tTime: " << totalTime / 1000.0 << " s\tNodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes\tSpeed: " << totalNodes / totalTime << " kN/s\t"
+		"BF: " << setprecision(5) << avgBF << endl;
+	//tt::printStatistics();
+	//material::printStatistics();
+	//pawn::printStatistics();
+	//cout << "info string Tablebase Hits: " << tablebase::GetTotalHits() << endl;
+	return totalNodes;
+}
+
 uint64_t nodeCount = 0;
 
 uint64_t perft(position &pos, int depth) {
@@ -148,11 +290,12 @@ uint64_t perft2(position &pos, int depth) {
 	return result;
 }
 
+HistoryStats history;
 uint64_t perft3(position &pos, int depth) {
 	nodeCount++;
 	if (depth == 0) return 1;
 	uint64_t result = 0;
-	pos.InitializeMoveIterator<MAIN_SEARCH>();
+	pos.InitializeMoveIterator<MAIN_SEARCH>(&history);
 	Move move;
 	while ((move = pos.NextMove())) {
 		position next = position(pos);
