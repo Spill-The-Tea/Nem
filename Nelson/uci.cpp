@@ -175,30 +175,37 @@ void setPosition(char *line){
 	//Chessbase GUI doesn't send "ucinewgame" command => assure that Hashtable get's initialized in any case
 	if (!initialized) ucinewgame();
 	int idx = 0;
+	position startpos;
 
 	char *token = my_strtok(&line, " ");
 	if (!token)
 		return;
 	else if (!strcmp(token, "startpos")) {
-		pos.setFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+		startpos.setFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 		token = my_strtok(&line, " ");
 	}
 	else if (!strcmp(token, "fen")) {
 		char fen[MAX_FEN] = "";
 		while ((token = my_strtok(&line, " ")) && strcmp(token, "moves"))
 			strcat(strcat(fen, token), " ");
-		pos.setFromFEN(fen);
+		startpos.setFromFEN(fen);
 	}
 	else if (!strcmp(token, "p")) {
 		token = my_strtok(&line, " ");
 		if (!strcmp(token, "fine70")) pos.setFromFEN("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - -");
 	}
+	bool moves = false;
+	position * pp = &startpos;
 	if (token && !strcmp(token, "moves")) {
 		while ((token = my_strtok(&line, " "))) {
 			string tokenString(token);
-			pos.ApplyMove(parseMoveInUCINotation(tokenString, pos));
+			position * next = new position(*pp);
+			next->ApplyMove(parseMoveInUCINotation(tokenString, *next));
+			pp = next;
 		}
 	}
+	pos = *pp;
+	pos.SetPrevious(pp->Previous());
 
 }
 
@@ -215,12 +222,19 @@ void deleteThread() {
 }
 
 void thinkAsync(SearchStopCriteria ssc) {
-	Engine.Think(pos, ssc);
-	cout << "bestmove " << toString(Engine.BestMove.move) << endl;
-	//tt::printStatistics();
-	//material::printStatistics();
-	//pawn::printStatistics();
-	//cout << "info string Tablebase Hits: " << tablebase::GetTotalHits() << endl;
+	ValuatedMove BestMove = Engine.Think(pos, ssc);
+	cout << "bestmove " << toString(BestMove.move) << endl;
+	//if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
+	//	cout << "info depth " << Engine.Depth() << " nodes " << Engine.NodeCount << " score cp " << BestMove.score << " nps " << Engine.NodeCount * 1000 / Engine.ThinkTime()
+	//	//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits() 
+	//	<< " pv " << Engine.PrincipalVariation(Engine.Depth()) << endl;
+	//else {
+	//	int pliesToMate;
+	//	if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
+	//	cout << "info depth " << Engine.Depth() << " nodes " << Engine.NodeCount << " score mate " << pliesToMate / 2 << " nps " << Engine.NodeCount * 1000 / Engine.ThinkTime()
+	//		//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits() 
+	//		<< " pv " << Engine.PrincipalVariation(Engine.Depth()) << endl;
+	//}
 	Engine.Reset();
 }
 

@@ -5,6 +5,7 @@
 #include "position.h"
 #include "settings.h"
 #include <atomic>
+#include <iostream>
 
 enum NodeType { ROOT, PV, NULL_MOVE, STANDARD };
 
@@ -20,6 +21,8 @@ public:
 	ValuatedMove Think(position &pos, SearchStopCriteria ssc);
 	string PrincipalVariation(int depth = PV_MAX_LENGTH);
 	inline void Reset();
+	inline int Depth() const { return _depth; }
+	inline int64_t ThinkTime() const { return _thinkTime; }
 
 private:
 	SearchStopCriteria searchStopCriteria;
@@ -27,6 +30,8 @@ private:
 	ValuatedMove * rootMoves;
 	Move PVMoves[PV_MAX_LENGTH];
 	HistoryStats History;
+	int _depth = 0;
+	int64_t _thinkTime;
 
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<> Value Search<ROOT>(Value alpha, Value beta, position &pos, int depth, Move * pv);

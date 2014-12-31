@@ -7,38 +7,39 @@
 
 ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 	searchStopCriteria = ssc;
-	int64_t thinkTime = 1;
+	_thinkTime = 1;
 	int64_t * nodeCounts = new int64_t[ssc.MaxDepth+1];
 	nodeCounts[0] = 0;
+	pos.ResetPliesFromRoot();
 	//Iterativ Deepening Loop
 	ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
 	rootMoveCount = pos.GeneratedMoveCount();
 	rootMoves = new ValuatedMove[rootMoveCount];
 	memcpy(rootMoves, generatedMoves, rootMoveCount * sizeof(ValuatedMove));
 	fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
-	for (int depth = 1; depth <= ssc.MaxDepth; ++depth) {
+	for (_depth = 1; _depth <= ssc.MaxDepth; ++_depth) {
 		Value alpha = -VALUE_MATE;
 		Value beta = VALUE_MATE;
-		Search<ROOT>(alpha, beta, pos, depth, &PVMoves[0]);
+		Search<ROOT>(alpha, beta, pos, _depth, &PVMoves[0]);
 		stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
 		BestMove = rootMoves[0];
 		if (Stop) break;
 		int64_t tNow = now();
-		thinkTime = tNow - ssc.StartTime;
+		_thinkTime = tNow - ssc.StartTime;
 		if (Stop || tNow > ssc.SoftStopTime || (3 * (tNow - ssc.StartTime) + ssc.StartTime) > ssc.SoftStopTime || (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD) && abs(int(BestMove.score)) <= int(VALUE_MATE))) break;
-		nodeCounts[depth] = NodeCount - nodeCounts[depth - 1];
-		if (depth > 3) BranchingFactor = sqrt(1.0 * nodeCounts[depth] / nodeCounts[depth - 2]);
-		if (UciOutput && thinkTime > 200) {
+		nodeCounts[_depth] = NodeCount - nodeCounts[_depth - 1];
+		if (_depth > 3) BranchingFactor = sqrt(1.0 * nodeCounts[_depth] / nodeCounts[_depth - 2]);
+		if (UciOutput && _thinkTime > 200) {
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
-				cout << "info depth " << depth << " nodes " << NodeCount << " score cp " << BestMove.score << " nps " << NodeCount * 1000 / thinkTime
+				cout << "info depth " << _depth << " nodes " << NodeCount << " score cp " << BestMove.score << " nps " << NodeCount * 1000 / _thinkTime
 				//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits() 
-				<< " pv " << PrincipalVariation(depth) << endl;
+				<< " pv " << PrincipalVariation(_depth) << endl;
 			else {
 				int pliesToMate;
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
-				cout << "info depth " << depth << " nodes " << NodeCount << " score mate " << pliesToMate / 2 << " nps " << NodeCount * 1000 / thinkTime
+				cout << "info depth " << _depth << " nodes " << NodeCount << " score mate " << pliesToMate / 2 << " nps " << NodeCount * 1000 / _thinkTime
 					//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits() 
-					<< " pv " << PrincipalVariation(depth) << endl;
+					<< " pv " << PrincipalVariation(_depth) << endl;
 			}
 		}
 	}

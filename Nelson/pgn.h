@@ -14,4 +14,11 @@ namespace pgn {
 	vector<Move> parsePGNGame(vector<string> lines);
 	vector<Move> parsePGNGame(vector<string> lines, string &fen);
 
+	enum Result { WHITE_WINS, BLACK_WINS, DRAW, UNKNOWN };
+
+	struct Game {
+		Result result;
+		vector<Move> Moves;
+	};
+
 }

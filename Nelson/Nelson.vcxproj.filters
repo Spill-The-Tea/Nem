@@ -45,6 +45,9 @@
     <ClCompile Include="pgn.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="hashtables.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="types.h">
@@ -75,6 +78,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="pgn.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="hashtables.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

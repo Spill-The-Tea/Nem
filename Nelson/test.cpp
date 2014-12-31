@@ -330,6 +330,15 @@ void testSearch(position &pos, int depth) {
 	cout << "Best Move: " << toString(vm.move) << " " << vm.score << endl;
 }
 
+void testRepetition() {
+	position pos("5r1k/R7/5p2/4p3/1p1pP3/1npP1P2/rqn1b1R1/7K w - - 0 1");
+	SearchStopCriteria ssc;
+	ssc.MaxDepth = 5;
+	search engine;
+	ValuatedMove vm = engine.Think(pos, ssc);
+	cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << vm.score << endl;
+}
+
 void testFindMate() {
 	std::map<string, Move> puzzles;
 	//Mate in 2
@@ -525,7 +534,7 @@ void testResult(string filename, Result result) {
 
 void testResult() {
 	chrono::system_clock::time_point begin = chrono::high_resolution_clock::now();
-	testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/stalemate.epd", STALEMATE);
+	testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/stalemate.epd", DRAW);
 	testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/mate.epd", MATE);
 	chrono::system_clock::time_point end = chrono::high_resolution_clock::now();
 	auto runtime = end - begin;

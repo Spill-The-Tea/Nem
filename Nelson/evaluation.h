@@ -7,15 +7,21 @@ struct evaluation
 {
 public:
 	Value Material;
+	eval Mobility;
 
 	inline Value GetScore(const Phase_t phase, const Color sideToMove) {
-		return Material * (1 - 2 * sideToMove);
+		return (Material + Mobility.getScore(phase)) * (1 - 2 * sideToMove);
 	}
 };
 
-typedef evaluation(*EvalFunction)(position&);
+const eval DrawEval;
+const evaluation DrawEvaluation{ Value(0), DrawEval };
 
-evaluation evaluate(position& pos);
-evaluation evaluateFromScratch(position& pos);
+typedef evaluation(*EvalFunction)(const position&);
+
+evaluation evaluate(const position& pos);
+evaluation evaluateDraw(const position& pos);
+evaluation evaluateFromScratch(const position& pos);
+eval evaluateMobility(const position& pos);
 
  

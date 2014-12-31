@@ -3,6 +3,7 @@
 #include "board.h"
 #include "material.h"
 #include "evaluation.h"
+#include "hashtables.h"
 #include <string>
 
 using namespace std;
@@ -30,11 +31,13 @@ public:
 	void setFromFEN(const string& fen);
 	bool ApplyMove(Move move); //Applies a pseudo-legal move and returns true if move is legal
 	static inline position UndoMove(position &pos) { return *pos.previous; }
+	inline position * Previous() { return previous; }
 	template<MoveGenerationType MGT> ValuatedMove * GenerateMoves();
 	template<> ValuatedMove* GenerateMoves<QUIET_CHECKS>();
 	template<> ValuatedMove* GenerateMoves<LEGAL>();
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
+	inline PawnKey_t GetPawnKey() const { return PawnKey; }
 	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history);
 	Move NextMove();
 	const Value position::SEE(Square from, const Square to);
@@ -50,18 +53,27 @@ public:
 	inline MoveGenerationType GetMoveGenerationType() const { return generationPhases[generationPhase]; }
 	inline ValuatedMove * GetMovesOfCurrentPhase() { return &moves[phaseStartIndex]; }
 	inline int GetMoveNumberInPhase() const { return moveIterationPointer;  }
+	inline Value GetMaterialScore() const { return material->Score; }
+	inline MaterialTableEntry * GetMaterialTableEntry() const { return material; }
+	inline Bitboard AttackedByPawns(Color color) const { return pawn->attackSet[color]; }
 	Result GetResult();
+	inline Bitboard GetAttacksFrom(Square square) const { return attacks[square]; }
+	inline void SetPrevious(position &pos) { previous = &pos; }
+	inline void SetPrevious(position *pos) { previous = pos; }
+	inline void ResetPliesFromRoot() { pliesFromRoot = 0; }
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
 	uint64_t Hash = ZobristMoveColor;
 	MaterialKey_t MaterialKey;
+	PawnKey_t PawnKey;
 	Square EPSquare;
 	unsigned char CastlingOptions;
 	unsigned char DrawPlyCount;
 	Color SideToMove;
 	int pliesFromRoot;
 	MaterialTableEntry * material;
+	pawn::Entry * pawn;
 	Piece Board[64];
 
 	position * previous;
@@ -77,6 +89,7 @@ private:
 	Result result = RESULT_UNKNOWN;
 	ValuatedMove * lastPositive;
 	HistoryStats * history;
+	//Bitboard pieceAttacks[2][4]; //Attacks by Color and Piece Type (only Sliders and Knights - others can be calculated on the fly or are stored in pawn hash table);
 
 	//Bitboard pinned;
 	//Bitboard pinner;
@@ -107,6 +120,7 @@ private:
 	Bitboard calculateAttacks(Color color);
 	Bitboard checkBlocker(Color colorOfBlocker, Color kingColor);
 	MaterialKey_t calculateMaterialKey();
+	PawnKey_t calculatePawnKey();
 	void evaluateByMVVLVA();
 	void evaluateBySEE(int startIndex);
 	void evaluateByHistory(int startIndex);
@@ -119,6 +133,7 @@ private:
 	inline bool IsCheck() { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
 	inline bool isValid(Move move) { position next(*this); return next.ApplyMove(move); }
 	template<bool CHECKED> bool CheckValidMoveExists();
+	bool checkRepetition();
 };
 
 Move parseMoveInUCINotation(const string& uciMove, const position& pos);
@@ -130,6 +145,7 @@ inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | O
 
 inline Value position::evaluate() { 
 	if (GetResult() == OPEN) return material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove); 
+	else if (result == DRAW) return VALUE_DRAW;
 	else return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 

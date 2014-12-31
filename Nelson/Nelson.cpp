@@ -12,10 +12,7 @@
 int main(int argc, const char* argv[]) {
 	cout << "Compiled on: " << __DATE__ << " " << __TIME__ << endl;
 	Initialize();
-	//position p("1B1Nrb2/1N1R1n2/Kp4r1/pp1p1Bp1/R1Pk4/3Pp1Q1/1P1p1P2/6qb w - - 0 1");
-	//testMateInDos();
-	//return 0;
-	//bench(8);
+	//bench2(7);
 	//return 0;
 	if (argc <= 1) loop();
 	else {
@@ -89,6 +86,9 @@ int main(int argc, const char* argv[]) {
 				}
 				else if (!input.compare(0, 7, "mattin2")) {
 					testMateInDos();
+				}
+				else if (!input.compare(0, 10, "repetition")) {
+					testRepetition();
 				}
 			}
 			std::getline(cin, input);

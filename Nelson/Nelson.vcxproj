@@ -147,6 +147,7 @@
   <ItemGroup>
     <ClCompile Include="board.cpp" />
     <ClCompile Include="evaluation.cpp" />
+    <ClCompile Include="hashtables.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Nelson.cpp" />
     <ClCompile Include="pgn.cpp" />
@@ -158,6 +159,7 @@
   <ItemGroup>
     <ClInclude Include="board.h" />
     <ClInclude Include="evaluation.h" />
+    <ClInclude Include="hashtables.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="pgn.h" />
     <ClInclude Include="position.h" />

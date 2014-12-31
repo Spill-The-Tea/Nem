@@ -7,6 +7,7 @@
 #include "types.h"
 #include "material.h"
 #include "position.h"
+#include "hashtables.h"
 
 using namespace std;
 
@@ -540,6 +541,7 @@ void Initialize() {
 	InitializeMagic();
 	InitializeMaterialTable();
 	InitializeShadowedFields();
+	pawn::initialize();
 	chrono::system_clock::time_point end = chrono::high_resolution_clock::now();
 	auto runtime = end - begin;
 	chrono::microseconds runtimeMS = chrono::duration_cast<chrono::microseconds>(runtime);
@@ -551,13 +553,13 @@ Move parseMoveInUCINotation(const string& uciMove, const position& pos) {
 	Square toSquare = Square(uciMove[2] - 'a' + 8 * (uciMove[3] - '1'));
 	if (uciMove.length() > 4) {
 		switch (uciMove[4]) {
-		case 'q':
+		case 'q': case 'Q':
 			return createMove<PROMOTION>(fromSquare, toSquare, QUEEN);
-		case 'r':
+		case 'r': case 'R':
 			return createMove<PROMOTION>(fromSquare, toSquare, ROOK);
-		case 'b':
+		case 'b': case 'B':
 			return createMove<PROMOTION>(fromSquare, toSquare, BISHOP);
-		case 'n':
+		case 'n': case 'N':
 			return createMove<PROMOTION>(fromSquare, toSquare, KNIGHT);
 		}
 	}

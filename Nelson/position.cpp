@@ -11,6 +11,7 @@
 #include "position.h"
 #include "material.h"
 #include "settings.h"
+#include "hashtables.h"
 
 static const string PieceToChar("QqRrBbNnPpKk ");
 
@@ -53,8 +54,16 @@ bool position::ApplyMove(Move move) {
 		}
 		else
 			SetEPSquare(OUTSIDE);
-		if (GetPieceType(moving) == PAWN || captured != BLANK)
+		if (GetPieceType(moving) == PAWN || captured != BLANK) {
 			DrawPlyCount = 0;
+			if (GetPieceType(moving) == PAWN) {
+				PawnKey ^= (ZobristKeys[moving][fromSquare]);
+				PawnKey ^= (ZobristKeys[moving][toSquare]);
+			}
+			if (GetPieceType(captured) == PAWN) {
+				PawnKey ^= ZobristKeys[captured][toSquare];
+			}
+		}
 		else
 			++DrawPlyCount;
 		//update castlings
@@ -67,6 +76,9 @@ bool position::ApplyMove(Move move) {
 		material = &MaterialTable[MaterialKey];
 		SetEPSquare(OUTSIDE);
 		DrawPlyCount = 0;
+		PawnKey ^= ZobristKeys[moving][fromSquare];
+		PawnKey ^= ZobristKeys[moving][toSquare];
+		PawnKey ^= ZobristKeys[BPAWN - SideToMove][toSquare - PawnStep()];
 		break;
 	case PROMOTION:
 		set<false>(GetPiece(promotionType(move), SideToMove), toSquare);
@@ -75,6 +87,7 @@ bool position::ApplyMove(Move move) {
 		if (CastlingOptions != 0) updateCastleFlags(fromSquare, toSquare);
 		SetEPSquare(OUTSIDE);
 		DrawPlyCount = 0;
+		PawnKey ^= ZobristKeys[moving][fromSquare];
 		break;
 	case CASTLING:
 		if (toSquare == G1 + (SideToMove * 56)) {
@@ -103,6 +116,8 @@ bool position::ApplyMove(Move move) {
 	//calculatePinned();
 	attackedByThem = 0ull;
 	assert(MaterialKey == calculateMaterialKey());
+	assert(PawnKey == calculatePawnKey());
+	if (pawn->Key != PawnKey) pawn = pawn::probe(*this);
 	return !(attackedByUs & PieceBB(KING, Color(SideToMove ^ 1)));
 	//if (attackedByUs & PieceBB(KING, Color(SideToMove ^ 1))) return false;
 	//attackedByThem = calculateAttacks(Color(SideToMove ^1));
@@ -443,6 +458,7 @@ void position::setFromFEN(const string& fen) {
 	std::fill_n(OccupiedByPieceType, 6, 0ull);
 	EPSquare = OUTSIDE;
 	SideToMove = WHITE;
+	DrawPlyCount = 0;
 	Hash = ZobristMoveColor;
 	istringstream ss(fen);
 	ss >> noskipws;
@@ -588,10 +604,15 @@ void position::setFromFEN(const string& fen) {
 		}
 		if (EPSquare != OUTSIDE) Hash ^= ZobristEnPassant[EPSquare & 7];
 	}
-
-	ss >> skipws >> DrawPlyCount;
+	string dpc;
+	ss >> skipws >> dpc;
+	if (dpc.length() > 0) {
+		DrawPlyCount = atoi(dpc.c_str());
+	}
 	std::fill_n(attacks, 64, 0ull);
 	MaterialKey = calculateMaterialKey();
+	PawnKey = calculatePawnKey();
+	pawn = pawn::probe(*this);
 	material = &MaterialTable[MaterialKey];
 	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	attackedByUs = calculateAttacks(SideToMove);
@@ -701,15 +722,42 @@ MaterialKey_t position::calculateMaterialKey() {
 	return key;
 }
 
+PawnKey_t position::calculatePawnKey() {
+	PawnKey_t key = 0;
+	Bitboard pawns = PieceBB(PAWN, WHITE);
+	while (pawns) {
+		key ^= ZobristKeys[WPAWN][lsb(pawns)];
+		pawns &= pawns - 1;
+	}
+	pawns = PieceBB(PAWN, BLACK);
+	while (pawns) {
+		key ^= ZobristKeys[BPAWN][lsb(pawns)];
+		pawns &= pawns - 1;
+	}
+	return key;
+}
+
 Result position::GetResult() {
 	if (!result) {
-		if (Checked()) {
+		if (DrawPlyCount > 100 || checkRepetition()) result = DRAW;
+		else if (Checked()) {
 			if (CheckValidMoveExists<true>()) result = OPEN; else result = MATE;
 		}
 		else {
-			if (CheckValidMoveExists<false>()) result = OPEN; else result = STALEMATE;
+			if (CheckValidMoveExists<false>()) result = OPEN; else result = DRAW;
 		}
 	}
 	return result;
+}
+
+bool position::checkRepetition() {
+	position * prev = Previous();
+	for (int i = 0; i < (std::min(pliesFromRoot, int(DrawPlyCount))>>1); ++i) {
+		prev = prev->Previous();
+		if (prev->GetHash() == GetHash()) 
+			return true;
+		prev = prev->Previous();
+	}
+	return false;
 }
 

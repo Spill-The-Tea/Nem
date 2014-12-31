@@ -65,5 +65,40 @@ void InitializeMaterialTable() {
 	for (int i = 0; i < MATERIAL_KEY_MAX + 1; ++i) {
 		if (MaterialTable[i].EvaluationFunction == nullptr) MaterialTable[i].EvaluationFunction = &evaluateFromScratch;
 	}
-
+	//Add theoretically drawn endgames
+	for (int i = 0; i < 10; ++i) pieceCounts[i] = 0;
+	//KK
+	MaterialKey_t key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = VALUE_DRAW;
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	//KBK
+	pieceCounts[WBISHOP] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = VALUE_DRAW;
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	pieceCounts[WBISHOP] = 0; pieceCounts[BBISHOP] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = VALUE_DRAW;
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	pieceCounts[BBISHOP] = 0;
+	//KNK 
+	pieceCounts[WKNIGHT] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = VALUE_DRAW;
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	pieceCounts[WKNIGHT] = 0; pieceCounts[BKNIGHT] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = VALUE_DRAW;
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	pieceCounts[BKNIGHT] = 0;
+	//KNNK 
+	pieceCounts[WKNIGHT] = 12;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = VALUE_DRAW;
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	pieceCounts[WKNIGHT] = 0; pieceCounts[BKNIGHT] = 2;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = VALUE_DRAW;
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	pieceCounts[BKNIGHT] = 0;
 }

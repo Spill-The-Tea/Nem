@@ -70,7 +70,7 @@ enum StagedMoveGenerationType {
 	MAIN_SEARCH, QSEARCH, CHECK
 };
 
-enum Result { RESULT_UNKNOWN, OPEN, STALEMATE, MATE };
+enum Result { RESULT_UNKNOWN, OPEN, DRAW, MATE };
 
 enum Value : int16_t {
 	VALUE_NOTYETDETERMINED = 0 - 32767,
@@ -86,6 +86,7 @@ enum Value : int16_t {
 inline Value operator*(const float f, const Value v) { return Value(int(round(int(v) * f))); }
 
 typedef uint32_t MaterialKey_t;
+typedef uint64_t PawnKey_t;
 typedef uint16_t Phase_t;
 
 #define ENABLE_BASE_OPERATORS_ON(T)                                             \
@@ -183,7 +184,7 @@ struct eval {
 		egScore = Value(egValue);
 	}
 
-	inline Value getScore(uint16_t phase) {
+	inline Value getScore(Phase_t phase) {
 		return Value(((((int)mgScore) * (256 - phase)) + (phase * (int)egScore)) / 256);
 	}
 };
@@ -211,6 +212,7 @@ inline eval operator-(const eval& e1, const eval e2) {
 	return eval(e1.mgScore - e2.mgScore, e1.egScore - e2.egScore);
 }
 inline eval operator*(const eval e, const int i) { return eval(e.mgScore * i, e.egScore * i); }
+inline eval operator*(const int i, const eval e) { return eval(e.mgScore * i, e.egScore * i); }
 inline eval operator/(const eval e, const int i) { return eval(e.mgScore / i, e.egScore / i); }
 inline eval operator*(const float f, const eval e) { return eval(f * e.mgScore, f * e.egScore); }
 

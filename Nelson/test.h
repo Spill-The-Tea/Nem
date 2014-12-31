@@ -27,3 +27,4 @@ void testSearch(position &pos, int depth);
 void testFindMate();
 void testResult();
 void testMateInDos();
+void testRepetition();
