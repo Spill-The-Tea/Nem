@@ -19,3 +19,5 @@ const eval MOBILITY_BONUS_ROOK[] = { eval(-47, -53), eval(-31, -26), eval(-5, 0)
 const eval MOBILITY_BONUS_QUEEN[] = { eval(-42, -40), eval(-28, -23), eval(-5, -7), eval(0, 0), eval(6, 10), eval(11, 19), eval(13, 29), eval(18, 38), eval(20, 40), eval(21, 41), 
                                       eval(22, 41), eval(22, 41), eval(22, 41), eval(23, 41), eval(24, 41), eval(25, 41), eval(25, 41), eval(25, 41), eval(25, 41), eval(25, 41), 
 									  eval(25, 41), eval(25, 41), eval(25, 41), eval(25, 41), eval(25, 41), eval(25, 41), eval(25, 41), eval(25, 41) };
+
+static int MOBILITY_SCALE = 3;

@@ -120,7 +120,8 @@ void uci() {
 	Engine.UciOutput = true;
 	puts("id name Nelson");
 	puts("id author Christian Günther");
-	//printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
+	printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
+	printf("option name MobScale type spin default %u\n", MOBILITY_SCALE);
 	//printf("option name Hash type spin default %lu min 1 max 16384\n", HashSizeMB);
 	//printf("option name Draw Value type spin default %d min -100 max 100\n", DrawValue);
 	//printf("option name GaviotaTablebasePaths type string\n");
@@ -145,8 +146,8 @@ void setoption(char *line){
 	if (!token)	 return;
 
 	token = my_strtok(&line, " ");
-	//if (!strcmp(name, "UCI_Chess960"))
-	//	Chess960 = !strcmp(token, "true");
+	if (!strcmp(name, "UCI_Chess960")) Chess960 = !strcmp(token, "true");
+	if (!strcmp(name, "MobScale")) MOBILITY_SCALE = atoi(token);
 	//if (!strcmp(name, "Hash")) HashSizeMB = atoi(token);
 	//if (!strcmp(name, "GaviotaTablebasePaths")) {
 	//	if (token) GTB_PATH = token; else GTB_PATH = "";
