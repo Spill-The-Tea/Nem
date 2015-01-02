@@ -61,6 +61,8 @@ public:
 	inline void SetPrevious(position &pos) { previous = &pos; }
 	inline void SetPrevious(position *pos) { previous = pos; }
 	inline void ResetPliesFromRoot() { pliesFromRoot = 0; }
+	inline Bitboard AttacksByPieceType(Color color, PieceType pieceType) const;
+	inline Bitboard AttacksByColor(Color color) const { return (SideToMove == color) * attackedByUs + (SideToMove != color) * attackedByThem; }
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -726,5 +728,15 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 	history = historyStats;
 	if (IsCheck()) generationPhase = generationPhaseOffset[CHECK];
 	else generationPhase = generationPhaseOffset[SMGT];
+}
+
+inline Bitboard position::AttacksByPieceType(Color color, PieceType pieceType) const {
+	Bitboard result = 0;
+	Bitboard bb = PieceBB(pieceType, color);
+	while (bb) {
+		result |= attacks[lsb(bb)];
+		bb &= bb - 1;
+	}
+	return result;
 }
 

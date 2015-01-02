@@ -16,6 +16,96 @@ evaluation evaluateDraw(const position& pos) {
 
 eval evaluateMobility(const position& pos) {
 	eval result;
+	//Create attack bitboards
+	Bitboard abbWPawn = pos.AttackedByPawns(WHITE);
+	Bitboard abbBPawn = pos.AttackedByPawns(BLACK);
+	//Leichtfiguren (N+B)
+	Bitboard abbWLeicht = abbWPawn | pos.AttacksByPieceType(WHITE, KNIGHT) | pos.AttacksByPieceType(WHITE, BISHOP);
+	Bitboard abbBLeicht = abbBPawn | pos.AttacksByPieceType(BLACK, KNIGHT) | pos.AttacksByPieceType(BLACK, BISHOP);
+	//Rooks
+	Bitboard abbWRook = abbWLeicht| pos.AttacksByPieceType(WHITE, ROOK);
+	Bitboard abbBRook = abbBLeicht | pos.AttacksByPieceType(BLACK, ROOK);
+	//Total Attacks
+	Bitboard abbWhite = pos.AttacksByColor(WHITE);
+	Bitboard abbBlack = pos.AttacksByColor(BLACK);
+
+	//excluded fields
+	Bitboard allowedWhite = ~(pos.PieceBB(PAWN, WHITE) | pos.PieceBB(KING, WHITE));
+	Bitboard allowedBlack = ~(pos.PieceBB(PAWN, BLACK) | pos.PieceBB(KING, BLACK));
+
+	//Now calculate Mobility
+	//Queens can move to all unattacked squares and if protected to all squares attacked by queens or kings
+	Bitboard pieceBB = pos.PieceBB(QUEEN, WHITE);
+	while (pieceBB) {
+		Square square = lsb(pieceBB);
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
+		targets &= ~abbBlack | (abbWhite & ~abbBRook);
+		result += MOBILITY_BONUS_QUEEN[popcount(targets)];
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(QUEEN, BLACK);
+	while (pieceBB) {
+		Square square = lsb(pieceBB);
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
+		targets &= ~abbWhite | (abbBlack & ~abbWRook);
+		result -= MOBILITY_BONUS_QUEEN[popcount(targets)];
+		pieceBB &= pieceBB - 1;
+	}
+	//Rooks can move to all unattacked squares and if protected to all squares attacked  attacked by rooks or less important pieces
+	pieceBB = pos.PieceBB(ROOK, WHITE);
+	while (pieceBB) {
+		Square square = lsb(pieceBB);
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
+		targets &= ~abbBlack | (abbWhite & ~abbBLeicht);
+		result += MOBILITY_BONUS_ROOK[popcount(targets)];
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(ROOK, BLACK);
+	while (pieceBB) {
+		Square square = lsb(pieceBB);
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
+		targets &= ~abbWhite | (abbBlack & ~abbWLeicht);
+		result -= MOBILITY_BONUS_ROOK[popcount(targets)];
+		pieceBB &= pieceBB - 1;
+	}
+	//Leichtfiguren
+	pieceBB = pos.PieceBB(BISHOP, WHITE);
+	while (pieceBB) {
+		Square square = lsb(pieceBB);
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
+		targets &= ~abbBlack | (abbWhite & ~abbBPawn);
+		result += MOBILITY_BONUS_BISHOP[popcount(targets)];
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(BISHOP, BLACK);
+	while (pieceBB) {
+		Square square = lsb(pieceBB);
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
+		targets &= ~abbWhite | (abbBlack & ~abbWPawn);
+		result -= MOBILITY_BONUS_BISHOP[popcount(targets)];
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(KNIGHT, WHITE);
+	while (pieceBB) {
+		Square square = lsb(pieceBB);
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
+		targets &= ~abbBlack | (abbWhite & ~abbBPawn);
+		result += MOBILITY_BONUS_KNIGHT[popcount(targets)];
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(KNIGHT, BLACK);
+	while (pieceBB) {
+		Square square = lsb(pieceBB);
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
+		targets &= ~abbWhite | (abbBlack & ~abbWPawn);
+		result -= MOBILITY_BONUS_KNIGHT[popcount(targets)];
+		pieceBB &= pieceBB - 1;
+	}
+	return result / MOBILITY_SCALE;
+}
+
+eval evaluateMobility2(const position& pos) {
+	eval result;
 	//Excluded fields (fields attacked by pawns or occupied by own king or pawns)
 	for (int i = 0; i <= 1; ++i) {
 		Color them = Color(i ^ 1);
