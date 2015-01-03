@@ -1,17 +1,82 @@
 #include "evaluation.h"
 #include "position.h"
 #include "settings.h"
+#include <algorithm>
 
 
 evaluation evaluate(const position& pos) {
 	evaluation result;
 	result.Material = pos.GetMaterialScore();
 	result.Mobility = evaluateMobility(pos);
+	result.KingSafety = evaluateKingSafety(pos);
 	return result;
 }
 
 evaluation evaluateDraw(const position& pos) {
 	return DrawEvaluation;
+}
+
+eval evaluateKingSafety(const position& pos) {
+	eval result;
+	//Areas around the king
+	Bitboard kingZoneWhite = pos.PieceBB(KING, WHITE) | KingAttacks[lsb(pos.PieceBB(KING, WHITE))];
+	Bitboard kingZoneBlack = pos.PieceBB(KING, BLACK) | KingAttacks[lsb(pos.PieceBB(KING, BLACK))];
+	int attackUnits = 0;
+	int attackerCount = 0; 
+	int attackCount;
+	Bitboard pieceBB = pos.PieceBB(BISHOP, WHITE) | pos.PieceBB(KNIGHT, WHITE);
+	while (pieceBB) {
+		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack)) {
+			attackUnits += 2 * attackCount;
+			++attackerCount;
+		}
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(ROOK, WHITE);
+	while (pieceBB) {
+		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack))  {
+			attackUnits += 3 * attackCount;
+			++attackerCount;
+		}
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(QUEEN, WHITE);
+	while (pieceBB) {
+		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack)) {
+			attackUnits += 5 * attackCount;
+			++attackerCount;
+		}
+		pieceBB &= pieceBB - 1;
+	}
+	if (attackerCount > 2) result.mgScore = KING_SAFETY[std::min(attackUnits, 99)];
+	attackUnits = 0;
+	attackerCount = 0;
+	pieceBB = pos.PieceBB(BISHOP, BLACK) | pos.PieceBB(KNIGHT, BLACK);
+	while (pieceBB) {
+		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite)) {
+			attackUnits += 2 * attackCount;
+			++attackerCount;
+		}
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(ROOK, BLACK);
+	while (pieceBB) {
+		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite)) {
+			attackUnits += 3 * attackCount;
+			++attackerCount;
+		}
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(QUEEN, BLACK);
+	while (pieceBB) {
+		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite)) {
+			attackUnits += 5 * attackCount;
+			++attackerCount;
+		}
+		pieceBB &= pieceBB - 1;
+	}
+	if (attackerCount > 2) result.mgScore -= KING_SAFETY[std::min(attackUnits, 99)];
+	return result;
 }
 
 eval evaluateMobility(const position& pos) {
@@ -23,7 +88,7 @@ eval evaluateMobility(const position& pos) {
 	Bitboard abbWLeicht = abbWPawn | pos.AttacksByPieceType(WHITE, KNIGHT) | pos.AttacksByPieceType(WHITE, BISHOP);
 	Bitboard abbBLeicht = abbBPawn | pos.AttacksByPieceType(BLACK, KNIGHT) | pos.AttacksByPieceType(BLACK, BISHOP);
 	//Rooks
-	Bitboard abbWRook = abbWLeicht| pos.AttacksByPieceType(WHITE, ROOK);
+	Bitboard abbWRook = abbWLeicht | pos.AttacksByPieceType(WHITE, ROOK);
 	Bitboard abbBRook = abbBLeicht | pos.AttacksByPieceType(BLACK, ROOK);
 	//Total Attacks
 	Bitboard abbWhite = pos.AttacksByColor(WHITE);

@@ -8,9 +8,10 @@ struct evaluation
 public:
 	Value Material;
 	eval Mobility;
+	eval KingSafety;
 
 	inline Value GetScore(const Phase_t phase, const Color sideToMove) {
-		return (Material + Mobility.getScore(phase)) * (1 - 2 * sideToMove);
+		return (Material + (Mobility + KingSafety).getScore(phase)) * (1 - 2 * sideToMove);
 	}
 };
 
@@ -23,5 +24,7 @@ evaluation evaluate(const position& pos);
 evaluation evaluateDraw(const position& pos);
 evaluation evaluateFromScratch(const position& pos);
 eval evaluateMobility(const position& pos);
+eval evaluateMobility2(const position& pos);
+eval evaluateKingSafety(const position& pos);
 
  

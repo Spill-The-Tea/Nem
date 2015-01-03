@@ -26,7 +26,6 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 		if (Stop) break;
 		int64_t tNow = now();
 		_thinkTime = tNow - ssc.StartTime;
-		if (Stop || tNow > ssc.SoftStopTime || (3 * (tNow - ssc.StartTime) + ssc.StartTime) > ssc.SoftStopTime || (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD) && abs(int(BestMove.score)) <= int(VALUE_MATE))) break;
 		nodeCounts[_depth] = NodeCount - nodeCounts[_depth - 1];
 		if (_depth > 3) BranchingFactor = sqrt(1.0 * nodeCounts[_depth] / nodeCounts[_depth - 2]);
 		if (UciOutput && _thinkTime > 200) {
@@ -42,6 +41,8 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 					<< " pv " << PrincipalVariation(_depth) << endl;
 			}
 		}
+		if (tNow > ssc.SoftStopTime || (3 * (tNow - ssc.StartTime) + ssc.StartTime) > ssc.SoftStopTime || (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD) && abs(int(BestMove.score)) <= int(VALUE_MATE))) break;
+
 	}
 	delete[] rootMoves;
 	delete[] nodeCounts;
@@ -76,14 +77,11 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 }
 
 template<NodeType NT> Value search::Search(Value alpha, Value beta, position &pos, int depth, Move * pv) {
-	if (pos.GetResult() != OPEN) {
-		++NodeCount;
-		return pos.evaluate();
-	}
 	if (depth <= 0) {
 		return QSearch<STANDARD>(alpha, beta, pos, depth);
 	}
 	++NodeCount;
+	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
 	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
 	if (Stop) return VALUE_ZERO;
 	Value score;
@@ -117,6 +115,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &pos, int depth) {
 	++QNodeCount;
 	++NodeCount;
+	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
 	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
 	if (Stop) return VALUE_ZERO;
 	Value standPat = pos.evaluate();

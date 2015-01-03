@@ -21,6 +21,8 @@ public:
 	position(position &pos);
 	~position();
 
+	static int AppliedMovesBeforeRoot;
+
 	Bitboard PieceBB(const PieceType pt, const Color c) const;
 	Bitboard ColorBB(const Color c) const;
 	Bitboard ColorBB(const int c) const;
@@ -45,6 +47,7 @@ public:
 	friend evaluation evaluate(position& pos);
 	friend evaluation evaluateFromScratch(position &pos);
 	inline Value evaluate();
+	inline Value evaluateFinalPosition();
 	inline int GeneratedMoveCount() const { return movepointer - 1; }
 	inline int GetPliesFromRoot() const { return pliesFromRoot; }
 	inline Color GetSideToMove() const { return SideToMove; }
@@ -148,6 +151,11 @@ inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | O
 inline Value position::evaluate() { 
 	if (GetResult() == OPEN) return material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove); 
 	else if (result == DRAW) return VALUE_DRAW;
+	else return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
+}
+
+inline Value position::evaluateFinalPosition() {
+	if (result == DRAW) return VALUE_DRAW;
 	else return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 

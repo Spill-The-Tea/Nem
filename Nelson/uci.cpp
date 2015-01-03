@@ -202,6 +202,7 @@ void setPosition(char *line){
 			string tokenString(token);
 			position * next = new position(*pp);
 			next->ApplyMove(parseMoveInUCINotation(tokenString, *next));
+			next->AppliedMovesBeforeRoot++;
 			pp = next;
 		}
 	}

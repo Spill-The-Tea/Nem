@@ -34,6 +34,8 @@ position::~position()
 {
 }
 
+int position::AppliedMovesBeforeRoot = 0;
+
 bool position::ApplyMove(Move move) {
 	pliesFromRoot++;
 	Square fromSquare = from(move);
@@ -459,6 +461,7 @@ void position::setFromFEN(const string& fen) {
 	EPSquare = OUTSIDE;
 	SideToMove = WHITE;
 	DrawPlyCount = 0;
+	AppliedMovesBeforeRoot = 0;
 	Hash = ZobristMoveColor;
 	istringstream ss(fen);
 	ss >> noskipws;
@@ -752,7 +755,7 @@ Result position::GetResult() {
 
 bool position::checkRepetition() {
 	position * prev = Previous();
-	for (int i = 0; i < (std::min(pliesFromRoot, int(DrawPlyCount))>>1); ++i) {
+	for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, int(DrawPlyCount))>>1); ++i) {
 		prev = prev->Previous();
 		if (prev->GetHash() == GetHash()) 
 			return true;
