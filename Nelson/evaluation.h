@@ -9,9 +9,10 @@ public:
 	Value Material;
 	eval Mobility;
 	eval KingSafety;
+	Value PawnStructure;
 
 	inline Value GetScore(const Phase_t phase, const Color sideToMove) {
-		return (Material + (Mobility + KingSafety).getScore(phase)) * (1 - 2 * sideToMove);
+		return (Material + PawnStructure + (Mobility + KingSafety).getScore(phase)) * (1 - 2 * sideToMove);
 	}
 };
 

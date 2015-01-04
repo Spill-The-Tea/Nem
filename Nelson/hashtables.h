@@ -11,6 +11,7 @@ namespace pawn {
 		PawnKey_t Key;
 		Value Score;
 		Bitboard attackSet[2];
+		Bitboard passedPawns[2];
 	};
 
 	extern Entry Table[PAWN_TABLE_SIZE];

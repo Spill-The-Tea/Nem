@@ -9,6 +9,7 @@ evaluation evaluate(const position& pos) {
 	result.Material = pos.GetMaterialScore();
 	result.Mobility = evaluateMobility(pos);
 	result.KingSafety = evaluateKingSafety(pos);
+	result.PawnStructure = pos.PawnStructureScore();
 	return result;
 }
 

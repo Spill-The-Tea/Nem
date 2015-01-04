@@ -13,8 +13,23 @@ namespace pawn {
 		Entry * result = &Table[pos.GetPawnKey() & (PAWN_TABLE_SIZE - 1)];
 		if (result->Key == pos.GetPawnKey()) return result;
 		result->Score = VALUE_ZERO;
-		result->attackSet[WHITE] = ((pos.PieceBB(PAWN, WHITE) << 9) & NOT_A_FILE) | ((pos.PieceBB(PAWN, WHITE) << 7) & NOT_H_FILE);
-		result->attackSet[BLACK] = ((pos.PieceBB(PAWN, BLACK) >> 9) & NOT_H_FILE) | ((pos.PieceBB(PAWN, BLACK) >> 7) & NOT_A_FILE);
+		Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
+		Bitboard bbBlack = pos.PieceBB(PAWN, BLACK);
+		result->attackSet[WHITE] = ((bbWhite << 9) & NOT_A_FILE) | ((bbWhite << 7) & NOT_H_FILE);
+		result->attackSet[BLACK] = ((bbBlack >> 9) & NOT_H_FILE) | ((bbBlack >> 7) & NOT_A_FILE);
+		//frontspans
+		Bitboard bbWFrontspan = FrontFillNorth(bbWhite);
+		Bitboard bbBFrontspan = FrontFillSouth(bbBlack);
+		//attacksets
+		Bitboard bbWAttackset = FrontFillNorth(result->attackSet[WHITE]);
+		Bitboard bbBAttackset = FrontFillSouth(result->attackSet[BLACK]);
+		result->passedPawns[WHITE] = bbWhite & (~(bbBAttackset | bbBFrontspan));
+		result->passedPawns[BLACK] = bbBlack & (~(bbWAttackset | bbWFrontspan));
+		for (int rank = 3; rank < 7; ++rank) {
+			result->Score += popcount(result->passedPawns[WHITE] & RANKS[rank]) * PASSED_PAWN_BONUS[rank - 3];
+			result->Score -= popcount(result->passedPawns[BLACK] & RANKS[7 - rank]) * PASSED_PAWN_BONUS[rank - 3];
+		}
+
 		return result;
 	}
 }

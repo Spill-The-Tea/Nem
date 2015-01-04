@@ -59,6 +59,7 @@ public:
 	inline Value GetMaterialScore() const { return material->Score; }
 	inline MaterialTableEntry * GetMaterialTableEntry() const { return material; }
 	inline Bitboard AttackedByPawns(Color color) const { return pawn->attackSet[color]; }
+	inline Value PawnStructureScore() const { return pawn->Score;  }
 	Result GetResult();
 	inline Bitboard GetAttacksFrom(Square square) const { return attacks[square]; }
 	inline void SetPrevious(position &pos) { previous = &pos; }
