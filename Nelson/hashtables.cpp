@@ -29,7 +29,13 @@ namespace pawn {
 			result->Score += popcount(result->passedPawns[WHITE] & RANKS[rank]) * PASSED_PAWN_BONUS[rank - 3];
 			result->Score -= popcount(result->passedPawns[BLACK] & RANKS[7 - rank]) * PASSED_PAWN_BONUS[rank - 3];
 		}
-
+		//bonus for protected passed pawns (on 5th rank or further)
+		result->Score += (popcount(result->passedPawns[WHITE] & result->attackSet[WHITE] & HALF_OF_BLACK) 
+			- popcount(result->passedPawns[BLACK] & result->attackSet[BLACK] & HALF_OF_WHITE)) * BONUS_PROTECTED_PASSED_PAWN;
+		//isolated pawns
+		//Bitboard west = (bbWhite >> 1) & NOT_H_FILE;
+		//Bitboard east = (bbWhite << 1) & NOT_A_FILE;
+		//Bitboard bbIsolatedWhite;
 		return result;
 	}
 }

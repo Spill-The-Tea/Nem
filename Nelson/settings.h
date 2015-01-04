@@ -36,3 +36,4 @@ const Value KING_SAFETY[100] = {
 };
 
 const Value PASSED_PAWN_BONUS[4] = { Value(10), Value(30), Value(60), Value(100) };
+const Value BONUS_PROTECTED_PASSED_PAWN = Value(30);
