@@ -8,7 +8,7 @@
 ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 	searchStopCriteria = ssc;
 	_thinkTime = 1;
-	int64_t * nodeCounts = new int64_t[ssc.MaxDepth+1];
+	int64_t * nodeCounts = new int64_t[ssc.MaxDepth + 1];
 	nodeCounts[0] = 0;
 	pos.ResetPliesFromRoot();
 	//Iterativ Deepening Loop
@@ -52,12 +52,14 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, int depth, Move * pv) {
 	Value score;
 	Value bestScore = -VALUE_MATE;
+	Value bonus;
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	for (int i = 0; i < rootMoveCount; ++i) {
 		position next(pos);
 		next.ApplyMove(rootMoves[i].move);
-		score = -Search<PV>(-beta, -alpha, next, depth - 1, &subpv[0]);
+		if (type(rootMoves[i].move) == CASTLING) bonus = BONUS_CASTLING; else bonus = VALUE_ZERO;
+		score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
 		rootMoves[i].score = score;
 		if (score >= beta) {
 			updateCutoffStats(rootMoves[i].move, depth, pos);

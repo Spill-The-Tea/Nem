@@ -48,6 +48,7 @@ void InitializeMaterialTable() {
 											Value scoreEG = (nWQ - nBQ)*PieceValuesEG[QUEEN] + (nWR - nBR)*PieceValuesEG[ROOK] + (nWB - nBB)*PieceValuesEG[BISHOP] +
 												(nWN - nBN) * PieceValuesEG[KNIGHT] + (nWP - nBP) * PieceValuesEG[PAWN];
 											eval evaluation(scoreMG, scoreEG);
+											if (nWB == 2 && nBB < 2) evaluation += BONUS_BISHOP_PAIR; else if (nBB == 2 && nWB < 2) evaluation -= BONUS_BISHOP_PAIR;
 											assert(MaterialTable[key].Score == VALUE_NOTYETDETERMINED);
 											MaterialTable[key].Score = evaluation.getScore(phase);
 											MaterialTable[key].Phase = phase;

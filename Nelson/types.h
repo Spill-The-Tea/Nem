@@ -208,6 +208,13 @@ inline eval operator-=(eval& e1, const eval e2) {
 	e1.egScore -= e2.egScore;
 	return e1;
 }
+
+inline eval operator-=(eval& e1, const Value v) {
+	e1.mgScore -= v;
+	e1.egScore -= v;
+	return e1;
+}
+
 inline eval operator-(const eval& e1, const eval e2) {
 	return eval(e1.mgScore - e2.mgScore, e1.egScore - e2.egScore);
 }
