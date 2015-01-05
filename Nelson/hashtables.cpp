@@ -33,9 +33,13 @@ namespace pawn {
 		result->Score += (popcount(result->passedPawns[WHITE] & result->attackSet[WHITE] & HALF_OF_BLACK) 
 			- popcount(result->passedPawns[BLACK] & result->attackSet[BLACK] & HALF_OF_WHITE)) * BONUS_PROTECTED_PASSED_PAWN;
 		//isolated pawns
-		//Bitboard west = (bbWhite >> 1) & NOT_H_FILE;
-		//Bitboard east = (bbWhite << 1) & NOT_A_FILE;
-		//Bitboard bbIsolatedWhite;
+		Bitboard west = (bbWhite >> 1) & NOT_H_FILE;
+		Bitboard east = (bbWhite << 1) & NOT_A_FILE;
+		Bitboard  bbIsolatedWhite = bbWhite & ~(FrontFillNorth(west) | FrontFillSouth(west) | FrontFillNorth(east) | FrontFillSouth(east));
+		west = (bbBlack >> 1) & NOT_H_FILE;
+		east = (bbBlack << 1) & NOT_A_FILE;
+		Bitboard  bbIsolatedBlack = bbBlack & ~(FrontFillNorth(west) | FrontFillSouth(west) | FrontFillNorth(east) | FrontFillSouth(east));
+		result->Score -= (popcount(bbIsolatedWhite) - popcount(bbIsolatedBlack)) * MALUS_ISOLATED_PAWN;
 		return result;
 	}
 }
