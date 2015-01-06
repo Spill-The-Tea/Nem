@@ -1,5 +1,6 @@
 // Nelson.cpp : Defines the entry point for the console application.
 //
+
 #include <stdio.h>
 #include <iostream>
 #include "types.h"
@@ -9,7 +10,18 @@
 #include "uci.h"
 
 
+static bool popcountSupport();
+static bool is64Bit();
+
 int main(int argc, const char* argv[]) {
+#ifndef _WIN64
+	cout << "Only 64 bit operating systems are supported!" << endl;
+	return 0;
+#endif
+	if (!popcountSupport()) {
+		cout << "No Popcount support - Engine does't work on this hardware!" << endl;
+		return 0;
+	}
 	cout << "Compiled on: " << __DATE__ << " " << __TIME__ << endl;
 	Initialize();
 	//bench2(7);
@@ -95,5 +107,12 @@ int main(int argc, const char* argv[]) {
 			return 0;
 		}
 	}
+}
+
+static bool popcountSupport() {
+	int cpuInfo[4];
+	int functionId = 0x00000001;
+	__cpuid(cpuInfo, functionId);
+	return (cpuInfo[2] & (1 << 23)) != 0;
 }
 

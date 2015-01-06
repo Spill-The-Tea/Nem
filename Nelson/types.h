@@ -5,6 +5,8 @@
 #include <inttypes.h>
 #include <chrono>
 
+#pragma intrinsic(_BitScanForward)
+
 typedef uint64_t Bitboard;
 
 /* Move Encoding as unsigned short (copied from Stockfish)

@@ -20,10 +20,10 @@ evaluation evaluateDraw(const position& pos) {
 eval evaluateKingSafety(const position& pos) {
 	eval result;
 	//Areas around the king
-	Bitboard kingZoneWhite = pos.PieceBB(KING, WHITE) | KingAttacks[lsb(pos.PieceBB(KING, WHITE))];
-	Bitboard kingZoneBlack = pos.PieceBB(KING, BLACK) | KingAttacks[lsb(pos.PieceBB(KING, BLACK))];
-	kingZoneWhite |= (kingZoneWhite << 8);
-	kingZoneBlack |= (kingZoneBlack >> 8);
+	Bitboard kingRingWhite = pos.PieceBB(KING, WHITE) | KingAttacks[lsb(pos.PieceBB(KING, WHITE))];
+	Bitboard kingRingBlack = pos.PieceBB(KING, BLACK) | KingAttacks[lsb(pos.PieceBB(KING, BLACK))];
+	Bitboard kingZoneWhite = kingRingWhite | (kingRingWhite << 8);
+	Bitboard kingZoneBlack = kingRingBlack | (kingRingBlack >> 8);
 	int attackUnits = 0;
 	int attackerCount = 0; 
 	int attackCount;
@@ -79,6 +79,15 @@ eval evaluateKingSafety(const position& pos) {
 		pieceBB &= pieceBB - 1;
 	}
 	if (attackerCount > 2) result.mgScore -= KING_SAFETY[std::min(attackUnits, 99)];
+	//Pawn shelter
+	if (pos.PieceBB(KING, WHITE) & SaveSquaresForKing & HALF_OF_WHITE) { //Bonus only for castled king
+		result.mgScore += PAWN_SHELTER_2ND_RANK * popcount(pos.PieceBB(PAWN, WHITE) & kingRingWhite & ShelterPawns2ndRank);
+		result.mgScore += PAWN_SHELTER_3RD_RANK * popcount(pos.PieceBB(PAWN, WHITE) & kingZoneWhite & ShelterPawns3rdRank);
+	}
+	if (pos.PieceBB(KING, BLACK) & SaveSquaresForKing & HALF_OF_BLACK) {
+		result.mgScore -= PAWN_SHELTER_2ND_RANK * popcount(pos.PieceBB(PAWN, BLACK) & kingRingBlack & ShelterPawns2ndRank);
+		result.mgScore -= PAWN_SHELTER_3RD_RANK * popcount(pos.PieceBB(PAWN, BLACK) & kingZoneBlack & ShelterPawns3rdRank);
+	}
 	return result;
 }
 

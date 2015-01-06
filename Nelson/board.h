@@ -29,6 +29,8 @@ const Bitboard RANKS[] = { RANK1, RANK2, RANK3, RANK4, RANK5, RANK6, RANK7, RANK
 const Bitboard RANK1and8 = RANK1 | RANK8;
 const Bitboard HALF_OF_WHITE = RANK1 | RANK2 | RANK3 | RANK4;
 const Bitboard HALF_OF_BLACK = ~HALF_OF_WHITE;
+const Bitboard bbKINGSIDE = F_FILE | G_FILE | H_FILE;
+const Bitboard bbQUEENSIDE = A_FILE | B_FILE | C_FILE;
 const Bitboard AntiDiagonals[] = { 0x102, 0x10204, 0x1020408, 0x102040810, 0x10204081020,
                  0x1020408102040, 0x102040810204080, 0x204081020408000, 0x408102040800000,
                  0x810204080000000, 0x1020408000000000, 0x2040800000000000, 0x4080000000000000 };
@@ -44,6 +46,10 @@ extern Bitboard SquaresToBeEmpty[4];
 extern Bitboard SlidingAttacksRookTo[64];
 extern Bitboard SlidingAttacksBishopTo[64];
 const Bitboard RookSquareAfterCastling[4] = { ToBitboard(F1), ToBitboard(D1), ToBitboard(F8), ToBitboard(D8) };
+
+const Bitboard SaveSquaresForKing = 0xe7c300000000c3e7;
+const Bitboard ShelterPawns2ndRank = 0xe700000000e700;
+const Bitboard ShelterPawns3rdRank = 0xe70000e70000;
 
 extern Bitboard MagicMovesRook[88576];
 extern Bitboard MagicMovesBishop[4800];
