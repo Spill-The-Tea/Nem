@@ -22,6 +22,8 @@ eval evaluateKingSafety(const position& pos) {
 	//Areas around the king
 	Bitboard kingZoneWhite = pos.PieceBB(KING, WHITE) | KingAttacks[lsb(pos.PieceBB(KING, WHITE))];
 	Bitboard kingZoneBlack = pos.PieceBB(KING, BLACK) | KingAttacks[lsb(pos.PieceBB(KING, BLACK))];
+	kingZoneWhite |= (kingZoneWhite << 8);
+	kingZoneBlack |= (kingZoneBlack >> 8);
 	int attackUnits = 0;
 	int attackerCount = 0; 
 	int attackCount;
