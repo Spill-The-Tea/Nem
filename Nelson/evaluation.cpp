@@ -178,7 +178,7 @@ eval evaluateMobility(const position& pos) {
 		result -= MOBILITY_BONUS_KNIGHT[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
-	return result / MOBILITY_SCALE;
+	return result;
 }
 
 eval evaluateMobility2(const position& pos) {
@@ -216,7 +216,7 @@ eval evaluateMobility2(const position& pos) {
 		}
 	}
 
-	return result / MOBILITY_SCALE;
+	return result;
 }
 
 evaluation evaluateFromScratch(const position& pos) {

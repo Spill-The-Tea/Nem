@@ -158,6 +158,10 @@ Move position::NextMove() {
 				GenerateMoves<CHECK_EVASION>();
 				moveIterationPointer = 0;
 				break;
+			case QUIET_CHECKS:
+				GenerateMoves<QUIET_CHECKS>();
+				moveIterationPointer = 0;
+				break;
 			}
 
 		}
@@ -174,7 +178,7 @@ Move position::NextMove() {
 				moveIterationPointer = -1;
 			}
 			break;
-		case CHECK_EVASION:
+		case CHECK_EVASION: case QUIET_CHECKS:
 			move = moves[phaseStartIndex + moveIterationPointer].move;
 			++moveIterationPointer;
 			generationPhase += (move == MOVE_NONE);

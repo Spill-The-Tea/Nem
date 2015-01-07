@@ -69,7 +69,7 @@ enum MoveGenerationType {
 };
 
 enum StagedMoveGenerationType {
-	MAIN_SEARCH, QSEARCH, CHECK
+	MAIN_SEARCH, QSEARCH, CHECK, QSEARCH_WITH_CHECKS
 };
 
 enum Result { RESULT_UNKNOWN, OPEN, DRAW, MATE };

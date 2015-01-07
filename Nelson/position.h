@@ -8,10 +8,11 @@
 
 using namespace std;
 
-const MoveGenerationType generationPhases[12] = { WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, //Main Search Phases
+const MoveGenerationType generationPhases[17] = { WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, //Main Search Phases
 WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
-CHECK_EVASION, NONE };
-const int generationPhaseOffset[] = { 0, 6, 10 };
+CHECK_EVASION, NONE,
+WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIET_CHECKS, NONE };
+const int generationPhaseOffset[] = { 0, 6, 10, 12 };
 
 struct position
 {
@@ -55,11 +56,11 @@ public:
 	inline Square GetEPSquare() const { return EPSquare; }
 	inline MoveGenerationType GetMoveGenerationType() const { return generationPhases[generationPhase]; }
 	inline ValuatedMove * GetMovesOfCurrentPhase() { return &moves[phaseStartIndex]; }
-	inline int GetMoveNumberInPhase() const { return moveIterationPointer;  }
+	inline int GetMoveNumberInPhase() const { return moveIterationPointer; }
 	inline Value GetMaterialScore() const { return material->Score; }
 	inline MaterialTableEntry * GetMaterialTableEntry() const { return material; }
 	inline Bitboard AttackedByPawns(Color color) const { return pawn->attackSet[color]; }
-	inline Value PawnStructureScore() const { return pawn->Score;  }
+	inline Value PawnStructureScore() const { return pawn->Score; }
 	Result GetResult();
 	inline Bitboard GetAttacksFrom(Square square) const { return attacks[square]; }
 	inline void SetPrevious(position &pos) { previous = &pos; }
@@ -149,8 +150,8 @@ inline Bitboard position::ColorBB(const Color c) const { return OccupiedByColor[
 inline Bitboard position::ColorBB(const int c) const { return OccupiedByColor[c]; }
 inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | OccupiedByColor[BLACK]; }
 
-inline Value position::evaluate() { 
-	if (GetResult() == OPEN) return material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove); 
+inline Value position::evaluate() {
+	if (GetResult() == OPEN) return material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove);
 	else if (result == DRAW) return VALUE_DRAW;
 	else return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
@@ -195,7 +196,7 @@ template<bool CHECKED> bool position::CheckValidMoveExists() {
 		Bitboard pawns = PieceBB(PAWN, SideToMove) & ~pinned;
 		if (SideToMove == WHITE) {
 			if ((singleStepTargets = ((pawns << 8) & ~OccupiedBB())) & blockingSquares) return true;
-			if (((singleStepTargets & RANK3)<< 8) & ~OccupiedBB() & blockingSquares) return true;
+			if (((singleStepTargets & RANK3) << 8) & ~OccupiedBB() & blockingSquares) return true;
 		}
 		else {
 			if ((singleStepTargets = ((pawns >> 8) & ~OccupiedBB())) & blockingSquares) return true;

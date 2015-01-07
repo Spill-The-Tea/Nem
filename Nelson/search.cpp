@@ -80,7 +80,7 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 
 template<NodeType NT> Value search::Search(Value alpha, Value beta, position &pos, int depth, Move * pv) {
 	if (depth <= 0) {
-		return QSearch<STANDARD>(alpha, beta, pos, depth);
+		return QSearch<QSEARCH_FULL>(alpha, beta, pos, depth);
 	}
 	++NodeCount;
 	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
@@ -123,13 +123,13 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 	Value standPat = pos.evaluate();
 	if (standPat > beta || pos.GetResult() != OPEN) return beta;
 	if (alpha < standPat) alpha = standPat;
-	pos.InitializeMoveIterator<QSEARCH>(&History);
+	if (NT == QSEARCH_FULL) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History); else pos.InitializeMoveIterator<QSEARCH>(&History);
 	Move move;
 	Value score;
 	while ((move = pos.NextMove())) {
 		position next(pos);
 		if (next.ApplyMove(move)) {
-			score = -QSearch<STANDARD>(-beta, -alpha, next, depth - 1);
+			score = -QSearch<QSEARCH_REDUCED>(-beta, -alpha, next, depth - 1);
 			if (score >= beta) {
 				return beta;
 			}

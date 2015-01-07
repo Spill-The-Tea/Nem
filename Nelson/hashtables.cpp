@@ -25,10 +25,14 @@ namespace pawn {
 		Bitboard bbBAttackset = FrontFillSouth(result->attackSet[BLACK]);
 		result->passedPawns[WHITE] = bbWhite & (~(bbBAttackset | bbBFrontspan));
 		result->passedPawns[BLACK] = bbBlack & (~(bbWAttackset | bbWFrontspan));
-		for (int rank = 3; rank < 7; ++rank) {
-			result->Score += popcount(result->passedPawns[WHITE] & RANKS[rank]) * PASSED_PAWN_BONUS[rank - 3];
-			result->Score -= popcount(result->passedPawns[BLACK] & RANKS[7 - rank]) * PASSED_PAWN_BONUS[rank - 3];
-		}
+		result->Score += popcount(result->passedPawns[WHITE] & RANK4) * PASSED_PAWN_BONUS[0]
+			+ popcount(result->passedPawns[WHITE] & RANK5) * PASSED_PAWN_BONUS[1]
+			+ popcount(result->passedPawns[WHITE] & RANK6) * PASSED_PAWN_BONUS[2]
+			+ popcount(result->passedPawns[WHITE] & RANK7) * PASSED_PAWN_BONUS[3];
+		result->Score -= popcount(result->passedPawns[BLACK] & RANK5) * PASSED_PAWN_BONUS[0]
+			+ popcount(result->passedPawns[BLACK] & RANK4) * PASSED_PAWN_BONUS[1]
+			+ popcount(result->passedPawns[BLACK] & RANK3) * PASSED_PAWN_BONUS[2]
+			+ popcount(result->passedPawns[BLACK] & RANK2) * PASSED_PAWN_BONUS[3];
 		//bonus for protected passed pawns (on 5th rank or further)
 		result->Score += (popcount(result->passedPawns[WHITE] & result->attackSet[WHITE] & HALF_OF_BLACK) 
 			- popcount(result->passedPawns[BLACK] & result->attackSet[BLACK] & HALF_OF_WHITE)) * BONUS_PROTECTED_PASSED_PAWN;
