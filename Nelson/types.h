@@ -5,7 +5,8 @@
 #include <inttypes.h>
 #include <chrono>
 
-#pragma intrinsic(_BitScanForward)
+#pragma intrinsic(_BitScanForward64)
+#pragma intrinsic(_BitScanReverse64)
 
 typedef uint64_t Bitboard;
 
@@ -162,6 +163,13 @@ inline Square lsb(Bitboard bb) {
 	unsigned long  index;
 	_BitScanForward64(&index, bb);
 	return Square(index);
+}
+
+inline int msb(int n) {
+	unsigned long result;
+	_BitScanReverse64(&result, n);
+#pragma warning(suppress: 6102)
+	return result;
 }
 
 inline Bitboard ToBitboard(Square square) { return 1ull << square; }

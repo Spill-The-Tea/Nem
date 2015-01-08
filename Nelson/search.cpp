@@ -4,6 +4,7 @@
 #include <sstream>
 #include <iostream>
 #include <math.h> 
+#include "hashtables.h"
 
 ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 	searchStopCriteria = ssc;
@@ -11,6 +12,7 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 	int64_t * nodeCounts = new int64_t[ssc.MaxDepth + 1];
 	nodeCounts[0] = 0;
 	pos.ResetPliesFromRoot();
+	tt::newSearch();
 	//Iterativ Deepening Loop
 	ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
 	rootMoveCount = pos.GeneratedMoveCount();
@@ -31,12 +33,14 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 		if (UciOutput && _thinkTime > 200) {
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 				cout << "info depth " << _depth << " nodes " << NodeCount << " score cp " << BestMove.score << " nps " << NodeCount * 1000 / _thinkTime
+				<< " hashfull " << tt::GetHashFull()
 				//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits() 
 				<< " pv " << PrincipalVariation(_depth) << endl;
 			else {
 				int pliesToMate;
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
 				cout << "info depth " << _depth << " nodes " << NodeCount << " score mate " << pliesToMate / 2 << " nps " << NodeCount * 1000 / _thinkTime
+					<< " hashfull " << tt::GetHashFull()
 					//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits() 
 					<< " pv " << PrincipalVariation(_depth) << endl;
 			}
@@ -79,17 +83,29 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 }
 
 template<NodeType NT> Value search::Search(Value alpha, Value beta, position &pos, int depth, Move * pv) {
-	if (depth <= 0) {
-		return QSearch<QSEARCH_FULL>(alpha, beta, pos, depth);
-	}
 	++NodeCount;
 	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
+	//TT lookup
+	bool ttFound;
+	tt::Entry* ttEntry = tt::probe(pos.GetHash(), ttFound);
+	Value ttValue = ttFound ? tt::fromTT(ttEntry->value, pos.GetPliesFromRoot()) : VALUE_NOTYETDETERMINED;
+	if (ttFound
+		&& ttEntry->depth >= depth
+		&& ttValue != VALUE_NOTYETDETERMINED
+		&& (ttValue >= beta ? (ttEntry->type() & tt::LOWER_BOUND)
+		: (ttEntry->type() & tt::UPPER_BOUND))) {
+		return ttValue;
+	}
+	if (depth <= 0) {
+		return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, depth);
+	}
 	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
 	if (Stop) return VALUE_ZERO;
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
+	tt::NodeType nodeType = tt::UPPER_BOUND;
 	pos.InitializeMoveIterator<MAIN_SEARCH>(&History);
 	Move move;
 	while ((move = pos.NextMove())) {
@@ -98,12 +114,14 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 			score = -Search<PV>(-beta, -alpha, next, depth - 1, &subpv[0]);
 			if (score >= beta) {
 				updateCutoffStats(move, depth, pos);
+				ttEntry->update(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, VALUE_NOTYETDETERMINED);
 				return score;
 			}
 			if (score > bestScore) {
 				bestScore = score;
 				if (score > alpha)
 				{
+					nodeType = tt::EXACT;
 					alpha = score;
 					pv[0] = move;
 					memcpy(pv + 1, subpv, (PV_MAX_LENGTH - 1)*sizeof(Move));
@@ -111,25 +129,28 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 			}
 		}
 	}
+	ttEntry->update(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], VALUE_NOTYETDETERMINED);
 	return bestScore;
 }
 
 template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &pos, int depth) {
 	++QNodeCount;
-	++NodeCount;
-	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
+	if (NT == QSEARCH_DEPTH_NEGATIVE) {
+		++NodeCount;
+		if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
+	}
 	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
 	if (Stop) return VALUE_ZERO;
 	Value standPat = pos.evaluate();
 	if (standPat > beta || pos.GetResult() != OPEN) return beta;
 	if (alpha < standPat) alpha = standPat;
-	if (NT == QSEARCH_FULL) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History); else pos.InitializeMoveIterator<QSEARCH>(&History);
+	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History); else pos.InitializeMoveIterator<QSEARCH>(&History);
 	Move move;
 	Value score;
 	while ((move = pos.NextMove())) {
 		position next(pos);
 		if (next.ApplyMove(move)) {
-			score = -QSearch<QSEARCH_REDUCED>(-beta, -alpha, next, depth - 1);
+			score = -QSearch<QSEARCH_DEPTH_NEGATIVE>(-beta, -alpha, next, depth - 1);
 			if (score >= beta) {
 				return beta;
 			}

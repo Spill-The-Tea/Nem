@@ -31,7 +31,6 @@ int main(int argc, const char* argv[]) {
 		string func(argv[1]);
 		if (!func.compare("test")) {
 			string input = "";
-			Initialize();
 			//std::getline(cin, input);
 			//testPerft();
 			//return 0;

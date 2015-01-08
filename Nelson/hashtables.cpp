@@ -1,5 +1,8 @@
 #include "hashtables.h"
 #include "position.h"
+#include <iostream>
+#include <mmintrin.h>
+#include "search.h"
 
 namespace pawn {
 
@@ -45,5 +48,78 @@ namespace pawn {
 		Bitboard  bbIsolatedBlack = bbBlack & ~(FrontFillNorth(west) | FrontFillSouth(west) | FrontFillNorth(east) | FrontFillSouth(east));
 		result->Score -= (popcount(bbIsolatedWhite) - popcount(bbIsolatedBlack)) * MALUS_ISOLATED_PAWN;
 		return result;
+	}
+}
+
+namespace tt {
+
+    uint64_t ProbeCounter = 0;
+	uint64_t HitCounter = 0;
+	uint64_t FillCounter = 0;
+
+	uint64_t GetProbeCounter() { return ProbeCounter; }
+	uint64_t GetHitCounter() { return HitCounter; }
+	uint64_t GetFillCounter() { return HitCounter; }
+	uint64_t GetHashFull() {
+		return 1000 * FillCounter / GetEntryCount();
+	}
+
+	Cluster * Table = nullptr;
+	uint64_t MASK;
+
+	void InitializeTranspositionTable(int sizeInMB) {
+		FreeTranspositionTable();
+		int clusterCount = sizeInMB * 1024 * 1024 / sizeof(Cluster);
+		clusterCount = 1ul << msb(clusterCount);
+		if (clusterCount < 1024) clusterCount = 1024;
+		Table = (Cluster *)calloc(clusterCount, sizeof(Cluster));
+		MASK = clusterCount - 1;
+		cout << "info string Hash Size: " << ((clusterCount * sizeof(Cluster)) >> 20) << " MByte" << endl;
+		ResetCounter();
+	}
+
+	void FreeTranspositionTable() {
+		if (Table != nullptr) {
+			delete[](Table);
+			Table = nullptr;
+		}
+	}
+
+	Entry* probe(const uint64_t hash, bool& found) {
+	   ProbeCounter++;
+       Entry* const tte = firstEntry(hash);
+		const uint16_t key = hash >> 48; // Use the high 16 bits as key inside the cluster
+		for (unsigned i = 0; i < CLUSTER_SIZE; ++i)
+			if (!tte[i].key || tte[i].key == key)
+			{
+				if (tte[i].key) {
+					tte[i].gentype = uint8_t(_generation | tte[i].type()); // Refresh
+					HitCounter++;
+				}
+				return found = tte[i].key != 0, &tte[i];
+			}
+		// Find an entry to be replaced according to the replacement strategy
+		Entry* replace = tte;
+		for (unsigned i = 1; i < CLUSTER_SIZE; ++i)
+			if ((tte[i].generation() == _generation || tte[i].type() == EXACT)
+				- (replace->generation() == _generation)
+				- (tte[i].depth < replace->depth) < 0)
+				replace = &tte[i];
+		return found = false, replace;
+	}
+
+	Entry* firstEntry(const uint64_t hash) {
+		return &Table[hash & MASK].entry[0];
+	}
+
+	void prefetch(uint64_t hash) {
+		_mm_prefetch((char*)&Table[hash & MASK], _MM_HINT_T0);
+	}
+
+	uint64_t GetClusterCount() {
+		return MASK + 1;
+	}
+	uint64_t GetEntryCount() {
+		return GetClusterCount() * CLUSTER_SIZE;
 	}
 }

@@ -542,6 +542,7 @@ void Initialize() {
 	InitializeMaterialTable();
 	InitializeShadowedFields();
 	pawn::initialize();
+	tt::InitializeTranspositionTable(HashSizeMB);
 	chrono::system_clock::time_point end = chrono::high_resolution_clock::now();
 	auto runtime = end - begin;
 	chrono::microseconds runtimeMS = chrono::duration_cast<chrono::microseconds>(runtime);

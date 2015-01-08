@@ -121,7 +121,7 @@ void uci() {
 	puts("id name Nelson");
 	puts("id author Christian Günther");
 	printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
-	//printf("option name Hash type spin default %lu min 1 max 16384\n", HashSizeMB);
+	printf("option name Hash type spin default %lu min 1 max 16384\n", HashSizeMB);
 	//printf("option name Draw Value type spin default %d min -100 max 100\n", DrawValue);
 	//printf("option name GaviotaTablebasePaths type string\n");
 	//printf("option name GaviotaTablebaseCache type spin default %lu min 1 max 16384\n", GTB_CACHE);
@@ -146,7 +146,13 @@ void setoption(char *line){
 
 	token = my_strtok(&line, " ");
 	if (!strcmp(name, "UCI_Chess960")) Chess960 = !strcmp(token, "true");
-	//if (!strcmp(name, "Hash")) HashSizeMB = atoi(token);
+	if (!strcmp(name, "Hash")) {
+		int hashSize = atoi(token);
+		if (hashSize != HashSizeMB) {
+			HashSizeMB = hashSize;
+			tt::InitializeTranspositionTable(HashSizeMB);
+		}
+	}
 	//if (!strcmp(name, "GaviotaTablebasePaths")) {
 	//	if (token) GTB_PATH = token; else GTB_PATH = "";
 	//}

@@ -113,6 +113,7 @@ bool position::ApplyMove(Move move) {
 		break;
 	}
 	SwitchSideToMove();
+	tt::prefetch(Hash);
 	movepointer = 0;
 	attackedByUs = calculateAttacks(SideToMove);
 	//calculatePinned();

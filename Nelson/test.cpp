@@ -7,6 +7,7 @@
 #include <map>
 #include "test.h"
 #include "search.h"
+#include "hashtables.h"
 
 int64_t bench(int depth) {
 	string sfBenchmarks[] = {
@@ -49,7 +50,8 @@ int64_t bench(int depth) {
 	int64_t totalNodes = 0;
 	int64_t totalQNodes = 0;
 	double avgBF = 0.0;
-	cout << left << setw(5) << "Nr" << setw(7) << "Time" << setw(10) << "Nodes" << setw(6) << "Speed" << setw(6) << "BF" << setw(46) << "PV" << endl;
+	cout << left << setw(5) << "Nr" << setw(7) << "Time" << setw(10) << "Nodes" << setw(6) << "Speed" << setw(6) << "BF" << setw(6) << "TT[%]" 
+		<< setw(46) << "PV" << endl;
 	for (int i = 0; i < 30; i++) {
 		position* pos = new position(sfBenchmarks[i]);
 		search srch;
@@ -66,7 +68,8 @@ int64_t bench(int depth) {
 		int64_t rt = runtime;
 		if (rt == 0) rt = 1;
 		cout << left << setw(5) << i << setw(7) << runtime << setw(10) << srch.NodeCount << setw(6)
-			<< srch.NodeCount / rt << setw(6) << setprecision(4) << srch.BranchingFactor << setw(46) << srch.PrincipalVariation(depth) << endl;
+			<< srch.NodeCount / rt << setw(6) << setprecision(4) << srch.BranchingFactor << setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
+			<< setw(40) << srch.PrincipalVariation(depth) << endl;
 		delete(pos);
 	}
 	avgBF = avgBF / (totalNodes - totalQNodes);
@@ -191,7 +194,8 @@ int64_t bench2(int depth) {
 	int64_t totalNodes = 0;
 	int64_t totalQNodes = 0;
 	double avgBF = 0.0;
-	cout << left << setw(5) << "Nr" << setw(7) << "Time" << setw(10) << "Nodes" << setw(6) << "Speed" << setw(6) << "BF" << setw(46) << "PV" << endl;
+	cout << left << setw(5) << "Nr" << setw(7) << "Time" << setw(10) << "Nodes" << setw(6) << "Speed" << setw(6) << "BF" << setw(6) << "TT[%]"
+		<< setw(46) << "PV" << endl;
 	for (int i = 0; i < 100; i++) {
 		position* pos = new position(sfBenchmarks[i]);
 		search srch;
@@ -208,7 +212,8 @@ int64_t bench2(int depth) {
 		int64_t rt = runtime;
 		if (rt == 0) rt = 1;
 		cout << left << setw(5) << i << setw(7) << runtime << setw(10) << srch.NodeCount << setw(6)
-			<< srch.NodeCount / rt << setw(6) << setprecision(4) << srch.BranchingFactor << setw(46) << srch.PrincipalVariation(depth) << endl;
+			<< srch.NodeCount / rt << setw(6) << setprecision(4) << srch.BranchingFactor << setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
+			<< setw(40) << srch.PrincipalVariation(depth) << endl;
 		delete(pos);
 	}
 	avgBF = avgBF / (totalNodes - totalQNodes);

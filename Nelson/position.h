@@ -68,6 +68,7 @@ public:
 	inline void ResetPliesFromRoot() { pliesFromRoot = 0; }
 	inline Bitboard AttacksByPieceType(Color color, PieceType pieceType) const;
 	inline Bitboard AttacksByColor(Color color) const { return (SideToMove == color) * attackedByUs + (SideToMove != color) * attackedByThem; }
+	bool checkRepetition();
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -140,7 +141,6 @@ private:
 	inline bool IsCheck() { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
 	inline bool isValid(Move move) { position next(*this); return next.ApplyMove(move); }
 	template<bool CHECKED> bool CheckValidMoveExists();
-	bool checkRepetition();
 };
 
 Move parseMoveInUCINotation(const string& uciMove, const position& pos);

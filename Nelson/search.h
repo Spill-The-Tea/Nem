@@ -7,7 +7,7 @@
 #include <atomic>
 #include <iostream>
 
-enum NodeType { ROOT, PV, NULL_MOVE, STANDARD, QSEARCH_FULL, QSEARCH_REDUCED };
+enum NodeType { ROOT, PV, NULL_MOVE, STANDARD, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
 
 struct search {
 public:

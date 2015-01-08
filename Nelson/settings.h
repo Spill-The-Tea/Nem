@@ -2,6 +2,8 @@
 
 #include "types.h"
 
+static int HashSizeMB = 32;
+
 const int EmergencyTime = 50; //50 ms Emergency time
 const int PV_MAX_LENGTH = 32;
 const int MASK_TIME_CHECK = (1 << 14) - 1;
