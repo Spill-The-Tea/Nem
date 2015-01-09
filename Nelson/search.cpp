@@ -106,7 +106,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
-	pos.InitializeMoveIterator<MAIN_SEARCH>(&History);
+	pos.InitializeMoveIterator<MAIN_SEARCH>(&History, ttFound? ttEntry->move : MOVE_NONE);
 	Move move;
 	while ((move = pos.NextMove())) {
 		position next(pos);

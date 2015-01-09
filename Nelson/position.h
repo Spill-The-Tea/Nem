@@ -8,11 +8,11 @@
 
 using namespace std;
 
-const MoveGenerationType generationPhases[17] = { WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, //Main Search Phases
-WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
-CHECK_EVASION, NONE,
-WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIET_CHECKS, NONE };
-const int generationPhaseOffset[] = { 0, 6, 10, 12 };
+const MoveGenerationType generationPhases[21] = { HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, //Main Search Phases
+HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
+HASHMOVE, CHECK_EVASION, NONE,
+HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIET_CHECKS, NONE };
+const int generationPhaseOffset[] = { 0, 7, 12, 15 };
 
 struct position
 {
@@ -41,7 +41,7 @@ public:
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history);
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, Move hashmove);
 	Move NextMove();
 	const Value position::SEE(Square from, const Square to);
 	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
@@ -94,6 +94,7 @@ private:
 	int moveIterationPointer;
 	int phaseStartIndex;
 	int generationPhase;
+	Move hashMove = MOVE_NONE;
 	Result result = RESULT_UNKNOWN;
 	ValuatedMove * lastPositive;
 	HistoryStats * history;
@@ -120,9 +121,16 @@ private:
 			}
 		}
 	}
-	inline const int PawnStep() const { return 8 - 16 * SideToMove; }
-	inline void AddMove(Move move) { moves[movepointer].move = move; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
-	inline void AddMove(Move move, Value score) { moves[movepointer].move = move; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
+	inline int PawnStep() const { return 8 - 16 * SideToMove; }
+	inline void AddMove(Move move) { 
+		if (move != hashMove) { 
+			moves[movepointer].move = move; 
+			moves[movepointer].score = VALUE_NOTYETDETERMINED; 
+			++movepointer; 
+		} 
+	}
+	inline void AddNullMove() { moves[movepointer].move = MOVE_NONE; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
+	//inline void AddMove(Move move, Value score) { moves[movepointer].move = move; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
 	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
 	void updateCastleFlags(Square fromSquare, Square toSquare);
 	Bitboard calculateAttacks(Color color);
@@ -140,6 +148,7 @@ private:
 	const Bitboard getSquareOfLeastValuablePiece(const Bitboard attadef, const int side);
 	inline bool IsCheck() { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
 	inline bool isValid(Move move) { position next(*this); return next.ApplyMove(move); }
+	bool validateHashMove(Move move);
 	template<bool CHECKED> bool CheckValidMoveExists();
 };
 
@@ -431,7 +440,7 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 			&& (RookTargets(opposedKingSquare, ~targets & ~PieceBB(KING, SideToMove)) & RookSquareAfterCastling[2 * SideToMove + 1])) //Rook is giving check after castling
 			AddMove(createMove<CASTLING>(kingSquare, Square(C1 + SideToMove * 56)));
 	}
-	AddMove(MOVE_NONE);
+	AddNullMove();
 	return result;
 }
 
@@ -726,18 +735,19 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 			}
 		}
 	}
-	AddMove(MOVE_NONE);
+	AddNullMove();
 	return result;
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats) {
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, Move hashmove = MOVE_NONE) {
 	if (!attackedByThem) attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	moveIterationPointer = -1;
 	phaseStartIndex = 0;
 	history = historyStats;
-	if (IsCheck()) generationPhase = generationPhaseOffset[CHECK];
-	else generationPhase = generationPhaseOffset[SMGT];
+	hashmove && validateHashMove(hashmove) ? hashMove = hashmove : hashMove = MOVE_NONE;
+	if (IsCheck()) generationPhase = generationPhaseOffset[CHECK] + (hashMove == MOVE_NONE);
+	else generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);
 }
 
 inline Bitboard position::AttacksByPieceType(Color color, PieceType pieceType) const {

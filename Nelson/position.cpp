@@ -168,6 +168,11 @@ Move position::NextMove() {
 		}
 		Move move;
 		switch (generationPhases[generationPhase]) {
+		case HASHMOVE:			
+			++generationPhase;
+			moveIterationPointer = -1;
+			return hashMove; //Validation might be required
+			break;
 		case WINNING_CAPTURES: case EQUAL_CAPTURES: case LOOSING_CAPTURES: case QUIETS_NEGATIVE:
 			move = getBestMove(phaseStartIndex + moveIterationPointer);
 			if (move) {
@@ -767,5 +772,62 @@ bool position::checkRepetition() {
 		prev = prev->Previous();
 	}
 	return false;
+}
+
+//Hashmove isn't really reliable => therefore check is hashmove is a valid move
+bool position::validateHashMove(Move move) {
+	Square fromSquare = from(move);
+	Piece movingPiece = Board[fromSquare];
+	Square toSquare = to(move);
+	bool result = (movingPiece != BLANK) && (GetColor(movingPiece) == SideToMove) //from field is occuppied by piece of correct color
+		&& ((Board[toSquare] == BLANK) || (GetColor(Board[toSquare]) != SideToMove));
+	if (result) {
+		PieceType pt = GetPieceType(movingPiece);
+		if (pt == PAWN) {
+			switch (type(move)) {
+			case NORMAL:
+				result = (((int(toSquare) - int(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) || 
+					(((int(toSquare) - int(fromSquare)) == 2 * PawnStep()) && ((fromSquare >> 3) == (1 + 5 * SideToMove)) && Board[toSquare] == BLANK && Board[toSquare - PawnStep()] == BLANK)
+					|| (attacks[fromSquare] & OccupiedByColor[SideToMove ^ 1]));
+				break;
+			case PROMOTION:
+				result = (ToBitboard(toSquare) & RANKS[7 - 7 * SideToMove]) && 
+					(((int(toSquare) - int(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) || (attacks[fromSquare] & OccupiedByColor[SideToMove ^ 1]));
+				break;
+			case ENPASSANT:
+				result = toSquare == EPSquare;
+			}
+		}
+		else if (pt == KING && type(move) == CASTLING) {
+			result = (CastlingOptions & CastlesbyColor[SideToMove]) != 0
+				&& ((InBetweenFields[fromSquare][toSquare] & OccupiedBB()) == 0)
+				&& ((InBetweenFields[fromSquare][toSquare] & attackedByThem) == 0)
+				&& !IsCheck();
+		}
+		else result = (attacks[fromSquare] & ToBitboard(toSquare)) != 0;
+	}
+#ifdef _DEBUG
+	position checkPos(*this);
+	checkPos.movepointer = 0;
+	checkPos.attackedByThem = attackedByThem;
+	checkPos.attackedByUs = attackedByUs;
+	memcpy(checkPos.attacks, attacks, 64 * sizeof(Bitboard));
+	ValuatedMove * moves = checkPos.GenerateMoves<ALL>();
+	Move cmove = MOVE_NONE;
+	bool found = false;
+	while (cmove = moves->move) {
+		if (cmove == move) {
+			if (!result) __debugbreak();
+			found = true;
+			break;
+		}
+
+		moves++;
+	}
+
+	if (result && !found)
+		__debugbreak();
+#endif
+	return result;
 }
 
