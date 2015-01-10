@@ -71,7 +71,9 @@ public:
 	inline Bitboard AttacksByColor(Color color) const { return (SideToMove == color) * attackedByUs + (SideToMove != color) * attackedByThem; }
 	bool checkRepetition();
 	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
+	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount;  }
 	void NullMove(Square epsquare = OUTSIDE);
+	void deleteParents();
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -87,7 +89,7 @@ private:
 	pawn::Entry * pawn;
 	Piece Board[64];
 
-	position * previous;
+	position * previous = nullptr;
 
 	ValuatedMove moves[256];
 	int movepointer = 0;

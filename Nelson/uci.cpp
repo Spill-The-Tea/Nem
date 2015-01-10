@@ -11,7 +11,7 @@
 
 
 search Engine;
-position pos;
+position * pos = nullptr;
 thread * Mainthread = nullptr;
 
 void dispatch(char *line);
@@ -98,7 +98,7 @@ void dispatch(char *line)
 	else if (!strcmp(token, "go"))
 		go(line);
 	else if (!strcmp(token, "print"))
-		cout << pos.print() << endl;
+		cout << pos->print() << endl;
 	else if (!strcmp(token, "perft"))
 		perft(line);
 	else if (!strcmp(token, "divide"))
@@ -179,28 +179,33 @@ void ucinewgame(){
 void setPosition(char *line){
 	//Chessbase GUI doesn't send "ucinewgame" command => assure that Hashtable get's initialized in any case
 	if (!initialized) ucinewgame();
+	if (pos) {
+		pos->deleteParents();
+		delete(pos);
+		pos = nullptr;
+	}
 	int idx = 0;
-	position startpos;
+	position * startpos;
 
 	char *token = my_strtok(&line, " ");
 	if (!token)
 		return;
 	else if (!strcmp(token, "startpos")) {
-		startpos.setFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+		startpos = new position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 		token = my_strtok(&line, " ");
 	}
 	else if (!strcmp(token, "fen")) {
 		char fen[MAX_FEN] = "";
 		while ((token = my_strtok(&line, " ")) && strcmp(token, "moves"))
 			strcat(strcat(fen, token), " ");
-		startpos.setFromFEN(fen);
+		startpos = new position(fen);
 	}
 	else if (!strcmp(token, "p")) {
 		token = my_strtok(&line, " ");
-		if (!strcmp(token, "fine70")) pos.setFromFEN("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - -");
+		if (!strcmp(token, "fine70")) startpos = new position("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - -");
 	}
 	bool moves = false;
-	position * pp = &startpos;
+	position * pp = startpos;
 	if (token && !strcmp(token, "moves")) {
 		while ((token = my_strtok(&line, " "))) {
 			string tokenString(token);
@@ -210,9 +215,8 @@ void setPosition(char *line){
 			pp = next;
 		}
 	}
-	pos = *pp;
-	pos.SetPrevious(pp->Previous());
-
+	pos = pp;
+	pos->SetPrevious(pp->Previous());
 }
 
 void deleteThread() {
@@ -228,7 +232,7 @@ void deleteThread() {
 }
 
 void thinkAsync(SearchStopCriteria ssc) {
-	ValuatedMove BestMove = Engine.Think(pos, ssc);
+	ValuatedMove BestMove = Engine.Think(*pos, ssc);
 	cout << "bestmove " << toString(BestMove.move) << endl;
 	//if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 	//	cout << "info depth " << Engine.Depth() << " nodes " << Engine.NodeCount << " score cp " << BestMove.score << " nps " << Engine.NodeCount * 1000 / Engine.ThinkTime()
@@ -245,6 +249,7 @@ void thinkAsync(SearchStopCriteria ssc) {
 }
 
 void go(char *line){
+	if (!pos) pos = new position();
 	SearchStopCriteria ssc;
 	ssc.StartTime = now();
 	char *token;
@@ -253,9 +258,9 @@ void go(char *line){
 	long long nodes = 0;
 	int movestogo = 30;
 	while ((token = my_strtok(&line, " "))) {
-		if (!strcmp(token, pos.GetSideToMove() == WHITE ? "wtime" : "btime"))
+		if (!strcmp(token, pos->GetSideToMove() == WHITE ? "wtime" : "btime"))
 			moveTime = atoi(my_strtok(&line, " "));
-		else if (!strcmp(token, pos.GetSideToMove() == WHITE ? "winc" : "binc"))
+		else if (!strcmp(token, pos->GetSideToMove() == WHITE ? "winc" : "binc"))
 			increment = atoi(my_strtok(&line, " "));
 		else if (!strcmp(token, "depth"))
 			ssc.MaxDepth = atoi(my_strtok(&line, " "));
@@ -319,9 +324,9 @@ void perft(char *line) {
 		return;
 	}
 	int64_t start = now();
-	uint64_t result = perft(pos, depth);
+	uint64_t result = perft(*pos, depth);
 	int64_t runtime = now() - start;
-	cout << "Result: " << result << "\t" << runtime << " ms\t" << pos.fen() << endl;
+	cout << "Result: " << result << "\t" << runtime << " ms\t" << pos->fen() << endl;
 }
 
 void divide(char *line) {
@@ -336,7 +341,7 @@ void divide(char *line) {
 		return;
 	}
 	int64_t start = now();
-	divide(pos, depth);
+	divide(*pos, depth);
 	int64_t runtime = now() - start;
 	cout << "Runtime: " << runtime << " ms\t" << endl;
 }

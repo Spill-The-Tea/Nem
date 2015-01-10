@@ -806,6 +806,7 @@ bool position::validateHashMove(Move move) {
 		}
 		else result = (attacks[fromSquare] & ToBitboard(toSquare)) != 0;
 	}
+	return result;
 #ifdef _DEBUG
 	position checkPos(*this);
 	checkPos.movepointer = 0;
@@ -838,4 +839,9 @@ void position::NullMove(Square epsquare) {
 	Bitboard tmp = attackedByThem;
 	attackedByThem = attackedByUs;
 	attackedByUs = tmp;
+}
+
+void position::deleteParents() {
+	if (previous != nullptr) previous->deleteParents();
+	delete(previous);
 }

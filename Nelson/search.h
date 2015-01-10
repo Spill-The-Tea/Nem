@@ -37,6 +37,7 @@ private:
 	uint64_t cutoffAt1stMove = 0;
 	uint64_t cutoffCount = 0;
 	uint64_t cutoffMoveIndexSum = 0;
+	position posStack[MAX_DEPTH];
 
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<> Value Search<ROOT>(Value alpha, Value beta, position &pos, int depth, Move * pv);
