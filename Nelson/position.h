@@ -28,6 +28,7 @@ public:
 	Bitboard ColorBB(const Color c) const;
 	Bitboard ColorBB(const int c) const;
 	Bitboard OccupiedBB() const;
+	Bitboard NonPawnMaterial(const Color c) const;
 	string print();
 	string printGeneratedMoves();
 	string fen() const;
@@ -69,6 +70,8 @@ public:
 	inline Bitboard AttacksByPieceType(Color color, PieceType pieceType) const;
 	inline Bitboard AttacksByColor(Color color) const { return (SideToMove == color) * attackedByUs + (SideToMove != color) * attackedByThem; }
 	bool checkRepetition();
+	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
+	void NullMove(Square epsquare = OUTSIDE);
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -131,7 +134,6 @@ private:
 	}
 	inline void AddNullMove() { moves[movepointer].move = MOVE_NONE; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
 	//inline void AddMove(Move move, Value score) { moves[movepointer].move = move; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
-	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
 	void updateCastleFlags(Square fromSquare, Square toSquare);
 	Bitboard calculateAttacks(Color color);
 	Bitboard checkBlocker(Color colorOfBlocker, Color kingColor);
@@ -158,6 +160,7 @@ inline Bitboard position::PieceBB(const PieceType pt, const Color c) const { ret
 inline Bitboard position::ColorBB(const Color c) const { return OccupiedByColor[c]; }
 inline Bitboard position::ColorBB(const int c) const { return OccupiedByColor[c]; }
 inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | OccupiedByColor[BLACK]; }
+inline Bitboard position::NonPawnMaterial(const Color c) const { return OccupiedByColor[c ^ 1] & ~OccupiedByPieceType[PAWN] & ~OccupiedByPieceType[KING]; }
 
 inline Value position::evaluate() {
 	if (GetResult() == OPEN) return material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove);

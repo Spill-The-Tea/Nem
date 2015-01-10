@@ -49,9 +49,11 @@ int64_t bench(int depth) {
 	int64_t totalTime = 0;
 	int64_t totalNodes = 0;
 	int64_t totalQNodes = 0;
+	double avgC1st = 0.0;
+	double avgCIndx = 0.0;
 	double avgBF = 0.0;
-	cout << left << setw(5) << "Nr" << setw(7) << "Time" << setw(10) << "Nodes" << setw(6) << "Speed" << setw(6) << "BF" << setw(6) << "TT[%]" 
-		<< setw(46) << "PV" << endl;
+	cout << setprecision(3) << left << setw(3) << "Nr" << setw(7) << "Time" << setw(10) << "Nodes" << setw(6) << "Speed" << setw(6) << "BF" << setw(6) << "TT[%]"
+		<< setw(6) << "C1st" << setw(6) << "CIndx" << setw(40) << "PV" << endl;
 	for (int i = 0; i < 30; i++) {
 		position* pos = new position(sfBenchmarks[i]);
 		search srch;
@@ -64,18 +66,23 @@ int64_t bench(int depth) {
 		totalNodes += srch.NodeCount;
 		totalQNodes += srch.QNodeCount;
 		avgBF += srch.BranchingFactor * (srch.NodeCount - srch.QNodeCount);
+		avgC1st += srch.cutoffAt1stMoveRate();
+		avgCIndx += srch.cutoffAverageMove();
 		int64_t runtime = endTime - ssc.StartTime;
 		int64_t rt = runtime;
 		if (rt == 0) rt = 1;
-		cout << left << setw(5) << i << setw(7) << runtime << setw(10) << srch.NodeCount << setw(6)
-			<< srch.NodeCount / rt << setw(6) << setprecision(4) << srch.BranchingFactor << setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
+		cout << left << setw(3) << i << setw(7) << runtime << setw(10) << srch.NodeCount << setw(6)
+			<< srch.NodeCount / rt << setw(6)  << srch.BranchingFactor << setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
+			<< setw(6) << srch.cutoffAt1stMoveRate() << setw(6) << srch.cutoffAverageMove()
 			<< setw(40) << srch.PrincipalVariation(depth) << endl;
 		delete(pos);
 	}
 	avgBF = avgBF / (totalNodes - totalQNodes);
+	avgCIndx = avgCIndx / 30;
+	avgC1st = avgC1st / 30;
 	cout << "------------------------------------------------------------------------" << endl;
-	cout << "Total:\tTime: " << totalTime / 1000.0 << " s\tNodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes\tSpeed: " << totalNodes / totalTime << " kN/s\t"
-		"BF: " << setprecision(5) << avgBF << endl;
+	cout << setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "
+		"BF: " << setprecision(3) << avgBF << "  C1st: " << avgC1st << "  CIndx: " << avgCIndx << endl;
 	//tt::printStatistics();
 	//material::printStatistics();
 	//pawn::printStatistics();
@@ -193,9 +200,11 @@ int64_t bench2(int depth) {
 	int64_t totalTime = 0;
 	int64_t totalNodes = 0;
 	int64_t totalQNodes = 0;
+	double avgC1st = 0.0;
+	double avgCIndx = 0.0;
 	double avgBF = 0.0;
-	cout << left << setw(5) << "Nr" << setw(7) << "Time" << setw(10) << "Nodes" << setw(6) << "Speed" << setw(6) << "BF" << setw(6) << "TT[%]"
-		<< setw(46) << "PV" << endl;
+	cout << setprecision(3) << left << setw(3) << "Nr" << setw(7) << "Time" << setw(10) << "Nodes" << setw(6) << "Speed" << setw(6) << "BF" << setw(6) << "TT[%]"
+		<< setw(6) << "C1st" << setw(6) << "CIndx" << setw(40) << "PV" << endl;
 	for (int i = 0; i < 100; i++) {
 		position* pos = new position(sfBenchmarks[i]);
 		search srch;
@@ -208,18 +217,23 @@ int64_t bench2(int depth) {
 		totalNodes += srch.NodeCount;
 		totalQNodes += srch.QNodeCount;
 		avgBF += srch.BranchingFactor * (srch.NodeCount - srch.QNodeCount);
+		avgC1st += srch.cutoffAt1stMoveRate();
+		avgCIndx += srch.cutoffAverageMove();
 		int64_t runtime = endTime - ssc.StartTime;
 		int64_t rt = runtime;
 		if (rt == 0) rt = 1;
-		cout << left << setw(5) << i << setw(7) << runtime << setw(10) << srch.NodeCount << setw(6)
-			<< srch.NodeCount / rt << setw(6) << setprecision(4) << srch.BranchingFactor << setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
+		cout << left << setw(3) << i << setw(7) << runtime << setw(10) << srch.NodeCount << setw(6)
+			<< srch.NodeCount / rt << setw(6) << srch.BranchingFactor << setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
+			<< setw(6) << srch.cutoffAt1stMoveRate() << setw(6) << srch.cutoffAverageMove()
 			<< setw(40) << srch.PrincipalVariation(depth) << endl;
 		delete(pos);
 	}
 	avgBF = avgBF / (totalNodes - totalQNodes);
+	avgCIndx = avgCIndx / 100;
+	avgC1st = avgC1st / 100;
 	cout << "------------------------------------------------------------------------" << endl;
-	cout << "Total:\tTime: " << totalTime / 1000.0 << " s\tNodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes\tSpeed: " << totalNodes / totalTime << " kN/s\t"
-		"BF: " << setprecision(5) << avgBF << endl;
+	cout << setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "
+		"BF: " << setprecision(3) << avgBF << "  C1st: " << avgC1st << "  CIndx: " << avgCIndx << endl;
 	//tt::printStatistics();
 	//material::printStatistics();
 	//pawn::printStatistics();

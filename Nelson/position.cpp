@@ -831,3 +831,11 @@ bool position::validateHashMove(Move move) {
 	return result;
 }
 
+
+void position::NullMove(Square epsquare) {
+	SwitchSideToMove();
+	SetEPSquare(epsquare);
+	Bitboard tmp = attackedByThem;
+	attackedByThem = attackedByUs;
+	attackedByUs = tmp;
+}

@@ -66,7 +66,7 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 		score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
 		rootMoves[i].score = score;
 		if (score >= beta) {
-			updateCutoffStats(rootMoves[i].move, depth, pos);
+			updateCutoffStats(rootMoves[i].move, depth, pos, i);
 			return score;
 		}
 		if (score > bestScore) {
@@ -101,19 +101,31 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	}
 	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
 	if (Stop) return VALUE_ZERO;
-	Value score;
-	Value bestScore = -VALUE_MATE;
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
+	if (NT != NULL_MOVE && depth > 4 && pos.NonPawnMaterial(pos.GetSideToMove()) &&  !pos.Checked()) {
+		int reduction; 
+		depth > 6 ? reduction = 2 : reduction = 3;
+		Square epsquare = pos.GetEPSquare();
+		pos.NullMove();
+		Value nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction - 1, &subpv[0]);
+		if (nullscore >= beta) {
+			return nullscore;
+		}
+		pos.NullMove(epsquare);
+	}
+	Value score;
+	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
 	pos.InitializeMoveIterator<MAIN_SEARCH>(&History, ttFound? ttEntry->move : MOVE_NONE);
 	Move move;
+	int moveIndex = 0;
 	while ((move = pos.NextMove())) {
 		position next(pos);
 		if (next.ApplyMove(move)) {
 			score = -Search<PV>(-beta, -alpha, next, depth - 1, &subpv[0]);
 			if (score >= beta) {
-				updateCutoffStats(move, depth, pos);
+				updateCutoffStats(move, depth, pos, moveIndex);
 				ttEntry->update(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, VALUE_NOTYETDETERMINED);
 				return score;
 			}
@@ -128,6 +140,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 				}
 			}
 		}
+		moveIndex++;
 	}
 	ttEntry->update(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], VALUE_NOTYETDETERMINED);
 	return bestScore;
@@ -162,7 +175,10 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 	return alpha;
 }
 
-void search::updateCutoffStats(const Move cutoffMove, int depth, position &pos) {
+void search::updateCutoffStats(const Move cutoffMove, int depth, position &pos, int moveIndex) {
+	cutoffAt1stMove += moveIndex == 0;
+	cutoffCount++;
+	cutoffMoveIndexSum += moveIndex;
 	Piece movingPiece;
 	Square toSquare;
 	if (pos.GetMoveGenerationType() >= QUIETS_POSITIVE) {
