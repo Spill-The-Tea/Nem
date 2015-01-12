@@ -750,7 +750,7 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 	moveIterationPointer = -1;
 	phaseStartIndex = 0;
 	history = historyStats;
-	hashmove && validateHashMove(hashmove) ? hashMove = hashmove : hashMove = MOVE_NONE;
+	hashmove ? hashMove = hashmove : hashMove = MOVE_NONE;
 	if (IsCheck()) generationPhase = generationPhaseOffset[CHECK] + (hashMove == MOVE_NONE);
 	else generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);
 }

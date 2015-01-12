@@ -88,9 +88,8 @@ namespace tt {
 	Entry* probe(const uint64_t hash, bool& found) {
 	   ProbeCounter++;
        Entry* const tte = firstEntry(hash);
-		const uint16_t key = hash >> 48; // Use the high 16 bits as key inside the cluster
 		for (unsigned i = 0; i < CLUSTER_SIZE; ++i)
-			if (!tte[i].key || tte[i].key == key)
+			if (!tte[i].key || tte[i].key == hash)
 			{
 				if (tte[i].key) {
 					tte[i].gentype = uint8_t(_generation | tte[i].type()); // Refresh

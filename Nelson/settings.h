@@ -6,7 +6,7 @@ static int HashSizeMB = 32;
 
 const int EmergencyTime = 50; //50 ms Emergency time
 const int PV_MAX_LENGTH = 32; //Maximum Length of displayed Principal Variation
-const int MAX_DEPTH = 64; //Maximal search depth
+const int MAX_DEPTH = 128; //Maximal search depth
 const int MASK_TIME_CHECK = (1 << 14) - 1;
 
 const Value PieceValuesMG[] { Value(950), Value(520), Value(325), Value(325), Value(80), VALUE_ZERO, VALUE_ZERO };

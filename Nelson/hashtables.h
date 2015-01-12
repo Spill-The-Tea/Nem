@@ -25,7 +25,7 @@ namespace pawn {
 namespace tt {
 	enum NodeType { UPPER_BOUND = 1, LOWER_BOUND = 2, EXACT = 3 };
 
-	const int CLUSTER_SIZE = 3;
+	const int CLUSTER_SIZE = 4;
 
 	static uint8_t _generation = 0;
 	inline void newSearch() { _generation += 4; }
@@ -42,7 +42,7 @@ namespace tt {
 	inline void ResetCounter() { ProbeCounter = HitCounter = FillCounter = 0; }
 
 	struct Entry {
-		uint16_t key;
+		uint64_t key;
 		Move move;
 		Value value;
 		Value evalValue;
@@ -54,9 +54,9 @@ namespace tt {
 
 		void update(uint64_t hash, Value v, NodeType nt, int d, Move m, Value ev) {
 			FillCounter += (type() == 0); //Initial entry get's overwritten
-			if (m || (hash >> 48) != key) // Preserve any existing move for the same position
+			if (m || hash != key) // Preserve any existing move for the same position
 				move = m;
-			key = (uint16_t)(hash >> 48);
+			key = hash;
 			value = v;
 			evalValue = ev;
 			gentype = (uint8_t)(_generation | nt);
@@ -66,7 +66,6 @@ namespace tt {
 
 	struct Cluster {
 		Entry entry[CLUSTER_SIZE];
-		char padding[2];
 	};
 
 	void InitializeTranspositionTable(int sizeInMB);

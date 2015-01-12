@@ -92,8 +92,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	if (ttFound
 		&& ttEntry->depth >= depth
 		&& ttValue != VALUE_NOTYETDETERMINED
-		&& (ttValue >= beta ? (ttEntry->type() & tt::LOWER_BOUND)
-		: (ttEntry->type() & tt::UPPER_BOUND))) {
+		&& ((ttEntry->type() == tt::EXACT) || (ttValue >= beta && ttEntry->type() == tt::LOWER_BOUND) || (ttValue <= alpha && ttEntry->type() == tt::UPPER_BOUND))) {
 		return ttValue;
 	}
 	if (depth <= 0) {
