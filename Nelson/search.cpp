@@ -59,11 +59,16 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 	Value bonus;
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
+	bool ZWS = false;
 	for (int i = 0; i < rootMoveCount; ++i) {
 		position next(pos);
 		next.ApplyMove(rootMoves[i].move);
 		if (type(rootMoves[i].move) == CASTLING) bonus = BONUS_CASTLING; else bonus = VALUE_ZERO;
-		score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
+		if (ZWS) {
+			score = bonus - Search<EXPECTED_CUT_NODE>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1, &subpv[0]);
+			if (score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
+		}
+		else score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
 		rootMoves[i].score = score;
 		if (score >= beta) {
 			updateCutoffStats(rootMoves[i].move, depth, pos, i);
@@ -73,6 +78,7 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 			bestScore = score;
 			if (score > alpha)
 			{
+				ZWS = true && depth > 2;
 				alpha = score;
 				pv[0] = rootMoves[i].move;
 				memcpy(pv + 1, subpv, (PV_MAX_LENGTH - 1)*sizeof(Move));
@@ -102,27 +108,33 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	if (Stop) return VALUE_ZERO;
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
-	if (NT != NULL_MOVE && depth > 4 && pos.NonPawnMaterial(pos.GetSideToMove()) &&  !pos.Checked()) {
-		int reduction; 
+	if (NT != NULL_MOVE && depth > 4 && pos.NonPawnMaterial(pos.GetSideToMove()) && !pos.Checked()) {
+		int reduction;
 		depth > 6 ? reduction = 2 : reduction = 3;
 		Square epsquare = pos.GetEPSquare();
 		pos.NullMove();
 		Value nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction - 1, &subpv[0]);
-		if (nullscore >= beta) {
-			return nullscore;
-		}
 		pos.NullMove(epsquare);
+		if (nullscore >= beta) {
+			return beta;
+		}
 	}
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
-	pos.InitializeMoveIterator<MAIN_SEARCH>(&History, ttFound? ttEntry->move : MOVE_NONE);
+	pos.InitializeMoveIterator<MAIN_SEARCH>(&History, ttFound ? ttEntry->move : MOVE_NONE);
 	Move move;
 	int moveIndex = 0;
+	bool ZWS = false;
 	while ((move = pos.NextMove())) {
 		position next(pos);
 		if (next.ApplyMove(move)) {
-			score = -Search<PV>(-beta, -alpha, next, depth - 1, &subpv[0]);
+			if (ZWS) {
+				score = -Search<EXPECTED_CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1, &subpv[0]);
+				if (score > alpha && score < beta) score = -Search<PV>(-beta, -alpha, next, depth - 1, &subpv[0]);
+			}
+			else
+				score = -Search<PV>(-beta, -alpha, next, depth - 1, &subpv[0]);
 			if (score >= beta) {
 				updateCutoffStats(move, depth, pos, moveIndex);
 				ttEntry->update(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, VALUE_NOTYETDETERMINED);
@@ -132,6 +144,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 				bestScore = score;
 				if (score > alpha)
 				{
+					ZWS = true;
 					nodeType = tt::EXACT;
 					alpha = score;
 					pv[0] = move;
