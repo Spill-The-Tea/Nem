@@ -131,9 +131,12 @@ Move position::NextMove() {
 	if (generationPhases[generationPhase] == NONE) return MOVE_NONE;
 	do {
 		if (moveIterationPointer < 0) {
-			phaseStartIndex = movepointer - (movepointer != 0);			
+			phaseStartIndex = movepointer - (movepointer != 0);
 			switch (generationPhases[generationPhase]) {
-			case WINNING_CAPTURES:				
+			case KILLER:
+				moveIterationPointer = 0;
+				break;
+			case WINNING_CAPTURES:
 				GenerateMoves<WINNING_CAPTURES>();
 				evaluateByMVVLVA();
 				moveIterationPointer = 0;
@@ -168,10 +171,22 @@ Move position::NextMove() {
 		}
 		Move move;
 		switch (generationPhases[generationPhase]) {
-		case HASHMOVE:			
+		case HASHMOVE:
 			++generationPhase;
 			moveIterationPointer = -1;
 			return hashMove; //Validation might be required
+			break;
+		case KILLER:
+			if (moveIterationPointer == 0) {
+				moveIterationPointer++;
+				if (!(killer1 == EXTENDED_MOVE_NONE) && validateMove(killer1)) return killer1.move;
+			}
+			if (moveIterationPointer == 1) {
+				moveIterationPointer++;
+				if (!(killer2 == EXTENDED_MOVE_NONE) && validateMove(killer2)) return killer2.move;
+			}
+			++generationPhase;
+			moveIterationPointer = -1;
 			break;
 		case WINNING_CAPTURES: case EQUAL_CAPTURES: case LOOSING_CAPTURES: case QUIETS_NEGATIVE:
 			move = getBestMove(phaseStartIndex + moveIterationPointer);
@@ -765,9 +780,9 @@ Result position::GetResult() {
 
 bool position::checkRepetition() {
 	position * prev = Previous();
-	for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, int(DrawPlyCount))>>1); ++i) {
+	for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, int(DrawPlyCount)) >> 1); ++i) {
 		prev = prev->Previous();
-		if (prev->GetHash() == GetHash()) 
+		if (prev->GetHash() == GetHash())
 			return true;
 		prev = prev->Previous();
 	}
@@ -775,7 +790,7 @@ bool position::checkRepetition() {
 }
 
 //Hashmove isn't really reliable => therefore check is hashmove is a valid move
-bool position::validateHashMove(Move move) {
+bool position::validateMove(Move move) {
 	Square fromSquare = from(move);
 	Piece movingPiece = Board[fromSquare];
 	Square toSquare = to(move);
@@ -786,13 +801,13 @@ bool position::validateHashMove(Move move) {
 		if (pt == PAWN) {
 			switch (type(move)) {
 			case NORMAL:
-				result = (((int(toSquare) - int(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) || 
+				result = !(ToBitboard(toSquare) & RANKS[7 - 7 * SideToMove]) && (((int(toSquare) - int(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) ||
 					(((int(toSquare) - int(fromSquare)) == 2 * PawnStep()) && ((fromSquare >> 3) == (1 + 5 * SideToMove)) && Board[toSquare] == BLANK && Board[toSquare - PawnStep()] == BLANK)
-					|| (attacks[fromSquare] & OccupiedByColor[SideToMove ^ 1]));
+					|| (attacks[fromSquare] & OccupiedByColor[SideToMove ^ 1] & ToBitboard(toSquare)));
 				break;
 			case PROMOTION:
-				result = (ToBitboard(toSquare) & RANKS[7 - 7 * SideToMove]) && 
-					(((int(toSquare) - int(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) || (attacks[fromSquare] & OccupiedByColor[SideToMove ^ 1]));
+				result = (ToBitboard(toSquare) & RANKS[7 - 7 * SideToMove]) &&
+					(((int(toSquare) - int(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) || (attacks[fromSquare] & OccupiedByColor[SideToMove ^ 1] & ToBitboard(toSquare)));
 				break;
 			case ENPASSANT:
 				result = toSquare == EPSquare;
@@ -800,11 +815,13 @@ bool position::validateHashMove(Move move) {
 		}
 		else if (pt == KING && type(move) == CASTLING) {
 			result = (CastlingOptions & CastlesbyColor[SideToMove]) != 0
-				&& ((InBetweenFields[fromSquare][toSquare] & OccupiedBB()) == 0)
-				&& ((InBetweenFields[fromSquare][toSquare] & attackedByThem) == 0)
+				&& ((InBetweenFields[fromSquare][InitialRookSquare[2 * SideToMove + (toSquare < fromSquare)]] & OccupiedBB()) == 0)
+				&& (((InBetweenFields[fromSquare][toSquare] | ToBitboard(toSquare)) & attackedByThem) == 0)
+				&& (InitialRookSquareBB[2 * SideToMove + (toSquare < fromSquare)] & PieceBB(ROOK, SideToMove))
 				&& !IsCheck();
 		}
-		else result = (attacks[fromSquare] & ToBitboard(toSquare)) != 0;
+		else if (type(move) == NORMAL) result = (attacks[fromSquare] & ToBitboard(toSquare)) != 0;
+		else result = false;
 	}
 	return result;
 #ifdef _DEBUG
@@ -830,6 +847,11 @@ bool position::validateHashMove(Move move) {
 		__debugbreak();
 #endif
 	return result;
+}
+
+bool position::validateMove(ExtendedMove move) {
+	Square fromSquare = from(move.move);
+	return Board[fromSquare] == move.piece && validateMove(move.move);
 }
 
 

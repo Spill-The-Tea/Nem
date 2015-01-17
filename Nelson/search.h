@@ -37,7 +37,7 @@ private:
 	uint64_t cutoffAt1stMove = 0;
 	uint64_t cutoffCount = 0;
 	uint64_t cutoffMoveIndexSum = 0;
-	position posStack[MAX_DEPTH];
+	ExtendedMove killer[MAX_DEPTH][2];
 
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<> Value Search<ROOT>(Value alpha, Value beta, position &pos, int depth, Move * pv);
@@ -56,4 +56,5 @@ inline void search::Reset() {
 	cutoffMoveIndexSum = 0;
 	Stop = false;
 	History.initialize();
+	for (int i = 0; i < MAX_DEPTH; ++i) killer[i][0] = killer[i][1] = EXTENDED_MOVE_NONE;
 }

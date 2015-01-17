@@ -105,6 +105,8 @@ void dispatch(char *line)
 		divide(line);
 	else if (!strcmp(token, "setvalue"))
 		setvalue(line);
+	else if (!strcmp(token, "bench"))
+		bench2(7);
 	//else if (!strcmp(token, "eval"))
 	//	cout << printEvaluation(pos);
 	//else if (!strcmp(token, "qeval"))

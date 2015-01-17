@@ -122,7 +122,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
-	pos.InitializeMoveIterator<MAIN_SEARCH>(&History, ttFound ? ttEntry->move : MOVE_NONE);
+	pos.InitializeMoveIterator<MAIN_SEARCH>(&History, killer[pos.GetPliesFromRoot()][0], killer[pos.GetPliesFromRoot()][1], ttFound ? ttEntry->move : MOVE_NONE);
 	Move move;
 	int moveIndex = 0;
 	bool ZWS = false;
@@ -169,7 +169,7 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 	Value standPat = pos.evaluate();
 	if (standPat > beta || pos.GetResult() != OPEN) return beta;
 	if (alpha < standPat) alpha = standPat;
-	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History); else pos.InitializeMoveIterator<QSEARCH>(&History);
+	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE); else pos.InitializeMoveIterator<QSEARCH>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE);
 	Move move;
 	Value score;
 	while ((move = pos.NextMove())) {
@@ -195,6 +195,10 @@ void search::updateCutoffStats(const Move cutoffMove, int depth, position &pos, 
 	Square toSquare;
 	if (pos.GetMoveGenerationType() >= QUIETS_POSITIVE) {
 		movingPiece = pos.GetPieceOnSquare(from(cutoffMove));
+		ExtendedMove killerMove(movingPiece, cutoffMove);
+		int pfr = pos.GetPliesFromRoot();
+		killer[pfr][1] = killer[pfr][0];
+		killer[pfr][0] = killerMove;
 		toSquare = to(cutoffMove);
 		Value v = Value(depth * depth);
 		History.update(v, movingPiece, toSquare);
