@@ -42,7 +42,7 @@ public:
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, ExtendedMove killerMove1, ExtendedMove killerMove2, Move hashmove);
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, ExtendedMove killerMove1, ExtendedMove killerMove2, Move * counterMoves, Move hashmove);
 	Move NextMove();
 	const Value position::SEE(Square from, const Square to);
 	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
@@ -74,6 +74,7 @@ public:
 	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount;  }
 	void NullMove(Square epsquare = OUTSIDE);
 	void deleteParents();
+	inline Move GetLastAppliedMove() { return lastAppliedMove;  }
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -103,8 +104,10 @@ private:
 	Result result = RESULT_UNKNOWN;
 	ExtendedMove killer1;
 	ExtendedMove killer2;
+	Move lastAppliedMove;
 	ValuatedMove * lastPositive;
 	HistoryStats * history;
+	Move * CounterMoves = nullptr;
 
 	template<bool SquareIsEmpty> void set(const Piece piece, const Square square);
 	void remove(const Square square);
@@ -742,8 +745,9 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, ExtendedMove killerMove1, ExtendedMove killerMove2, Move hashmove = MOVE_NONE) {
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, ExtendedMove killerMove1, ExtendedMove killerMove2, Move * counterMoves, Move hashmove = MOVE_NONE) {
 	killer1 = killerMove1; killer2 = killerMove2;
+	CounterMoves = counterMoves;
 	if (!attackedByThem) attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	moveIterationPointer = -1;
 	phaseStartIndex = 0;

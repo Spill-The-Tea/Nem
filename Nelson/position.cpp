@@ -121,6 +121,7 @@ bool position::ApplyMove(Move move) {
 	assert(MaterialKey == calculateMaterialKey());
 	assert(PawnKey == calculatePawnKey());
 	if (pawn->Key != PawnKey) pawn = pawn::probe(*this);
+	lastAppliedMove = move;
 	return !(attackedByUs & PieceBB(KING, Color(SideToMove ^ 1)));
 	//if (attackedByUs & PieceBB(KING, Color(SideToMove ^ 1))) return false;
 	//attackedByThem = calculateAttacks(Color(SideToMove ^1));
@@ -238,10 +239,21 @@ void position::evaluateBySEE(int startIndex) {
 }
 
 void position::evaluateByHistory(int startIndex) {
+	Move counterMove = MOVE_NONE;
+	if (CounterMoves && previous) {
+		Square lastTo = to(previous->lastAppliedMove);
+		PieceType lastPT = GetPieceType(Board[lastTo]);
+		counterMove = CounterMoves[(lastPT << 6) + lastTo];
+	}
 	for (int i = startIndex; i < movepointer - 1; ++i) {
-		Square toSquare = to(moves[i].move);
-		Piece p = Board[from(moves[i].move)];
-		moves[i].score = history->getValue(p, toSquare);
+		if (moves[i].move == counterMove) {
+			moves[i].score = VALUE_MATE;
+		}
+		else {
+			Square toSquare = to(moves[i].move);
+			Piece p = Board[from(moves[i].move)];
+			moves[i].score = history->getValue(p, toSquare);
+		}
 	}
 }
 

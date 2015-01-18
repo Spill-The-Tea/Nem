@@ -314,7 +314,7 @@ uint64_t perft3(position &pos, int depth) {
 	nodeCount++;
 	if (depth == 0) return 1;
 	uint64_t result = 0;
-	pos.InitializeMoveIterator<MAIN_SEARCH>(&history, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE);
+	pos.InitializeMoveIterator<MAIN_SEARCH>(&history, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr);
 	Move move;
 	while ((move = pos.NextMove())) {
 		position next = position(pos);
