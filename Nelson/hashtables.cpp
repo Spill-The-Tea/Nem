@@ -1,7 +1,10 @@
 #include "hashtables.h"
 #include "position.h"
 #include <iostream>
+#ifdef _MSC_VER
 #include <mmintrin.h>
+#endif
+#include "stdlib.h"
 #include "search.h"
 
 namespace pawn {
@@ -37,7 +40,7 @@ namespace pawn {
 			+ popcount(result->passedPawns[BLACK] & RANK3) * PASSED_PAWN_BONUS[2]
 			+ popcount(result->passedPawns[BLACK] & RANK2) * PASSED_PAWN_BONUS[3];
 		//bonus for protected passed pawns (on 5th rank or further)
-		result->Score += (popcount(result->passedPawns[WHITE] & result->attackSet[WHITE] & HALF_OF_BLACK) 
+		result->Score += (popcount(result->passedPawns[WHITE] & result->attackSet[WHITE] & HALF_OF_BLACK)
 			- popcount(result->passedPawns[BLACK] & result->attackSet[BLACK] & HALF_OF_WHITE)) * BONUS_PROTECTED_PASSED_PAWN;
 		//isolated pawns
 		Bitboard west = (bbWhite >> 1) & NOT_H_FILE;
@@ -112,7 +115,12 @@ namespace tt {
 	}
 
 	void prefetch(uint64_t hash) {
+#ifdef _MSC_VER
 		_mm_prefetch((char*)&Table[hash & MASK], _MM_HINT_T0);
+#endif // _MSC_VER
+#ifdef __GNUC__
+        __builtin_prefetch((char*)&Table[hash & MASK]);
+#endif // __GNUC__
 	}
 
 	uint64_t GetClusterCount() {

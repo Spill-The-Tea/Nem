@@ -2,6 +2,8 @@
 #include <fstream>
 #include <string>
 #include <iostream>
+#include <cstring>
+#include <cstdlib>
 #include "uci.h"
 #include "position.h"
 #include "board.h"
@@ -238,13 +240,13 @@ void thinkAsync(SearchStopCriteria ssc) {
 	cout << "bestmove " << toString(BestMove.move) << endl;
 	//if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 	//	cout << "info depth " << Engine.Depth() << " nodes " << Engine.NodeCount << " score cp " << BestMove.score << " nps " << Engine.NodeCount * 1000 / Engine.ThinkTime()
-	//	//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits() 
+	//	//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 	//	<< " pv " << Engine.PrincipalVariation(Engine.Depth()) << endl;
 	//else {
 	//	int pliesToMate;
 	//	if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
 	//	cout << "info depth " << Engine.Depth() << " nodes " << Engine.NodeCount << " score mate " << pliesToMate / 2 << " nps " << Engine.NodeCount * 1000 / Engine.ThinkTime()
-	//		//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits() 
+	//		//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 	//		<< " pv " << Engine.PrincipalVariation(Engine.Depth()) << endl;
 	//}
 	Engine.Reset();

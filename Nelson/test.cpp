@@ -5,6 +5,7 @@
 #include <fstream>
 #include <string>
 #include <map>
+#include <cstdlib>
 #include "test.h"
 #include "search.h"
 #include "hashtables.h"
@@ -250,7 +251,7 @@ uint64_t perft(position &pos, int depth) {
 	uint64_t result = 0;
 	ValuatedMove * moves = pos.GenerateMoves<ALL>();
 	while ((move = *moves).move) {
-		position next = position(pos);
+		position next(pos);
 		if (next.ApplyMove(move.move)) result += perft(next, depth - 1);
 		++moves;
 	}
@@ -264,13 +265,13 @@ uint64_t perft1(position &pos, int depth) {
 	uint64_t result = 0;
 	ValuatedMove * moves = pos.GenerateMoves<TACTICAL>();
 	while ((move = *moves).move) {
-		position next = position(pos);
+		position next(pos);
 		if (next.ApplyMove(move.move)) result += perft1(next, depth - 1);
 		++moves;
 	}
 	moves = pos.GenerateMoves<QUIETS>();
 	while ((move = *moves).move) {
-		position next = position(pos);
+		position next(pos);
 		if (next.ApplyMove(move.move)) result += perft1(next, depth - 1);
 		++moves;
 	}
@@ -284,25 +285,25 @@ uint64_t perft2(position &pos, int depth) {
 	uint64_t result = 0;
 	ValuatedMove * moves = pos.GenerateMoves<WINNING_CAPTURES>();
 	while ((move = *moves).move) {
-		position next = position(pos);
+		position next(pos);
 		if (next.ApplyMove(move.move)) result += perft2(next, depth - 1);
 		++moves;
 	}
 	moves = pos.GenerateMoves<EQUAL_CAPTURES>();
 	while ((move = *moves).move) {
-		position next = position(pos);
+		position next(pos);
 		if (next.ApplyMove(move.move)) result += perft2(next, depth - 1);
 		++moves;
 	}
 	moves = pos.GenerateMoves<LOOSING_CAPTURES>();
 	while ((move = *moves).move) {
-		position next = position(pos);
+		position next(pos);
 		if (next.ApplyMove(move.move)) result += perft2(next, depth - 1);
 		++moves;
 	}
 	moves = pos.GenerateMoves<QUIETS>();
 	while ((move = *moves).move) {
-		position next = position(pos);
+		position next(pos);
 		if (next.ApplyMove(move.move)) result += perft2(next, depth - 1);
 		++moves;
 	}
@@ -317,7 +318,7 @@ uint64_t perft3(position &pos, int depth) {
 	pos.InitializeMoveIterator<MAIN_SEARCH>(&history, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr);
 	Move move;
 	while ((move = pos.NextMove())) {
-		position next = position(pos);
+		position next(pos);
 		if (next.ApplyMove(move)) {
 			result += perft3(next, depth - 1);
 		}
@@ -330,7 +331,7 @@ void divide(position &pos, int depth) {
 	ValuatedMove move;
 	uint64_t total = 0;
 	while ((move = *moves).move) {
-		position next = position(pos);
+		position next(pos);
 		if (next.ApplyMove(move.move)) {
 			uint64_t p = perft(next, depth - 1);
 			cout << toString(move.move) << "\t" << p << "\t" << next.fen() << endl;
@@ -439,7 +440,7 @@ void testTacticalMoveGeneration() {
 						if (p3.ApplyMove(move)) {
 							if (p3.GetMaterialKey() == p1.GetMaterialKey()) {
 								cout << endl << "Move " << toString(move) << " doesn't change Material key: " << fen << endl;
-								__debugbreak();
+								//__debugbreak();
 							}
 							bool found = false;
 							Move amove;
@@ -453,7 +454,7 @@ void testTacticalMoveGeneration() {
 							}
 							if (!found) {
 								cout << endl << "Move " << toString(move) << " not part of all moves: " << fen << endl;
-								__debugbreak();
+								//__debugbreak();
 							};
 						}
 						tm++;
@@ -475,7 +476,7 @@ void testTacticalMoveGeneration() {
 							}
 							if (!found) {
 								cout << endl << "Move " << toString(move) << " isn't detected as tactical: " << fen << endl;
-								__debugbreak();
+								//__debugbreak();
 							};
 						}
 						am++;
@@ -520,7 +521,7 @@ void testResult(string filename, Result result) {
 					if (count < lines.size()) {
 						if (p1.GetResult() != OPEN) {
 							cout << "Expected: Open Actual: " << p1.GetResult() << "\t" << p1.fen() << endl;
-							__debugbreak();
+							//__debugbreak();
 							position p2(fen);
 							p2.GetResult();
 						}
@@ -528,11 +529,11 @@ void testResult(string filename, Result result) {
 					else {
 						if (p1.GetResult() != result) {
 							cout << "Expected: " << result << " Actual: " << p1.GetResult() << "\t" << p1.fen() << endl;
-							__debugbreak();
+							//__debugbreak();
 							position p2(fen);
 							p2.GetResult();
 						}
-					}					
+					}
 				}
 				lines.clear();
 			}
@@ -596,7 +597,7 @@ void testCheckQuietCheckMoveGeneration() {
 						if (p3.ApplyMove(move)) {
 							if (!p3.Checked()) {
 								cout << endl << "Move " << toString(move) << " doesn't give check: " << fen << endl;
-								__debugbreak();
+								//__debugbreak();
 							}
 							bool found = false;
 							Move qmove;
@@ -610,7 +611,7 @@ void testCheckQuietCheckMoveGeneration() {
 							}
 							if (!found) {
 								cout << endl << "Move " << toString(move) << " not part of quiet moves: " << fen << endl;
-								__debugbreak();
+								//__debugbreak();
 							};
 						}
 						cgm++;
@@ -632,7 +633,7 @@ void testCheckQuietCheckMoveGeneration() {
 							}
 							if (!found) {
 								cout << endl << "Move " << toString(move) << " not part of check giving moves: " << fen << endl;
-								__debugbreak();
+								//__debugbreak();
 							};
 						}
 						qm++;
@@ -701,7 +702,7 @@ void testMateInDos() {
 		ssc.MaxDepth = 3;
 		++count;
 		ValuatedMove result = engine.Think(pos, ssc);
-			cout << count << "\t" << ((result.move == it->second) ? "OK\t" : "ERROR\t") << toString(result.move) << "\t" << toString(it->second) 
+			cout << count << "\t" << ((result.move == it->second) ? "OK\t" : "ERROR\t") << toString(result.move) << "\t" << toString(it->second)
 				<< "\t" << result.score << "\t" << it->first << endl;
 			failed += result.move != it->second;
 	}

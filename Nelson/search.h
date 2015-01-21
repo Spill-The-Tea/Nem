@@ -4,7 +4,6 @@
 #include "board.h"
 #include "position.h"
 #include "settings.h"
-#include <atomic>
 #include <iostream>
 
 enum NodeType { ROOT, PV, NULL_MOVE, EXPECTED_CUT_NODE, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
@@ -14,7 +13,7 @@ public:
 	ValuatedMove BestMove;
 	int64_t NodeCount;
 	int64_t QNodeCount;
-	atomic<bool> Stop = false;
+	bool Stop = false;
 	bool UciOutput = false;
 	double BranchingFactor = 0;
 
@@ -41,11 +40,12 @@ private:
 	Move counterMove[6*64];
 
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
-	template<> Value Search<ROOT>(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<NodeType NT> Value QSearch(Value alpha, Value beta, position &pos, int depth);
 	void updateCutoffStats(const Move cutoffMove, int depth, position &pos, int moveIndex);
 
 };
+
+	template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, int depth, Move * pv);
 
 inline void search::Reset() {
 	BestMove.move = MOVE_NONE;

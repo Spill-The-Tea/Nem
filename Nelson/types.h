@@ -1,12 +1,18 @@
 #pragma once
-#include <assert.h> 
+#include <assert.h>
 #include <string>
+#ifdef _MSC_VER
 #include <intrin.h>
+#endif
 #include <inttypes.h>
 #include <chrono>
+#include <climits>
+#include <cmath>
 
 #pragma intrinsic(_BitScanForward64)
 #pragma intrinsic(_BitScanReverse64)
+
+using namespace std;
 
 typedef uint64_t Bitboard;
 
@@ -100,7 +106,7 @@ typedef uint16_t Phase_t;
 	inline T operator-(const T d) { return T(-int(d)); }                        \
 	inline T& operator+=(T& d1, const T d2) { return d1 = d1 + d2; }            \
 	inline T& operator-=(T& d1, const T d2) { return d1 = d1 - d2; }            \
-	inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }             
+	inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }
 
 #define ENABLE_FULL_OPERATORS_ON(T)                                             \
 	ENABLE_BASE_OPERATORS_ON(T)                                                 \
@@ -154,10 +160,8 @@ const uint64_t EPAttackersForToField[] = { 0x2000000ull,
 inline uint64_t GetEPAttackersForToField(Square to) { return EPAttackersForToField[to - A4]; }
 inline uint64_t GetEPAttackersForToField(int to) { return EPAttackersForToField[to - A4]; }
 
+#ifdef _MSC_VER
 inline int popcount(Bitboard bb) { return (int)_mm_popcnt_u64(bb); }
-inline Bitboard isolateLSB(Bitboard bb) { return bb & (0 - bb); }
-
-//inline Square lsb(Bitboard bb) { return Square(popcount((bb & (0 - bb)) - 1)); }
 
 inline Square lsb(Bitboard bb) {
 	unsigned long  index;
@@ -171,6 +175,21 @@ inline int msb(int n) {
 #pragma warning(suppress: 6102)
 	return result;
 }
+
+#endif
+
+#ifdef __GNUC__
+inline int popcount(Bitboard bb) { return __builtin_popcountll(bb); }
+
+inline Square lsb(Bitboard b) {  return Square(__builtin_ctzll(b)); }
+
+inline Square msb(int n) { return Square(__builtin_clzll(n)); }
+//#define offsetof(type, member)  __builtin_offsetof (type, member)
+#endif // __GNUC__
+
+inline Bitboard isolateLSB(Bitboard bb) { return bb & (0 - bb); }
+
+//inline Square lsb(Bitboard bb) { return Square(popcount((bb & (0 - bb)) - 1)); }
 
 inline Bitboard ToBitboard(Square square) { return 1ull << square; }
 inline Bitboard ToBitboard(int square) { return 1ull << square; }
@@ -278,7 +297,7 @@ struct HistoryStats {
 public:
 	static const Value MAX_HISTORY_VALUE = Value(2000); //blindly copied from SF
 	inline void update(Value v, Piece p, Square s) {
-		if (abs(Table[p][s]) < MAX_HISTORY_VALUE) {
+		if (abs(int(Table[p][s])) < MAX_HISTORY_VALUE) {
 			Table[p][s] += v;
 		}
 	}

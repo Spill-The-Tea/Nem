@@ -837,26 +837,26 @@ bool position::validateMove(Move move) {
 	}
 	return result;
 #ifdef _DEBUG
-	position checkPos(*this);
-	checkPos.movepointer = 0;
-	checkPos.attackedByThem = attackedByThem;
-	checkPos.attackedByUs = attackedByUs;
-	memcpy(checkPos.attacks, attacks, 64 * sizeof(Bitboard));
-	ValuatedMove * moves = checkPos.GenerateMoves<ALL>();
-	Move cmove = MOVE_NONE;
-	bool found = false;
-	while (cmove = moves->move) {
-		if (cmove == move) {
-			if (!result) __debugbreak();
-			found = true;
-			break;
-		}
-
-		moves++;
-	}
-
-	if (result && !found)
-		__debugbreak();
+//	position checkPos(*this);
+//	checkPos.movepointer = 0;
+//	checkPos.attackedByThem = attackedByThem;
+//	checkPos.attackedByUs = attackedByUs;
+//	memcpy(checkPos.attacks, attacks, 64 * sizeof(Bitboard));
+//	ValuatedMove * moves = checkPos.GenerateMoves<ALL>();
+//	Move cmove = MOVE_NONE;
+//	bool found = false;
+//	while (cmove = moves->move) {
+//		if (cmove == move) {
+//			if (!result) __debugbreak();
+//			found = true;
+//			break;
+//		}
+//
+//		moves++;
+//	}
+//
+//	if (result && !found)
+//		__debugbreak();
 #endif
 	return result;
 }

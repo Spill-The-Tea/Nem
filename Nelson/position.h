@@ -37,14 +37,12 @@ public:
 	static inline position UndoMove(position &pos) { return *pos.previous; }
 	inline position * Previous() { return previous; }
 	template<MoveGenerationType MGT> ValuatedMove * GenerateMoves();
-	template<> ValuatedMove* GenerateMoves<QUIET_CHECKS>();
-	template<> ValuatedMove* GenerateMoves<LEGAL>();
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
 	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, ExtendedMove killerMove1, ExtendedMove killerMove2, Move * counterMoves, Move hashmove);
 	Move NextMove();
-	const Value position::SEE(Square from, const Square to);
+	const Value SEE(Square from, const Square to);
 	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
 	friend evaluation evaluate(position& pos);
 	friend evaluation evaluateFromScratch(position &pos);
@@ -128,10 +126,10 @@ private:
 		}
 	}
 	inline int PawnStep() const { return 8 - 16 * SideToMove; }
-	inline void AddMove(Move move) { 
-			moves[movepointer].move = move; 
-			moves[movepointer].score = VALUE_NOTYETDETERMINED; 
-			++movepointer; 
+	inline void AddMove(Move move) {
+			moves[movepointer].move = move;
+			moves[movepointer].score = VALUE_NOTYETDETERMINED;
+			++movepointer;
 	}
 	inline void AddNullMove() { moves[movepointer].move = MOVE_NONE; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
 	//inline void AddMove(Move move, Value score) { moves[movepointer].move = move; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
@@ -156,7 +154,11 @@ private:
 	template<bool CHECKED> bool CheckValidMoveExists();
 };
 
+template<> inline ValuatedMove* position::GenerateMoves<QUIET_CHECKS>();
+template<> inline ValuatedMove* position::GenerateMoves<LEGAL>();
+
 Move parseMoveInUCINotation(const string& uciMove, const position& pos);
+
 
 inline Bitboard position::PieceBB(const PieceType pt, const Color c) const { return OccupiedByColor[c] & OccupiedByPieceType[pt]; }
 inline Bitboard position::ColorBB(const Color c) const { return OccupiedByColor[c]; }
@@ -177,7 +179,7 @@ inline Value position::evaluateFinalPosition() {
 
 //Tries to find one valid move as fast as possible
 template<bool CHECKED> bool position::CheckValidMoveExists() {
-	assert(attackedByThem); //should have been already calculated 
+	assert(attackedByThem); //should have been already calculated
 	//Start with king (Castling need not be considered - as there is always another legal move available with castling
 	//In Chess960 this might be different
 	Square kingSquare = lsb(PieceBB(KING, SideToMove));
@@ -297,7 +299,7 @@ template<> ValuatedMove* position::GenerateMoves<LEGAL>() {
 template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 	movepointer -= (movepointer != 0);
 	ValuatedMove * result = &moves[movepointer];
-	//There are 2 options to give check: Either give check with the moving piece, or a discovered check by 
+	//There are 2 options to give check: Either give check with the moving piece, or a discovered check by
 	//moving a check blocking piece
 	Square opposedKingSquare = lsb(PieceBB(KING, Color(SideToMove ^ 1)));
 	//1. Discovered Checks
@@ -375,7 +377,7 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 		}
 		rooks &= rooks - 1;
 	}
-	//2b "Bishops" 
+	//2b "Bishops"
 	Bitboard bishopAttackstoKing = BishopTargets(opposedKingSquare, OccupiedBB()) & targets;
 	Bitboard bishops = (PieceBB(BISHOP, SideToMove) | PieceBB(QUEEN, SideToMove)) & ~discoveredCheckCandidates;
 	while (bishops) {
@@ -440,7 +442,7 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 		if ((CastlingOptions & (1 << (2 * SideToMove + 1))) //Short castle allowed
 			&& (InitialRookSquareBB[2 * SideToMove + 1] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 			&& !(SquaresToBeEmpty[2 * SideToMove + 1] & OccupiedBB()) //Fields between Rook and King are empty
-			& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
+			&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 			&& !(SquaresToBeUnattacked[2 * SideToMove + 1] & attackedByThem) //Fields passed by the king are unattacked
 			&& (RookTargets(opposedKingSquare, ~targets & ~PieceBB(KING, SideToMove)) & RookSquareAfterCastling[2 * SideToMove + 1])) //Rook is giving check after castling
 			AddMove(createMove<CASTLING>(kingSquare, Square(C1 + SideToMove * 56)));
@@ -492,7 +494,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				if ((CastlingOptions & (1 << (2 * SideToMove + 1))) //Short castle allowed
 					&& (InitialRookSquareBB[2 * SideToMove + 1] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 					&& !(SquaresToBeEmpty[2 * SideToMove + 1] & OccupiedBB()) //Fields between Rook and King are empty
-					& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
+					&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 					&& !(SquaresToBeUnattacked[2 * SideToMove + 1] & attackedByThem)) //Fields passed by the king are unattacked
 					AddMove(createMove<CASTLING>(kingSquare, Square(C1 + SideToMove * 56)));
 			}

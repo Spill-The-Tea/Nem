@@ -3,7 +3,8 @@
 #include <algorithm>
 #include <sstream>
 #include <iostream>
-#include <math.h> 
+#include <math.h>
+#include <cstring>
 #include "hashtables.h"
 
 ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
@@ -34,14 +35,14 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 				cout << "info depth " << _depth << " nodes " << NodeCount << " score cp " << BestMove.score << " nps " << NodeCount * 1000 / _thinkTime
 				<< " hashfull " << tt::GetHashFull()
-				//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits() 
+				//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 				<< " pv " << PrincipalVariation(_depth) << endl;
 			else {
 				int pliesToMate;
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
 				cout << "info depth " << _depth << " nodes " << NodeCount << " score mate " << pliesToMate / 2 << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
-					//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits() 
+					//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 					<< " pv " << PrincipalVariation(_depth) << endl;
 			}
 		}

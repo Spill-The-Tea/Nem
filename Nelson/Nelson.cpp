@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include "stdlib.h"
 #include "types.h"
 #include "board.h"
 #include "position.h"
@@ -14,10 +15,18 @@ static bool popcountSupport();
 static bool is64Bit();
 
 int main(int argc, const char* argv[]) {
+#ifdef _MSC_VER
 #ifndef _WIN64
 	cout << "Only 64 bit operating systems are supported!" << endl;
 	return 0;
 #endif
+#endif // _MSC_VER
+#ifdef __GNUC__
+//#ifndef __x86_64__
+//	cout << "Only 64 bit operating systems are supported!" << endl;
+//	return 0;
+//#endif
+#endif // __GNUC__
 	if (!popcountSupport()) {
 		cout << "No Popcount support - Engine does't work on this hardware!" << endl;
 		return 0;
@@ -108,10 +117,22 @@ int main(int argc, const char* argv[]) {
 	}
 }
 
+#ifdef _MSC_VER
 static bool popcountSupport() {
 	int cpuInfo[4];
 	int functionId = 0x00000001;
 	__cpuid(cpuInfo, functionId);
 	return (cpuInfo[2] & (1 << 23)) != 0;
 }
+#endif // _MSC_VER
+#ifdef __GNUC__
+#define cpuid(func,ax,bx,cx,dx)\
+	__asm__ __volatile__ ("cpuid":\
+	"=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (func));
+static bool popcountSupport() {
+    int cpuInfo[4];
+    cpuid(0x00000001, cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
+ 	return (cpuInfo[2] & (1 << 23)) != 0;
+}
+#endif // __GNUC__
 
