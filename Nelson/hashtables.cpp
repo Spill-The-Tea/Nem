@@ -62,7 +62,7 @@ namespace tt {
 
 	uint64_t GetProbeCounter() { return ProbeCounter; }
 	uint64_t GetHitCounter() { return HitCounter; }
-	uint64_t GetFillCounter() { return HitCounter; }
+	uint64_t GetFillCounter() { return FillCounter; }
 	uint64_t GetHashFull() {
 		return 1000 * FillCounter / GetEntryCount();
 	}

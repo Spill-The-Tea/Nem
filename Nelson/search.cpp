@@ -92,6 +92,9 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 template<NodeType NT> Value search::Search(Value alpha, Value beta, position &pos, int depth, Move * pv) {
 	++NodeCount;
 	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
+	if (depth <= 0) {
+		return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, depth);
+	}
 	//TT lookup
 	bool ttFound;
 	tt::Entry* ttEntry = tt::probe(pos.GetHash(), ttFound);
@@ -101,9 +104,6 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 		&& ttValue != VALUE_NOTYETDETERMINED
 		&& ((ttEntry->type() == tt::EXACT) || (ttValue >= beta && ttEntry->type() == tt::LOWER_BOUND) || (ttValue <= alpha && ttEntry->type() == tt::UPPER_BOUND))) {
 		return ttValue;
-	}
-	if (depth <= 0) {
-		return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, depth);
 	}
 	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
 	if (Stop) return VALUE_ZERO;
@@ -167,10 +167,12 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 	}
 	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
 	if (Stop) return VALUE_ZERO;
-	Value standPat = pos.evaluate();
-	if (standPat > beta || pos.GetResult() != OPEN) return beta;
+	Value standPat;
+	standPat = pos.evaluate();
+	if (standPat >= beta) return beta;
 	if (alpha < standPat) alpha = standPat;
-	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr); else pos.InitializeMoveIterator<QSEARCH>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr);
+	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr);
+	else pos.InitializeMoveIterator<QSEARCH>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr);
 	Move move;
 	Value score;
 	while ((move = pos.NextMove())) {
