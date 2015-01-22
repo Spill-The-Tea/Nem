@@ -100,6 +100,7 @@ private:
 	int generationPhase;
 	Move hashMove = MOVE_NONE;
 	Result result = RESULT_UNKNOWN;
+	Value StaticEval = VALUE_NOTYETDETERMINED;
 	ExtendedMove killer1;
 	ExtendedMove killer2;
 	Move lastAppliedMove;
@@ -167,7 +168,18 @@ inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | O
 inline Bitboard position::NonPawnMaterial(const Color c) const { return OccupiedByColor[c ^ 1] & ~OccupiedByPieceType[PAWN] & ~OccupiedByPieceType[KING]; }
 
 inline Value position::evaluate() {
-	if (GetResult() == OPEN) return material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove);
+	if (GetResult() == OPEN) {
+		if (StaticEval == VALUE_NOTYETDETERMINED) {
+			bool ttFound;
+			tt::Entry* ttEntry = tt::probe(Hash, ttFound);
+			if (ttFound && ttEntry->evalValue != VALUE_NOTYETDETERMINED) StaticEval = ttEntry->evalValue;
+			else {
+				StaticEval = material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove);
+				ttEntry->updateEval(Hash, StaticEval);
+			}
+		}
+		return StaticEval;
+	}
 	else if (result == DRAW) return VALUE_DRAW;
 	else return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }

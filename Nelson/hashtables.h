@@ -23,7 +23,7 @@ namespace pawn {
 }
 
 namespace tt {
-	enum NodeType { UPPER_BOUND = 1, LOWER_BOUND = 2, EXACT = 3 };
+	enum NodeType { UNDEFINED = 0, UPPER_BOUND = 1, LOWER_BOUND = 2, EXACT = 3 };
 
 	const int CLUSTER_SIZE = 4;
 
@@ -57,10 +57,21 @@ namespace tt {
 			if (m || hash != key) // Preserve any existing move for the same position
 				move = m;
 			key = hash;
-			value = v;
-			evalValue = ev;
+			value = nt != UNDEFINED ? v : VALUE_NOTYETDETERMINED;
+			if (nt != UNDEFINED || ev != VALUE_NOTYETDETERMINED) evalValue = ev;
 			gentype = (uint8_t)(_generation | nt);
 			depth = (int8_t)d;
+		}
+
+		void updateEval(uint64_t hash, Value ev) {
+			if (hash != key) {
+				move = MOVE_NONE;
+				value = VALUE_NOTYETDETERMINED;
+				gentype = _generation;
+				depth = 0;				
+			}
+			key = hash;
+			evalValue = ev;
 		}
 	};
 
