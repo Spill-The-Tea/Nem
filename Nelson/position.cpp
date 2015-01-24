@@ -873,6 +873,7 @@ void position::NullMove(Square epsquare) {
 	Bitboard tmp = attackedByThem;
 	attackedByThem = attackedByUs;
 	attackedByUs = tmp;
+	if (StaticEval != VALUE_NOTYETDETERMINED) StaticEval = -StaticEval;
 }
 
 void position::deleteParents() {

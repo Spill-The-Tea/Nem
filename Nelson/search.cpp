@@ -103,6 +103,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 		&& ttEntry->depth >= depth
 		&& ttValue != VALUE_NOTYETDETERMINED
 		&& ((ttEntry->type() == tt::EXACT) || (ttValue >= beta && ttEntry->type() == tt::LOWER_BOUND) || (ttValue <= alpha && ttEntry->type() == tt::UPPER_BOUND))) {
+		//if (ttValue > beta && ttEntry->move != MOVE_NONE && pos.IsQuiet(ttEntry->move)) updateCutoffStats(ttEntry->move, depth, pos, 0);
 		return ttValue;
 	}
 	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
@@ -120,9 +121,14 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 			return beta;
 		}
 	}
+	Value staticEvaluation = ttFound && ttEntry->evalValue != VALUE_NOTYETDETERMINED ? ttEntry->evalValue : pos.evaluate();
+	//bool futilityPruning = depth <= FULTILITY_PRUNING_DEPTH && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]);
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
+	//if (futilityPruning) 
+	//	pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, counterMove, ttFound ? ttEntry->move : MOVE_NONE);
+	//else
 	pos.InitializeMoveIterator<MAIN_SEARCH>(&History, killer[pos.GetPliesFromRoot()][0], killer[pos.GetPliesFromRoot()][1], counterMove, ttFound ? ttEntry->move : MOVE_NONE);
 	Move move;
 	int moveIndex = 0;
@@ -138,7 +144,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 				score = -Search<PV>(-beta, -alpha, next, depth - 1, &subpv[0]);
 			if (score >= beta) {
 				updateCutoffStats(move, depth, pos, moveIndex);
-				ttEntry->update(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, VALUE_NOTYETDETERMINED);
+				ttEntry->update(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
 				return score;
 			}
 			if (score > bestScore) {
@@ -155,7 +161,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 		}
 		moveIndex++;
 	}
-	ttEntry->update(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], VALUE_NOTYETDETERMINED);
+	ttEntry->update(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
 	return bestScore;
 }
 
@@ -165,28 +171,44 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 		++NodeCount;
 		if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
 	}
+	//TT lookup
+	bool ttFound;
+	tt::Entry* ttEntry = tt::probe(pos.GetHash(), ttFound);
+	Value ttValue = ttFound ? tt::fromTT(ttEntry->value, pos.GetPliesFromRoot()) : VALUE_NOTYETDETERMINED;
+	if (ttFound
+		&& ttEntry->depth >= depth
+		&& ttValue != VALUE_NOTYETDETERMINED
+		&& ((ttEntry->type() == tt::EXACT) || (ttValue >= beta && ttEntry->type() == tt::LOWER_BOUND) || (ttValue <= alpha && ttEntry->type() == tt::UPPER_BOUND))) {
+		return ttValue;
+	}
 	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
 	if (Stop) return VALUE_ZERO;
-	Value standPat;
-	standPat = pos.evaluate();
-	if (standPat >= beta) return beta;
+	Value standPat = ttFound && ttEntry->evalValue != VALUE_NOTYETDETERMINED ? ttEntry->evalValue : pos.evaluate();
+	if (standPat >= beta) {
+		ttEntry->update(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
+		return beta;
+	}
 	if (alpha < standPat) alpha = standPat;
 	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr);
 	else pos.InitializeMoveIterator<QSEARCH>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr);
 	Move move;
 	Value score;
+	tt::NodeType nt = tt::UPPER_BOUND;
 	while ((move = pos.NextMove())) {
 		position next(pos);
 		if (next.ApplyMove(move)) {
 			score = -QSearch<QSEARCH_DEPTH_NEGATIVE>(-beta, -alpha, next, depth - 1);
 			if (score >= beta) {
+				ttEntry->update(pos.GetHash(), beta, tt::LOWER_BOUND, depth, move, standPat);
 				return beta;
 			}
 			if (score > alpha) {
+				nt = tt::EXACT;
 				alpha = score;
 			}
 		}
 	}
+	ttEntry->update(pos.GetHash(), alpha, nt, depth, MOVE_NONE, standPat);
 	return alpha;
 }
 
@@ -194,23 +216,23 @@ void search::updateCutoffStats(const Move cutoffMove, int depth, position &pos, 
 	cutoffAt1stMove += moveIndex == 0;
 	cutoffCount++;
 	cutoffMoveIndexSum += moveIndex;
-	Piece movingPiece;
-	Square toSquare;
 	if (pos.GetMoveGenerationType() >= QUIETS_POSITIVE) {
-		movingPiece = pos.GetPieceOnSquare(from(cutoffMove));
+		Square toSquare = to(cutoffMove);
+		Piece movingPiece = pos.GetPieceOnSquare(from(cutoffMove));
 		ExtendedMove killerMove(movingPiece, cutoffMove);
 		int pfr = pos.GetPliesFromRoot();
 		killer[pfr][1] = killer[pfr][0];
 		killer[pfr][0] = killerMove;
-		toSquare = to(cutoffMove);
 		Value v = Value(depth * depth);
 		History.update(v, movingPiece, toSquare);
-		ValuatedMove * alreadyProcessedQuiets = pos.GetMovesOfCurrentPhase();
-		for (int i = 0; i < pos.GetMoveNumberInPhase() - 1; ++i) {
-			movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedQuiets->move));
-			toSquare = to(alreadyProcessedQuiets->move);
-			History.update(v, movingPiece, toSquare);
-			alreadyProcessedQuiets++;
+		if (moveIndex > 0) {
+			ValuatedMove * alreadyProcessedQuiets = pos.GetMovesOfCurrentPhase();
+			for (int i = 0; i < pos.GetMoveNumberInPhase() - 1; ++i) {
+				movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedQuiets->move));
+				toSquare = to(alreadyProcessedQuiets->move);
+				History.update(v, movingPiece, toSquare);
+				alreadyProcessedQuiets++;
+			}
 		}
 		Square lastToSquare = to(pos.GetLastAppliedMove());
 		PieceType lastMovedPT = GetPieceType(pos.GetPieceOnSquare(lastToSquare));

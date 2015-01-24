@@ -69,10 +69,13 @@ public:
 	inline Bitboard AttacksByColor(Color color) const { return (SideToMove == color) * attackedByUs + (SideToMove != color) * attackedByThem; }
 	bool checkRepetition();
 	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
-	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount;  }
+	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount; }
 	void NullMove(Square epsquare = OUTSIDE);
 	void deleteParents();
-	inline Move GetLastAppliedMove() { return lastAppliedMove;  }
+	inline Move GetLastAppliedMove() { return lastAppliedMove; }
+	inline bool IsQuiet(const Move move) const {
+		return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING); 
+}
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -168,20 +171,12 @@ inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | O
 inline Bitboard position::NonPawnMaterial(const Color c) const { return OccupiedByColor[c ^ 1] & ~OccupiedByPieceType[PAWN] & ~OccupiedByPieceType[KING]; }
 
 inline Value position::evaluate() {
+	if (StaticEval != VALUE_NOTYETDETERMINED) return StaticEval = material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove);
 	if (GetResult() == OPEN) {
-		if (StaticEval == VALUE_NOTYETDETERMINED) {
-			bool ttFound;
-			tt::Entry* ttEntry = tt::probe(Hash, ttFound);
-			if (ttFound && ttEntry->evalValue != VALUE_NOTYETDETERMINED) StaticEval = ttEntry->evalValue;
-			else {
-				StaticEval = material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove);
-				ttEntry->updateEval(Hash, StaticEval);
-			}
-		}
-		return StaticEval;
+		return StaticEval = material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove);
 	}
-	else if (result == DRAW) return VALUE_DRAW;
-	else return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
+	else if (result == DRAW) return StaticEval = VALUE_DRAW;
+	else return StaticEval = Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 
 inline Value position::evaluateFinalPosition() {

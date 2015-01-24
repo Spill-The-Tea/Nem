@@ -53,26 +53,16 @@ namespace tt {
 		uint8_t generation() const { return gentype & 0xFC; }
 
 		void update(uint64_t hash, Value v, NodeType nt, int d, Move m, Value ev) {
-			FillCounter += (type() == 0); //Initial entry get's overwritten
+			FillCounter += (key == 0); //Initial entry get's overwritten
 			if (m || hash != key) // Preserve any existing move for the same position
 				move = m;
 			key = hash;
-			value = nt != UNDEFINED ? v : VALUE_NOTYETDETERMINED;
-			if (nt != UNDEFINED || ev != VALUE_NOTYETDETERMINED) evalValue = ev;
+			value = v;
+			evalValue = ev;
 			gentype = (uint8_t)(_generation | nt);
 			depth = (int8_t)d;
 		}
 
-		void updateEval(uint64_t hash, Value ev) {
-			if (hash != key) {
-				move = MOVE_NONE;
-				value = VALUE_NOTYETDETERMINED;
-				gentype = _generation;
-				depth = 0;				
-			}
-			key = hash;
-			evalValue = ev;
-		}
 	};
 
 	struct Cluster {
