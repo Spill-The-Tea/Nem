@@ -37,7 +37,7 @@ private:
 	uint64_t cutoffCount = 0;
 	uint64_t cutoffMoveIndexSum = 0;
 	ExtendedMove killer[MAX_DEPTH][2];
-	Move counterMove[6*64];
+	Move counterMove[12*64];
 
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<NodeType NT> Value QSearch(Value alpha, Value beta, position &pos, int depth);

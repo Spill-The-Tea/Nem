@@ -242,8 +242,7 @@ void position::evaluateByHistory(int startIndex) {
 	Move counterMove = MOVE_NONE;
 	if (CounterMoves && previous) {
 		Square lastTo = to(previous->lastAppliedMove);
-		PieceType lastPT = GetPieceType(Board[lastTo]);
-		counterMove = CounterMoves[(lastPT << 6) + lastTo];
+		counterMove = CounterMoves[(Board[lastTo] << 6) + lastTo];
 	}
 	for (int i = startIndex; i < movepointer - 1; ++i) {
 		if (moves[i].move == counterMove) {

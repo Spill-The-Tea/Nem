@@ -235,8 +235,7 @@ void search::updateCutoffStats(const Move cutoffMove, int depth, position &pos, 
 			}
 		}
 		Square lastToSquare = to(pos.GetLastAppliedMove());
-		PieceType lastMovedPT = GetPieceType(pos.GetPieceOnSquare(lastToSquare));
-		counterMove[(lastMovedPT << 6) + lastToSquare] = cutoffMove;
+		counterMove[(pos.GetPieceOnSquare(lastToSquare) << 6) + lastToSquare] = cutoffMove;
 	}
 }
 

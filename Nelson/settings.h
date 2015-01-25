@@ -45,5 +45,5 @@ const Value BONUS_CASTLING = Value(10);
 const Value PAWN_SHELTER_2ND_RANK = Value(10); 
 const Value PAWN_SHELTER_3RD_RANK = Value(5);
 
-const int FULTILITY_PRUNING_DEPTH = 1;
+const int FULTILITY_PRUNING_DEPTH = 3;
 const Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValuesMG[BISHOP], PieceValuesMG[ROOK], PieceValuesMG[QUEEN] };
