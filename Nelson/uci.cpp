@@ -14,7 +14,7 @@
 
 search Engine;
 position * pos = nullptr;
-thread * Mainthread = nullptr;
+std::thread * Mainthread = nullptr;
 
 void dispatch(char *line);
 
@@ -34,7 +34,7 @@ void stop();
 void thinkAsync(SearchStopCriteria ssc);
 
 bool fexists(const std::string& filename) {
-	ifstream f(filename.c_str());
+	std::ifstream f(filename.c_str());
 	if (f.good()) {
 		f.close();
 		return true;
@@ -50,7 +50,7 @@ char *my_strtok(char **str, char *delim)
 	assert(str && *str && delim);
 	char *token = *str, *p = token;
 
-	// special case: if end of string reached return NULL
+	// special case: if end ofstd::string reached return NULL
 	if (!*p)
 		return NULL;
 
@@ -74,8 +74,8 @@ void loop() {
 	size_t allocated = 0;
 
 	while (!feof(stdin)) {
-		string line;
-		getline(cin, line);
+		std::string line;
+		std::getline(std::cin, line);
 		dispatch(&line[0]);
 	}
 }
@@ -100,7 +100,7 @@ void dispatch(char *line)
 	else if (!strcmp(token, "go"))
 		go(line);
 	else if (!strcmp(token, "print"))
-		cout << pos->print() << endl;
+		std::cout << pos->print() << std::endl;
 	else if (!strcmp(token, "perft"))
 		perft(line);
 	else if (!strcmp(token, "divide"))
@@ -112,7 +112,7 @@ void dispatch(char *line)
 	//else if (!strcmp(token, "eval"))
 	//	cout << printEvaluation(pos);
 	//else if (!strcmp(token, "qeval"))
-	//	cout << "QEval: " << Engine.QEval(pos) << endl;
+	//	cout << "QEval: " << Engine.QEval(pos) << std::endl;
 	else if (!strcmp(token, "quit"))
 		quit();
 	else if (!strcmp(token, "stop"))
@@ -127,10 +127,10 @@ void uci() {
 	printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
 	printf("option name Hash type spin default %lu min 1 max 16384\n", HashSizeMB);
 	//printf("option name Draw Value type spin default %d min -100 max 100\n", DrawValue);
-	//printf("option name GaviotaTablebasePaths type string\n");
+	//printf("option name GaviotaTablebasePaths typestd::string\n");
 	//printf("option name GaviotaTablebaseCache type spin default %lu min 1 max 16384\n", GTB_CACHE);
 	//printf("option name GaviotaTablebaseCompressionScheme type spin default %lu min 0 max 4\n", GTB_COMPRESSION_SCHEME);
-	//printf("option name BookFile type string default %s\n", BOOK_FILE);
+	//printf("option name BookFile typestd::string default %s\n", BOOK_FILE);
 	//printf("option name UseBook type check default %s\n", USE_BOOK ? "true" : "false");
 	puts("uciok");
 }
@@ -171,11 +171,12 @@ void setoption(char *line){
 }
 bool initialized = false;
 void ucinewgame(){
-	initialized = true;
+	initialized = true;	
+	Engine.NewGame();
 	//tt::InitializeTranspositionTable(HashSizeMB);
 	//if (USE_BOOK)  Engine.bookFile = BOOK_FILE; else Engine.bookFile = "";
 	//tablebase::initialize();
-	//if (tablebase::AvailableTableBaseLevel > 0) cout << "info string Using Tablebases up to " << tablebase::AvailableTableBaseLevel << " pieces" << endl;
+	//if (tablebase::AvailableTableBaseLevel > 0)std::cout << "infostd::string Using Tablebases up to " << tablebase::AvailableTableBaseLevel << " pieces" << std::endl;
 }
 
 #define MAX_FEN 0x80
@@ -212,7 +213,7 @@ void setPosition(char *line){
 	position * pp = startpos;
 	if (token && !strcmp(token, "moves")) {
 		while ((token = my_strtok(&line, " "))) {
-			string tokenString(token);
+			std::string tokenString(token);
 			position * next = new position(*pp);
 			next->ApplyMove(parseMoveInUCINotation(tokenString, *next));
 			next->AppliedMovesBeforeRoot++;
@@ -237,17 +238,17 @@ void deleteThread() {
 
 void thinkAsync(SearchStopCriteria ssc) {
 	ValuatedMove BestMove = Engine.Think(*pos, ssc);
-	cout << "bestmove " << toString(BestMove.move) << endl;
+	std::cout << "bestmove " << toString(BestMove.move) << std::endl;
 	//if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 	//	cout << "info depth " << Engine.Depth() << " nodes " << Engine.NodeCount << " score cp " << BestMove.score << " nps " << Engine.NodeCount * 1000 / Engine.ThinkTime()
 	//	//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
-	//	<< " pv " << Engine.PrincipalVariation(Engine.Depth()) << endl;
+	//	<< " pv " << Engine.PrincipalVariation(Engine.Depth()) << std::endl;
 	//else {
 	//	int pliesToMate;
 	//	if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
 	//	cout << "info depth " << Engine.Depth() << " nodes " << Engine.NodeCount << " score mate " << pliesToMate / 2 << " nps " << Engine.NodeCount * 1000 / Engine.ThinkTime()
 	//		//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
-	//		<< " pv " << Engine.PrincipalVariation(Engine.Depth()) << endl;
+	//		<< " pv " << Engine.PrincipalVariation(Engine.Depth()) << std::endl;
 	//}
 	Engine.Reset();
 }
@@ -284,10 +285,10 @@ void go(char *line){
 		}
 	}
 	deleteThread();
-	Mainthread = new thread(thinkAsync, ssc);
+	Mainthread = new std::thread(thinkAsync, ssc);
 
 	//Engine.Think(pos, ssc);
-	//cout << "bestmove " << toString(Engine.bestMove) << endl;
+	//cout << "bestmove " << toString(Engine.bestMove) << std::endl;
 	//Engine.Reset();
 
 	//const move_t m = id_loop(&board, &lim);
@@ -302,13 +303,13 @@ void setvalue(char *line) {
 	//if (!strcmp(token, "mf")) {
 	//	token = my_strtok(&line, " ");
 	//	MOBILITY_FACTOR = atoi(token);
-	//	cout << "info string Mobility Factor: " << MOBILITY_FACTOR << endl;
+	//	cout << "infostd::string Mobility Factor: " << MOBILITY_FACTOR << std::endl;
 	//}
 	//else if (!strcmp(token, "ppf")) {
 	//	token = my_strtok(&line, " ");
 	//	PASSED_PAWN_FACTOR = float(atof(token));
 	//	pawn::updateBonusFactors();
-	//	cout << "info string Passed Pawn Factor: " << PASSED_PAWN_FACTOR << endl;
+	//	cout << "infostd::string Passed Pawn Factor: " << PASSED_PAWN_FACTOR << std::endl;
 	//}
 }
 
@@ -319,35 +320,35 @@ void stop() {
 void perft(char *line) {
 	char * token = my_strtok(&line, " ");
 	if (!token) {
-		cout << "No depth specified!" << endl;
+		std::cout << "No depth specified!" << std::endl;
 		return;
 	}
 	int depth = atoi(token);
 	if (depth == 0) {
-		cout << token << " is no valid depth!" << endl;
+		std::cout << token << " is no valid depth!" << std::endl;
 		return;
 	}
 	int64_t start = now();
 	uint64_t result = perft(*pos, depth);
 	int64_t runtime = now() - start;
-	cout << "Result: " << result << "\t" << runtime << " ms\t" << pos->fen() << endl;
+	std::cout << "Result: " << result << "\t" << runtime << " ms\t" << pos->fen() << std::endl;
 }
 
 void divide(char *line) {
 	char * token = my_strtok(&line, " ");
 	if (!token) {
-		cout << "No depth specified!" << endl;
+		std::cout << "No depth specified!" << std::endl;
 		return;
 	}
 	int depth = atoi(token);
 	if (depth == 0) {
-		cout << token << " is no valid depth!" << endl;
+		std::cout << token << " is no valid depth!" << std::endl;
 		return;
 	}
 	int64_t start = now();
 	divide(*pos, depth);
 	int64_t runtime = now() - start;
-	cout << "Runtime: " << runtime << " ms\t" << endl;
+	std::cout << "Runtime: " << runtime << " ms\t" << std::endl;
 }
 
 void quit(){

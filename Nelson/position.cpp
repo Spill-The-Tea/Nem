@@ -13,14 +13,14 @@
 #include "settings.h"
 #include "hashtables.h"
 
-static const string PieceToChar("QqRrBbNnPpKk ");
+static const std::string PieceToChar("QqRrBbNnPpKk ");
 
 position::position()
 {
 	setFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
-position::position(string fen)
+position::position(std::string fen)
 {
 	setFromFEN(fen);
 }
@@ -474,7 +474,7 @@ const Value position::SEE(Square from, const Square to)
 	{
 		d++; // next depth and side
 		gain[d] = PieceValuesMG[GetPieceType(Board[from])] - gain[d - 1]; // speculative store, if defended
-		if (max(-gain[d - 1], gain[d]) < 0) break; // pruning does not influence the result
+		if (std::max(-gain[d - 1], gain[d]) < 0) break; // pruning does not influence the result
 		attadef ^= fromSet; // reset bit in set to traverse
 		occ ^= fromSet; // reset bit in temporary occupancy (for x-Rays)
 		if ((fromSet & mayXray) != 0)
@@ -483,13 +483,13 @@ const Value position::SEE(Square from, const Square to)
 		from = lsb(fromSet);
 	} while (fromSet != 0);
 	while (--d != 0)
-		gain[d - 1] = -max(-gain[d - 1], gain[d]);
+		gain[d - 1] = -std::max(-gain[d - 1], gain[d]);
 	return gain[0];
 }
 
 
 //"Copied" from Stockfish source code
-void position::setFromFEN(const string& fen) {
+void position::setFromFEN(const std::string& fen) {
 	material = nullptr;
 	std::fill_n(Board, 64, BLANK);
 	OccupiedByColor[WHITE] = OccupiedByColor[BLACK] = 0ull;
@@ -499,8 +499,8 @@ void position::setFromFEN(const string& fen) {
 	DrawPlyCount = 0;
 	AppliedMovesBeforeRoot = 0;
 	Hash = ZobristMoveColor;
-	istringstream ss(fen);
-	ss >> noskipws;
+	std::istringstream ss(fen);
+	ss >> std::noskipws;
 	char token;
 
 	//Piece placement
@@ -511,7 +511,7 @@ void position::setFromFEN(const string& fen) {
 			square = square + (token - '0');
 		else if (token == '/')
 			square -= 16;
-		else if ((piece = PieceToChar.find(token)) != string::npos) {
+		else if ((piece = PieceToChar.find(token)) != std::string::npos) {
 			set<true>((Piece)piece, (Square)square);
 			square++;
 		}
@@ -643,8 +643,8 @@ void position::setFromFEN(const string& fen) {
 		}
 		if (EPSquare != OUTSIDE) Hash ^= ZobristEnPassant[EPSquare & 7];
 	}
-	string dpc;
-	ss >> skipws >> dpc;
+	std::string dpc;
+	ss >> std::skipws >> dpc;
 	if (dpc.length() > 0) {
 		DrawPlyCount = atoi(dpc.c_str());
 	}
@@ -658,7 +658,7 @@ void position::setFromFEN(const string& fen) {
 	pliesFromRoot = 0;
 }
 
-string position::fen() const {
+std::string position::fen() const {
 
 	int emptyCnt;
 	std::ostringstream ss;
@@ -725,7 +725,7 @@ string position::fen() const {
 	return ss.str();
 }
 
-string position::print() {
+std::string position::print() {
 	std::ostringstream ss;
 
 	ss << "\n +---+---+---+---+---+---+---+---+\n";
@@ -736,7 +736,7 @@ string position::print() {
 
 		ss << " |\n +---+---+---+---+---+---+---+---+\n";
 	}
-	ss << "\nChecked:         " << boolalpha << IsCheck() << noboolalpha
+	ss << "\nChecked:         " << std::boolalpha << IsCheck() << std::noboolalpha
 		<< "\nEvaluation:      " << this->evaluate()
 		<< "\nFen:             " << fen()
 		<< "\nHash:            " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << Hash
@@ -746,7 +746,7 @@ string position::print() {
 	return ss.str();
 }
 
-string position::printGeneratedMoves() {
+std::string position::printGeneratedMoves() {
 	std::ostringstream ss;
 	for (int i = 0; i < movepointer - 1; ++i) {
 		ss << toString(moves[i].move) << "\t" << moves[i].score << "\n";

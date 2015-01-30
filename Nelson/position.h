@@ -6,8 +6,6 @@
 #include "hashtables.h"
 #include <string>
 
-using namespace std;
-
 const MoveGenerationType generationPhases[22] = { HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, KILLER, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, //Main Search Phases
 HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
 HASHMOVE, CHECK_EVASION, NONE,
@@ -18,7 +16,7 @@ struct position
 {
 public:
 	position();
-	position(string fen);
+	position(std::string fen);
 	position(position &pos);
 	~position();
 
@@ -29,10 +27,10 @@ public:
 	Bitboard ColorBB(const int c) const;
 	Bitboard OccupiedBB() const;
 	Bitboard NonPawnMaterial(const Color c) const;
-	string print();
-	string printGeneratedMoves();
-	string fen() const;
-	void setFromFEN(const string& fen);
+	std::string print();
+	std::string printGeneratedMoves();
+	std::string fen() const;
+	void setFromFEN(const std::string& fen);
 	bool ApplyMove(Move move); //Applies a pseudo-legal move and returns true if move is legal
 	static inline position UndoMove(position &pos) { return *pos.previous; }
 	inline position * Previous() { return previous; }
@@ -74,8 +72,9 @@ public:
 	void deleteParents();
 	inline Move GetLastAppliedMove() { return lastAppliedMove; }
 	inline bool IsQuiet(const Move move) const {
-		return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING); 
-}
+		return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING);
+	}
+	inline Value GetStaticEval() { return StaticEval; }
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -131,9 +130,9 @@ private:
 	}
 	inline int PawnStep() const { return 8 - 16 * SideToMove; }
 	inline void AddMove(Move move) {
-			moves[movepointer].move = move;
-			moves[movepointer].score = VALUE_NOTYETDETERMINED;
-			++movepointer;
+		moves[movepointer].move = move;
+		moves[movepointer].score = VALUE_NOTYETDETERMINED;
+		++movepointer;
 	}
 	inline void AddNullMove() { moves[movepointer].move = MOVE_NONE; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
 	//inline void AddMove(Move move, Value score) { moves[movepointer].move = move; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
@@ -161,7 +160,7 @@ private:
 template<> inline ValuatedMove* position::GenerateMoves<QUIET_CHECKS>();
 template<> inline ValuatedMove* position::GenerateMoves<LEGAL>();
 
-Move parseMoveInUCINotation(const string& uciMove, const position& pos);
+Move parseMoveInUCINotation(const std::string& uciMove, const position& pos);
 
 
 inline Bitboard position::PieceBB(const PieceType pt, const Color c) const { return OccupiedByColor[c] & OccupiedByPieceType[pt]; }
@@ -171,9 +170,9 @@ inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | O
 inline Bitboard position::NonPawnMaterial(const Color c) const { return OccupiedByColor[c ^ 1] & ~OccupiedByPieceType[PAWN] & ~OccupiedByPieceType[KING]; }
 
 inline Value position::evaluate() {
-	if (StaticEval != VALUE_NOTYETDETERMINED) return StaticEval = material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove);
+	if (StaticEval != VALUE_NOTYETDETERMINED) return StaticEval = material->EvaluationFunction(*this);
 	if (GetResult() == OPEN) {
-		return StaticEval = material->EvaluationFunction(*this).GetScore(material->Phase, SideToMove);
+		return StaticEval = material->EvaluationFunction(*this);
 	}
 	else if (result == DRAW) return StaticEval = VALUE_DRAW;
 	else return StaticEval = Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));

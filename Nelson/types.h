@@ -12,8 +12,6 @@
 #pragma intrinsic(_BitScanForward64)
 #pragma intrinsic(_BitScanReverse64)
 
-using namespace std;
-
 typedef uint64_t Bitboard;
 
 /* Move Encoding as unsigned short (copied from Stockfish)
@@ -57,6 +55,12 @@ enum Square : unsigned char {
 	A8, B8, C8, D8, E8, F8, G8, H8,
 	OUTSIDE
 };
+
+inline Bitboard operator&(Bitboard b, Square s) {
+	return b & (1ull << s);
+}
+
+inline Color operator~(Color c) { return Color(c ^ 1); }
 
 enum Rank {
 	Rank1, Rank2, Rank3, Rank4, Rank5, Rank6, Rank7, Rank8
@@ -122,10 +126,11 @@ ENABLE_FULL_OPERATORS_ON(Value);
 ENABLE_FULL_OPERATORS_ON(PieceType);
 ENABLE_FULL_OPERATORS_ON(Piece);
 
+inline Value operator-(Value v, int i) { return Value(int(v) - i); }
 
 inline Color& operator^=(Color& col, int i) { return col = Color(((int)col) ^ 1); }
 
-inline Square createSquare(Rank rank, File file) { return Square(8 * rank + file); }
+inline Square createSquare(Rank rank, File file) { return Square((rank<<3) + file); }
 inline char toChar(File f, bool tolower = true) { return char(f - FileA + 'a'); }
 inline char toChar(Rank r) { return char(r - Rank1 + '1'); }
 
@@ -213,10 +218,22 @@ struct eval {
 		egScore = Value(egValue);
 	}
 
+	eval(int value) {
+		mgScore = Value(value);
+		egScore = Value(value);
+	}
+
+	eval(Value value) {
+		mgScore = value;
+		egScore = value;
+	}
+
 	inline Value getScore(Phase_t phase) {
 		return Value(((((int)mgScore) * (256 - phase)) + (phase * (int)egScore)) / 256);
 	}
 };
+
+const eval EVAL_ZERO;
 
 inline eval operator-(const eval e) { return eval(-e.mgScore, -e.egScore); }
 inline eval operator+(const eval e1, const eval e2) { return eval(e1.mgScore + e2.mgScore, e1.egScore + e2.egScore); }
@@ -289,7 +306,7 @@ struct SearchStopCriteria {
 struct position;
 
 inline int64_t now() {
-	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now().time_since_epoch()).count();
+	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 	//return GetTickCount64();
 }
 

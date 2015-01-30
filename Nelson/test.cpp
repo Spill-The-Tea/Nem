@@ -9,9 +9,10 @@
 #include "test.h"
 #include "search.h"
 #include "hashtables.h"
+#include "kpk.h"
 
 int64_t bench(int depth) {
-	string sfBenchmarks[] = {
+	std::string sfBenchmarks[] = {
 		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
 		"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 10",
 		"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 11",
@@ -43,8 +44,8 @@ int64_t bench(int depth) {
 		"6k1/4pp1p/3p2p1/P1pPb3/R7/1r2P1PP/3B1P2/6K1 w - - 0 1",
 		"8/3p3B/5p2/5P2/p7/PP5b/k7/6K1 w - - 0 1"
 	};
-	cout << "Benchmark" << endl;
-	cout << "------------------------------------------------------------------------" << endl;
+	std::cout << "Benchmark" << std::endl;
+	std::cout << "------------------------------------------------------------------------" << std::endl;
 	SearchStopCriteria ssc;
 	ssc.MaxDepth = depth;
 	int64_t totalTime = 0;
@@ -53,13 +54,13 @@ int64_t bench(int depth) {
 	double avgC1st = 0.0;
 	double avgCIndx = 0.0;
 	double avgBF = 0.0;
-	cout << setprecision(3) << left << setw(3) << "Nr" << setw(7) << "Time" << setw(10) << "Nodes" << setw(6) << "Speed" << setw(6) << "BF" << setw(6) << "TT[%]"
-		<< setw(6) << "C1st" << setw(6) << "CIndx" << setw(40) << "PV" << endl;
+	std::cout << std::setprecision(3) << std::left << std::setw(3) << "Nr" << std::setw(7) << "Time" << std::setw(10) << "Nodes" << std::setw(6) << "Speed" << std::setw(6) << "BF" << std::setw(6) << "TT[%]"
+		<< std::setw(6) << "C1st" << std::setw(6) << "CIndx" << std::setw(40) << "PV" << std::endl;
 	for (int i = 0; i < 30; i++) {
 		position* pos = new position(sfBenchmarks[i]);
 		search srch;
 		//srch.uciOutput = false;
-		srch.Reset();
+		srch.NewGame();
 		ssc.StartTime = now();
 		srch.Think(*pos, ssc);
 		int64_t endTime = now();
@@ -72,27 +73,27 @@ int64_t bench(int depth) {
 		int64_t runtime = endTime - ssc.StartTime;
 		int64_t rt = runtime;
 		if (rt == 0) rt = 1;
-		cout << left << setw(3) << i << setw(7) << runtime << setw(10) << srch.NodeCount << setw(6)
-			<< srch.NodeCount / rt << setw(6)  << srch.BranchingFactor << setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
-			<< setw(6) << srch.cutoffAt1stMoveRate() << setw(6) << srch.cutoffAverageMove()
-			<< setw(40) << srch.PrincipalVariation(depth) << endl;
+		std::cout << std::left << std::setw(3) << i << std::setw(7) << runtime << std::setw(10) << srch.NodeCount << std::setw(6)
+			<< srch.NodeCount / rt << std::setw(6) << srch.BranchingFactor << std::setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
+			<< std::setw(6) << srch.cutoffAt1stMoveRate() << std::setw(6) << srch.cutoffAverageMove()
+			<< std::setw(40) << srch.PrincipalVariation(depth) << std::endl;
 		delete(pos);
 	}
 	avgBF = avgBF / (totalNodes - totalQNodes);
 	avgCIndx = avgCIndx / 30;
 	avgC1st = avgC1st / 30;
-	cout << "------------------------------------------------------------------------" << endl;
-	cout << setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "
-		"BF: " << setprecision(3) << avgBF << "  C1st: " << avgC1st << "  CIndx: " << avgCIndx << endl;
+	std::cout << "------------------------------------------------------------------------" << std::endl;
+	std::cout << std::setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "
+		"BF: " << std::setprecision(3) << avgBF << "  C1st: " << avgC1st << "  CIndx: " << avgCIndx << std::endl;
 	//tt::printStatistics();
 	//material::printStatistics();
 	//pawn::printStatistics();
-	//cout << "info string Tablebase Hits: " << tablebase::GetTotalHits() << endl;
+	//cout << "infostd::string Tablebase Hits: " << tablebase::GetTotalHits() << std::endl;
 	return totalNodes;
 }
 
 int64_t bench2(int depth) {
-	string sfBenchmarks[] = {
+	std::string sfBenchmarks[] = {
 		"5r2/4r1kp/1pnb2p1/p4p2/1P1P4/1NPBpRPP/1P6/5RK1 w - a6",
 		"1Q6/8/2N2k2/8/2p4p/6bK/1P6/5n2 b - -",
 		"8/1B2k3/8/1p5R/5n1p/PKP2N1r/1P6/8 b - -",
@@ -194,8 +195,8 @@ int64_t bench2(int depth) {
 		"1q1rr1k1/1p3pp1/pbn3bp/3p4/P2N4/1PP1B2P/3QBPP1/3RRK2 w - -",
 		"rnbqkbnr/pp2pppp/2p5/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq -"
 	};
-	cout << "Benchmark" << endl;
-	cout << "------------------------------------------------------------------------" << endl;
+	std::cout << "Benchmark" << std::endl;
+	std::cout << "------------------------------------------------------------------------" << std::endl;
 	SearchStopCriteria ssc;
 	ssc.MaxDepth = depth;
 	int64_t totalTime = 0;
@@ -204,13 +205,13 @@ int64_t bench2(int depth) {
 	double avgC1st = 0.0;
 	double avgCIndx = 0.0;
 	double avgBF = 0.0;
-	cout << setprecision(3) << left << setw(3) << "Nr" << setw(7) << "Time" << setw(10) << "Nodes" << setw(6) << "Speed" << setw(6) << "BF" << setw(6) << "TT[%]"
-		<< setw(6) << "C1st" << setw(6) << "CIndx" << setw(40) << "PV" << endl;
+	std::cout << std::setprecision(3) << std::left << std::setw(3) << "Nr" << std::setw(7) << "Time" << std::setw(10) << "Nodes" << std::setw(6) << "Speed" << std::setw(6) << "BF" << std::setw(6) << "TT[%]"
+		<< std::setw(6) << "C1st" << std::setw(6) << "CIndx" << std::setw(40) << "PV" << std::endl;
 	for (int i = 0; i < 100; i++) {
 		position* pos = new position(sfBenchmarks[i]);
 		search srch;
 		//srch.uciOutput = false;
-		srch.Reset();
+		srch.NewGame();
 		ssc.StartTime = now();
 		srch.Think(*pos, ssc);
 		int64_t endTime = now();
@@ -223,22 +224,22 @@ int64_t bench2(int depth) {
 		int64_t runtime = endTime - ssc.StartTime;
 		int64_t rt = runtime;
 		if (rt == 0) rt = 1;
-		cout << left << setw(3) << i << setw(7) << runtime << setw(10) << srch.NodeCount << setw(6)
-			<< srch.NodeCount / rt << setw(6) << srch.BranchingFactor << setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
-			<< setw(6) << srch.cutoffAt1stMoveRate() << setw(6) << srch.cutoffAverageMove()
-			<< setw(40) << srch.PrincipalVariation(depth) << endl;
+		std::cout << std::left << std::setw(3) << i << std::setw(7) << runtime << std::setw(10) << srch.NodeCount << std::setw(6)
+			<< srch.NodeCount / rt << std::setw(6) << srch.BranchingFactor << std::setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
+			<< std::setw(6) << srch.cutoffAt1stMoveRate() << std::setw(6) << srch.cutoffAverageMove()
+			<< std::setw(40) << srch.PrincipalVariation(depth) << std::endl;
 		delete(pos);
 	}
 	avgBF = avgBF / (totalNodes - totalQNodes);
 	avgCIndx = avgCIndx / 100;
 	avgC1st = avgC1st / 100;
-	cout << "------------------------------------------------------------------------" << endl;
-	cout << setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "
-		"BF: " << setprecision(3) << avgBF << "  C1st: " << avgC1st << "  CIndx: " << avgCIndx << endl;
+	std::cout << "------------------------------------------------------------------------" << std::endl;
+	std::cout << std::setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "
+		"BF: " << std::setprecision(3) << avgBF << "  C1st: " << avgC1st << "  CIndx: " << avgCIndx << std::endl;
 	//tt::printStatistics();
 	//material::printStatistics();
 	//pawn::printStatistics();
-	//cout << "info string Tablebase Hits: " << tablebase::GetTotalHits() << endl;
+	//cout << "infostd::string Tablebase Hits: " << tablebase::GetTotalHits() << std::endl;
 	return totalNodes;
 }
 
@@ -334,12 +335,12 @@ void divide(position &pos, int depth) {
 		position next(pos);
 		if (next.ApplyMove(move.move)) {
 			uint64_t p = perft(next, depth - 1);
-			cout << toString(move.move) << "\t" << p << "\t" << next.fen() << endl;
+			std::cout << toString(move.move) << "\t" << p << "\t" << next.fen() << std::endl;
 			total += p;
 		}
 		++moves;
 	}
-	cout << "Total: " << total << endl;
+	std::cout << "Total: " << total << std::endl;
 }
 
 void testSearch(position &pos, int depth) {
@@ -347,7 +348,7 @@ void testSearch(position &pos, int depth) {
 	ssc.MaxDepth = depth;
 	search engine;
 	ValuatedMove vm = engine.Think(pos, ssc);
-	cout << "Best Move: " << toString(vm.move) << " " << vm.score << endl;
+	std::cout << "Best Move: " << toString(vm.move) << " " << vm.score << std::endl;
 }
 
 void testRepetition() {
@@ -356,11 +357,11 @@ void testRepetition() {
 	ssc.MaxDepth = 5;
 	search engine;
 	ValuatedMove vm = engine.Think(pos, ssc);
-	cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << vm.score << endl;
+	std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << vm.score << std::endl;
 }
 
 void testFindMate() {
-	std::map<string, Move> puzzles;
+	std::map<std::string, Move> puzzles;
 	//Mate in 2
 	puzzles["2@2bqkbn1/2pppp2/np2N3/r3P1p1/p2N2B1/5Q2/PPPPKPP1/RNB2r2 w KQkq - 0 1"] = createMove(F3, F7);
 	puzzles["2@8/6K1/1p1B1RB1/8/2Q5/2n1kP1N/3b4/4n3 w - - 0 1"] = createMove(D6, A3);
@@ -388,45 +389,45 @@ void testFindMate() {
 	puzzles["5@6r1/p3p1rk/1p1pPp1p/q3n2R/4P3/3BR2P/PPP2QP1/7K w - -"] = createMove(H5, H6);
 	puzzles["5@2q1nk1r/4Rp2/1ppp1P2/6Pp/3p1B2/3P3P/PPP1Q3/6K1 w - - 0 1"] = createMove(E7, E8);
 	search engine;
-	std::map<string, Move>::iterator iter;
+	std::map<std::string, Move>::iterator iter;
 	int count = 0;
 	for (iter = puzzles.begin(); iter != puzzles.end(); iter++) {
 		engine.Reset();
-		string mateIn = iter->first.substr(0, 1);
-		string fen = iter->first.substr(2, string::npos);
+		std::string mateIn = iter->first.substr(0, 1);
+		std::string fen = iter->first.substr(2, std::string::npos);
 		SearchStopCriteria ssc;
 		ssc.MaxDepth = 2 * atoi(mateIn.c_str()) - 1;
 		position pos(fen);
 		ValuatedMove vm = engine.Think(pos, ssc);
-		cout << ((vm.move == iter->second) && (vm.score == VALUE_MATE - ssc.MaxDepth) ? "OK    " : "ERROR ") << "\t" << toString(vm.move) << "/" << toString(iter->second)
-			<< "\t" << vm.score << "/" << VALUE_MATE - ssc.MaxDepth << "\t" << fen << endl;
+		std::cout << ((vm.move == iter->second) && (vm.score == VALUE_MATE - ssc.MaxDepth) ? "OK    " : "ERROR ") << "\t" << toString(vm.move) << "/" << toString(iter->second)
+			<< "\t" << vm.score << "/" << VALUE_MATE - ssc.MaxDepth << "\t" << fen << std::endl;
 		count++;
 	}
 
 }
 
 void testTacticalMoveGeneration() {
-	vector<string> lines;
-	ifstream s;
+	std::vector<std::string> lines;
+	std::ifstream s;
 	s.open("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/ccrl.epd");
-	string l;
+	std::string l;
 	if (s.is_open())
 	{
 		long lineCount = 0;
 		while (s)
 		{
-			getline(s, l);
+			std::getline(s, l);
 			lines.push_back(l);
 			lineCount++;
-			if ((lineCount & 8191) == 0) cout << ".";
+			if ((lineCount & 8191) == 0) std::cout << ".";
 			if (((lineCount & 65535) == 0) || !s) {
-				cout << lineCount << " Lines read from File - starting to analyze" << endl;
+				std::cout << lineCount << " Lines read from File - starting to analyze" << std::endl;
 				long count = 0;
-				for (vector<string>::iterator it = lines.begin(); it != lines.end(); ++it) {
-					string line = *it;
+				for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); ++it) {
+					std::string line = *it;
 					if (line.length() < 10) continue;
 					size_t indx = line.find(" c0");
-					string fen = line.substr(0, indx);
+					std::string fen = line.substr(0, indx);
 					position p1(fen);
 					ValuatedMove * tacticalMoves = p1.GenerateMoves<TACTICAL>();
 					position p2(fen);
@@ -439,7 +440,7 @@ void testTacticalMoveGeneration() {
 						position p3(p1);
 						if (p3.ApplyMove(move)) {
 							if (p3.GetMaterialKey() == p1.GetMaterialKey()) {
-								cout << endl << "Move " << toString(move) << " doesn't change Material key: " << fen << endl;
+								std::cout << std::endl << "Move " << toString(move) << " doesn't change Material key: " << fen << std::endl;
 								//__debugbreak();
 							}
 							bool found = false;
@@ -453,7 +454,7 @@ void testTacticalMoveGeneration() {
 								am++;
 							}
 							if (!found) {
-								cout << endl << "Move " << toString(move) << " not part of all moves: " << fen << endl;
+								std::cout << std::endl << "Move " << toString(move) << " not part of all moves: " << fen << std::endl;
 								//__debugbreak();
 							};
 						}
@@ -475,52 +476,52 @@ void testTacticalMoveGeneration() {
 								tm++;
 							}
 							if (!found) {
-								cout << endl << "Move " << toString(move) << " isn't detected as tactical: " << fen << endl;
+								std::cout << std::endl << "Move " << toString(move) << " isn't detected as tactical: " << fen << std::endl;
 								//__debugbreak();
 							};
 						}
 						am++;
 					}
-					//if ((count & 1023) == 0) cout << endl << count << "\t";
+					//if ((count & 1023) == 0)std::cout << std::endl << count << "\t";
 					++count;
 				}
 				lines.clear();
 			}
 		}
 		s.close();
-		cout << endl;
-		cout << lineCount << " lines read!" << endl;
+		std::cout << std::endl;
+		std::cout << lineCount << " lines read!" << std::endl;
 	}
 	else
 	{
-		cout << "Unable to open file" << std::endl;
+		std::cout << "Unable to open file" << std::endl;
 	}
 }
 
-void testResult(string filename, Result result) {
-	vector<string> lines;
-	ifstream s;
+void testResult(std::string filename, Result result) {
+	std::vector<std::string> lines;
+	std::ifstream s;
 	s.open(filename);
-	string l;
+	std::string l;
 	if (s.is_open())
 	{
 		long lineCount = 0;
 		while (s)
 		{
-			getline(s, l);
+			std::getline(s, l);
 
-			if ((lineCount & 32767) == 0) cout << ".";
+			if ((lineCount & 32767) == 0)std::cout << ".";
 			if (l.length() < 10 || !s) {
 				long count = 0;
-				for (vector<string>::iterator it = lines.begin(); it != lines.end(); ++it) {
+				for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); ++it) {
 					++count;
-					string line = *it;
+					std::string line = *it;
 					size_t indx = line.find(" c0");
-					string fen = line.substr(0, indx);
+					std::string fen = line.substr(0, indx);
 					position p1(fen);
 					if (count < lines.size()) {
 						if (p1.GetResult() != OPEN) {
-							cout << "Expected: Open Actual: " << p1.GetResult() << "\t" << p1.fen() << endl;
+							std::cout << "Expected: Open Actual: " << p1.GetResult() << "\t" << p1.fen() << std::endl;
 							//__debugbreak();
 							position p2(fen);
 							p2.GetResult();
@@ -528,7 +529,7 @@ void testResult(string filename, Result result) {
 					}
 					else {
 						if (p1.GetResult() != result) {
-							cout << "Expected: " << result << " Actual: " << p1.GetResult() << "\t" << p1.fen() << endl;
+							std::cout << "Expected: " << result << " Actual: " << p1.GetResult() << "\t" << p1.fen() << std::endl;
 							//__debugbreak();
 							position p2(fen);
 							p2.GetResult();
@@ -543,47 +544,63 @@ void testResult(string filename, Result result) {
 			}
 		}
 		s.close();
-		cout << endl;
-		cout << lineCount << " lines read!" << endl;
+		std::cout << std::endl;
+		std::cout << lineCount << " lines read!" << std::endl;
 	}
 	else
 	{
-		cout << "Unable to open file" << std::endl;
+		std::cout << "Unable to open file" << std::endl;
 	}
 }
 
+void testKPK() {
+	assert(!kpk::probe_kpk(A6, A5, A8, WHITE));
+	assert(!kpk::probe_kpk(A6, A5, A8, BLACK));
+	assert(kpk::probe_kpk(A6, B6, B8, WHITE));
+	assert(!kpk::probe_kpk(A6, B6, B8, BLACK));
+	position pos("1k6/8/KP6/8/8/8/8/8 w - -0 1");
+	assert(pos.evaluate() > VALUE_DRAW);
+	position pos1("1k6/8/KP6/8/8/8/8/8 b - -0 1");
+	assert(pos1.evaluate() == VALUE_DRAW);
+	position pos2("8/8/8/8/8/6pk/8/6K1 w - - 0 1");
+	assert(pos2.evaluate() == VALUE_DRAW);
+	position pos3("8/8/8/8/8/6pk/8/6K1 b - - 0 1");
+	assert(pos3.evaluate() > VALUE_DRAW);
+	std::cout << "KPK Tests succesful!" << std::endl;
+}
+
 void testResult() {
-	chrono::system_clock::time_point begin = chrono::high_resolution_clock::now();
+	std::chrono::system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/stalemate.epd", DRAW);
 	testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/mate.epd", MATE);
-	chrono::system_clock::time_point end = chrono::high_resolution_clock::now();
+	std::chrono::system_clock::time_point end = std::chrono::high_resolution_clock::now();
 	auto runtime = end - begin;
-	chrono::microseconds runtimeMS = chrono::duration_cast<chrono::microseconds>(runtime);
-	cout << "Runtime: " << runtimeMS.count() / 1000000.0 << " s" << endl;
+	std::chrono::microseconds runtimeMS = std::chrono::duration_cast<std::chrono::microseconds>(runtime);
+	std::cout << "Runtime: " << runtimeMS.count() / 1000000.0 << " s" << std::endl;
 }
 
 void testCheckQuietCheckMoveGeneration() {
-	vector<string> lines;
-	ifstream s;
+	std::vector<std::string> lines;
+	std::ifstream s;
 	s.open("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/ccrl.epd");
-	string l;
+	std::string l;
 	if (s.is_open())
 	{
 		long lineCount = 0;
 		while (s)
 		{
-			getline(s, l);
+			std::getline(s, l);
 			lines.push_back(l);
 			lineCount++;
-			if ((lineCount & 8191) == 0) cout << ".";
+			if ((lineCount & 8191) == 0) std::cout << ".";
 			if (((lineCount & 65535) == 0) || !s) {
-				cout << lineCount << " Lines read from File - starting to analyze" << endl;
+				std::cout << lineCount << " Lines read from File - starting to analyze" << std::endl;
 				long count = 0;
-				for (vector<string>::iterator it = lines.begin(); it != lines.end(); ++it) {
-					string line = *it;
+				for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); ++it) {
+					std::string line = *it;
 					if (line.length() < 10) continue;
 					size_t indx = line.find(" c0");
-					string fen = line.substr(0, indx);
+					std::string fen = line.substr(0, indx);
 					position p1(fen);
 					ValuatedMove * checkGivingMoves = p1.GenerateMoves<QUIET_CHECKS>();
 					position p2(fen);
@@ -596,7 +613,7 @@ void testCheckQuietCheckMoveGeneration() {
 						position p3(p1);
 						if (p3.ApplyMove(move)) {
 							if (!p3.Checked()) {
-								cout << endl << "Move " << toString(move) << " doesn't give check: " << fen << endl;
+								std::cout << std::endl << "Move " << toString(move) << " doesn't give check: " << fen << std::endl;
 								//__debugbreak();
 							}
 							bool found = false;
@@ -610,7 +627,7 @@ void testCheckQuietCheckMoveGeneration() {
 								qm++;
 							}
 							if (!found) {
-								cout << endl << "Move " << toString(move) << " not part of quiet moves: " << fen << endl;
+								std::cout << std::endl << "Move " << toString(move) << " not part of quiet moves: " << fen << std::endl;
 								//__debugbreak();
 							};
 						}
@@ -632,92 +649,92 @@ void testCheckQuietCheckMoveGeneration() {
 								cgm++;
 							}
 							if (!found) {
-								cout << endl << "Move " << toString(move) << " not part of check giving moves: " << fen << endl;
+								std::cout << std::endl << "Move " << toString(move) << " not part of check giving moves: " << fen << std::endl;
 								//__debugbreak();
 							};
 						}
 						qm++;
 					}
-					//if ((count & 1023) == 0) cout << endl << count << "\t";
+					//if ((count & 1023) == 0)std::cout << std::endl << count << "\t";
 					++count;
 				}
 				lines.clear();
 			}
 		}
 		s.close();
-		cout << endl;
-		cout << lineCount << " lines read!" << endl;
+		std::cout << std::endl;
+		std::cout << lineCount << " lines read!" << std::endl;
 	}
 	else
 	{
-		cout << "Unable to open file" << std::endl;
+		std::cout << "Unable to open file" << std::endl;
 	}
 }
 
 void testPolyglotKey() {
 	uint64_t key = 0x463b96181691fc9c;
 	position pos;
-	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	std::cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << std::endl;
 	Move move = createMove(E2, E4);
 	pos.ApplyMove(move);
 	key = 0x823c9b50fd114196;
-	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	std::cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << std::endl;
 	move = createMove(D7, D5);
 	pos.ApplyMove(move);
 	key = 0x0756b94461c50fb0;
-	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	std::cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << std::endl;
 	move = createMove(E4, E5);
 	pos.ApplyMove(move);
 	key = 0x662fafb965db29d4;
-	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	std::cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << std::endl;
 	move = createMove(F7, F5);
 	pos.ApplyMove(move);
 	key = 0x22a48b5a8e47ff78;
-	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	std::cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << std::endl;
 	move = createMove(E1, E2);
 	pos.ApplyMove(move);
 	key = 0x652a607ca3f242c1;
-	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	std::cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << std::endl;
 	move = createMove(E8, F7);
 	pos.ApplyMove(move);
 	key = 0x00fdd303c946bdd9;
-	cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << endl;
+	std::cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << std::endl;
 }
 
 void testParsePGN() {
-	string filename = "C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/twic1048.pgn";
-	vector<vector<Move>> parsed = pgn::parsePGNFile(filename);
+	std::string filename = "C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/twic1048.pgn";
+	std::vector<std::vector<Move>> parsed = pgn::parsePGNFile(filename);
 }
 
 void testMateInDos() {
-	string filename = "C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/MateenDos.pgn";
-	map<string, Move> exercises = pgn::parsePGNExerciseFile(filename);
+	std::string filename = "C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/MateenDos.pgn";
+	std::map<std::string, Move> exercises = pgn::parsePGNExerciseFile(filename);
 	search engine;
 	int count = 0;
 	int failed = 0;
-	for (map<string, Move>::iterator it = exercises.begin(); it != exercises.end(); ++it) {
+	for (std::map<std::string, Move>::iterator it = exercises.begin(); it != exercises.end(); ++it) {
 		engine.Reset();
 		position pos(it->first);
 		SearchStopCriteria ssc;
 		ssc.MaxDepth = 3;
 		++count;
 		ValuatedMove result = engine.Think(pos, ssc);
-			cout << count << "\t" << ((result.move == it->second) ? "OK\t" : "ERROR\t") << toString(result.move) << "\t" << toString(it->second)
-				<< "\t" << result.score << "\t" << it->first << endl;
+		std::cout << count << "\t" << ((result.move == it->second) ? "OK\t" : "ERROR\t") << toString(result.move) << "\t" << toString(it->second)
+				<< "\t" << result.score << "\t" << it->first << std::endl;
 			failed += result.move != it->second;
 	}
-	cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << endl;
-	cout << failed << " of " << count << " failed!";
+	std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
+	std::cout << failed << " of " << count << " failed!";
 }
 
 uint64_t perftNodes = 0;
 uint64_t testCount = 0;
-chrono::microseconds perftRuntime;
-bool checkPerft(string fen, int depth, uint64_t expectedResult, PerftType perftType = BASIC) {
+std::chrono::microseconds perftRuntime;
+bool checkPerft(std::string fen, int depth, uint64_t expectedResult, PerftType perftType = BASIC) {
 	testCount++;
 	position pos(fen);
 	uint64_t perftResult;
-	chrono::system_clock::time_point begin = chrono::high_resolution_clock::now();
+	std::chrono::system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	switch (perftType) {
 	case BASIC:
 		perftResult = perft(pos, depth); break;
@@ -728,46 +745,46 @@ bool checkPerft(string fen, int depth, uint64_t expectedResult, PerftType perftT
 	case P3:
 		perftResult = perft3(pos, depth); break;
 	}
-	chrono::system_clock::time_point end = chrono::high_resolution_clock::now();
+	std::chrono::system_clock::time_point end = std::chrono::high_resolution_clock::now();
 	auto runtime = end - begin;
-	chrono::microseconds runtimeMS = chrono::duration_cast<chrono::microseconds>(runtime);
+	std::chrono::microseconds runtimeMS = std::chrono::duration_cast<std::chrono::microseconds>(runtime);
 	perftRuntime += runtimeMS;
 	perftNodes += expectedResult;
 	if (perftResult == expectedResult) {
 		if (runtimeMS.count() > 0) {
-			cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << expectedResult / runtimeMS.count() << " MNodes/s\t" << endl << "\t" << fen << endl;
+			std::cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << expectedResult / runtimeMS.count() << " MNodes/s\t" << std::endl << "\t" << fen << std::endl;
 		}
 		else {
-			cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << endl << "\t" << fen << endl;
+			std::cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << std::endl << "\t" << fen << std::endl;
 		}
 		return true;
 	}
 	else {
-		cout << testCount << "\t" << "Error\t" << depth << "\t" << perftResult << "\texpected\t" << expectedResult << "\t" << fen << endl;
+		std::cout << testCount << "\t" << "Error\t" << depth << "\t" << perftResult << "\texpected\t" << expectedResult << "\t" << fen << std::endl;
 		return false;
 	}
 }
 
 bool testPerft(PerftType perftType) {
-	cout << "Starting Perft Suite in Mode " << perftType << endl;
+	std::cout << "Starting Perft Suite in Mode " << perftType << std::endl;
 	bool result = true;
 	testCount = 0;
 	perftNodes = 0;
 	perftRuntime = perftRuntime.zero();
-	cout << "Initial Position" << endl;
+	std::cout << "Initial Position" << std::endl;
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 1, 20, perftType);
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 2, 400, perftType);
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 3, 8902, perftType);
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 4, 197281, perftType);
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 5, 4865609, perftType);
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 6, 119060324, perftType);
-	cout << "Kiwi Pete" << endl;
+	std::cout << "Kiwi Pete" << std::endl;
 	result = result && checkPerft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 1, 48, perftType);
 	result = result && checkPerft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 2, 2039, perftType);
 	result = result && checkPerft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 3, 97862, perftType);
 	result = result && checkPerft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4, 4085603, perftType);
 	result = result && checkPerft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 5, 193690690, perftType);
-	cout << "Chess 960 Positions" << endl;
+	std::cout << "Chess 960 Positions" << std::endl;
 	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 1, 19, perftType);
 	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 2, 361, perftType);
 	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 3, 7735, perftType);
@@ -781,7 +798,7 @@ bool testPerft(PerftType perftType) {
 	result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 5, 37095094, perftType);
 	result = result && checkPerft("2rkr3/5PP1/8/5Q2/5q2/8/5pp1/2RKR3 w KQkq - 0 1", 5, 94370149, perftType);
 	result = result && checkPerft("rqkrbnnb/pppppppp/8/8/8/8/PPPPPPPP/RQKRBNNB w KQkq - 0 1", 6, 111825069, perftType);
-	cout << "Standard Chess positions" << endl;
+	std::cout << "Standard Chess positions" << std::endl;
 	result = result && checkPerft("4k3/8/8/8/8/8/8/4K2R w K - 0 1", 1, 15, perftType);
 	result = result && checkPerft("4k3/8/8/8/8/8/8/4K2R w K - 0 1", 2, 66, perftType);
 	result = result && checkPerft("4k3/8/8/8/8/8/8/4K2R w K - 0 1", 3, 1197, perftType);
@@ -1526,11 +1543,11 @@ bool testPerft(PerftType perftType) {
 	result = result && checkPerft("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 4, 182838, perftType);
 	result = result && checkPerft("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 5, 3605103, perftType);
 	result = result && checkPerft("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 6, 71179139, perftType);
-	if (result) cout << "Done OK" << endl; else cout << "Error!" << endl;
-	cout << "Runtime: " << setprecision(3) << perftRuntime.count() / 1000000.0 << " s" << endl;
-	cout << "Count:   " << setprecision(3) << perftNodes / 1000000.0 << " MNodes" << endl;
-	cout << "Leafs: " << setprecision(3) << (1.0 * perftNodes) / perftRuntime.count() << " MNodes/s" << endl;
-	cout << "Nodes: " << setprecision(3) << (1.0 * nodeCount) / perftRuntime.count() << " MNodes/s" << endl;
+	if (result)std::cout << "Done OK" << std::endl; else std::cout << "Error!" << std::endl;
+	std::cout << "Runtime: " << std::setprecision(3) << perftRuntime.count() / 1000000.0 << " s" << std::endl;
+	std::cout << "Count:   " << std::setprecision(3) << perftNodes / 1000000.0 << " MNodes" << std::endl;
+	std::cout << "Leafs: " << std::setprecision(3) << (1.0 * perftNodes) / perftRuntime.count() << " MNodes/s" << std::endl;
+	std::cout << "Nodes: " << std::setprecision(3) << (1.0 * nodeCount) / perftRuntime.count() << " MNodes/s" << std::endl;
 	return result;
 }
 
@@ -1538,75 +1555,75 @@ bool testSEE() {
 	position pos("1k1r4/1pp4p/p7/4p3/8/P5P1/1PP4P/2K1R3 w - - ");
 	Value see = pos.SEE(E1, E5);
 	bool result = true;
-	if (see > 0) cout << "OK\t"; else {
-		cout << "ERROR\t";
+	if (see > 0)std::cout << "OK\t"; else {
+		std::cout << "ERROR\t";
 		result = false;
 	}
-	cout << "SEE: " << see << "\t1k1r4/1pp4p/p7/4p3/8/P5P1/1PP4P/2K1R3 w - - \t" << toString(createMove(E1, E5)) << endl;
+	std::cout << "SEE: " << see << "\t1k1r4/1pp4p/p7/4p3/8/P5P1/1PP4P/2K1R3 w - - \t" << toString(createMove(E1, E5)) << std::endl;
 	position pos2("1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - -");
 	see = pos2.SEE(D3, E5);
-	if (see < 0) cout << "OK\t"; else {
-		cout << "ERROR\t";
+	if (see < 0)std::cout << "OK\t"; else {
+		std::cout << "ERROR\t";
 		result = false;
 	}
-	cout << "SEE: " << see << "\t1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - \t" << toString(createMove(D3, E5)) << endl;
+	std::cout << "SEE: " << see << "\t1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - \t" << toString(createMove(D3, E5)) << std::endl;
 
 	position pos3("2k1r3/1pp4p/p5p1/8/4P3/P7/1PP4P/1K1R4 b - - 0 1");
 	see = pos3.SEE(E8, E4);
-	if (see > 0) cout << "OK\t"; else {
-		cout << "ERROR\t";
+	if (see > 0) std::cout << "OK\t"; else {
+		std::cout << "ERROR\t";
 		result = false;
 	}
-	cout << "SEE: " << see << "\t2k1r3/1pp4p/p5p1/8/4P3/P7/1PP4P/1K1R4 b - - 0 1\t" << toString(createMove(E8, E4)) << endl;
+	std::cout << "SEE: " << see << "\t2k1r3/1pp4p/p5p1/8/4P3/P7/1PP4P/1K1R4 b - - 0 1\t" << toString(createMove(E8, E4)) << std::endl;
 
 	position pos4("2k1q3/1pp1r1bp/p2n2p1/8/4P3/P4B2/1PPN3P/1K1R3Q b - - 0 1");
 	see = pos4.SEE(D6, E4);
-	if (see < 0) cout << "OK\t"; else {
-		cout << "ERROR\t";
+	if (see < 0)std::cout << "OK\t"; else {
+		std::cout << "ERROR\t";
 		result = false;
 	}
-	cout << "SEE: " << see << "\t2k1q3/1pp1r1bp/p2n2p1/8/4P3/P4B2/1PPN3P/1K1R3Q b - - 0 1 \t" << toString(createMove(D6, E4)) << endl;
+	std::cout << "SEE: " << see << "\t2k1q3/1pp1r1bp/p2n2p1/8/4P3/P4B2/1PPN3P/1K1R3Q b - - 0 1 \t" << toString(createMove(D6, E4)) << std::endl;
 
 	position pos5("1k6/8/8/3pRrRr/8/8/8/1K6 w - - 0 1");
 	see = pos5.SEE(E5, D5);
-	if (see < 0) cout << "OK\t"; else {
-		cout << "ERROR\t";
+	if (see < 0)std::cout << "OK\t"; else {
+		std::cout << "ERROR\t";
 		result = false;
 	}
-	cout << "SEE: " << see << "\t1k6/8/8/3pRrRr/8/8/8/1K6 w - - 0 1  \t" << toString(createMove(E5, D5)) << endl;
+	std::cout << "SEE: " << see << "\t1k6/8/8/3pRrRr/8/8/8/1K6 w - - 0 1  \t" << toString(createMove(E5, D5)) << std::endl;
 
 	position pos6("1k6/8/8/8/3PrRrR/8/8/1K6 b - - 0 1");
 	see = pos6.SEE(E4, D4);
-	if (see < 0) cout << "OK\t"; else {
-		cout << "ERROR\t";
+	if (see < 0)std::cout << "OK\t"; else {
+		std::cout << "ERROR\t";
 		result = false;
 	}
-	cout << "SEE: " << see << "\t1k6/8/8/8/3PrRrR/8/8/1K6 b - - 0 1 \t" << toString(createMove(E4, D4)) << endl;
+	std::cout << "SEE: " << see << "\t1k6/8/8/8/3PrRrR/8/8/1K6 b - - 0 1 \t" << toString(createMove(E4, D4)) << std::endl;
 	return result;
 }
 
-vector<string> readTextFile(string file) {
-	vector<string> lines;
-	ifstream s;
+std::vector<std::string> readTextFile(std::string file) {
+	std::vector<std::string> lines;
+	std::ifstream s;
 	s.open(file);
-	string line;
+	std::string line;
 	if (s.is_open())
 	{
 		long lineCount = 0;
 		while (s)
 		{
-			getline(s, line);
+			std::getline(s, line);
 			lines.push_back(line);
 			lineCount++;
-			if ((lineCount & 8191) == 0) cout << ".";
+			if ((lineCount & 8191) == 0)std::cout << ".";
 		}
 		s.close();
-		cout << endl;
-		cout << lineCount << " lines read!" << endl;
+		std::cout << std::endl;
+		std::cout << lineCount << " lines read!" << std::endl;
 	}
 	else
 	{
-		cout << "Unable to open file" << std::endl;
+		std::cout << "Unable to open file" << std::endl;
 	}
 	return lines;
 }

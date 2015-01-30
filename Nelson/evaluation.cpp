@@ -4,17 +4,17 @@
 #include <algorithm>
 
 
-evaluation evaluate(const position& pos) {
+Value evaluate(const position& pos) {
 	evaluation result;
 	result.Material = pos.GetMaterialScore();
 	result.Mobility = evaluateMobility(pos);
 	result.KingSafety = evaluateKingSafety(pos);
 	result.PawnStructure = pos.PawnStructureScore();
-	return result;
+	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
 }
 
-evaluation evaluateDraw(const position& pos) {
-	return DrawEvaluation;
+Value evaluateDraw(const position& pos) {
+	return VALUE_DRAW;
 }
 
 eval evaluateKingSafety(const position& pos) {
@@ -25,7 +25,7 @@ eval evaluateKingSafety(const position& pos) {
 	Bitboard kingZoneWhite = kingRingWhite | (kingRingWhite << 8);
 	Bitboard kingZoneBlack = kingRingBlack | (kingRingBlack >> 8);
 	int attackUnits = 0;
-	int attackerCount = 0; 
+	int attackerCount = 0;
 	int attackCount;
 	Bitboard pieceBB = pos.PieceBB(BISHOP, WHITE) | pos.PieceBB(KNIGHT, WHITE);
 	while (pieceBB) {
@@ -219,7 +219,7 @@ eval evaluateMobility2(const position& pos) {
 	return result;
 }
 
-evaluation evaluateFromScratch(const position& pos) {
+Value evaluateFromScratch(const position& pos) {
 	evaluation result;
 	MaterialTableEntry * material = pos.GetMaterialTableEntry();
 	material->Score = VALUE_ZERO;
@@ -236,7 +236,9 @@ evaluation evaluateFromScratch(const position& pos) {
 	material->Phase = phase;
 	result.Material = material->Score = materialEvaluation.getScore(phase);
 	material->EvaluationFunction = &evaluate;
-	return result;
+	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
 }
+
+
 
 

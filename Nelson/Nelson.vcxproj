@@ -148,6 +148,7 @@
     <ClCompile Include="board.cpp" />
     <ClCompile Include="evaluation.cpp" />
     <ClCompile Include="hashtables.cpp" />
+    <ClCompile Include="kpk.cpp" />
     <ClCompile Include="Material.cpp" />
     <ClCompile Include="Nelson.cpp" />
     <ClCompile Include="pgn.cpp" />
@@ -160,6 +161,7 @@
     <ClInclude Include="board.h" />
     <ClInclude Include="evaluation.h" />
     <ClInclude Include="hashtables.h" />
+    <ClInclude Include="kpk.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="pgn.h" />
     <ClInclude Include="position.h" />

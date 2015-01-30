@@ -77,7 +77,7 @@ namespace tt {
 		if (clusterCount < 1024) clusterCount = 1024;
 		Table = (Cluster *)calloc(clusterCount, sizeof(Cluster));
 		MASK = clusterCount - 1;
-		cout << "info string Hash Size: " << ((clusterCount * sizeof(Cluster)) >> 20) << " MByte" << endl;
+		std::cout << "infostd::string Hash Size: " << ((clusterCount * sizeof(Cluster)) >> 20) << " MByte" << std::endl;
 		ResetCounter();
 	}
 

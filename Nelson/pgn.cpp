@@ -4,25 +4,23 @@
 #include <iostream>
 #include "pgn.h"
 
-using namespace std;
-
 namespace pgn {
 
-	const string WHITESPACE = " \n\r\t";
+	const std::string WHITESPACE = " \n\r\t";
 
-	string TrimLeft(const string& s)
+	std::string TrimLeft(const std::string& s)
 	{
 		size_t startpos = s.find_first_not_of(WHITESPACE);
-		return (startpos == string::npos) ? "" : s.substr(startpos);
+		return (startpos ==std::string::npos) ? "" : s.substr(startpos);
 	}
 
-	string TrimRight(const string& s)
+	std::string TrimRight(const std::string& s)
 	{
 		size_t endpos = s.find_last_not_of(WHITESPACE);
-		return (endpos == string::npos) ? "" : s.substr(0, endpos + 1);
+		return (endpos ==std::string::npos) ? "" : s.substr(0, endpos + 1);
 	}
 
-	string Trim(const string& s)
+	std::string Trim(const std::string& s)
 	{
 		return TrimRight(TrimLeft(s));
 	}
@@ -44,23 +42,23 @@ namespace pgn {
 		return Square(8 * rankI + fileI);
 	}
 		 
-	/* Tokenizing a string */
-	vector<string> tokenize(const string& p_pcstStr, char delim)  {
-		vector<string> tokens;
-		stringstream   mySstream(p_pcstStr);
-		string         temp;
-		while (getline(mySstream, temp, delim)) {
+	/* Tokenizing astd::string */
+	std::vector<std::string> tokenize(const std::string& p_pcstStr, char delim)  {
+		std::vector<std::string> tokens;
+		std::stringstream   mySstream(p_pcstStr);
+		std::string         temp;
+		while (std::getline(mySstream, temp, delim)) {
 			tokens.push_back(temp);
 		}
 		return tokens;
 	}
-	//Parses a single move (assuming that only move data is part of the string - no annotations,
+	//Parses a single move (assuming that only move data is part of thestd::string - no annotations,
 	//no check symbol, ...
-	Move parseSANMove(string move, position & pos) {
+	Move parseSANMove(std::string move, position & pos) {
 		size_t indx = move.find("+");
-		if (indx != string::npos) move = move.substr(0, indx);
+		if (indx != std::string::npos) move = move.substr(0, indx);
 		indx = move.find("#");
-		if (indx != string::npos) move = move.substr(0, indx);
+		if (indx != std::string::npos) move = move.substr(0, indx);
 		move = Trim(move);
 		ValuatedMove * moves = pos.GenerateMoves<ALL>();
 		Move m;
@@ -77,7 +75,7 @@ namespace pgn {
 			return MOVE_NONE;
 		}
 		PieceType movingPieceType = getPieceType(move[0]);
-		bool isPromotion = movingPieceType == PAWN && move.find("=") != string::npos;
+		bool isPromotion = movingPieceType == PAWN && move.find("=") != std::string::npos;
 		size_t len = move.length();
 		PieceType promotionType;
 		Square targetSquare;
@@ -127,13 +125,13 @@ namespace pgn {
 		else return m1;
 	}
 
-	const string INITIAL_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
-	vector<Move> parsePGNGame(vector<string> lines, string & fen) {
-		vector<Move> moves;
+	const std::string INITIAL_FEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
+	std::vector<Move> parsePGNGame(std::vector<std::string> lines, std::string & fen) {
+		std::vector<Move> moves;
 		position * pos = new position();
 		fen = INITIAL_FEN;
-		for (vector<string>::iterator it = lines.begin(); it != lines.end(); ++it) {
-			string line = Trim(*it);
+		for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); ++it) {
+			std::string line = Trim(*it);
 			if (line.length() == 0) continue;
 			if (line[0] == '[') {
 				if (!line.substr(0, 4).compare("[FEN")) {
@@ -146,11 +144,11 @@ namespace pgn {
 				continue;
 			}
 			
-			vector<string> tokens = tokenize(line, ' ');
-			for (vector<string>::iterator t = tokens.begin(); t != tokens.end(); ++t) {
-				string token((*t).append("\0"));
-				if (token.find_first_not_of("abcdefgh1234567890KQRBNx+#=.") != string::npos) goto END;
-				if (token.find('.') != string::npos) continue; //Move number
+			std::vector<std::string> tokens = tokenize(line, ' ');
+			for (std::vector<std::string>::iterator t = tokens.begin(); t != tokens.end(); ++t) {
+				std::string token((*t).append("\0"));
+				if (token.find_first_not_of("abcdefgh1234567890KQRBNx+#=.") !=std::string::npos) goto END;
+				if (token.find('.') !=std::string::npos) continue; //Move number
 				Move move = parseSANMove(token, *pos);
 				if (move) {
 					moves.push_back(move);
@@ -162,26 +160,26 @@ namespace pgn {
 		return moves;
 	}
 
-	vector<Move> parsePGNGame(vector<string> lines) {
-		string fen;
+	std::vector<Move> parsePGNGame(std::vector<std::string> lines) {
+		std::string fen;
 		return parsePGNGame(lines, fen);
 	}
 
-	vector<vector<Move>> parsePGNFile(string filename) {
-		vector<vector<Move>> result;
-		ifstream s;
+	std::vector<std::vector<Move>> parsePGNFile(std::string filename) {
+		std::vector<std::vector<Move>> result;
+		std::ifstream s;
 		s.open(filename);
-		string l;
+		std::string l;
 		bool inTag = false;
 		bool inMoves = false;
-		vector<string> * gameLines = new vector<string>();
+		std::vector<std::string> * gameLines = new std::vector<std::string>();
 		if (s.is_open())
 		{
 			long lineCount = 0;
 			while (s)
 			{
-				getline(s, l);
-				string line = Trim(l);
+				std::getline(s, l);
+				std::string line = Trim(l);
 				gameLines->push_back(line);
 				if (line.length() > 0) {
 					if (inTag && line[0] != '[') {
@@ -204,22 +202,22 @@ namespace pgn {
 		return result;
 	}
 
-	map<string, Move> parsePGNExerciseFile(string filename) {
-		map<string, Move> result;
-		ifstream s;
+	std::map<std::string, Move> parsePGNExerciseFile(std::string filename) {
+		std::map<std::string, Move> result;
+		std::ifstream s;
 		s.open(filename);
-		string l;
+		std::string l;
 		bool inTag = false;
 		bool inMoves = false;
 		uint64_t gameCount = 0;
-		vector<string> * gameLines = new vector<string>();
+		std::vector<std::string> * gameLines = new std::vector<std::string>();
 		if (s.is_open())
 		{
 			long lineCount = 0;
 			while (s)
 			{
-				getline(s, l);
-				string line = Trim(l);
+				std::getline(s, l);
+				std::string line = Trim(l);
 				gameLines->push_back(line);
 				if (line.length() > 0) {
 					if (inTag && line[0] != '[') {
@@ -228,12 +226,12 @@ namespace pgn {
 					}
 					else if (!inTag && line[0] == '[') {
 						if (inMoves) {
-							string fen;
-							vector<Move> moves = parsePGNGame(*gameLines, fen);
+							std::string fen;
+							std::vector<Move> moves = parsePGNGame(*gameLines, fen);
 							if (moves.size() > 0){
 								result[fen] = moves[0];
 								gameCount++;
-								if ((gameCount % 1000) == 0) cout << gameCount << endl;
+								if ((gameCount % 1000) == 0)std::cout << gameCount << std::endl;
 							}
 							gameLines->clear();
 						}
@@ -243,8 +241,8 @@ namespace pgn {
 				}
 			}
 			if (gameLines->size() > 0) {
-				string fen;
-				vector<Move> moves = parsePGNGame(*gameLines, fen);
+				std::string fen;
+				std::vector<Move> moves = parsePGNGame(*gameLines, fen);
 				result[fen] = moves[0];
 			}
 		}

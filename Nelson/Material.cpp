@@ -1,8 +1,8 @@
 #include "material.h"
 #include "settings.h"
 #include "evaluation.h"
+#include "kpk.h"
 
-using namespace std;
 
 MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 1];
 
@@ -102,4 +102,51 @@ void InitializeMaterialTable() {
 	MaterialTable[key].Score = VALUE_DRAW;
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
 	pieceCounts[BKNIGHT] = 0;
+	for (int i = 0; i < 10; ++i) pieceCounts[i] = 0;
+	//KPK
+	pieceCounts[WPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &kpk::EvaluateKPK<WHITE>;
+	pieceCounts[WPAWN] = 0;
+	pieceCounts[BPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &kpk::EvaluateKPK<BLACK>;
+	//KQK, KRK
+	pieceCounts[BPAWN] = 0;
+	pieceCounts[WQUEEN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &easyMate<WHITE>;
+	pieceCounts[BQUEEN] = 1;
+	pieceCounts[WQUEEN] = 0;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &easyMate<BLACK>;
+	pieceCounts[BQUEEN] = 0;
+	pieceCounts[WROOK] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &easyMate<WHITE>;
+	pieceCounts[WROOK] = 0;
+	pieceCounts[BROOK] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &easyMate<BLACK>;
+	pieceCounts[BROOK] = 0;
+	//KBBK
+	pieceCounts[WBISHOP] = 2;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &easyMate<WHITE>;
+	pieceCounts[WBISHOP] = 0;
+	pieceCounts[BBISHOP] = 2;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &easyMate<BLACK>;
+	pieceCounts[BBISHOP] = 0;
+	//KBNK
+	pieceCounts[WBISHOP] = 1;
+	pieceCounts[WKNIGHT] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKNBK<WHITE>;
+	pieceCounts[WBISHOP] = 0;
+	pieceCounts[WKNIGHT] = 0;
+	pieceCounts[BBISHOP] = 1;
+	pieceCounts[BKNIGHT] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKNBK<BLACK>;
 }

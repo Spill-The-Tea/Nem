@@ -18,8 +18,9 @@ public:
 	double BranchingFactor = 0;
 
 	ValuatedMove Think(position &pos, SearchStopCriteria ssc);
-	string PrincipalVariation(int depth = PV_MAX_LENGTH);
+	std::string PrincipalVariation(int depth = PV_MAX_LENGTH);
 	inline void Reset();
+	inline void NewGame();
 	inline int Depth() const { return _depth; }
 	inline int64_t ThinkTime() const { return _thinkTime; }
 	inline double cutoffAt1stMoveRate() const { return 100.0 * cutoffAt1stMove / cutoffCount; }
@@ -37,7 +38,8 @@ private:
 	uint64_t cutoffCount = 0;
 	uint64_t cutoffMoveIndexSum = 0;
 	ExtendedMove killer[MAX_DEPTH][2];
-	Move counterMove[12*64];
+	Move counterMove[12 * 64];
+	//Value gains[12 * 64];
 
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<NodeType NT> Value QSearch(Value alpha, Value beta, position &pos, int depth);
@@ -58,4 +60,12 @@ inline void search::Reset() {
 	Stop = false;
 	History.initialize();
 	for (int i = 0; i < MAX_DEPTH; ++i) killer[i][0] = killer[i][1] = EXTENDED_MOVE_NONE;
+}
+
+inline void search::NewGame() {
+	Reset();
+	for (int i = 0; i < 12 * 64; ++i) {
+		counterMove[i] = MOVE_NONE;
+		//gains[i] = VALUE_ZERO;
+	}
 }

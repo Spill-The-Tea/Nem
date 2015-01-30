@@ -19,31 +19,31 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 	rootMoveCount = pos.GeneratedMoveCount();
 	rootMoves = new ValuatedMove[rootMoveCount];
 	memcpy(rootMoves, generatedMoves, rootMoveCount * sizeof(ValuatedMove));
-	fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
+	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
 	for (_depth = 1; _depth <= ssc.MaxDepth; ++_depth) {
 		Value alpha = -VALUE_MATE;
 		Value beta = VALUE_MATE;
 		Search<ROOT>(alpha, beta, pos, _depth, &PVMoves[0]);
-		stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
+		std::stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
 		BestMove = rootMoves[0];
-		if (Stop) break;
 		int64_t tNow = now();
 		_thinkTime = tNow - ssc.StartTime;
+		if (Stop) break;
 		nodeCounts[_depth] = NodeCount - nodeCounts[_depth - 1];
 		if (_depth > 3) BranchingFactor = sqrt(1.0 * nodeCounts[_depth] / nodeCounts[_depth - 2]);
 		if (UciOutput && _thinkTime > 200) {
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
-				cout << "info depth " << _depth << " nodes " << NodeCount << " score cp " << BestMove.score << " nps " << NodeCount * 1000 / _thinkTime
+				std::cout << "info depth " << _depth << " nodes " << NodeCount << " score cp " << BestMove.score << " nps " << NodeCount * 1000 / _thinkTime
 				<< " hashfull " << tt::GetHashFull()
 				//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
-				<< " pv " << PrincipalVariation(_depth) << endl;
+				<< " pv " << PrincipalVariation(_depth) << std::endl;
 			else {
 				int pliesToMate;
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
-				cout << "info depth " << _depth << " nodes " << NodeCount << " score mate " << pliesToMate / 2 << " nps " << NodeCount * 1000 / _thinkTime
+				std::cout << "info depth " << _depth << " nodes " << NodeCount << " score mate " << pliesToMate / 2 << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
 					//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
-					<< " pv " << PrincipalVariation(_depth) << endl;
+					<< " pv " << PrincipalVariation(_depth) << std::endl;
 			}
 		}
 		if (tNow > ssc.SoftStopTime || (3 * (tNow - ssc.StartTime) + ssc.StartTime) > ssc.SoftStopTime || (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD) && abs(int(BestMove.score)) <= int(VALUE_MATE))) break;
@@ -70,6 +70,7 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 			if (score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
 		}
 		else score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
+		if (Stop) break;
 		rootMoves[i].score = score;
 		if (score >= beta) {
 			updateCutoffStats(rootMoves[i].move, depth, pos, i);
@@ -110,19 +111,29 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	if (Stop) return VALUE_ZERO;
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
-	if (NT != NULL_MOVE && depth > 4 && pos.NonPawnMaterial(pos.GetSideToMove()) && !pos.Checked()) {
-		int reduction;
-		depth > 6 ? reduction = 2 : reduction = 3;
+	Value staticEvaluation = ttFound && ttEntry->evalValue != VALUE_NOTYETDETERMINED ? ttEntry->evalValue : pos.evaluate();
+	if (NT != NULL_MOVE && staticEvaluation > beta && depth > 4 && pos.GetMaterialTableEntry()->Phase <= 200 && !pos.Checked() && pos.NonPawnMaterial(pos.GetSideToMove())) {
+		int reduction = depth >> 1;
 		Square epsquare = pos.GetEPSquare();
 		pos.NullMove();
 		Value nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction - 1, &subpv[0]);
 		pos.NullMove(epsquare);
-		if (nullscore >= beta) {
-			return beta;
-		}
+		if (nullscore >= beta) return beta;
+		//{
+		//	if (nullscore > VALUE_MATE_THRESHOLD) nullscore = beta;
+		//	if (depth < 12 && abs(beta) < VALUE_KNOWN_WIN) return nullscore;
+
+		//	//Verification Search
+		//	Value verificationValue = Search<NULL_MOVE>(beta - 1, beta, pos, depth - reduction, &subpv[0]);
+		//	if (verificationValue >= beta) return nullscore;
+		//}
 	}
-	Value staticEvaluation = ttFound && ttEntry->evalValue != VALUE_NOTYETDETERMINED ? ttEntry->evalValue : pos.evaluate();
-	//bool futilityPruning = depth <= FULTILITY_PRUNING_DEPTH && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]);
+	//if (pos.IsQuiet(pos.GetLastAppliedMove())) {
+	//	Square lastToSquare = to(pos.GetLastAppliedMove());
+	//	int gainIndx = (pos.GetPieceOnSquare(lastToSquare) << 6) + lastToSquare;
+	//	gains[gainIndx] = std::max(staticEvaluation - pos.Previous()->GetStaticEval(), gains[gainIndx] - 1);
+	//}
+	//bool futilityPruning = NT != PV && NT != NULL_MOVE && depth <= FULTILITY_PRUNING_DEPTH && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]) && !pos.Checked() && pos.NonPawnMaterial(pos.GetSideToMove());
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
@@ -131,7 +142,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	//else
 	pos.InitializeMoveIterator<MAIN_SEARCH>(&History, killer[pos.GetPliesFromRoot()][0], killer[pos.GetPliesFromRoot()][1], counterMove, ttFound ? ttEntry->move : MOVE_NONE);
 	Move move;
-	int moveIndex = 0;
+	int moveIndex = 0; 
 	bool ZWS = false;
 	while ((move = pos.NextMove())) {
 		position next(pos);
@@ -239,7 +250,7 @@ void search::updateCutoffStats(const Move cutoffMove, int depth, position &pos, 
 	}
 }
 
-string search::PrincipalVariation(int depth) {
+std::string search::PrincipalVariation(int depth) {
 	std::stringstream ss;
 	for (int i = 0; i < depth; ++i) {
 		if (PVMoves[i] == MOVE_NONE) break;

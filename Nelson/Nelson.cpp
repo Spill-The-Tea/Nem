@@ -17,29 +17,29 @@ static bool is64Bit();
 int main(int argc, const char* argv[]) {
 #ifdef _MSC_VER
 #ifndef _WIN64
-	cout << "Only 64 bit operating systems are supported!" << endl;
+	cout << "Only 64 bit operating systems are supported!" << std::endl;
 	return 0;
 #endif
 #endif // _MSC_VER
 #ifdef __GNUC__
 //#ifndef __x86_64__
-//	cout << "Only 64 bit operating systems are supported!" << endl;
+//	cout << "Only 64 bit operating systems are supported!" << std::endl;
 //	return 0;
 //#endif
 #endif // __GNUC__
 	if (!popcountSupport()) {
-		cout << "No Popcount support - Engine does't work on this hardware!" << endl;
+		std::cout << "No Popcount support - Engine does't work on this hardware!" << std::endl;
 		return 0;
 	}
-	cout << "Compiled on: " << __DATE__ << " " << __TIME__ << endl;
+	std::cout << "Compiled on: " << __DATE__ << " " << __TIME__ << std::endl;
 	Initialize();
 	//bench2(7);
 	//return 0;
 	if (argc <= 1) loop();
 	else {
-		string func(argv[1]);
+		std::string func(argv[1]);
 		if (!func.compare("test")) {
-			string input = "";
+			std::string input = "";
 			//std::getline(cin, input);
 			//testPerft();
 			//return 0;
@@ -47,11 +47,11 @@ int main(int argc, const char* argv[]) {
 			position pos;
 			std::cout << pos.GetMaterialKey() << std::endl;
 			while (true) {
-				string input;
-				std::getline(cin, input);
+				std::string input;
+				std::getline(std::cin, input);
 				if (!input.compare(0, 4, "quit")) break;
 				else if (!input.compare(0, 8, "position")) {
-					string fen;
+					std::string fen;
 					if (input.length() < 10) fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 					else fen = input.substr(9);
 					pos.setFromFEN(fen);
@@ -86,7 +86,7 @@ int main(int argc, const char* argv[]) {
 					testSEE();
 				}
 				else if (!input.compare(0, 5, "print")) {
-					cout << pos.print() << endl;
+					std::cout << pos.print() << std::endl;
 				}
 				else if (!input.compare(0, 3, "qcg")) {
 					testCheckQuietCheckMoveGeneration();
@@ -110,8 +110,11 @@ int main(int argc, const char* argv[]) {
 				else if (!input.compare(0, 10, "repetition")) {
 					testRepetition();
 				}
+				else if (!input.compare(0, 3, "kpk")) {
+					testKPK();
+				}
 			}
-			std::getline(cin, input);
+			std::getline(std::cin, input);
 			return 0;
 		}
 	}

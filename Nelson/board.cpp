@@ -8,8 +8,7 @@
 #include "material.h"
 #include "position.h"
 #include "hashtables.h"
-
-using namespace std;
+#include "kpk.h"
 
 bool Chess960 = false;
 
@@ -530,7 +529,7 @@ void InitializeMagic() {
 
 void Initialize() {
 	Chess960 = false;
-	chrono::system_clock::time_point begin = chrono::high_resolution_clock::now();
+	std::chrono::system_clock::time_point begin = std::chrono::high_resolution_clock::now();
 	InitializeInBetweenFields();
 	InitializeKingAttacks();
 	InitializeKnightAttacks();
@@ -542,14 +541,15 @@ void Initialize() {
 	InitializeMaterialTable();
 	InitializeShadowedFields();
 	pawn::initialize();
+	kpk::init_kpk();
 	tt::InitializeTranspositionTable(HashSizeMB);
-	chrono::system_clock::time_point end = chrono::high_resolution_clock::now();
+	std::chrono::system_clock::time_point end = std::chrono::high_resolution_clock::now();
 	auto runtime = end - begin;
-	chrono::microseconds runtimeMS = chrono::duration_cast<chrono::microseconds>(runtime);
-	cout << "Initialization Time: " << runtimeMS.count() / 1000 << "ms" << endl;
+	std::chrono::microseconds runtimeMS = std::chrono::duration_cast<std::chrono::microseconds>(runtime);
+	std::cout << "Initialization Time: " << runtimeMS.count() / 1000 << "ms" << std::endl;
 }
 
-Move parseMoveInUCINotation(const string& uciMove, const position& pos) {
+Move parseMoveInUCINotation(const std::string& uciMove, const position& pos) {
 	Square fromSquare = Square(uciMove[0] - 'a' + 8 * (uciMove[1] - '1'));
 	Square toSquare = Square(uciMove[2] - 'a' + 8 * (uciMove[3] - '1'));
 	if (uciMove.length() > 4) {

@@ -1,6 +1,6 @@
 #pragma once
-
 #include "types.h"
+#include <algorithm>
 
 extern bool Chess960;
 
@@ -31,12 +31,15 @@ const Bitboard HALF_OF_WHITE = RANK1 | RANK2 | RANK3 | RANK4;
 const Bitboard HALF_OF_BLACK = ~HALF_OF_WHITE;
 const Bitboard bbKINGSIDE = F_FILE | G_FILE | H_FILE;
 const Bitboard bbQUEENSIDE = A_FILE | B_FILE | C_FILE;
+const Bitboard BORDER = RANK1 | RANK8 | A_FILE | H_FILE;
+const Bitboard EXTENDED_BORDER = BORDER | RANK7 | RANK2 | B_FILE | G_FILE;
 const Bitboard AntiDiagonals[] = { 0x102, 0x10204, 0x1020408, 0x102040810, 0x10204081020,
                  0x1020408102040, 0x102040810204080, 0x204081020408000, 0x408102040800000,
                  0x810204080000000, 0x1020408000000000, 0x2040800000000000, 0x4080000000000000 };
 const Bitboard Diagonals[] = { 0x8040, 0x804020, 0x80402010, 0x8040201008, 0x804020100804,
                  0x80402010080402, 0x8040201008040201, 0x4020100804020100, 0x2010080402010000,
                  0x1008040201000000, 0x804020100000000, 0x402010000000000, 0x201000000000000 };
+const Bitboard DARKSQUARES = 0xaa55aa55aa55aa55;
 extern Bitboard InitialKingSquareBB[2];
 extern Square InitialKingSquare[2];
 extern Bitboard InitialRookSquareBB[4];
@@ -113,6 +116,14 @@ inline Bitboard FrontFillSouth(Bitboard gen) {
 	gen |= (gen >> 16);
 	gen |= (gen >> 32);
 	return gen;
+}
+
+inline int ChebishevDistance(Square sq1, Square sq2) {
+	return std::max(abs((sq1>>3) - (sq2>>3)), abs((sq1 & 7) - (sq2 & 7)));
+}
+
+inline int ManhattanDistance(Square sq1, Square sq2) {
+	return abs((sq1 >> 3) - (sq2 >> 3)) + abs((sq1 & 7) - (sq2 & 7));
 }
 
 #define ZKBPawn { 0x9D39247E33776D41, 0x2AF7398005AAA5C7,            \
