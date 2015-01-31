@@ -4,6 +4,8 @@
 
 extern bool Chess960;
 
+const int MAX_MOVE_COUNT = 256;
+
 const Bitboard ALL_SQUARES = 0xffffffffffffffff;
 const Bitboard EMPTY = 0x00;
 const Bitboard NOT_H_FILE = 0x7f7f7f7f7f7f7f7f;

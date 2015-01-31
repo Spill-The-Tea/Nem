@@ -4,7 +4,7 @@
 #include <algorithm>
 
 
-Value evaluate(const position& pos) {
+Value evaluateDefault(const position& pos) {
 	evaluation result;
 	result.Material = pos.GetMaterialScore();
 	result.Mobility = evaluateMobility(pos);
@@ -235,7 +235,7 @@ Value evaluateFromScratch(const position& pos) {
 		popcount(pos.PieceBB(KNIGHT, WHITE)), popcount(pos.PieceBB(KNIGHT, BLACK)));
 	material->Phase = phase;
 	result.Material = material->Score = materialEvaluation.getScore(phase);
-	material->EvaluationFunction = &evaluate;
+	material->EvaluationFunction = &evaluateDefault;
 	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
 }
 

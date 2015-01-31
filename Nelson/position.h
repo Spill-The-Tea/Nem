@@ -92,7 +92,7 @@ private:
 
 	position * previous = nullptr;
 
-	ValuatedMove moves[256];
+	ValuatedMove moves[MAX_MOVE_COUNT];
 	int movepointer = 0;
 	Bitboard attacks[64];
 	Bitboard attackedByThem;
