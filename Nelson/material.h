@@ -11,6 +11,8 @@ struct MaterialTableEntry {
 	Value Score;
 	Phase_t Phase;
 	EvalFunction EvaluationFunction;
+
+	inline bool IsLateEndgame() { return EvaluationFunction != &evaluateDefault || Phase > 200; }
 };
 
 extern MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 1];

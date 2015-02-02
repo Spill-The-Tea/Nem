@@ -34,6 +34,13 @@ position::~position()
 {
 }
 
+void position::copy(const position &pos) {
+	memcpy(this->attacks, pos.attacks, 64 * sizeof(Bitboard));
+	this->attackedByUs = pos.attackedByUs;
+	this->attackedByThem = pos.attackedByThem;
+	this->lastAppliedMove = pos.lastAppliedMove;
+}
+
 int position::AppliedMovesBeforeRoot = 0;
 
 bool position::ApplyMove(Move move) {
@@ -175,7 +182,7 @@ Move position::NextMove() {
 		case HASHMOVE:
 			++generationPhase;
 			moveIterationPointer = -1;
-			return hashMove; //Validation might be required
+			if (validateMove(hashMove)) return hashMove; //Validation might be required
 			break;
 		case KILLER:
 			if (moveIterationPointer == 0) {

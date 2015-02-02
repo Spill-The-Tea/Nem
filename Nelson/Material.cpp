@@ -52,7 +52,7 @@ void InitializeMaterialTable() {
 											assert(MaterialTable[key].Score == VALUE_NOTYETDETERMINED);
 											MaterialTable[key].Score = evaluation.getScore(phase);
 											MaterialTable[key].Phase = phase;
-											MaterialTable[key].EvaluationFunction = &evaluate;
+											MaterialTable[key].EvaluationFunction = &evaluateDefault;
 										}
 									}
 								}
@@ -149,4 +149,17 @@ void InitializeMaterialTable() {
 	pieceCounts[BKNIGHT] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].EvaluationFunction = &evaluateKNBK<BLACK>;
+	//KQKR
+	pieceCounts[BBISHOP] = 0;
+	pieceCounts[BKNIGHT] = 0;
+	pieceCounts[WQUEEN] = 1;
+	pieceCounts[BROOK] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &easyMate<WHITE>;
+	pieceCounts[WQUEEN] = 0;
+	pieceCounts[BROOK] = 0;
+	pieceCounts[BQUEEN] = 1;
+	pieceCounts[WROOK] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &easyMate<BLACK>;
 }

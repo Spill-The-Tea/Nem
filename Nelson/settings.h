@@ -42,6 +42,8 @@ const Value MALUS_ISOLATED_PAWN = Value(25);
 const Value BONUS_BISHOP_PAIR = Value(0);
 const Value BONUS_CASTLING = Value(10);
 
+const Value DELTA_PRUNING_SAFETY_MARGIN = PieceValuesEG[PAWN];
+
 const Value PAWN_SHELTER_2ND_RANK = Value(10); 
 const Value PAWN_SHELTER_3RD_RANK = Value(5);
 

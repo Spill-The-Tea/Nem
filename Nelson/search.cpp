@@ -92,6 +92,8 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 
 template<NodeType NT> Value search::Search(Value alpha, Value beta, position &pos, int depth, Move * pv) {
 	++NodeCount;
+	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
+	if (Stop) return VALUE_ZERO;
 	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
 	//Mate distance pruning
 	alpha = Value(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), int(alpha)));
@@ -111,12 +113,12 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 		//if (ttValue > beta && ttEntry->move != MOVE_NONE && pos.IsQuiet(ttEntry->move)) updateCutoffStats(ttEntry->move, depth, pos, 0);
 		return ttValue;
 	}
-	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
-	if (Stop) return VALUE_ZERO;
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
-	Value staticEvaluation = ttFound && ttEntry->evalValue != VALUE_NOTYETDETERMINED ? ttEntry->evalValue : pos.evaluate();
-	if (NT != NULL_MOVE && staticEvaluation > beta && depth > 4 && pos.GetMaterialTableEntry()->NullMoveAllowed() && !pos.Checked() && pos.NonPawnMaterial(pos.GetSideToMove())) {
+	bool checked = pos.Checked();
+	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
+		ttFound && ttEntry->evalValue != VALUE_NOTYETDETERMINED ? ttEntry->evalValue : pos.evaluate();
+	if (NT != NULL_MOVE && !checked && staticEvaluation > beta && depth > 4 && !pos.GetMaterialTableEntry()->IsLateEndgame() && pos.NonPawnMaterial(pos.GetSideToMove())) {
 		int reduction = depth >> 1;
 		Square epsquare = pos.GetEPSquare();
 		pos.NullMove();
@@ -137,16 +139,26 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	//	int gainIndx = (pos.GetPieceOnSquare(lastToSquare) << 6) + lastToSquare;
 	//	gains[gainIndx] = std::max(staticEvaluation - pos.Previous()->GetStaticEval(), gains[gainIndx] - 1);
 	//}
+	Move ttMove = ttFound ? ttEntry->move : MOVE_NONE;
+	//IID (Seems to be neutral => therefore deactivated
+	//if (NT == PV && depth >= 5 && !ttMove) {
+	//	position next(pos);
+	//	next.copy(pos);
+	//	Search<NT>(alpha, beta, next, depth - 3, &subpv[0]);
+	//	if (Stop) return VALUE_ZERO;
+	//	ttEntry = tt::probe(pos.GetHash(), ttFound);
+	//	ttMove = ttFound ? ttEntry->move : MOVE_NONE;
+	//}
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
-	bool futilityPruning = NT != NULL_MOVE && depth <= FULTILITY_PRUNING_DEPTH && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]) && !pos.Checked() && pos.NonPawnMaterial(pos.GetSideToMove());
-	if (futilityPruning) 
-		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, counterMove, ttFound ? ttEntry->move : MOVE_NONE);
+	bool futilityPruning = NT != NULL_MOVE && !checked && depth <= FULTILITY_PRUNING_DEPTH && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]) && pos.NonPawnMaterial(pos.GetSideToMove());
+	if (futilityPruning)
+		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, counterMove, ttMove);
 	else
-	pos.InitializeMoveIterator<MAIN_SEARCH>(&History, killer[pos.GetPliesFromRoot()][0], killer[pos.GetPliesFromRoot()][1], counterMove, ttFound ? ttEntry->move : MOVE_NONE);
+		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, killer[pos.GetPliesFromRoot()][0], killer[pos.GetPliesFromRoot()][1], counterMove, ttMove);
 	Move move;
-	int moveIndex = 0; 
+	int moveIndex = 0;
 	bool ZWS = false;
 	while ((move = pos.NextMove())) {
 		position next(pos);
@@ -184,6 +196,8 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 	++QNodeCount;
 	if (NT == QSEARCH_DEPTH_NEGATIVE) {
 		++NodeCount;
+		Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
+		if (Stop) return VALUE_ZERO;
 		if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
 	}
 	//TT lookup
@@ -195,12 +209,11 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 		&& ttValue != VALUE_NOTYETDETERMINED
 		&& ((ttEntry->type() == tt::EXACT) || (ttValue >= beta && ttEntry->type() == tt::LOWER_BOUND) || (ttValue <= alpha && ttEntry->type() == tt::UPPER_BOUND))) {
 		return ttValue;
-	}
-	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
-	if (Stop) return VALUE_ZERO;
+	}	
+	bool checked = pos.Checked();
 	Value standPat;
-	if (pos.Checked()) { 
-		standPat = ttFound ? ttEntry->evalValue : VALUE_NOTYETDETERMINED;
+	if (checked) {
+		standPat = VALUE_NOTYETDETERMINED;
 	}
 	else {
 		standPat = ttFound && ttEntry->evalValue != VALUE_NOTYETDETERMINED ? ttEntry->evalValue : pos.evaluate();
@@ -208,6 +221,11 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 			ttEntry->update(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
 			return beta;
 		}
+		//Delta Pruning
+		//if (!pos.GetMaterialTableEntry()->IsLateEndgame()) {
+		//	Value delta = PieceValuesEG[pos.GetMostValuablePieceType(~pos.GetSideToMove())] + int(pos.PawnOn7thRank()) * (PieceValuesEG[QUEEN] - PieceValuesEG[PAWN]) + DELTA_PRUNING_SAFETY_MARGIN;
+		//	if (standPat + delta < alpha) return alpha;
+		//}
 		if (alpha < standPat) alpha = standPat;
 	}
 	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr);

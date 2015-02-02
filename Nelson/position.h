@@ -75,6 +75,9 @@ public:
 		return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING);
 	}
 	inline Value GetStaticEval() { return StaticEval; }
+	inline PieceType GetMostValuablePieceType(Color col) const;
+	inline bool PawnOn7thRank() { return (PieceBB(PAWN, SideToMove) & RANKS[6 - 5 * SideToMove]) != 0; } //Side to Move has pawn on 7th Rank
+	void copy(const position &pos);
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -168,6 +171,13 @@ inline Bitboard position::ColorBB(const Color c) const { return OccupiedByColor[
 inline Bitboard position::ColorBB(const int c) const { return OccupiedByColor[c]; }
 inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | OccupiedByColor[BLACK]; }
 inline Bitboard position::NonPawnMaterial(const Color c) const { return OccupiedByColor[c ^ 1] & ~OccupiedByPieceType[PAWN] & ~OccupiedByPieceType[KING]; }
+
+inline PieceType position::GetMostValuablePieceType(Color color) const {
+	for (PieceType pt = QUEEN; pt < KING; ++pt) {
+		if (PieceBB(pt, color)) return pt;
+	}
+	return KING;
+}
 
 inline Value position::evaluate() {
 	if (StaticEval != VALUE_NOTYETDETERMINED) return StaticEval = material->EvaluationFunction(*this);

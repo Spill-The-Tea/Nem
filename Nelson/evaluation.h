@@ -18,7 +18,7 @@ public:
 
 typedef Value(*EvalFunction)(const position&);
 
-Value evaluate(const position& pos);
+Value evaluateDefault(const position& pos);
 Value evaluateDraw(const position& pos);
 Value evaluateFromScratch(const position& pos);
 template <Color WinningSide> Value easyMate(const position& pos);
