@@ -27,11 +27,13 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 		std::stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
 		BestMove = rootMoves[0];
 		int64_t tNow = now();
-		_thinkTime = tNow - ssc.StartTime;
-		if (Stop) break;
-		nodeCounts[_depth] = NodeCount - nodeCounts[_depth - 1];
-		if (_depth > 3) BranchingFactor = sqrt(1.0 * nodeCounts[_depth] / nodeCounts[_depth - 2]);
-		if (UciOutput && _thinkTime > 200) {
+		_thinkTime = std::max(tNow - ssc.StartTime, 1ll);
+		if (!Stop) {
+			nodeCounts[_depth] = NodeCount - nodeCounts[_depth - 1];
+			if (_depth > 3) BranchingFactor = sqrt(1.0 * nodeCounts[_depth] / nodeCounts[_depth - 2]);
+			if (tNow > ssc.SoftStopTime || (3 * (tNow - ssc.StartTime) + ssc.StartTime) > ssc.SoftStopTime) Stop = true;
+		}
+		if (Stop || (UciOutput && _thinkTime > 200)) {
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 				std::cout << "info depth " << _depth << " nodes " << NodeCount << " score cp " << BestMove.score << " nps " << NodeCount * 1000 / _thinkTime
 				<< " hashfull " << tt::GetHashFull()
@@ -46,8 +48,7 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 					<< " pv " << PrincipalVariation(_depth) << std::endl;
 			}
 		}
-		if (tNow > ssc.SoftStopTime || (3 * (tNow - ssc.StartTime) + ssc.StartTime) > ssc.SoftStopTime || (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD) && abs(int(BestMove.score)) <= int(VALUE_MATE))) break;
-
+		if (Stop) break;
 	}
 	delete[] rootMoves;
 	delete[] nodeCounts;
@@ -73,7 +74,6 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 		if (Stop) break;
 		rootMoves[i].score = score;
 		if (score >= beta) {
-			updateCutoffStats(rootMoves[i].move, depth, pos, i);
 			return score;
 		}
 		if (score > bestScore) {
@@ -118,6 +118,26 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
 		ttFound && ttEntry->evalValue != VALUE_NOTYETDETERMINED ? ttEntry->evalValue : pos.evaluate();
+	Move ttMove = ttFound ? ttEntry->move : MOVE_NONE;
+	//Razoring a la SF (no measurable ELO change)
+	//if (NT == PV && !checked && depth < 4
+	//	&& (staticEvaluation + Value(512 + 32 * depth)) <= alpha
+	//	&& ttMove == MOVE_NONE
+	//	&& !pos.PawnOn7thRank())
+	//{
+	//	if (depth <= 1 && (staticEvaluation + 608) <= alpha) return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, 0); 
+	//	Value ralpha = alpha - Value(512 + 32 * depth);
+	//	Value v = QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, 0);
+	//	if (v <= ralpha) return v;
+	//}
+	// Futility pruning as in SF
+	if (!checked
+		&& depth < 7 
+		&& staticEvaluation - 200 * depth >= beta
+		&& staticEvaluation < VALUE_KNOWN_WIN 
+		&& pos.NonPawnMaterial(pos.GetSideToMove()))
+		return staticEvaluation - 200 * depth;
+	//Null Move Pruning
 	if (NT != NULL_MOVE && !checked && staticEvaluation > beta && depth > 4 && !pos.GetMaterialTableEntry()->IsLateEndgame() && pos.NonPawnMaterial(pos.GetSideToMove())) {
 		int reduction = depth >> 1;
 		Square epsquare = pos.GetEPSquare();
@@ -139,7 +159,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	//	int gainIndx = (pos.GetPieceOnSquare(lastToSquare) << 6) + lastToSquare;
 	//	gains[gainIndx] = std::max(staticEvaluation - pos.Previous()->GetStaticEval(), gains[gainIndx] - 1);
 	//}
-	Move ttMove = ttFound ? ttEntry->move : MOVE_NONE;
+
 	//IID (Seems to be neutral => therefore deactivated
 	//if (NT == PV && depth >= 5 && !ttMove) {
 	//	position next(pos);
@@ -152,6 +172,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
+	//Futility Pruning: Prune quiet moves that give no check if they can't raise alpha
 	bool futilityPruning = NT != NULL_MOVE && !checked && depth <= FULTILITY_PRUNING_DEPTH && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]) && pos.NonPawnMaterial(pos.GetSideToMove());
 	if (futilityPruning)
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, counterMove, ttMove);

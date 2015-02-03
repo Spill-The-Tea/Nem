@@ -170,7 +170,7 @@ inline Bitboard position::PieceBB(const PieceType pt, const Color c) const { ret
 inline Bitboard position::ColorBB(const Color c) const { return OccupiedByColor[c]; }
 inline Bitboard position::ColorBB(const int c) const { return OccupiedByColor[c]; }
 inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | OccupiedByColor[BLACK]; }
-inline Bitboard position::NonPawnMaterial(const Color c) const { return OccupiedByColor[c ^ 1] & ~OccupiedByPieceType[PAWN] & ~OccupiedByPieceType[KING]; }
+inline Bitboard position::NonPawnMaterial(const Color c) const { return OccupiedByColor[c] & ~OccupiedByPieceType[PAWN] & ~OccupiedByPieceType[KING]; }
 
 inline PieceType position::GetMostValuablePieceType(Color color) const {
 	for (PieceType pt = QUEEN; pt < KING; ++pt) {
