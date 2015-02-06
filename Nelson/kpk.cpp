@@ -9,7 +9,7 @@ namespace kpk {
 	const unsigned MAX_INDEX = 2 * 24 * 64 * 64; // stm * psq * wksq * bksq = 196608
 
 	// Each uint32_t stores results of 32 positions, one per bit
-	uint32_t KPKBitbase[MAX_INDEX / 32];
+	static uint32_t KPKBitbase[6144];
 
 	// A KPK bitbase index is an integer in [0, IndexMax] range
 	//
@@ -56,7 +56,7 @@ namespace kpk {
 
 		assert((wpsq & 7) <= FileD);
 
-		unsigned idx = index(us, bksq, wksq, wpsq);
+		uint32_t idx = index(us, bksq, wksq, wpsq);
 		return (KPKBitbase[idx / 32] & (1 << (idx & 0x1F))) != 0;
 	}
 
@@ -80,7 +80,7 @@ namespace kpk {
 		// Map 32 results into one KPKBitbase[] entry
 		for (idx = 0; idx < MAX_INDEX; ++idx) {
 			if (db[idx] == WIN)
-				KPKBitbase[idx / 32] |= 1 << (idx & 0x1F);
+				KPKBitbase[idx >> 5] |= 1 << (idx & 0x1F);
 		}
 	}
 

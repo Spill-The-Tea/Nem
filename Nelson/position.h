@@ -40,7 +40,8 @@ public:
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
 	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, ExtendedMove killerMove1, ExtendedMove killerMove2, Move * counterMoves, Move hashmove);
 	Move NextMove();
-	const Value SEE(Square from, const Square to);
+	const Value SEE(Square from, const Square to) const;
+	Value SEE_Sign(Move move) const;
 	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
 	friend evaluation evaluate(position& pos);
 	friend evaluation evaluateFromScratch(position &pos);
@@ -71,6 +72,7 @@ public:
 	void NullMove(Square epsquare = OUTSIDE);
 	void deleteParents();
 	inline Move GetLastAppliedMove() { return lastAppliedMove; }
+	inline Piece getCapturedInLastMove() { return capturedInLastMove; }
 	inline bool IsQuiet(const Move move) const {
 		return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING);
 	}
@@ -109,6 +111,7 @@ private:
 	ExtendedMove killer1;
 	ExtendedMove killer2;
 	Move lastAppliedMove;
+	Piece capturedInLastMove = BLANK;
 	ValuatedMove * lastPositive;
 	HistoryStats * history;
 	Move * CounterMoves = nullptr;
@@ -149,10 +152,10 @@ private:
 	void evaluateByHistory(int startIndex);
 	Move getBestMove(int startIndex);
 	void insertionSort(ValuatedMove* begin, ValuatedMove* end);
-	const Bitboard considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from);
-	const Bitboard AttacksOfField(const Square targetField);
-	const Bitboard AttacksOfField(const Square targetField, const Color attackingSide);
-	const Bitboard getSquareOfLeastValuablePiece(const Bitboard attadef, const int side);
+	const Bitboard considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from) const;
+	const Bitboard AttacksOfField(const Square targetField) const;
+	const Bitboard AttacksOfField(const Square targetField, const Color attackingSide) const;
+	const Bitboard getSquareOfLeastValuablePiece(const Bitboard attadef, const int side) const;
 	inline bool IsCheck() { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
 	inline bool isValid(Move move) { position next(*this); return next.ApplyMove(move); }
 	bool validateMove(Move move);

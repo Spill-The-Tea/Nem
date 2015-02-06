@@ -92,6 +92,11 @@ inline std::string toString(Move move) {
 	return ch;
 }
 
+inline bool oppositeColors(Square s1, Square s2) {
+	int s = int(s1) ^ int(s2);
+	return ((s >> 3) ^ s) & 1;
+}
+
 inline Bitboard RookTargets(Square rookSquare, Bitboard occupied) {
 	int index = (int)(((OccupancyMaskRook[rookSquare] & occupied) * RookMagics[rookSquare]) >> RookShift[rookSquare]);
 	return MagicMovesRook[index + IndexOffsetRook[rookSquare]];

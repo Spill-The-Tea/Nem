@@ -21,7 +21,9 @@ typedef Value(*EvalFunction)(const position&);
 Value evaluateDefault(const position& pos);
 Value evaluateDraw(const position& pos);
 Value evaluateFromScratch(const position& pos);
+template<Color WinningSide> Value evaluateKBPK(const position& pos);
 template <Color WinningSide> Value easyMate(const position& pos);
+template <Color WinningSide> Value evaluateKQKP(const position& pos);
 eval evaluateMobility(const position& pos);
 eval evaluateMobility2(const position& pos);
 eval evaluateKingSafety(const position& pos);
@@ -52,6 +54,65 @@ template <Color WinningSide> Value easyMate(const position& pos) {
 		result -= Value(BonusDistance[ChebishevDistance(lsb(pos.PieceBB(KING, BLACK)), lsb(pos.PieceBB(KING, WHITE)))]);
 	}
 
+	return result * (1 - 2 * pos.GetSideToMove());
+}
+
+//Copied from SF: Doesn't recognize drawn positions (could be improved)
+//Idea create bitbase for all positions where pawn is on A7 and C7 and the Black King is controlling
+//the conversion square => Size: 8 (black king pawn constellations) * 64 (wking squares) * 64 (wqueen squares) 
+// results in a bitbase of 4k (Problem there are some very rare positions where even a pawn on 5th rank draws)
+template<Color WinningSide> Value evaluateKQKP(const position& pos) {
+	Square winnerKSq = lsb(pos.PieceBB(KING, WinningSide));
+	Square loserKSq = lsb(pos.PieceBB(KING, ~WinningSide));
+	Square pawnSq = lsb(pos.PieceBB(PAWN, ~WinningSide));
+
+	Value result = Value(BonusDistance[ChebishevDistance(winnerKSq, loserKSq)]);
+
+	int relativeRank = pawnSq >> 3;;
+	if (WinningSide == WHITE) relativeRank = 7 - relativeRank;
+	if (relativeRank != Rank7
+		|| ChebishevDistance(loserKSq, pawnSq) != 1
+		|| !((A_FILE | C_FILE | F_FILE | H_FILE) & pos.PieceBB(PAWN, ~WinningSide)))
+		result += PieceValuesEG[QUEEN] - PieceValuesEG[PAWN];
+
+	return WinningSide == pos.GetSideToMove() ? result : -result;
+}
+
+template<Color WinningSide> Value evaluateKBPK(const position& pos) {
+	//Check for draw
+	Value result;
+	Bitboard bbPawn = pos.PieceBB(PAWN, WinningSide);
+	Square pawnSquare = lsb(bbPawn);
+	if ((bbPawn & (A_FILE | H_FILE)) != 0) { //Pawn is on rook file
+		Square conversionSquare = WinningSide == WHITE ? Square(56 + (pawnSquare & 7)) : Square(pawnSquare & 7);
+		if (oppositeColors(conversionSquare, lsb(pos.PieceBB(BISHOP, WinningSide)))) { //Bishop doesn't match conversion's squares color
+			//Now check if weak king control the conversion square
+			Bitboard conversionSquareControl = KingAttacks[conversionSquare] | (ToBitboard(conversionSquare));
+			if (pos.PieceBB(KING, ~WinningSide) & conversionSquareControl) return VALUE_DRAW;
+			if ((pos.PieceBB(KING, WinningSide) & conversionSquareControl) == 0) { //Strong king doesn't control conversion square
+				Square weakKing = lsb(pos.PieceBB(KING, ~WinningSide));
+				Square strongKing = lsb(pos.PieceBB(KING, WinningSide));
+				Bitboard bbRank2 = WinningSide == WHITE ? RANK2 : RANK7;
+				if ((ChebishevDistance(weakKing, conversionSquare) + (pos.GetSideToMove() != WinningSide) <= ChebishevDistance(pawnSquare, conversionSquare) - ((bbPawn & bbRank2) != 0)) //King is in Pawnsquare
+					&& (ChebishevDistance(weakKing, conversionSquare) - (pos.GetSideToMove() != WinningSide) <= ChebishevDistance(strongKing, conversionSquare))) {
+					//Weak King is in pawn square and at least as near to the conversion square as the Strong King => search must solve it
+					if (WinningSide == WHITE) {
+						result = pos.GetMaterialScore()
+							+ Value(10 * (ChebishevDistance(weakKing, conversionSquare) - ChebishevDistance(strongKing, conversionSquare)))
+							+ Value(5 * (pawnSquare >> 3));
+					}
+					else {
+						result = pos.GetMaterialScore()
+							- Value(10 * (ChebishevDistance(weakKing, conversionSquare) - ChebishevDistance(strongKing, conversionSquare)))
+							- Value(5 * (7 - (pawnSquare >> 3)));
+					}
+					return result * (1 - 2 * pos.GetSideToMove());
+				}
+			}
+		}
+	}
+	result = WinningSide == WHITE ? VALUE_KNOWN_WIN + pos.GetMaterialScore() + Value(pawnSquare >> 3)
+		                                : pos.GetMaterialScore() - VALUE_KNOWN_WIN - Value(7 - (pawnSquare >> 3));
 	return result * (1 - 2 * pos.GetSideToMove());
 }
 

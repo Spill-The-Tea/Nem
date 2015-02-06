@@ -48,7 +48,7 @@ bool position::ApplyMove(Move move) {
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
 	Piece moving = Board[fromSquare];
-	Piece captured = Board[toSquare];
+	capturedInLastMove = Board[toSquare];
 	remove(fromSquare);
 	MoveType moveType = type(move);
 	switch (moveType) {
@@ -63,14 +63,14 @@ bool position::ApplyMove(Move move) {
 		}
 		else
 			SetEPSquare(OUTSIDE);
-		if (GetPieceType(moving) == PAWN || captured != BLANK) {
+		if (GetPieceType(moving) == PAWN || capturedInLastMove != BLANK) {
 			DrawPlyCount = 0;
 			if (GetPieceType(moving) == PAWN) {
 				PawnKey ^= (ZobristKeys[moving][fromSquare]);
 				PawnKey ^= (ZobristKeys[moving][toSquare]);
 			}
-			if (GetPieceType(captured) == PAWN) {
-				PawnKey ^= ZobristKeys[captured][toSquare];
+			if (GetPieceType(capturedInLastMove) == PAWN) {
+				PawnKey ^= ZobristKeys[capturedInLastMove][toSquare];
 			}
 		}
 		else
@@ -389,7 +389,7 @@ Bitboard position::checkBlocker(Color colorOfBlocker, Color kingColor) {
 //	}
 //}
 
-const Bitboard position::considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from)
+const Bitboard position::considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from) const
 {
 	if ((fromSet & (SlidingAttacksRookTo[to] | SlidingAttacksBishopTo[to])) == 0) return 0;
 	Bitboard shadowed = ShadowedFields[to][from];
@@ -406,7 +406,7 @@ const Bitboard position::considerXrays(const Bitboard occ, const Square to, cons
 	return 0;
 }
 
-const Bitboard position::AttacksOfField(const Square targetField)
+const Bitboard position::AttacksOfField(const Square targetField) const
 {
 	//sliding attacks
 	Bitboard attacks = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
@@ -431,7 +431,7 @@ const Bitboard position::AttacksOfField(const Square targetField)
 	return attacks;
 }
 
-const Bitboard position::AttacksOfField(const Square targetField, const Color attackingSide) {
+const Bitboard position::AttacksOfField(const Square targetField, const Color attackingSide) const {
 	//sliding attacks
 	Bitboard attacks = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
 	attacks |= SlidingAttacksBishopTo[targetField] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
@@ -457,7 +457,7 @@ const Bitboard position::AttacksOfField(const Square targetField, const Color at
 	return attacks;
 }
 
-const Bitboard position::getSquareOfLeastValuablePiece(const Bitboard attadef, const int side)
+const Bitboard position::getSquareOfLeastValuablePiece(const Bitboard attadef, const int side) const
 {
 	Color diff = Color((SideToMove + side) & 1);
 	Bitboard subset = attadef & PieceBB(PAWN, diff); if (subset) return subset & (0 - subset); // single bit
@@ -468,7 +468,15 @@ const Bitboard position::getSquareOfLeastValuablePiece(const Bitboard attadef, c
 	return 0; // empty set
 }
 
-const Value position::SEE(Square from, const Square to)
+//SEE with early return if SEE value can't be negative
+Value position::SEE_Sign(Move move) const {
+	Square fromSquare = from(move);
+	Square toSquare = to(move);
+	if (PieceValuesMG[GetPieceType(Board[fromSquare])] <= PieceValuesMG[GetPieceType(Board[toSquare])]) return VALUE_KNOWN_WIN;
+	return SEE(fromSquare, toSquare);
+}
+
+const Value position::SEE(Square from, const Square to) const
 {
 	Value gain[32];
 	int d = 0;

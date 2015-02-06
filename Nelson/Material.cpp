@@ -162,4 +162,35 @@ void InitializeMaterialTable() {
 	pieceCounts[WROOK] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].EvaluationFunction = &easyMate<BLACK>;
+	pieceCounts[BQUEEN] = 0;
+	pieceCounts[WROOK] = 0;
+	//Simple KxKx Endgames should all be draws (x <> PAWN)
+	for (PieceType pt = QUEEN; pt < PAWN; ++pt) {
+		pieceCounts[GetPiece(pt, WHITE)] = pieceCounts[GetPiece(pt, BLACK)] = 1;
+		key = calculateMaterialKey(&pieceCounts[0]);
+		MaterialTable[key].EvaluationFunction = &evaluateDraw;
+		pieceCounts[GetPiece(pt, WHITE)] = pieceCounts[GetPiece(pt, BLACK)] = 0;
+	}
+	//KBPK
+	pieceCounts[WBISHOP] = 1;
+	pieceCounts[WPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKBPK<WHITE>;
+	pieceCounts[WBISHOP] = 0;
+	pieceCounts[WPAWN] = 0;
+	pieceCounts[BBISHOP] = 1;
+	pieceCounts[BPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKBPK<BLACK>;
+	pieceCounts[BBISHOP] = 0;
+	pieceCounts[BPAWN] = 0;
+    //KQKP
+	pieceCounts[WQUEEN] = pieceCounts[BPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKQKP<WHITE>;
+	pieceCounts[WQUEEN] = pieceCounts[BPAWN] = 0;
+	pieceCounts[BQUEEN] = pieceCounts[WPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKQKP<BLACK>;
+	pieceCounts[BQUEEN] = pieceCounts[WPAWN] = 0;
 }
