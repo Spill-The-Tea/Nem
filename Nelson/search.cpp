@@ -180,7 +180,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, counterMove, ttMove);
 	else
 		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, killer[pos.GetPliesFromRoot()][0], killer[pos.GetPliesFromRoot()][1], counterMove, ttMove);
-	bool lmr = NT != PV && !checked && depth >= 3;
+	bool lmr = !checked && depth >= 3;
 	Move move;
 	int moveIndex = 0;
 	bool ZWS = false;
@@ -192,12 +192,20 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 			    + gains[(pos.GetPieceOnSquare(from(move)) << 6) + to(move)] 
 				+ PieceValuesMG[GetPieceType(pos.GetPieceOnSquare(to(move)))]) <= alpha
 				) continue;
+		if (NT != PV && depth <= 3 && moveIndex >= depth * 4 && std::abs(bestScore) <= VALUE_MATE_THRESHOLD  && pos.IsQuietAndNoCastles(move)) { // late-move pruning
+			continue;
+		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
 			//int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
 			int reduction = 0;
 			if (lmr && moveIndex >= 2 && pos.IsQuietAndNoCastles(move) && !next.Checked()) {
-				if (moveIndex >= 5) reduction = depth / 3; else reduction = 1;
+				if (NT == PV) {
+					if (moveIndex >= 5) reduction = 1;
+				}
+				else {
+					if (moveIndex >= 5) reduction = depth / 3; else reduction = 1;
+				}
 			}
 			if (ZWS) {
 				score = -Search<EXPECTED_CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction, &subpv[0]);
