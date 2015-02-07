@@ -76,6 +76,9 @@ public:
 	inline bool IsQuiet(const Move move) const {
 		return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING);
 	}
+	inline bool IsQuietAndNoCastles(const Move move) const {
+		return type(move) == NORMAL && Board[to(move)] == BLANK ;
+	}
 	inline Value GetStaticEval() { return StaticEval; }
 	inline PieceType GetMostValuablePieceType(Color col) const;
 	inline bool PawnOn7thRank() { return (PieceBB(PAWN, SideToMove) & RANKS[6 - 5 * SideToMove]) != 0; } //Side to Move has pawn on 7th Rank
