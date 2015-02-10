@@ -14,12 +14,15 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 	nodeCounts[0] = 0;
 	pos.ResetPliesFromRoot();
 	tt::newSearch();
-	//Iterativ Deepening Loop
 	ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
 	rootMoveCount = pos.GeneratedMoveCount();
+	if (rootMoveCount == 1){
+		return *generatedMoves; //if there is only one legal move save time and return move immediately (although there is no score assigned)
+	}
 	rootMoves = new ValuatedMove[rootMoveCount];
 	memcpy(rootMoves, generatedMoves, rootMoveCount * sizeof(ValuatedMove));
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
+	//Iterativ Deepening Loop
 	for (_depth = 1; _depth <= ssc.MaxDepth; ++_depth) {
 		Value alpha = -VALUE_MATE;
 		Value beta = VALUE_MATE;
@@ -162,15 +165,14 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	}
 
 	//IID (Seems to be neutral => therefore deactivated
-	//if (depth >= (NT == PV ? 5 : 8) && !ttMove && ((NT == PV) || staticEvaluation + 256 >= beta)) {
-	//	position next(pos);
-	//	next.copy(pos);
-	//	int iidDepth = 2 * (depth - 2) - (NT == PV ? 0 : depth / 2);
-	//	Search<NT>(alpha, beta, next, iidDepth / 2, &subpv[0]);
-	//	if (Stop) return VALUE_ZERO;
-	//	ttEntry = tt::probe(pos.GetHash(), ttFound);
-	//	ttMove = ttFound ? ttEntry->move : MOVE_NONE;
-	//}
+	if (NT == PV && depth >= 3 && !ttMove) {
+		position next(pos);
+		next.copy(pos);
+		Search<NT>(alpha, beta, next, depth - 2, &subpv[0]);
+		if (Stop) return VALUE_ZERO;
+		ttEntry = tt::probe(pos.GetHash(), ttFound);
+		ttMove = ttFound ? ttEntry->move : MOVE_NONE;
+	}
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;

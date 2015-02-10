@@ -164,6 +164,7 @@ private:
 	bool validateMove(Move move);
 	bool validateMove(ExtendedMove move);
 	template<bool CHECKED> bool CheckValidMoveExists();
+	bool checkMaterialIsUnusual();
 };
 
 template<> inline ValuatedMove* position::GenerateMoves<QUIET_CHECKS>();

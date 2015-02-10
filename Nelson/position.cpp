@@ -51,6 +51,7 @@ bool position::ApplyMove(Move move) {
 	capturedInLastMove = Board[toSquare];
 	remove(fromSquare);
 	MoveType moveType = type(move);
+	Piece convertedTo;
 	switch (moveType) {
 	case NORMAL:
 		set<false>(moving, toSquare);
@@ -77,12 +78,27 @@ bool position::ApplyMove(Move move) {
 			++DrawPlyCount;
 		//update castlings
 		if (CastlingOptions != 0) updateCastleFlags(fromSquare, toSquare);
+		//Adjust material key
+		if (capturedInLastMove != BLANK) {
+			if (MaterialKey == MATERIAL_KEY_UNUSUAL) {
+				if (checkMaterialIsUnusual()) material->Score = calculateMaterialScore(*this);
+				else MaterialKey = calculateMaterialKey();
+			}
+			else MaterialKey -= materialKeyFactors[capturedInLastMove];
+			material = &MaterialTable[MaterialKey];
+		}
 		break;
 	case ENPASSANT:
 		set<true>(moving, toSquare);
 		remove(Square(toSquare - PawnStep()));
-		MaterialKey -= materialKeyFactors[BPAWN - SideToMove];
-		material = &MaterialTable[MaterialKey];
+		capturedInLastMove = Piece(BPAWN - SideToMove);
+		if (MaterialKey == MATERIAL_KEY_UNUSUAL) {
+			material->Score = calculateMaterialScore(*this);
+		}
+		else {
+			MaterialKey -= materialKeyFactors[BPAWN - SideToMove];
+			material = &MaterialTable[MaterialKey];
+		}
 		SetEPSquare(OUTSIDE);
 		DrawPlyCount = 0;
 		PawnKey ^= ZobristKeys[moving][fromSquare];
@@ -90,13 +106,24 @@ bool position::ApplyMove(Move move) {
 		PawnKey ^= ZobristKeys[BPAWN - SideToMove][toSquare - PawnStep()];
 		break;
 	case PROMOTION:
-		set<false>(GetPiece(promotionType(move), SideToMove), toSquare);
-		MaterialKey += materialKeyFactors[GetPiece(promotionType(move), SideToMove)] - materialKeyFactors[moving];
-		material = &MaterialTable[MaterialKey];
+		convertedTo = GetPiece(promotionType(move), SideToMove);
+		set<false>(convertedTo, toSquare);
 		if (CastlingOptions != 0) updateCastleFlags(fromSquare, toSquare);
 		SetEPSquare(OUTSIDE);
 		DrawPlyCount = 0;
 		PawnKey ^= ZobristKeys[moving][fromSquare];
+		//Adjust Material Key
+		if (checkMaterialIsUnusual()) {
+			MaterialKey = MATERIAL_KEY_UNUSUAL;
+			material = &MaterialTable[MaterialKey];
+			material->Score = calculateMaterialScore(*this);
+		}
+		else {
+			if (MaterialKey == MATERIAL_KEY_UNUSUAL) MaterialKey = calculateMaterialKey();
+			else
+			MaterialKey = MaterialKey - materialKeyFactors[WPAWN + SideToMove] - materialKeyFactors[capturedInLastMove] + materialKeyFactors[convertedTo];
+			material = &MaterialTable[MaterialKey];
+		}
 		break;
 	case CASTLING:
 		if (toSquare == G1 + (SideToMove * 56)) {
@@ -125,7 +152,7 @@ bool position::ApplyMove(Move move) {
 	attackedByUs = calculateAttacks(SideToMove);
 	//calculatePinned();
 	attackedByThem = 0ull;
-	assert(MaterialKey == calculateMaterialKey());
+	assert((checkMaterialIsUnusual() && MaterialKey == MATERIAL_KEY_UNUSUAL) || MaterialKey == calculateMaterialKey());
 	assert(PawnKey == calculatePawnKey());
 	if (pawn->Key != PawnKey) pawn = pawn::probe(*this);
 	lastAppliedMove = move;
@@ -282,14 +309,13 @@ template<bool SquareIsEmpty> void position::set(const Piece piece, const Square 
 		OccupiedByPieceType[GetPieceType(captured)] &= ~squareBB;
 		OccupiedByColor[GetColor(captured)] &= ~squareBB;
 		Hash ^= ZobristKeys[captured][square];
-		MaterialKey -= materialKeyFactors[captured];
-		material = &MaterialTable[MaterialKey];
 	}
 	OccupiedByPieceType[GetPieceType(piece)] |= squareBB;
 	OccupiedByColor[GetColor(piece)] |= squareBB;
 	Board[square] = piece;
 	Hash ^= ZobristKeys[piece][square];
 }
+
 void position::remove(const Square square){
 	Bitboard NotSquareBB = ~(1ull << square);
 	Piece piece = Board[square];
@@ -664,10 +690,17 @@ void position::setFromFEN(const std::string& fen) {
 		DrawPlyCount = atoi(dpc.c_str());
 	}
 	std::fill_n(attacks, 64, 0ull);
-	MaterialKey = calculateMaterialKey();
 	PawnKey = calculatePawnKey();
 	pawn = pawn::probe(*this);
-	material = &MaterialTable[MaterialKey];
+	if (checkMaterialIsUnusual()) {
+		MaterialKey = MATERIAL_KEY_UNUSUAL;
+		material = &MaterialTable[MaterialKey];
+		material->Score = calculateMaterialScore(*this);
+	}
+	else {
+		MaterialKey = calculateMaterialKey();
+		material = &MaterialTable[MaterialKey];
+	}
 	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	attackedByUs = calculateAttacks(SideToMove);
 	pliesFromRoot = 0;
@@ -772,7 +805,7 @@ std::string position::printGeneratedMoves() {
 MaterialKey_t position::calculateMaterialKey() {
 	MaterialKey_t key = MATERIAL_KEY_OFFSET;
 	for (int i = WQUEEN; i <= BPAWN; ++i)
-		key += materialKeyFactors[i] * popcount(PieceBB(PieceType(i / 2), Color(i & 1)));
+		key += materialKeyFactors[i] * popcount(PieceBB(GetPieceType(Piece(i)), Color(i & 1)));
 	return key;
 }
 
@@ -851,26 +884,26 @@ bool position::validateMove(Move move) {
 	}
 	return result;
 #ifdef _DEBUG
-//	position checkPos(*this);
-//	checkPos.movepointer = 0;
-//	checkPos.attackedByThem = attackedByThem;
-//	checkPos.attackedByUs = attackedByUs;
-//	memcpy(checkPos.attacks, attacks, 64 * sizeof(Bitboard));
-//	ValuatedMove * moves = checkPos.GenerateMoves<ALL>();
-//	Move cmove = MOVE_NONE;
-//	bool found = false;
-//	while (cmove = moves->move) {
-//		if (cmove == move) {
-//			if (!result) __debugbreak();
-//			found = true;
-//			break;
-//		}
-//
-//		moves++;
-//	}
-//
-//	if (result && !found)
-//		__debugbreak();
+	//	position checkPos(*this);
+	//	checkPos.movepointer = 0;
+	//	checkPos.attackedByThem = attackedByThem;
+	//	checkPos.attackedByUs = attackedByUs;
+	//	memcpy(checkPos.attacks, attacks, 64 * sizeof(Bitboard));
+	//	ValuatedMove * moves = checkPos.GenerateMoves<ALL>();
+	//	Move cmove = MOVE_NONE;
+	//	bool found = false;
+	//	while (cmove = moves->move) {
+	//		if (cmove == move) {
+	//			if (!result) __debugbreak();
+	//			found = true;
+	//			break;
+	//		}
+	//
+	//		moves++;
+	//	}
+	//
+	//	if (result && !found)
+	//		__debugbreak();
 #endif
 	return result;
 }
@@ -893,4 +926,15 @@ void position::NullMove(Square epsquare) {
 void position::deleteParents() {
 	if (previous != nullptr) previous->deleteParents();
 	delete(previous);
+}
+
+bool position::checkMaterialIsUnusual() {
+	return popcount(PieceBB(QUEEN, WHITE)) > 1
+		|| popcount(PieceBB(QUEEN, BLACK)) > 1
+		|| popcount(PieceBB(ROOK, WHITE)) > 2
+		|| popcount(PieceBB(ROOK, BLACK)) > 2
+		|| popcount(PieceBB(BISHOP, WHITE)) > 2
+		|| popcount(PieceBB(BISHOP, BLACK)) > 2
+		|| popcount(PieceBB(KNIGHT, WHITE)) > 2
+		|| popcount(PieceBB(KNIGHT, BLACK)) > 2;
 }

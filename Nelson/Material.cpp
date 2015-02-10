@@ -2,9 +2,10 @@
 #include "settings.h"
 #include "evaluation.h"
 #include "kpk.h"
+#include "position.h"
 
 
-MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 1];
+MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 2];
 
 MaterialKey_t calculateMaterialKey(int * pieceCounts) {
 	MaterialKey_t key = MATERIAL_KEY_OFFSET;
@@ -13,12 +14,24 @@ MaterialKey_t calculateMaterialKey(int * pieceCounts) {
 	return key;
 }
 
+//Calculation (only used for special situations like 3 Queens, ...)
+Value calculateMaterialScore(position &pos) {
+	int diffQ = popcount(pos.PieceBB(QUEEN, WHITE)) - popcount(pos.PieceBB(QUEEN, BLACK));
+	int diffR = popcount(pos.PieceBB(ROOK, WHITE)) - popcount(pos.PieceBB(ROOK, BLACK));
+	int diffB = popcount(pos.PieceBB(BISHOP, WHITE)) - popcount(pos.PieceBB(BISHOP, BLACK));
+	int diffN = popcount(pos.PieceBB(KNIGHT, WHITE)) - popcount(pos.PieceBB(KNIGHT, BLACK));
+	int diffP = popcount(pos.PieceBB(PAWN, WHITE)) - popcount(pos.PieceBB(PAWN, BLACK));
+	return diffQ*PieceValuesMG[QUEEN] + diffR*PieceValuesMG[ROOK] + diffB*PieceValuesMG[BISHOP] + diffN * PieceValuesMG[KNIGHT] + diffP * PieceValuesMG[PAWN];
+
+}
+
 void InitializeMaterialTable() {
 	MaterialTableEntry undetermined;
 	undetermined.Score = VALUE_NOTYETDETERMINED;
 	undetermined.Phase = 128;
 	undetermined.EvaluationFunction = nullptr;
-	std::fill_n(MaterialTable, MATERIAL_KEY_MAX + 1, undetermined);
+	std::fill_n(MaterialTable, MATERIAL_KEY_MAX + 2, undetermined);
+	MaterialTable[MATERIAL_KEY_UNUSUAL].EvaluationFunction = &evaluateDefault;
 	int pieceCounts[10];
 	for (int nWQ = 0; nWQ <= 1; ++nWQ) {
 		pieceCounts[0] = nWQ;
@@ -193,4 +206,5 @@ void InitializeMaterialTable() {
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].EvaluationFunction = &evaluateKQKP<BLACK>;
 	pieceCounts[BQUEEN] = pieceCounts[WPAWN] = 0;
+
 }

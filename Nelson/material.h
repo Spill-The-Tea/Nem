@@ -3,9 +3,11 @@
 #include "types.h"
 #include "evaluation.h"
 
-const int materialKeyFactors[] = { 729, 1458, 486, -405, 279, -270, 246, -244, 2916, 26244 };
+const int materialKeyFactors[] = { 729, 1458, 486, -405, 279, -270, 246, -244, 2916, 26244, 0, 0, 0 };
+const int MAX_PIECE_COUNT[] = { 1, 1, 2, 2, 2, 2, 2, 2 }; //Max piece count "normal" positions
 const int MATERIAL_KEY_OFFSET = 1839; //this assures that the Material Key is always > 0 => material key = 0 can be used for unusual material due to promotions (2 queens,..) 
 const int MATERIAL_KEY_MAX = 729 + 1458 + 2 * (486 + 279 + 246) + 8 * (2916 + 26244) + MATERIAL_KEY_OFFSET;
+const int MATERIAL_KEY_UNUSUAL = MATERIAL_KEY_MAX + 1; //Entry for unusual Material distribution (like 3 Queens, 5 Bishops, ...)
 
 struct MaterialTableEntry {
 	Value Score;
@@ -15,7 +17,7 @@ struct MaterialTableEntry {
 	inline bool IsLateEndgame() { return EvaluationFunction != &evaluateDefault || Phase > 200; }
 };
 
-extern MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 1];
+extern MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 2];
 
 //Phase is 0 in starting position and grows up to 256 when only kings are left
 inline const Phase_t Phase(int nWQ, int nBQ, int nWR, int nBR, int nWB, int nBB, int nWN, int nBN) {
@@ -29,3 +31,5 @@ inline const Phase_t Phase(int nWQ, int nBQ, int nWR, int nBR, int nWB, int nBB,
 void InitializeMaterialTable();
 
 inline MaterialTableEntry * probe(MaterialKey_t key) { return &MaterialTable[key]; }
+
+Value calculateMaterialScore(position &pos);

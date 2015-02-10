@@ -1,8 +1,11 @@
 #pragma once
 #include <assert.h>
 #include <string>
+#include <algorithm>
 #ifdef _MSC_VER
 #include <intrin.h>
+#define NOMINMAX
+#include <Windows.h>
 #endif
 #include <inttypes.h>
 #include <chrono>
@@ -23,6 +26,8 @@ typedef uint64_t Bitboard;
 typedef uint16_t Move;
 
 const Move MOVE_NONE = 0;
+
+struct position;
 
 enum MoveType {
 	NORMAL, PROMOTION = 1 << 14, ENPASSANT = 2 << 14, CASTLING = 3 << 14
@@ -130,7 +135,7 @@ inline Value operator-(Value v, int i) { return Value(int(v) - i); }
 
 inline Color& operator^=(Color& col, int i) { return col = Color(((int)col) ^ 1); }
 
-inline Square createSquare(Rank rank, File file) { return Square((rank<<3) + file); }
+inline Square createSquare(Rank rank, File file) { return Square((rank << 3) + file); }
 inline char toChar(File f, bool tolower = true) { return char(f - FileA + 'a'); }
 inline char toChar(Rank r) { return char(r - Rank1 + '1'); }
 
@@ -305,10 +310,20 @@ struct SearchStopCriteria {
 
 struct position;
 
+#ifdef _MSC_VER
+static LARGE_INTEGER s_frequency;
+inline int64_t now() {
+	QueryPerformanceFrequency(&s_frequency);
+	LARGE_INTEGER now;
+	QueryPerformanceCounter(&now);
+	return (1000LL * now.QuadPart) / s_frequency.QuadPart;
+}
+#else
 inline int64_t now() {
 	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 	//return GetTickCount64();
 }
+#endif
 
 struct HistoryStats {
 public:
