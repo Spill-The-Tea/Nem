@@ -199,7 +199,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
-			//int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
+			int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
 			int reduction = 0;
 			if (lmr && moveIndex >= 2 && pos.IsQuietAndNoCastles(move) && !next.Checked()) {
 				if (NT == PV) {
@@ -210,11 +210,11 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 				}
 			}
 			if (ZWS) {
-				score = -Search<EXPECTED_CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction, &subpv[0]);
-				if (score > alpha && score < beta) score = -Search<PV>(-beta, -alpha, next, depth - 1, &subpv[0]);
+				score = -Search<EXPECTED_CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0]);
+				if (score > alpha && score < beta) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0]);
 			}
 			else
-				score = -Search<PV>(-beta, -alpha, next, depth - 1 - reduction, &subpv[0]);
+				score = -Search<PV>(-beta, -alpha, next, depth - 1 - reduction + extension, &subpv[0]);
 			if (score >= beta) {
 				updateCutoffStats(move, depth, pos, moveIndex);
 				ttEntry->update(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
