@@ -4,6 +4,7 @@
 #include "board.h"
 #include "position.h"
 #include "settings.h"
+#include "polyglotbook.h"
 #include <iostream>
 
 enum NodeType { ROOT, PV, NULL_MOVE, EXPECTED_CUT_NODE, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
@@ -16,6 +17,7 @@ public:
 	bool Stop = false;
 	bool UciOutput = false;
 	double BranchingFactor = 0;
+	std::string BookFile = "";
 
 	ValuatedMove Think(position &pos, SearchStopCriteria ssc);
 	std::string PrincipalVariation(int depth = PV_MAX_LENGTH);
@@ -40,6 +42,7 @@ private:
 	ExtendedMove killer[MAX_DEPTH][2];
 	Move counterMove[12 * 64];
 	Value gains[12 * 64];
+	polyglot::polyglotbook book;
 
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<NodeType NT> Value QSearch(Value alpha, Value beta, position &pos, int depth);

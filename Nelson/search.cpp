@@ -19,6 +19,17 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 	if (rootMoveCount == 1){
 		return *generatedMoves; //if there is only one legal move save time and return move immediately (although there is no score assigned)
 	}
+	//check for book
+	if (USE_BOOK && BookFile.size() > 0) {
+		Move bookMove = book.probe(pos, BookFile, false, generatedMoves, rootMoveCount);
+		if (bookMove != MOVE_NONE) {
+			ValuatedMove valuatedBookMove;
+			valuatedBookMove.move = bookMove;
+			valuatedBookMove.score = VALUE_ZERO;
+			if (UciOutput) std::cout << "info string book move" << std::endl;
+			return valuatedBookMove;
+		}
+	}
 	rootMoves = new ValuatedMove[rootMoveCount];
 	memcpy(rootMoves, generatedMoves, rootMoveCount * sizeof(ValuatedMove));
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
@@ -201,7 +212,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 		if (next.ApplyMove(move)) {
 			int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
 			int reduction = 0;
-			if (lmr && moveIndex >= 2 && pos.IsQuietAndNoCastles(move) && !next.Checked()) {
+			if (lmr && moveIndex >= 2 && !extension && pos.IsQuietAndNoCastles(move) && !next.Checked()) {
 				if (NT == PV) {
 					if (moveIndex >= 5) reduction = 1;
 				}
