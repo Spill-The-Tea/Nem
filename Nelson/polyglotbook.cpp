@@ -1,5 +1,6 @@
 #include "polyglotbook.h"
 #include "position.h"
+#include <iostream>
 
 namespace polyglot {
 
@@ -63,8 +64,10 @@ namespace polyglot {
 
 	Move polyglotbook::probe(position& pos, const std::string& fName, bool pickBest, ValuatedMove * moves, int moveCount) {
 
-		if (fileName != fName && !open(fName.c_str()))
+		if (fileName != fName && !open(fName.c_str())) {
+			std::cout << "info string Failed to open " << fName << std::endl;
 			return MOVE_NONE;
+		}
 
 		Entry e;
 		uint16_t best = 0;

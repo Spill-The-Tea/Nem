@@ -6,48 +6,50 @@
 #include <math.h>
 #include <cstring>
 #include "hashtables.h"
+#include <thread>
+#include <chrono>
 
 ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 	searchStopCriteria = ssc;
 	_thinkTime = 1;
-	int64_t * nodeCounts = new int64_t[ssc.MaxDepth + 1];
+	int64_t * nodeCounts = new int64_t[searchStopCriteria.MaxDepth + 1];
 	nodeCounts[0] = 0;
 	pos.ResetPliesFromRoot();
 	tt::newSearch();
 	ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
 	rootMoveCount = pos.GeneratedMoveCount();
 	if (rootMoveCount == 1){
-		return *generatedMoves; //if there is only one legal move save time and return move immediately (although there is no score assigned)
+		BestMove = *generatedMoves; //if there is only one legal move save time and return move immediately (although there is no score assigned)
+		goto END;
 	}
 	//check for book
 	if (USE_BOOK && BookFile.size() > 0) {
 		Move bookMove = book.probe(pos, BookFile, false, generatedMoves, rootMoveCount);
 		if (bookMove != MOVE_NONE) {
-			ValuatedMove valuatedBookMove;
-			valuatedBookMove.move = bookMove;
-			valuatedBookMove.score = VALUE_ZERO;
+			BestMove.move = bookMove;
+			BestMove.score = VALUE_ZERO;
 			if (UciOutput) std::cout << "info string book move" << std::endl;
-			return valuatedBookMove;
+			goto END;
 		}
 	}
 	rootMoves = new ValuatedMove[rootMoveCount];
 	memcpy(rootMoves, generatedMoves, rootMoveCount * sizeof(ValuatedMove));
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
 	//Iterativ Deepening Loop
-	for (_depth = 1; _depth <= ssc.MaxDepth; ++_depth) {
+	for (_depth = 1; _depth <= searchStopCriteria.MaxDepth; ++_depth) {
 		Value alpha = -VALUE_MATE;
 		Value beta = VALUE_MATE;
 		Search<ROOT>(alpha, beta, pos, _depth, &PVMoves[0]);
 		std::stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
 		BestMove = rootMoves[0];
 		int64_t tNow = now();
-		_thinkTime = std::max(tNow - ssc.StartTime, 1ll);
-		if (!Stop) {
+		_thinkTime = std::max(tNow - searchStopCriteria.StartTime, int64_t(1));
+		if (!Stopped()) {
 			nodeCounts[_depth] = NodeCount - nodeCounts[_depth - 1];
 			if (_depth > 3) BranchingFactor = sqrt(1.0 * nodeCounts[_depth] / nodeCounts[_depth - 2]);
-			if (tNow > ssc.SoftStopTime || (3 * (tNow - ssc.StartTime) + ssc.StartTime) > ssc.SoftStopTime) Stop = true;
+			if (!PonderMode && (tNow > searchStopCriteria.SoftStopTime || (3 * (tNow - searchStopCriteria.StartTime) + searchStopCriteria.StartTime) > searchStopCriteria.SoftStopTime)) Stop = true;
 		}
-		if (Stop || (UciOutput && _thinkTime > 200)) {
+		if (Stopped() || (UciOutput && _thinkTime > 200)) {
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 				std::cout << "info depth " << _depth << " nodes " << NodeCount << " score cp " << BestMove.score << " nps " << NodeCount * 1000 / _thinkTime
 				<< " hashfull " << tt::GetHashFull()
@@ -62,9 +64,10 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 					<< " pv " << PrincipalVariation(_depth) << std::endl;
 			}
 		}
-		if (Stop) break;
+		if (Stopped()) break;
 	}
-	delete[] rootMoves;
+
+END:	while (PonderMode) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
 	delete[] nodeCounts;
 	return BestMove;
 }
@@ -85,7 +88,7 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 			if (score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
 		}
 		else score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
-		if (Stop) break;
+		if (Stopped()) break;
 		rootMoves[i].score = score;
 		if (score >= beta) {
 			return score;
@@ -106,8 +109,8 @@ template<> Value search::Search<ROOT>(Value alpha, Value beta, position &pos, in
 
 template<NodeType NT> Value search::Search(Value alpha, Value beta, position &pos, int depth, Move * pv) {
 	++NodeCount;
-	Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
-	if (Stop) return VALUE_ZERO;
+	Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime));
+	if (Stopped()) return VALUE_ZERO;
 	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
 	//Mate distance pruning
 	alpha = Value(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), int(alpha)));
@@ -180,7 +183,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 		position next(pos);
 		next.copy(pos);
 		Search<NT>(alpha, beta, next, depth - 2, &subpv[0]);
-		if (Stop) return VALUE_ZERO;
+		if (Stopped()) return VALUE_ZERO;
 		ttEntry = tt::probe(pos.GetHash(), ttFound);
 		ttMove = ttFound ? ttEntry->move : MOVE_NONE;
 	}
@@ -189,7 +192,7 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	tt::NodeType nodeType = tt::UPPER_BOUND;
 	//Futility Pruning: Prune quiet moves that give no check if they can't raise alpha
 	bool futilityPruning = NT != NULL_MOVE && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
-	if (futilityPruning && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
+	if (futilityPruning && alpha >(staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, counterMove, ttMove);
 	else
 		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, killer[pos.GetPliesFromRoot()][0], killer[pos.GetPliesFromRoot()][1], counterMove, ttMove);
@@ -201,10 +204,10 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 		if (futilityPruning
 			&& moveIndex > 0
 			&& type(move) != PROMOTION
-			&& (staticEvaluation + FUTILITY_PRUNING_MARGIN[depth] 
-			    + gains[(pos.GetPieceOnSquare(from(move)) << 6) + to(move)] 
-				+ PieceValuesMG[GetPieceType(pos.GetPieceOnSquare(to(move)))]) <= alpha
-				) continue;
+			&& (staticEvaluation + FUTILITY_PRUNING_MARGIN[depth]
+			+ gains[(pos.GetPieceOnSquare(from(move)) << 6) + to(move)]
+			+ PieceValuesMG[GetPieceType(pos.GetPieceOnSquare(to(move)))]) <= alpha
+			) continue;
 		if (NT != PV && depth <= 3 && moveIndex >= depth * 4 && std::abs(bestScore) <= VALUE_MATE_THRESHOLD  && pos.IsQuietAndNoCastles(move)) { // late-move pruning
 			continue;
 		}
@@ -253,8 +256,8 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 	++QNodeCount;
 	if (NT == QSEARCH_DEPTH_NEGATIVE) {
 		++NodeCount;
-		Stop = Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime);
-		if (Stop) return VALUE_ZERO;
+		Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime));
+		if (Stopped()) return VALUE_ZERO;
 		if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
 	}
 	//TT lookup
@@ -343,5 +346,9 @@ std::string search::PrincipalVariation(int depth) {
 		ss << toString(PVMoves[i]);
 	}
 	return ss.str();
+}
+
+Move search::GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount) {
+	return (USE_BOOK && BookFile.size() > 0) ? book.probe(pos, BookFile, true, moves, moveCount) : MOVE_NONE;
 }
 

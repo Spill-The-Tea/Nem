@@ -16,6 +16,7 @@ public:
 	int64_t QNodeCount;
 	bool Stop = false;
 	bool UciOutput = false;
+	bool PonderMode = false;
 	double BranchingFactor = 0;
 	std::string BookFile = "";
 
@@ -27,6 +28,9 @@ public:
 	inline int64_t ThinkTime() const { return _thinkTime; }
 	inline double cutoffAt1stMoveRate() const { return 100.0 * cutoffAt1stMove / cutoffCount; }
 	inline double cutoffAverageMove() const { return 1 + 1.0 * cutoffMoveIndexSum / cutoffCount; }
+	inline Move PonderMove() const { return PVMoves[1]; }
+	inline void ExtendStopTimes(int64_t extensionTime) { searchStopCriteria.HardStopTime += extensionTime; searchStopCriteria.SoftStopTime += extensionTime; }
+	Move GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount);
 
 private:
 	SearchStopCriteria searchStopCriteria;
@@ -47,6 +51,7 @@ private:
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<NodeType NT> Value QSearch(Value alpha, Value beta, position &pos, int depth);
 	void updateCutoffStats(const Move cutoffMove, int depth, position &pos, int moveIndex);
+	inline bool Stopped() { return Stop && (!PonderMode); }
 
 };
 
@@ -61,6 +66,7 @@ inline void search::Reset() {
 	cutoffCount = 0;
 	cutoffMoveIndexSum = 0;
 	Stop = false;
+	PonderMode = false;
 	History.initialize();
 	for (int i = 0; i < MAX_DEPTH; ++i) killer[i][0] = killer[i][1] = EXTENDED_MOVE_NONE;
 }

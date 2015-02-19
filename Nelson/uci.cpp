@@ -15,6 +15,11 @@
 search Engine;
 position * pos = nullptr;
 std::thread * Mainthread = nullptr;
+int64_t ponderStartTime = 0;
+bool ponderActive = false;
+
+int ponderedMoves = 0;
+int ponderHits = 0;
 
 void dispatch(char *line);
 
@@ -32,6 +37,7 @@ void evaluatePosition();
 void quit();
 void stop();
 void thinkAsync(SearchStopCriteria ssc);
+void ponderhit();
 
 bool fexists(const std::string& filename) {
 	std::ifstream f(filename.c_str());
@@ -99,6 +105,8 @@ void dispatch(char *line)
 		setPosition(line);
 	else if (!strcmp(token, "go"))
 		go(line);
+	else if (!strcmp(token, "ponderhit"))
+		ponderhit();
 	else if (!strcmp(token, "print"))
 		std::cout << pos->print() << std::endl;
 	else if (!strcmp(token, "perft"))
@@ -126,6 +134,7 @@ void uci() {
 	puts("id author Christian Günther");
 	printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
 	printf("option name Hash type spin default %lu min 1 max 16384\n", HashSizeMB);
+	printf("option name Ponder type check");
 	//printf("option name Draw Value type spin default %d min -100 max 100\n", DrawValue);
 	//printf("option name GaviotaTablebasePaths type string\n");
 	//printf("option name GaviotaTablebaseCache type spin default %lu min 1 max 16384\n", GTB_CACHE);
@@ -163,9 +172,17 @@ void setoption(char *line){
 	//if (!strcmp(name, "GaviotaTablebaseCache")) GTB_CACHE = atoi(token);
 	//if (!strcmp(name, "GaviotaTablebaseCache")) GTB_COMPRESSION_SCHEME = TB_compression_scheme(atoi(token));
 	if (!strcmp(name, "BookFile")) {
-		if (token) BOOK_FILE = token; else USE_BOOK = false;
+		if (token)  {
+			BOOK_FILE = token;
+			while ((token = my_strtok(&line, " "))) {
+				BOOK_FILE.append(" ");
+				BOOK_FILE.append(token);
+			}
+		}
+		else USE_BOOK = false;
 	}
 	if (!strcmp(name, "OwnBook")) USE_BOOK = !strcmp(token, "true");
+	if (!strcmp(name, "Ponder")) ponderActive = !strcmp(token, "true");
 	//else if (!strcmp(name, "DrawValue"))
 	//	DrawValue = atoi(token);
 }
@@ -227,6 +244,7 @@ void setPosition(char *line){
 void deleteThread() {
 	if (Mainthread != nullptr) {
 		if (Mainthread->joinable()) {
+			Engine.PonderMode = false;
 			Engine.Stop = true;
 			Mainthread->join();
 			Engine.Reset();
@@ -238,7 +256,23 @@ void deleteThread() {
 
 void thinkAsync(SearchStopCriteria ssc) {
 	ValuatedMove BestMove = Engine.Think(*pos, ssc);
-	std::cout << "bestmove " << toString(BestMove.move) << std::endl;
+	if (!ponderActive) std::cout << "bestmove " << toString(BestMove.move) << std::endl;
+	else {
+		//First try move from principal variation
+		Move ponderMove = Engine.PonderMove();
+		if (ponderMove == MOVE_NONE) {
+			//Then try to find any move to ponder on (as Arena seems to have problems when no ponder move is provided)
+			position next(*pos);
+			next.ApplyMove(BestMove.move);
+			ValuatedMove * moves = next.GenerateMoves<LEGAL>();
+			int movecount = next.GeneratedMoveCount();
+			ponderMove = Engine.GetBestBookMove(next, moves, movecount);
+			if (ponderMove == MOVE_NONE && movecount > 0) ponderMove = moves->move;
+		}
+		if (ponderMove == MOVE_NONE) std::cout << "bestmove " << toString(BestMove.move) << std::endl;
+		else std::cout << "bestmove " << toString(BestMove.move) << " ponder " << toString(ponderMove) << std::endl;
+		std::cout << "info string PonderStats " << ponderHits << "/" << ponderedMoves << std::endl;
+	}
 	//if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 	//	cout << "info depth " << Engine.Depth() << " nodes " << Engine.NodeCount << " score cp " << BestMove.score << " nps " << Engine.NodeCount * 1000 / Engine.ThinkTime()
 	//	//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
@@ -262,6 +296,7 @@ void go(char *line){
 	int increment = 0;
 	long long nodes = 0;
 	int movestogo = 30;
+	bool ponder = false;
 	while ((token = my_strtok(&line, " "))) {
 		if (!strcmp(token, pos->GetSideToMove() == WHITE ? "wtime" : "btime"))
 			moveTime = atoi(my_strtok(&line, " "));
@@ -273,6 +308,11 @@ void go(char *line){
 			ssc.MaxNumberOfNodes = atoll(my_strtok(&line, " "));
 		else if (!strcmp(token, "movestogo"))
 			movestogo = atoi(my_strtok(&line, " "));
+		else if (!strcmp(token, "ponder")) {
+			ponderStartTime = ssc.StartTime;
+			ponder = true;
+			ponderedMoves++;
+		}
 	}
 	//Simple timemanagement
 	if (moveTime > 0) {
@@ -285,6 +325,7 @@ void go(char *line){
 		}
 	}
 	deleteThread();
+	Engine.PonderMode = ponder;
 	Mainthread = new std::thread(thinkAsync, ssc);
 
 	//Engine.Think(pos, ssc);
@@ -296,6 +337,12 @@ void go(char *line){
 	//char m_str[6];
 	//move_to_uci(&board, m, m_str);
 	//printf("bestmove %s\n", m_str);
+}
+
+void ponderhit() {
+	Engine.ExtendStopTimes(now() - ponderStartTime);
+	Engine.PonderMode = false;
+	ponderHits++;
 }
 
 void setvalue(char *line) {
