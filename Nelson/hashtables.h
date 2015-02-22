@@ -27,7 +27,7 @@ namespace tt {
 
 	const int CLUSTER_SIZE = 4;
 
-	static uint8_t _generation = 0;
+	extern uint8_t _generation;
 	inline void newSearch() { _generation += 4; }
 
 	extern uint64_t ProbeCounter;

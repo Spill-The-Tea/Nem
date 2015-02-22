@@ -77,4 +77,5 @@ inline void search::NewGame() {
 		counterMove[i] = MOVE_NONE;
 		//gains[i] = VALUE_ZERO;
 	}
+	for (int i = 0; i < 12 * 64; ++i) gains[i] = VALUE_ZERO;
 }

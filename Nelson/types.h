@@ -311,8 +311,8 @@ struct SearchStopCriteria {
 struct position;
 
 #ifdef _MSC_VER
-static LARGE_INTEGER s_frequency;
 inline int64_t now() {
+	LARGE_INTEGER s_frequency;
 	QueryPerformanceFrequency(&s_frequency);
 	LARGE_INTEGER now;
 	QueryPerformanceCounter(&now);
@@ -325,9 +325,9 @@ inline int64_t now() {
 }
 #endif
 
+const Value MAX_HISTORY_VALUE = Value(2000);
 struct HistoryStats {
 public:
-	static const Value MAX_HISTORY_VALUE = Value(2000); //blindly copied from SF
 	inline void update(Value v, Piece p, Square s) {
 		if (abs(int(Table[p][s])) < MAX_HISTORY_VALUE) {
 			Table[p][s] += v;

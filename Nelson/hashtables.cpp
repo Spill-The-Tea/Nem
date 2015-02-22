@@ -56,6 +56,7 @@ namespace pawn {
 
 namespace tt {
 
+	uint8_t _generation = 0;
     uint64_t ProbeCounter = 0;
 	uint64_t HitCounter = 0;
 	uint64_t FillCounter = 0;
