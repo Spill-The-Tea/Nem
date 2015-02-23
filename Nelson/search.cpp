@@ -294,6 +294,7 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 	Value score;
 	tt::NodeType nt = tt::UPPER_BOUND;
 	while ((move = pos.NextMove())) {
+		if (pos.SEE_Sign(move) < VALUE_ZERO) continue;
 		position next(pos);
 		if (next.ApplyMove(move)) {
 			score = -QSearch<QSEARCH_DEPTH_NEGATIVE>(-beta, -alpha, next, depth - 1);
