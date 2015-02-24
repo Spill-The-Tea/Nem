@@ -282,10 +282,10 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 			return beta;
 		}
 		//Delta Pruning
-		//if (!pos.GetMaterialTableEntry()->IsLateEndgame()) {
-		//	Value delta = PieceValuesEG[pos.GetMostValuablePieceType(~pos.GetSideToMove())] + int(pos.PawnOn7thRank()) * (PieceValuesEG[QUEEN] - PieceValuesEG[PAWN]) + DELTA_PRUNING_SAFETY_MARGIN;
-		//	if (standPat + delta < alpha) return alpha;
-		//}
+		if (!pos.GetMaterialTableEntry()->IsLateEndgame()) {
+			Value delta = PieceValuesEG[pos.GetMostValuablePieceType(~pos.GetSideToMove())] + int(pos.PawnOn7thRank()) * (PieceValuesEG[QUEEN] - PieceValuesEG[PAWN]) + DELTA_PRUNING_SAFETY_MARGIN;
+			if (standPat + delta < alpha) return alpha;
+		}
 		if (alpha < standPat) alpha = standPat;
 	}
 	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr);

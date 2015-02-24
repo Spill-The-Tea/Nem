@@ -65,7 +65,9 @@ void InitializeMaterialTable() {
 											assert(MaterialTable[key].Score == VALUE_NOTYETDETERMINED);
 											MaterialTable[key].Score = evaluation.getScore(phase);
 											MaterialTable[key].Phase = phase;
-											MaterialTable[key].EvaluationFunction = &evaluateDefault;
+											if (nWP == 0 && nWN == 0 && nWB == 0 && nWR == 0 && nWQ == 0) MaterialTable[key].EvaluationFunction = &easyMate < BLACK > ;
+											else if (nBP == 0 && nBN == 0 && nBB == 0 && nBR == 0 && nBQ == 0) MaterialTable[key].EvaluationFunction = &easyMate < WHITE > ;
+											else MaterialTable[key].EvaluationFunction = &evaluateDefault;
 										}
 									}
 								}
@@ -106,7 +108,7 @@ void InitializeMaterialTable() {
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
 	pieceCounts[BKNIGHT] = 0;
 	//KNNK 
-	pieceCounts[WKNIGHT] = 12;
+	pieceCounts[WKNIGHT] = 2;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].Score = VALUE_DRAW;
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
@@ -119,62 +121,62 @@ void InitializeMaterialTable() {
 	//KPK
 	pieceCounts[WPAWN] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &kpk::EvaluateKPK<WHITE>;
+	MaterialTable[key].EvaluationFunction = &kpk::EvaluateKPK < WHITE > ;
 	pieceCounts[WPAWN] = 0;
 	pieceCounts[BPAWN] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &kpk::EvaluateKPK<BLACK>;
+	MaterialTable[key].EvaluationFunction = &kpk::EvaluateKPK < BLACK > ;
 	//KQK, KRK
 	pieceCounts[BPAWN] = 0;
 	pieceCounts[WQUEEN] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &easyMate<WHITE>;
+	MaterialTable[key].EvaluationFunction = &easyMate < WHITE > ;
 	pieceCounts[BQUEEN] = 1;
 	pieceCounts[WQUEEN] = 0;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &easyMate<BLACK>;
+	MaterialTable[key].EvaluationFunction = &easyMate < BLACK > ;
 	pieceCounts[BQUEEN] = 0;
 	pieceCounts[WROOK] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &easyMate<WHITE>;
+	MaterialTable[key].EvaluationFunction = &easyMate < WHITE > ;
 	pieceCounts[WROOK] = 0;
 	pieceCounts[BROOK] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &easyMate<BLACK>;
+	MaterialTable[key].EvaluationFunction = &easyMate < BLACK > ;
 	pieceCounts[BROOK] = 0;
 	//KBBK
 	pieceCounts[WBISHOP] = 2;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &easyMate<WHITE>;
+	MaterialTable[key].EvaluationFunction = &easyMate < WHITE > ;
 	pieceCounts[WBISHOP] = 0;
 	pieceCounts[BBISHOP] = 2;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &easyMate<BLACK>;
+	MaterialTable[key].EvaluationFunction = &easyMate < BLACK > ;
 	pieceCounts[BBISHOP] = 0;
 	//KBNK
 	pieceCounts[WBISHOP] = 1;
 	pieceCounts[WKNIGHT] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &evaluateKNBK<WHITE>;
+	MaterialTable[key].EvaluationFunction = &evaluateKNBK < WHITE > ;
 	pieceCounts[WBISHOP] = 0;
 	pieceCounts[WKNIGHT] = 0;
 	pieceCounts[BBISHOP] = 1;
 	pieceCounts[BKNIGHT] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &evaluateKNBK<BLACK>;
+	MaterialTable[key].EvaluationFunction = &evaluateKNBK < BLACK > ;
 	//KQKR
 	pieceCounts[BBISHOP] = 0;
 	pieceCounts[BKNIGHT] = 0;
 	pieceCounts[WQUEEN] = 1;
 	pieceCounts[BROOK] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &easyMate<WHITE>;
+	MaterialTable[key].EvaluationFunction = &easyMate < WHITE > ;
 	pieceCounts[WQUEEN] = 0;
 	pieceCounts[BROOK] = 0;
 	pieceCounts[BQUEEN] = 1;
 	pieceCounts[WROOK] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &easyMate<BLACK>;
+	MaterialTable[key].EvaluationFunction = &easyMate < BLACK > ;
 	pieceCounts[BQUEEN] = 0;
 	pieceCounts[WROOK] = 0;
 	//Simple KxKx Endgames should all be draws (x <> PAWN)
@@ -188,23 +190,23 @@ void InitializeMaterialTable() {
 	pieceCounts[WBISHOP] = 1;
 	pieceCounts[WPAWN] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &evaluateKBPK<WHITE>;
+	MaterialTable[key].EvaluationFunction = &evaluateKBPK < WHITE > ;
 	pieceCounts[WBISHOP] = 0;
 	pieceCounts[WPAWN] = 0;
 	pieceCounts[BBISHOP] = 1;
 	pieceCounts[BPAWN] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &evaluateKBPK<BLACK>;
+	MaterialTable[key].EvaluationFunction = &evaluateKBPK < BLACK > ;
 	pieceCounts[BBISHOP] = 0;
 	pieceCounts[BPAWN] = 0;
-    //KQKP
+	//KQKP
 	pieceCounts[WQUEEN] = pieceCounts[BPAWN] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &evaluateKQKP<WHITE>;
+	MaterialTable[key].EvaluationFunction = &evaluateKQKP < WHITE > ;
 	pieceCounts[WQUEEN] = pieceCounts[BPAWN] = 0;
 	pieceCounts[BQUEEN] = pieceCounts[WPAWN] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
-	MaterialTable[key].EvaluationFunction = &evaluateKQKP<BLACK>;
+	MaterialTable[key].EvaluationFunction = &evaluateKQKP < BLACK > ;
 	pieceCounts[BQUEEN] = pieceCounts[WPAWN] = 0;
 
 }
