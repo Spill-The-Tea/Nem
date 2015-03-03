@@ -84,6 +84,8 @@ public:
 	inline bool PawnOn7thRank() { return (PieceBB(PAWN, SideToMove) & RANKS[6 - 5 * SideToMove]) != 0; } //Side to Move has pawn on 7th Rank
 	void copy(const position &pos);
 	inline bool CastlingAllowed(CastleFlag castling) { return (CastlingOptions & castling) != 0; }
+	std::string toSan(Move move);
+	Move parseSan(std::string move);
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];

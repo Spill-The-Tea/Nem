@@ -13,8 +13,7 @@ struct search {
 public:
 	ValuatedMove BestMove;
 	int64_t NodeCount;
-	int64_t QNodeCount;
-	bool Stop = false;
+	int64_t QNodeCount;	
 	bool UciOutput = false;
 	bool PonderMode = false;
 	double BranchingFactor = 0;
@@ -30,6 +29,7 @@ public:
 	inline double cutoffAverageMove() const { return 1 + 1.0 * cutoffMoveIndexSum / cutoffCount; }
 	inline Move PonderMove() const { return PVMoves[1]; }
 	inline void ExtendStopTimes(int64_t extensionTime) { searchStopCriteria.HardStopTime += extensionTime; searchStopCriteria.SoftStopTime += extensionTime; }
+	inline void StopThinking(){ Stop = true; searchStopCriteria.HardStopTime = 0; }
 	Move GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount);
 
 private:
@@ -47,6 +47,7 @@ private:
 	Move counterMove[12 * 64];
 	Value gains[12 * 64];
 	polyglot::polyglotbook book;
+	bool Stop = false;
 
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<NodeType NT> Value QSearch(Value alpha, Value beta, position &pos, int depth);

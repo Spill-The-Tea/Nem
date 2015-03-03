@@ -51,14 +51,14 @@ ValuatedMove search::Think(position &pos, SearchStopCriteria ssc) {
 		}
 		if (Stopped() || (UciOutput && _thinkTime > 200)) {
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
-				std::cout << "info depth " << _depth << " nodes " << NodeCount << " score cp " << BestMove.score << " nps " << NodeCount * 1000 / _thinkTime
+				std::cout << "info depth " << _depth << " seldepth 0 multipv 1" << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 				<< " hashfull " << tt::GetHashFull()
 				//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 				<< " pv " << PrincipalVariation(_depth) << std::endl;
 			else {
 				int pliesToMate;
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
-				std::cout << "info depth " << _depth << " nodes " << NodeCount << " score mate " << pliesToMate / 2 << " nps " << NodeCount * 1000 / _thinkTime
+				std::cout << "info depth " << _depth << " seldepth 0 multipv 1" << " score mate " << pliesToMate / 2  << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
 					//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 					<< " pv " << PrincipalVariation(_depth) << std::endl;

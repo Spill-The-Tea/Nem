@@ -93,6 +93,10 @@ void dispatch(char *line)
 
 	if (!token)
 		return;
+	else if (!strcmp(token, "stop"))
+		stop();
+	else if (!strcmp(token, "go"))
+		go(line);
 	else if (!strcmp(token, "uci"))
 		uci();
 	else if (!strcmp(token, "isready"))
@@ -103,8 +107,6 @@ void dispatch(char *line)
 		ucinewgame();
 	else if (!strcmp(token, "position"))
 		setPosition(line);
-	else if (!strcmp(token, "go"))
-		go(line);
 	else if (!strcmp(token, "ponderhit"))
 		ponderhit();
 	else if (!strcmp(token, "print"))
@@ -123,8 +125,6 @@ void dispatch(char *line)
 	//	cout << "QEval: " << Engine.QEval(pos) << std::endl;
 	else if (!strcmp(token, "quit"))
 		quit();
-	else if (!strcmp(token, "stop"))
-		stop();
 }
 
 
@@ -141,6 +141,10 @@ void uci() {
 	//printf("option name GaviotaTablebaseCompressionScheme type spin default %lu min 0 max 4\n", GTB_COMPRESSION_SCHEME);
 	printf("option name BookFile type string default %s\n", BOOK_FILE);
 	printf("option name OwnBook type check default %s\n", USE_BOOK ? "true" : "false");
+	printf("option name PPB0 type string default %lu min 0 max 100\n", PASSED_PAWN_BONUS[0]);
+	printf("option name PPB1 type string default %lu min 0 max 200\n", PASSED_PAWN_BONUS[1]);
+	printf("option name PPB2 type string default %lu min 0 max 300\n", PASSED_PAWN_BONUS[2]);
+	printf("option name PPB3 type string default %lu min 0 max 500\n", PASSED_PAWN_BONUS[3]);
 	puts("uciok");
 }
 
@@ -183,12 +187,17 @@ void setoption(char *line){
 	}
 	if (!strcmp(name, "OwnBook")) USE_BOOK = !strcmp(token, "true");
 	if (!strcmp(name, "Ponder")) ponderActive = !strcmp(token, "true");
+	if (name[0] == 'P' && name[1] == 'P' && name[2] == 'B') {
+		int indx = int(name[3] - '0');
+		int value = round(atof(token));
+		//PASSED_PAWN_BONUS[indx] = Value(value);
+	}
 	//else if (!strcmp(name, "DrawValue"))
 	//	DrawValue = atoi(token);
 }
 bool initialized = false;
 void ucinewgame(){
-	initialized = true;	
+	initialized = true;
 	Engine.NewGame();
 	//tt::InitializeTranspositionTable(HashSizeMB);
 	if (USE_BOOK) Engine.BookFile = BOOK_FILE; else Engine.BookFile = "";
@@ -242,16 +251,15 @@ void setPosition(char *line){
 }
 
 void deleteThread() {
+	Engine.PonderMode = false;
+	Engine.StopThinking();
 	if (Mainthread != nullptr) {
-		if (Mainthread->joinable()) {
-			Engine.PonderMode = false;
-			Engine.Stop = true;
-			Mainthread->join();
-			Engine.Reset();
-		}
+		if (Mainthread->joinable())  Mainthread->join();
+		else std::cout << "info string Can't stop Engine Thread!" << std::endl;
 		free(Mainthread);
 		Mainthread = nullptr;
 	}
+	Engine.Reset();
 }
 
 void thinkAsync(SearchStopCriteria ssc) {
@@ -269,9 +277,8 @@ void thinkAsync(SearchStopCriteria ssc) {
 			ponderMove = Engine.GetBestBookMove(next, moves, movecount);
 			if (ponderMove == MOVE_NONE && movecount > 0) ponderMove = moves->move;
 		}
-		if (ponderMove == MOVE_NONE) std::cout << "bestmove " << toString(BestMove.move) << std::endl;
+		if (ponderMove == MOVE_NONE || !ponderActive) std::cout << "bestmove " << toString(BestMove.move) << std::endl;
 		else std::cout << "bestmove " << toString(BestMove.move) << " ponder " << toString(ponderMove) << std::endl;
-		std::cout << "info string PonderStats " << ponderHits << "/" << ponderedMoves << std::endl;
 	}
 	//if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 	//	cout << "info depth " << Engine.Depth() << " nodes " << Engine.NodeCount << " score cp " << BestMove.score << " nps " << Engine.NodeCount * 1000 / Engine.ThinkTime()
@@ -313,17 +320,24 @@ void go(char *line){
 			ponder = true;
 			ponderedMoves++;
 		}
-	}
-	//Simple timemanagement
-	if (moveTime > 0) {
-		//if (movestogo > 30) movestogo = 30;
-		int avalaibleTime = moveTime + movestogo * increment;
-		ssc.SoftStopTime = ssc.StartTime + avalaibleTime / movestogo;
-		ssc.HardStopTime = ssc.StartTime + moveTime - EmergencyTime;
-		if ((ssc.HardStopTime - ssc.StartTime) < 2 * (ssc.SoftStopTime - ssc.StartTime)) {
-			ssc.SoftStopTime = ssc.StartTime + (ssc.HardStopTime - ssc.StartTime) / 2;
+		else if (!strcmp(token, "infinite")) {
+			moveTime = INT_MAX;
 		}
 	}
+	//Simple timemanagement
+	if (moveTime == INT_MAX) {
+		ssc.SoftStopTime = ssc.StartTime + int64_t(31536000000); //1 Year
+		ssc.HardStopTime = ssc.StartTime;
+	}
+	else if (moveTime > 0) {
+			//if (movestogo > 30) movestogo = 30;
+			int avalaibleTime = moveTime + movestogo * increment;
+			ssc.SoftStopTime = ssc.StartTime + avalaibleTime / movestogo;
+			ssc.HardStopTime = ssc.StartTime + moveTime - EmergencyTime;
+			if ((ssc.HardStopTime - ssc.StartTime) < 2 * (ssc.SoftStopTime - ssc.StartTime)) {
+				ssc.SoftStopTime = ssc.StartTime + (ssc.HardStopTime - ssc.StartTime) / 2;
+			}
+		}
 	deleteThread();
 	Engine.PonderMode = ponder;
 	Mainthread = new std::thread(thinkAsync, ssc);
@@ -346,8 +360,14 @@ void ponderhit() {
 }
 
 void setvalue(char *line) {
-	//char * token = my_strtok(&line, " ");
-	//if (!strcmp(token, "mf")) {
+	char * token = my_strtok(&line, " ");
+	if (token[0] == 'P' && token[1] == 'P' && token[2] == 'B') {
+		int indx = int(token[3] - '0');
+		token = my_strtok(&line, " ");
+		int value = round(atof(token));
+		//PASSED_PAWN_BONUS[indx] = Value(value);
+		std::cout << "info string Passed Pawn Bonus " << indx << ": " << PASSED_PAWN_BONUS[indx] << std::endl;
+	} 
 	//	token = my_strtok(&line, " ");
 	//	MOBILITY_FACTOR = atoi(token);
 	//	cout << "infostd::string Mobility Factor: " << MOBILITY_FACTOR << std::endl;

@@ -121,7 +121,7 @@ bool position::ApplyMove(Move move) {
 		else {
 			if (MaterialKey == MATERIAL_KEY_UNUSUAL) MaterialKey = calculateMaterialKey();
 			else
-			MaterialKey = MaterialKey - materialKeyFactors[WPAWN + SideToMove] - materialKeyFactors[capturedInLastMove] + materialKeyFactors[convertedTo];
+				MaterialKey = MaterialKey - materialKeyFactors[WPAWN + SideToMove] - materialKeyFactors[capturedInLastMove] + materialKeyFactors[convertedTo];
 			material = &MaterialTable[MaterialKey];
 		}
 		break;
@@ -209,7 +209,7 @@ Move position::NextMove() {
 		case HASHMOVE:
 			++generationPhase;
 			moveIterationPointer = -1;
-			if (validateMove(hashMove)) return hashMove; //Validation might be required
+			if (validateMove(hashMove)) return hashMove;
 			break;
 		case KILLER:
 			if (moveIterationPointer == 0) {
@@ -937,4 +937,80 @@ bool position::checkMaterialIsUnusual() {
 		|| popcount(PieceBB(BISHOP, BLACK)) > 2
 		|| popcount(PieceBB(KNIGHT, WHITE)) > 2
 		|| popcount(PieceBB(KNIGHT, BLACK)) > 2;
+}
+
+std::string position::toSan(Move move) {
+	Square toSquare = to(move);
+	Square fromSquare = from(move);
+	if (type(move) == CASTLING) {
+		if (toSquare > fromSquare) return "O-O"; else return "O-O-O";
+	}
+	PieceType pt = GetPieceType(Board[from(move)]);
+	bool isCapture = (Board[to(move)] != BLANK) || (type(move) == PROMOTION);
+	if (pt == PAWN) {
+		if (isCapture || type(move) == ENPASSANT) {
+			if (type(move) == PROMOTION) {
+				char ch[] = { toChar(File(fromSquare & 7)), 'x', toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)), '=', "QRBN"[promotionType(move)], 0 };
+				return ch;
+			}
+			else {
+				char ch[] = { toChar(File(fromSquare & 7)), 'x', toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)), 0 };
+				return ch;
+			}
+		}
+		else {
+			if (type(move) == PROMOTION) {
+				char ch[] = { toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)), '=', "QRBN"[promotionType(move)], 0 };
+				return ch;
+			}
+			else {
+				char ch[] = { toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)), 0 };
+				return ch;
+			}
+		}
+	}
+	else if (pt == KING) {
+		if (isCapture) {
+			char ch[] = { 'K', 'x', toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)), 0 };
+			return ch;
+		}
+		else {
+			char ch[] = { 'K', toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)), 0 };
+			return ch;
+		}
+	}
+	//Check if diambiguation is needed
+	Move dMove = MOVE_NONE;
+	ValuatedMove * legalMoves = GenerateMoves<LEGAL>();
+	while (legalMoves->move) {
+		if (legalMoves->move != move && to(legalMoves->move) == toSquare && GetPieceType(Board[from(legalMoves->move)]) == pt) {
+			dMove = legalMoves->move;
+			break;
+		}
+	}
+	char ch[6];
+	ch[0] = "QRBN"[pt];
+	int indx = 1;
+	if (dMove != MOVE_NONE) {
+		if ((from(dMove) & 7) == (fromSquare & 7)) ch[indx] = toChar(Rank(from(dMove) >> 3)); else ch[indx] = toChar(File(from(dMove) & 7));
+		indx++;
+	}
+	if (isCapture) {
+		ch[indx] = 'x';
+		indx++;
+	}
+	ch[indx] = toChar(File(toSquare & 7));
+	indx++;
+	ch[indx] = toChar(Rank(toSquare >> 3));
+	indx++ ;
+	ch[indx] = 0;
+	return ch;
+}
+
+Move position::parseSan(std::string move) {
+	ValuatedMove * legalMoves = GenerateMoves<LEGAL>();
+	while (legalMoves->move) {
+		if (move.find(toSan(legalMoves->move)) != std::string::npos) return legalMoves->move;
+	}
+	return MOVE_NONE;
 }
