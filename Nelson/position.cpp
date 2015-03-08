@@ -126,9 +126,10 @@ bool position::ApplyMove(Move move) {
 		}
 		break;
 	case CASTLING:
-		if (toSquare == G1 + (SideToMove * 56)) {
+		if (toSquare == G1 + (SideToMove * 56) || (toSquare == InitialRookSquare[2 * SideToMove])) {
 			//short castling
 			remove(InitialRookSquare[2 * SideToMove]); //remove rook
+			toSquare = Square(G1 + (SideToMove * 56));
 			set<true>(moving, toSquare); //Place king
 			set<true>(Piece(WROOK + SideToMove),
 				Square(toSquare - 1)); //Place rook
@@ -136,6 +137,7 @@ bool position::ApplyMove(Move move) {
 		else {
 			//long castling
 			remove(InitialRookSquare[2 * SideToMove + 1]); //remove rook
+			toSquare = Square(C1 + (SideToMove * 56));
 			set<true>(moving, toSquare); //Place king
 			set<true>(Piece(WROOK + SideToMove),
 				Square(toSquare + 1)); //Place rook
@@ -564,7 +566,6 @@ void position::setFromFEN(const std::string& fen) {
 
 	//Castles
 	CastlingOptions = 0;
-	Chess960 = false;
 	ss >> token;
 	while ((ss >> token) && !isspace(token)) {
 
@@ -645,7 +646,7 @@ void position::setFromFEN(const std::string& fen) {
 		}
 	}
 	if (CastlingOptions) {
-		Chess960 = (InitialKingSquare[WHITE] != E1) || (InitialRookSquare[0] != H1) || (InitialRookSquare[1] != A1);
+		Chess960 = Chess960 || (InitialKingSquare[WHITE] != E1) || (InitialRookSquare[0] != H1) || (InitialRookSquare[1] != A1);
 		for (int i = 0; i < 4; ++i) InitialRookSquareBB[i] = 1ull << InitialRookSquare[i];
 		Square ks;
 		Square kt[4] = { G1, C1, G8, C8 };

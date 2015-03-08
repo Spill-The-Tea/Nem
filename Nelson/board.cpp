@@ -564,12 +564,12 @@ Move parseMoveInUCINotation(const std::string& uciMove, const position& pos) {
 			return createMove<PROMOTION>(fromSquare, toSquare, KNIGHT);
 		}
 	}
-	if (Chess960 && GetPieceType(pos.GetPieceOnSquare(fromSquare)) == KING && GetPieceType(pos.GetPieceOnSquare(toSquare)) == ROOK) {
+	if (Chess960 && GetPieceType(pos.GetPieceOnSquare(fromSquare)) == KING && pos.GetPieceOnSquare(toSquare) == GetPiece(ROOK, pos.GetSideToMove())) {
 		if (fromSquare < toSquare) {
-			return createMove<CASTLING>(InitialKingSquare[pos.GetSideToMove()], Square(G1 + 56 * pos.GetSideToMove()));
+			return createMove<CASTLING>(InitialKingSquare[pos.GetSideToMove()], InitialRookSquare[2 * pos.GetSideToMove()]);
 		}
 		else {
-			return createMove<CASTLING>(InitialKingSquare[pos.GetSideToMove()], Square(C1 + 56 * pos.GetSideToMove()));
+			return createMove<CASTLING>(InitialKingSquare[pos.GetSideToMove()], InitialRookSquare[2 * pos.GetSideToMove()+1]);
 		}
 	}
 	else {
