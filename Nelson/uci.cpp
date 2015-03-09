@@ -141,10 +141,7 @@ void uci() {
 	//printf("option name GaviotaTablebaseCompressionScheme type spin default %lu min 0 max 4\n", GTB_COMPRESSION_SCHEME);
 	printf("option name BookFile type string default %s\n", BOOK_FILE);
 	printf("option name OwnBook type check default %s\n", USE_BOOK ? "true" : "false");
-	printf("option name PPB0 type string default %lu min 0 max 100\n", PASSED_PAWN_BONUS[0]);
-	printf("option name PPB1 type string default %lu min 0 max 200\n", PASSED_PAWN_BONUS[1]);
-	printf("option name PPB2 type string default %lu min 0 max 300\n", PASSED_PAWN_BONUS[2]);
-	printf("option name PPB3 type string default %lu min 0 max 500\n", PASSED_PAWN_BONUS[3]);
+	//printf("option name bpf type spin default %lu\n", BETA_PRUNING_FACTOR);
 	puts("uciok");
 }
 
@@ -187,11 +184,7 @@ void setoption(char *line){
 	}
 	if (!strcmp(name, "OwnBook")) USE_BOOK = !strcmp(token, "true");
 	if (!strcmp(name, "Ponder")) ponderActive = !strcmp(token, "true");
-	if (name[0] == 'P' && name[1] == 'P' && name[2] == 'B') {
-		int indx = int(name[3] - '0');
-		int value = round(atof(token));
-		//PASSED_PAWN_BONUS[indx] = Value(value);
-	}
+	//if (!strcmp(name, "bpf")) BETA_PRUNING_FACTOR = Value(atoi(token));
 	//else if (!strcmp(name, "DrawValue"))
 	//	DrawValue = atoi(token);
 }

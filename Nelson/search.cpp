@@ -151,10 +151,10 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	if (!checked
 		&& depth < 7
 		&& staticEvaluation < VALUE_KNOWN_WIN
-		&& staticEvaluation - BETA_PRUNING_MARGIN[depth] >= beta
+		&& (staticEvaluation - BETA_PRUNING_FACTOR * depth) >= beta
 		//&& !pos.GetMaterialTableEntry()->IsLateEndgame()
 		&& pos.NonPawnMaterial(pos.GetSideToMove()))
-		return staticEvaluation - BETA_PRUNING_MARGIN[depth];
+		return staticEvaluation - BETA_PRUNING_FACTOR * depth;
 	//Null Move Pruning
 	if (NT != NULL_MOVE && !checked && staticEvaluation > beta && depth > 4 && !pos.GetMaterialTableEntry()->IsLateEndgame() && pos.NonPawnMaterial(pos.GetSideToMove())) {
 		int reduction = depth >> 1;
