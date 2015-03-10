@@ -342,3 +342,16 @@ public:
 private:
 	Value Table[12][64];
 };
+
+//struct DblHistoryStats {
+//public:
+//	inline void update(Value v, Piece p1, Square s1, Piece p2, Square s2) {
+//		if (abs(int(Table[p1][s1][p2][s2])) < MAX_HISTORY_VALUE) {
+//			Table[p1][s1][p2][s2] += v;
+//		}
+//	}
+//	inline Value const getValue(const Piece p1, const Square s1, const Piece p2, const Square s2) { return Table[p1][s1][p2][s2]; }
+//	inline void initialize() { std::memset(Table, 0, sizeof(Table)); }
+//private:
+//	Value Table[12][64][12][64];
+//};

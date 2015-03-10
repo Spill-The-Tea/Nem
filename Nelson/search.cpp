@@ -193,9 +193,9 @@ template<NodeType NT> Value search::Search(Value alpha, Value beta, position &po
 	//Futility Pruning: Prune quiet moves that give no check if they can't raise alpha
 	bool futilityPruning = NT != NULL_MOVE && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
 	if (futilityPruning && alpha >(staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
-		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, counterMove, ttMove);
+		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, nullptr, counterMove, ttMove);
 	else
-		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, killer[pos.GetPliesFromRoot()][0], killer[pos.GetPliesFromRoot()][1], counterMove, ttMove);
+		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &killer[2*pos.GetPliesFromRoot()], counterMove, ttMove);
 	bool lmr = !checked && depth >= 3;
 	Move move;
 	int moveIndex = 0;
@@ -288,8 +288,8 @@ template<NodeType NT> Value search::QSearch(Value alpha, Value beta, position &p
 		}
 		if (alpha < standPat) alpha = standPat;
 	}
-	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr);
-	else pos.InitializeMoveIterator<QSEARCH>(&History, EXTENDED_MOVE_NONE, EXTENDED_MOVE_NONE, nullptr);
+	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, nullptr, nullptr);
+	else pos.InitializeMoveIterator<QSEARCH>(&History, nullptr, nullptr);
 	Move move;
 	Value score;
 	tt::NodeType nt = tt::UPPER_BOUND;
@@ -321,16 +321,24 @@ void search::updateCutoffStats(const Move cutoffMove, int depth, position &pos, 
 		Piece movingPiece = pos.GetPieceOnSquare(from(cutoffMove));
 		ExtendedMove killerMove(movingPiece, cutoffMove);
 		int pfr = pos.GetPliesFromRoot();
-		killer[pfr][1] = killer[pfr][0];
-		killer[pfr][0] = killerMove;
+
+		killer[2 * pfr + 1] = killer[2 * pfr];
+		killer[2 * pfr] = killerMove;
 		Value v = Value(depth * depth);
 		History.update(v, movingPiece, toSquare);
+		//DblHistory
+		//Piece prevPiece = pos.GetPreviousMovingPiece();
+		//Square prevTo; 
+		//if (prevPiece != BLANK) {
+		//	prevTo = to(pos.GetLastAppliedMove());
+		//	DblHistory.update(v, prevPiece, prevTo, movingPiece, toSquare);
+		//}
 		if (moveIndex > 0) {
 			ValuatedMove * alreadyProcessedQuiets = pos.GetMovesOfCurrentPhase();
 			for (int i = 0; i < pos.GetMoveNumberInPhase() - 1; ++i) {
 				movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedQuiets->move));
 				toSquare = to(alreadyProcessedQuiets->move);
-				History.update(v, movingPiece, toSquare);
+				History.update(-v, movingPiece, toSquare);
 				alreadyProcessedQuiets++;
 			}
 		}

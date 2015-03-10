@@ -38,7 +38,7 @@ public:
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, ExtendedMove killerMove1, ExtendedMove killerMove2, Move * counterMoves, Move hashmove);
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, ExtendedMove * killerMove, Move * counterMoves, Move hashmove);
 	Move NextMove();
 	const Value SEE(Square from, const Square to) const;
 	Value SEE_Sign(Move move) const;
@@ -72,6 +72,7 @@ public:
 	void NullMove(Square epsquare = OUTSIDE);
 	void deleteParents();
 	inline Move GetLastAppliedMove() { return lastAppliedMove; }
+	inline Piece GetPreviousMovingPiece() { if (previous) return previous->GetPieceOnSquare(from(lastAppliedMove)); else return BLANK; }
 	inline Piece getCapturedInLastMove() { return capturedInLastMove; }
 	inline bool IsQuiet(const Move move) const {
 		return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING);
@@ -114,8 +115,7 @@ private:
 	Move hashMove = MOVE_NONE;
 	Result result = RESULT_UNKNOWN;
 	Value StaticEval = VALUE_NOTYETDETERMINED;
-	ExtendedMove killer1;
-	ExtendedMove killer2;
+	ExtendedMove *killer;
 	Move lastAppliedMove;
 	Piece capturedInLastMove = BLANK;
 	ValuatedMove * lastPositive;
@@ -775,8 +775,10 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, ExtendedMove killerMove1, ExtendedMove killerMove2, Move * counterMoves, Move hashmove = MOVE_NONE) {
-	killer1 = killerMove1; killer2 = killerMove2;
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, ExtendedMove* killerMove, Move * counterMoves, Move hashmove = MOVE_NONE) {
+	if (SMGT == MAIN_SEARCH && killerMove) {
+		killer = killerMove;  
+	}
 	CounterMoves = counterMoves;
 	if (!attackedByThem) attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	moveIterationPointer = -1;

@@ -38,12 +38,13 @@ private:
 	ValuatedMove * rootMoves;
 	Move PVMoves[PV_MAX_LENGTH];
 	HistoryStats History;
+	//DblHistoryStats DblHistory;
 	int _depth = 0;
 	int64_t _thinkTime;
 	uint64_t cutoffAt1stMove = 0;
 	uint64_t cutoffCount = 0;
 	uint64_t cutoffMoveIndexSum = 0;
-	ExtendedMove killer[MAX_DEPTH][2];
+	ExtendedMove killer[2*MAX_DEPTH];
 	Move counterMove[12 * 64];
 	Value gains[12 * 64];
 	polyglot::polyglotbook book;
@@ -69,7 +70,8 @@ inline void search::Reset() {
 	Stop = false;
 	PonderMode = false;
 	History.initialize();
-	for (int i = 0; i < MAX_DEPTH; ++i) killer[i][0] = killer[i][1] = EXTENDED_MOVE_NONE;
+	//DblHistory.initialize();
+	for (int i = 0; i < 2*MAX_DEPTH; ++i) killer[i] = EXTENDED_MOVE_NONE;
 }
 
 inline void search::NewGame() {

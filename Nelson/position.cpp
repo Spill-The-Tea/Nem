@@ -216,11 +216,11 @@ Move position::NextMove() {
 		case KILLER:
 			if (moveIterationPointer == 0) {
 				moveIterationPointer++;
-				if (!(killer1 == EXTENDED_MOVE_NONE) && validateMove(killer1)) return killer1.move;
+				if (!(killer->move == MOVE_NONE) && validateMove(*killer)) return killer->move;
 			}
 			if (moveIterationPointer == 1) {
 				moveIterationPointer++;
-				if (!(killer2 == EXTENDED_MOVE_NONE) && validateMove(killer2)) return killer2.move;
+				if (!((killer + 1)->move == MOVE_NONE) && validateMove(*(killer + 1))) return (killer + 1)->move;
 			}
 			++generationPhase;
 			moveIterationPointer = -1;
