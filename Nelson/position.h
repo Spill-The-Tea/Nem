@@ -38,7 +38,7 @@ public:
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, ExtendedMove * killerMove, Move * counterMoves, Move hashmove);
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, DblHistoryStats *dblHistoryStats, ExtendedMove * killerMove, Move * counterMoves, Move hashmove);
 	Move NextMove();
 	const Value SEE(Square from, const Square to) const;
 	Value SEE_Sign(Move move) const;
@@ -72,7 +72,7 @@ public:
 	void NullMove(Square epsquare = OUTSIDE);
 	void deleteParents();
 	inline Move GetLastAppliedMove() { return lastAppliedMove; }
-	inline Piece GetPreviousMovingPiece() { if (previous) return previous->GetPieceOnSquare(from(lastAppliedMove)); else return BLANK; }
+	inline Piece GetPreviousMovingPiece() { if (previous) return previous->GetPieceOnSquare(to(lastAppliedMove)); else return BLANK; }
 	inline Piece getCapturedInLastMove() { return capturedInLastMove; }
 	inline bool IsQuiet(const Move move) const {
 		return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING);
@@ -120,6 +120,7 @@ private:
 	Piece capturedInLastMove = BLANK;
 	ValuatedMove * lastPositive;
 	HistoryStats * history;
+	DblHistoryStats * dblHistory;
 	Move * CounterMoves = nullptr;
 
 	template<bool SquareIsEmpty> void set(const Piece piece, const Square square);
@@ -775,7 +776,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, ExtendedMove* killerMove, Move * counterMoves, Move hashmove = MOVE_NONE) {
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, DblHistoryStats * dblHistoryStats, ExtendedMove* killerMove, Move * counterMoves, Move hashmove = MOVE_NONE) {
 	if (SMGT == MAIN_SEARCH && killerMove) {
 		killer = killerMove;  
 	}
@@ -784,6 +785,7 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 	moveIterationPointer = -1;
 	phaseStartIndex = 0;
 	history = historyStats;
+	dblHistory = dblHistoryStats;
 	hashmove ? hashMove = hashmove : hashMove = MOVE_NONE;
 	if (IsCheck()) generationPhase = generationPhaseOffset[CHECK] + (hashMove == MOVE_NONE);
 	else generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);

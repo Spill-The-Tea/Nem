@@ -312,11 +312,12 @@ uint64_t perft2(position &pos, int depth) {
 }
 
 HistoryStats history;
+DblHistoryStats dblHistory;
 uint64_t perft3(position &pos, int depth) {
 	nodeCount++;
 	if (depth == 0) return 1;
 	uint64_t result = 0;
-	pos.InitializeMoveIterator<MAIN_SEARCH>(&history, nullptr, nullptr);
+	pos.InitializeMoveIterator<MAIN_SEARCH>(&history, &dblHistory, nullptr, nullptr);
 	Move move;
 	while ((move = pos.NextMove())) {
 		position next(pos);

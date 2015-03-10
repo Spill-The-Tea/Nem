@@ -288,6 +288,7 @@ void position::evaluateByHistory(int startIndex) {
 			Square toSquare = to(moves[i].move);
 			Piece p = Board[from(moves[i].move)];
 			moves[i].score = history->getValue(p, toSquare);
+			if (lastAppliedMove) moves[i].score += dblHistory->getValue(Board[to(lastAppliedMove)], to(lastAppliedMove), p, toSquare);
 		}
 	}
 }

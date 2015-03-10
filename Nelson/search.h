@@ -19,6 +19,7 @@ public:
 	double BranchingFactor = 0;
 	std::string BookFile = "";
 
+	~search();
 	ValuatedMove Think(position &pos, SearchStopCriteria ssc);
 	std::string PrincipalVariation(int depth = PV_MAX_LENGTH);
 	inline void Reset();
@@ -38,7 +39,7 @@ private:
 	ValuatedMove * rootMoves;
 	Move PVMoves[PV_MAX_LENGTH];
 	HistoryStats History;
-	//DblHistoryStats DblHistory;
+	DblHistoryStats * DblHistory = nullptr;
 	int _depth = 0;
 	int64_t _thinkTime;
 	uint64_t cutoffAt1stMove = 0;
@@ -70,7 +71,8 @@ inline void search::Reset() {
 	Stop = false;
 	PonderMode = false;
 	History.initialize();
-	//DblHistory.initialize();
+	if (!DblHistory) DblHistory = new DblHistoryStats();
+	DblHistory->initialize();
 	for (int i = 0; i < 2*MAX_DEPTH; ++i) killer[i] = EXTENDED_MOVE_NONE;
 }
 
