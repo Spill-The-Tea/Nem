@@ -57,7 +57,6 @@ public:
 	inline int GetMoveNumberInPhase() const { return moveIterationPointer; }
 	inline Value GetMaterialScore() const { return material->Score; }
 	inline MaterialTableEntry * GetMaterialTableEntry() const { return material; }
-	inline Bitboard AttackedByPawns(Color color) const { return pawn->attackSet[color]; }
 	inline Value PawnStructureScore() const { return pawn->Score; }
 	Result GetResult();
 	inline Bitboard GetAttacksFrom(Square square) const { return attacks[square]; }
@@ -109,6 +108,7 @@ private:
 	Bitboard attacks[64];
 	Bitboard attackedByThem;
 	Bitboard attackedByUs;
+	Bitboard attacksByPt[12];
 	int moveIterationPointer;
 	int phaseStartIndex;
 	int generationPhase;
@@ -792,12 +792,7 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 }
 
 inline Bitboard position::AttacksByPieceType(Color color, PieceType pieceType) const {
-	Bitboard result = 0;
-	Bitboard bb = PieceBB(pieceType, color);
-	while (bb) {
-		result |= attacks[lsb(bb)];
-		bb &= bb - 1;
-	}
-	return result;
+	return attacksByPt[GetPiece(pieceType, color)];
 }
+
 

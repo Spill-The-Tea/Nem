@@ -10,7 +10,6 @@ namespace pawn {
 	struct Entry {
 		PawnKey_t Key;
 		Value Score;
-		Bitboard attackSet[2];
 		Bitboard passedPawns[2];
 	};
 

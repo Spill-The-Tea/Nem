@@ -8,11 +8,12 @@ struct evaluation
 public:
 	Value Material = VALUE_ZERO;
 	eval Mobility = EVAL_ZERO;
+	eval Threats = EVAL_ZERO;
 	eval KingSafety = EVAL_ZERO;
 	Value PawnStructure = VALUE_ZERO;
 
 	inline Value GetScore(const Phase_t phase, const Color sideToMove) {
-		return (Material + PawnStructure + (Mobility + KingSafety).getScore(phase)) * (1 - 2 * sideToMove);
+		return (Material + PawnStructure + (Mobility + KingSafety + Threats).getScore(phase)) * (1 - 2 * sideToMove);
 	}
 };
 
@@ -143,5 +144,51 @@ template <Color WinningSide> Value evaluateKNBK(const position& pos) {
 	return result * (1 - 2 * pos.GetSideToMove());
 }
 
+template <Color COL> eval evaluateThreats(const position& pos) {
+	enum { Defended, Weak };
+	enum { Minor, Major };
+	Bitboard b, weak, defended;
+	eval result = EVAL_ZERO;
+	Color OTHER = Color(COL ^ 1);
+	// Non-pawn enemies defended by a pawn
+	defended = (pos.ColorBB(OTHER) ^ pos.PieceBB(PAWN, OTHER)) & pos.AttacksByPieceType(OTHER, PAWN);
+	// Add a bonus according to the kind of attacking pieces
+	if (defended)
+	{
+		b = defended & (pos.AttacksByPieceType(COL, KNIGHT) | pos.AttacksByPieceType(COL, BISHOP));
+		while (b) {
+			result += Threat[Defended][Minor][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
+			b &= b - 1;
+		}
+		b = defended & pos.AttacksByPieceType(COL, ROOK);
+		while (b) {
+			result += Threat[Defended][Major][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
+			b &= b - 1;
+		}
+	}
+	// Enemies not defended by a pawn and under our attack
+	weak = pos.ColorBB(OTHER)
+		& ~pos.AttacksByPieceType(OTHER, PAWN)
+		& pos.AttacksByColor(COL);
+	// Add a bonus according to the kind of attacking pieces
+	if (weak)
+	{
+		b = weak & (pos.AttacksByPieceType(COL, KNIGHT) | pos.AttacksByPieceType(COL, BISHOP));
+		while (b) {
+			result += Threat[Weak][Minor][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
+			b &= b - 1;
+		}
+		b = weak & (pos.AttacksByPieceType(COL, ROOK) | pos.AttacksByPieceType(COL, QUEEN));
+		while (b) {
+			result += Threat[Weak][Major][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
+			b &= b - 1;
+		}
+		b = weak & ~pos.AttacksByColor(OTHER);
+		if (b) result += Hanging * popcount(b);
+		b = weak & pos.AttacksByPieceType(COL, KING);
+		if (b) result += (b & b - 1) ? KingOnMany : KingOnOne;
+	}
+	return result;
+}
 
 

@@ -10,6 +10,7 @@ Value evaluateDefault(const position& pos) {
 	result.Mobility = evaluateMobility(pos);
 	result.KingSafety = evaluateKingSafety(pos);
 	result.PawnStructure = pos.PawnStructureScore();
+	result.Threats = evaluateThreats<WHITE>(pos) - evaluateThreats<BLACK>(pos);
 	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
 }
 
@@ -94,8 +95,8 @@ eval evaluateKingSafety(const position& pos) {
 eval evaluateMobility(const position& pos) {
 	eval result;
 	//Create attack bitboards
-	Bitboard abbWPawn = pos.AttackedByPawns(WHITE);
-	Bitboard abbBPawn = pos.AttackedByPawns(BLACK);
+	Bitboard abbWPawn = pos.AttacksByPieceType(WHITE, PAWN);
+	Bitboard abbBPawn = pos.AttacksByPieceType(BLACK, PAWN);
 	//Leichtfiguren (N+B)
 	Bitboard abbWLeicht = abbWPawn | pos.AttacksByPieceType(WHITE, KNIGHT) | pos.AttacksByPieceType(WHITE, BISHOP);
 	Bitboard abbBLeicht = abbBPawn | pos.AttacksByPieceType(BLACK, KNIGHT) | pos.AttacksByPieceType(BLACK, BISHOP);
@@ -188,7 +189,7 @@ eval evaluateMobility2(const position& pos) {
 		Color them = Color(i ^ 1);
 		Color us = Color(i);
 		int factor = 1 - 2 * i;
-		Bitboard notExcluded = ~(pos.AttackedByPawns(them) | pos.PieceBB(KING, us) | pos.PieceBB(PAWN, us));
+		Bitboard notExcluded = ~(pos.AttacksByPieceType(them, PAWN) | pos.PieceBB(KING, us) | pos.PieceBB(PAWN, us));
 		//Knight mobility
 		Bitboard knights = pos.PieceBB(KNIGHT, us);
 		while (knights) {
@@ -238,7 +239,6 @@ Value evaluateFromScratch(const position& pos) {
 	material->EvaluationFunction = &evaluateDefault;
 	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
 }
-
 
 
 

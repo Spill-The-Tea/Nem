@@ -38,6 +38,19 @@ const Value KING_SAFETY[100] = {
 	Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500)
 };
 
+// Threat[defended/weak][minor/major attacking][attacked PieceType] contains
+// bonuses according to which piece type attacks which one.
+const eval Threat[][2][6] = {
+	{ { eval(0, 0), eval(0, 0), eval(10, 18), eval(12, 19), eval(22, 49), eval(18, 53) }, // Defended Minor
+	{ eval(0, 0), eval(0, 0), eval(5, 7), eval(5, 7), eval(4, 7), eval(12, 24) } }, // Defended Major
+	{ { eval(0, 0), eval(0, 16), eval(17, 21), eval(16, 25), eval(21, 50), eval(18, 52) }, // Weak Minor
+	{ eval(0, 0), eval(0, 14), eval(13, 29), eval(13, 29), eval(0, 22), eval(12, 26) } } // Weak Major
+};
+
+const eval Hanging(16, 13);
+const eval KingOnOne(1, 29);
+const eval KingOnMany(3, 63);
+
 //extern Value PASSED_PAWN_BONUS[4];
 const Value PASSED_PAWN_BONUS[4] = { Value(30), Value(37), Value(77), Value(162) };
 const Value BONUS_PROTECTED_PASSED_PAWN = Value(30);

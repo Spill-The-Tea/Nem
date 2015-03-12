@@ -36,6 +36,7 @@ position::~position()
 
 void position::copy(const position &pos) {
 	memcpy(this->attacks, pos.attacks, 64 * sizeof(Bitboard));
+	memcpy(this->attacksByPt, pos.attacksByPt, 12 * sizeof(Bitboard));
 	this->attackedByUs = pos.attackedByUs;
 	this->attackedByThem = pos.attackedByThem;
 	this->lastAppliedMove = pos.lastAppliedMove;
@@ -343,46 +344,52 @@ void position::updateCastleFlags(Square fromSquare, Square toSquare) {
 
 Bitboard position::calculateAttacks(Color color) {
 	Bitboard occupied = OccupiedBB();
-	Bitboard result = 0ull;
-	Bitboard rookSliders = PieceBB(ROOK, color) | PieceBB(QUEEN, color);
+	attacksByPt[GetPiece(ROOK, color)] = 0ull;
+	Bitboard rookSliders = PieceBB(ROOK, color);
 	while (rookSliders) {
 		Square sq = lsb(rookSliders);
 		attacks[sq] = RookTargets(sq, occupied);
-		result |= attacks[sq];
+		attacksByPt[GetPiece(ROOK, color)] |= attacks[sq];
 		rookSliders &= rookSliders - 1;
 	}
+	attacksByPt[GetPiece(BISHOP, color)] = 0ull;
 	Bitboard bishopSliders = PieceBB(BISHOP, color);
 	while (bishopSliders) {
 		Square sq = lsb(bishopSliders);
 		attacks[sq] = BishopTargets(sq, occupied);
-		result |= attacks[sq];
+		attacksByPt[GetPiece(BISHOP, color)] |= attacks[sq];
 		bishopSliders &= bishopSliders - 1;
 	}
+	attacksByPt[GetPiece(QUEEN, color)] = 0ull;
 	Bitboard queenSliders = PieceBB(QUEEN, color);
 	while (queenSliders) {
 		Square sq = lsb(queenSliders);
+		attacks[sq] = RookTargets(sq, occupied);
 		attacks[sq] |= BishopTargets(sq, occupied);
-		result |= attacks[sq];
+		attacksByPt[GetPiece(QUEEN, color)] |= attacks[sq];
 		queenSliders &= queenSliders - 1;
 	}
+	attacksByPt[GetPiece(KNIGHT, color)] = 0ull;
 	Bitboard knights = PieceBB(KNIGHT, color);
 	while (knights) {
 		Square sq = lsb(knights);
 		attacks[sq] = KnightAttacks[sq];
-		result |= attacks[sq];
+		attacksByPt[GetPiece(KNIGHT, color)] |= attacks[sq];
 		knights &= knights - 1;
 	}
 	Square kingSquare = lsb(PieceBB(KING, color));
 	attacks[kingSquare] = KingAttacks[kingSquare];
-	result |= attacks[kingSquare];
+	attacksByPt[GetPiece(KING, color)] = attacks[kingSquare];
+	attacksByPt[GetPiece(PAWN, color)] = 0ull;
 	Bitboard pawns = PieceBB(PAWN, color);
 	while (pawns) {
 		Square sq = lsb(pawns);
 		attacks[sq] = PawnAttacks[color][sq];
-		result |= attacks[sq];
+		attacksByPt[GetPiece(PAWN, color)] |= attacks[sq];
 		pawns &= pawns - 1;
 	}
-	return result;
+	return attacksByPt[GetPiece(QUEEN, color)] | attacksByPt[GetPiece(ROOK, color)] | attacksByPt[GetPiece(BISHOP, color)]
+		| attacksByPt[GetPiece(KNIGHT, color)] | attacksByPt[GetPiece(PAWN, color)] | attacksByPt[GetPiece(KING, color)];
 }
 
 Bitboard position::checkBlocker(Color colorOfBlocker, Color kingColor) {
