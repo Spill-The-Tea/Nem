@@ -10,10 +10,12 @@ public:
 	eval Mobility = EVAL_ZERO;
 	eval Threats = EVAL_ZERO;
 	eval KingSafety = EVAL_ZERO;
+	eval Outposts = EVAL_ZERO;
+	//eval Space = EVAL_ZERO;
 	Value PawnStructure = VALUE_ZERO;
 
 	inline Value GetScore(const Phase_t phase, const Color sideToMove) {
-		return (Material + PawnStructure + (Mobility + KingSafety + Threats).getScore(phase)) * (1 - 2 * sideToMove);
+		return (Material + PawnStructure + (Mobility + KingSafety + Threats + Outposts).getScore(phase)) * (1 - 2 * sideToMove);
 	}
 };
 
@@ -191,4 +193,43 @@ template <Color COL> eval evaluateThreats(const position& pos) {
 	return result;
 }
 
+template <Color COL> eval evaluateSpace(const position& pos) {
+	Bitboard space;
+	Color OTHER = Color(COL ^ 1);
+	if (COL == WHITE) space = 0x3c3c3c00; else space = 0x3c3c3c00000000;
+	Bitboard safe = space & ~pos.PieceBB(PAWN, COL) & ~pos.AttacksByPieceType(OTHER, PAWN) 
+		& (pos.AttacksByColor(COL) | ~pos.AttacksByColor(OTHER));
+	// Find all squares which are at most three squares behind some friendly pawn
+	Bitboard behind = pos.PieceBB(PAWN, COL);
+	behind |= (COL == WHITE ? behind >> 8 : behind << 8);
+	behind |= (COL == WHITE ? behind >> 16 : behind << 16);
+	int bonus = popcount(safe) + popcount(behind & safe);
+	int weight = popcount(pos.PieceTypeBB(KNIGHT) | pos.PieceTypeBB(BISHOP));
+	eval result((bonus * weight * weight)>>2, 0);
+	return result;
+}
+
+template <Color COL> eval evaluateOutposts(const position& pos) {
+	Color OTHER = Color(COL ^ 1);
+	Bitboard outpostArea = COL == WHITE ? 0x3c3c00000000 : 0x3c3c0000;
+	Bitboard outposts = pos.PieceBB(KNIGHT, COL) & outpostArea & pos.AttacksByPieceType(COL, PAWN);
+	Value bonus = BONUS_KNIGHT_OUTPOST * popcount(outposts);
+	//Value bonus = VALUE_ZERO;
+	//Value ptBonus = BONUS_BISHOP_OUTPOST;
+	//for (PieceType pt = BISHOP; pt <= KNIGHT; ++pt) {
+	//	Bitboard outposts = pos.PieceBB(pt, COL) & outpostArea & pos.AttacksByPieceType(COL, PAWN);
+	//	while (outposts) {
+	//		bonus += ptBonus;
+	//		Bitboard outpostBB = isolateLSB(outposts);
+	//		Square outpostSquare = lsb(outposts);
+	//		Bitboard defendingPawnSquares = PawnAttacks[COL][outpostSquare];
+	//		if (COL == WHITE) defendingPawnSquares |= defendingPawnSquares << 8; else defendingPawnSquares |= defendingPawnSquares >> 8;
+	//		if (!(pos.PieceBB(PAWN, OTHER) & defendingPawnSquares)) bonus += ptBonus; //Outpost can't be attacked by a pawn
+	//		if (!pos.PieceBB(KNIGHT, OTHER) && !(squaresOfSameColor(outpostSquare) & pos.PieceBB(BISHOP, OTHER))) bonus += ptBonus; //Outpost can't be exchanged
+	//		outposts &= outposts - 1;
+	//	}
+	//	ptBonus = BONUS_KNIGHT_OUTPOST;
+	//}
+	return eval(bonus, 0);
+}
 

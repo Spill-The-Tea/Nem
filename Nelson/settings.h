@@ -51,6 +51,9 @@ const eval Hanging(16, 13);
 const eval KingOnOne(1, 29);
 const eval KingOnMany(3, 63);
 
+const Value BONUS_KNIGHT_OUTPOST = Value(5);
+const Value BONUS_BISHOP_OUTPOST = Value(0);
+
 //extern Value PASSED_PAWN_BONUS[4];
 const Value PASSED_PAWN_BONUS[4] = { Value(30), Value(37), Value(77), Value(162) };
 const Value BONUS_PROTECTED_PASSED_PAWN = Value(30);

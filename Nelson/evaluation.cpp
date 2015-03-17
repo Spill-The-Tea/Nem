@@ -11,6 +11,8 @@ Value evaluateDefault(const position& pos) {
 	result.KingSafety = evaluateKingSafety(pos);
 	result.PawnStructure = pos.PawnStructureScore();
 	result.Threats = evaluateThreats<WHITE>(pos) - evaluateThreats<BLACK>(pos);
+	result.Outposts = evaluateOutposts<WHITE>(pos) -evaluateOutposts<BLACK>(pos);
+	//result.Space = evaluateSpace<WHITE>(pos) -evaluateSpace<BLACK>(pos);
 	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
 }
 

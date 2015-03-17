@@ -97,6 +97,10 @@ inline bool oppositeColors(Square s1, Square s2) {
 	return ((s >> 3) ^ s) & 1;
 }
 
+inline Bitboard squaresOfSameColor(Square s) {
+	return DARKSQUARES & s ? DARKSQUARES : ~DARKSQUARES;
+}
+
 inline Bitboard RookTargets(Square rookSquare, Bitboard occupied) {
 	int index = (int)(((OccupancyMaskRook[rookSquare] & occupied) * RookMagics[rookSquare]) >> RookShift[rookSquare]);
 	return MagicMovesRook[index + IndexOffsetRook[rookSquare]];

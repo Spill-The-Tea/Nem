@@ -25,6 +25,7 @@ public:
 	Bitboard PieceBB(const PieceType pt, const Color c) const;
 	Bitboard ColorBB(const Color c) const;
 	Bitboard ColorBB(const int c) const;
+	Bitboard PieceTypeBB(const PieceType pt) const;
 	Bitboard OccupiedBB() const;
 	Bitboard NonPawnMaterial(const Color c) const;
 	std::string print();
@@ -182,6 +183,7 @@ inline Bitboard position::ColorBB(const Color c) const { return OccupiedByColor[
 inline Bitboard position::ColorBB(const int c) const { return OccupiedByColor[c]; }
 inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | OccupiedByColor[BLACK]; }
 inline Bitboard position::NonPawnMaterial(const Color c) const { return OccupiedByColor[c] & ~OccupiedByPieceType[PAWN] & ~OccupiedByPieceType[KING]; }
+inline Bitboard position::PieceTypeBB(const PieceType pt) const { return OccupiedByPieceType[pt]; }
 
 inline PieceType position::GetMostValuablePieceType(Color color) const {
 	for (PieceType pt = QUEEN; pt < KING; ++pt) {
