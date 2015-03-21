@@ -12,7 +12,7 @@
 #include "settings.h"
 
 
-search Engine;
+search<MASTER> Engine;
 position * pos = nullptr;
 std::thread * Mainthread = nullptr;
 int64_t ponderStartTime = 0;
@@ -76,9 +76,6 @@ char *my_strtok(char **str, char *delim)
 
 void loop() {
 	setvbuf(stdout, NULL, _IOLBF, 2048);
-	char *line = NULL;
-	size_t allocated = 0;
-
 	while (!feof(stdin)) {
 		std::string line;
 		std::getline(std::cin, line);
@@ -133,13 +130,14 @@ void uci() {
 	puts("id name Nelson");
 	puts("id author Christian Günther");
 	printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
-	printf("option name Hash type spin default %lu min 1 max 16384\n", HashSizeMB);
+	printf("option name Hash type spin default %li min 1 max 16384\n", HashSizeMB);
+	printf("option name Threads type spin default %li min 1 max 128\n", HelperThreads+1);
 	printf("option name Ponder type check");
 	//printf("option name Draw Value type spin default %d min -100 max 100\n", DrawValue);
 	//printf("option name GaviotaTablebasePaths type string\n");
 	//printf("option name GaviotaTablebaseCache type spin default %lu min 1 max 16384\n", GTB_CACHE);
 	//printf("option name GaviotaTablebaseCompressionScheme type spin default %lu min 0 max 4\n", GTB_COMPRESSION_SCHEME);
-	printf("option name BookFile type string default %s\n", BOOK_FILE);
+	printf("option name BookFile type string default %s\n", BOOK_FILE.c_str());
 	printf("option name OwnBook type check default %s\n", USE_BOOK ? "true" : "false");
 	//printf("option name bpf type spin default %lu\n", BETA_PRUNING_FACTOR);
 	puts("uciok");
@@ -182,8 +180,9 @@ void setoption(char *line){
 		}
 		else USE_BOOK = false;
 	}
-	if (!strcmp(name, "OwnBook")) USE_BOOK = !strcmp(token, "true");
-	if (!strcmp(name, "Ponder")) ponderActive = !strcmp(token, "true");
+	if (!strcmp(name, "OwnBook") && (token)) USE_BOOK = !strcmp(token, "true");
+	if (!strcmp(name, "Ponder") && (token)) ponderActive = !strcmp(token, "true");
+	if (!strcmp(name, "Threads") && (token)) HelperThreads = atoi(token) - 1;
 	//if (!strcmp(name, "bpf")) BETA_PRUNING_FACTOR = Value(atoi(token));
 	//else if (!strcmp(name, "DrawValue"))
 	//	DrawValue = atoi(token);
@@ -209,7 +208,7 @@ void setPosition(char *line){
 		pos = nullptr;
 	}
 	int idx = 0;
-	position * startpos;
+	position * startpos = nullptr;
 
 	char *token = my_strtok(&line, " ");
 	if (!token)
@@ -229,18 +228,20 @@ void setPosition(char *line){
 		if (!strcmp(token, "fine70")) startpos = new position("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - -");
 	}
 	bool moves = false;
-	position * pp = startpos;
-	if (token && !strcmp(token, "moves")) {
-		while ((token = my_strtok(&line, " "))) {
-			std::string tokenString(token);
-			position * next = new position(*pp);
-			next->ApplyMove(parseMoveInUCINotation(tokenString, *next));
-			next->AppliedMovesBeforeRoot++;
-			pp = next;
+	if (startpos) {
+		position * pp = startpos;
+		if (token && !strcmp(token, "moves")) {
+			while ((token = my_strtok(&line, " "))) {
+				std::string tokenString(token);
+				position * next = new position(*pp);
+				next->ApplyMove(parseMoveInUCINotation(tokenString, *next));
+				next->AppliedMovesBeforeRoot++;
+				pp = next;
+			}
 		}
+		pos = pp;
+		pos->SetPrevious(pp->Previous());
 	}
-	pos = pp;
-	pos->SetPrevious(pp->Previous());
 }
 
 void deleteThread() {

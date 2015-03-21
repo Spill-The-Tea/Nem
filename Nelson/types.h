@@ -11,9 +11,15 @@
 #include <chrono>
 #include <climits>
 #include <cmath>
+#include <cstring>
 
 #pragma intrinsic(_BitScanForward64)
 #pragma intrinsic(_BitScanReverse64)
+
+#define CACHE_LINE 64
+#ifdef _MSC_VER
+#define CACHE_ALIGN __declspec(align(CACHE_LINE))
+#endif
 
 typedef uint64_t Bitboard;
 
@@ -176,6 +182,7 @@ inline int popcount(Bitboard bb) { return (int)_mm_popcnt_u64(bb); }
 inline Square lsb(Bitboard bb) {
 	unsigned long  index;
 	_BitScanForward64(&index, bb);
+#pragma warning(suppress: 6102)
 	return Square(index);
 }
 

@@ -6,6 +6,8 @@
 #include "hashtables.h"
 #include <string>
 
+struct evaluation;
+
 const MoveGenerationType generationPhases[22] = { HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, KILLER, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, //Main Search Phases
 HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
 HASHMOVE, CHECK_EVASION, NONE,
@@ -290,7 +292,7 @@ template<bool CHECKED> bool position::CheckValidMoveExists() {
 		//Now there remains only pinned pawn captures
 		while (pinnedPawns) {
 			Square from = lsb(pinnedPawns);
-			Bitboard pawnTargets = ColorBB(SideToMove ^ 1) & attacks[from];
+			pawnTargets = ColorBB(SideToMove ^ 1) & attacks[from];
 			while (pawnTargets) {
 				if (isolateLSB(pawnTargets) & (InBetweenFields[from][kingSquare] | ShadowedFields[kingSquare][from])) return true;
 				pawnTargets &= pawnTargets - 1;
@@ -652,7 +654,6 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 		}
 	}
 	else { //Winning, Equal and loosing captures
-		Bitboard targets;
 		Bitboard sliders;
 		if (MGT == EQUAL_CAPTURES || MGT == LOOSING_CAPTURES) { //Queen Captures are never winning
 			sliders = PieceBB(QUEEN, SideToMove);
@@ -780,7 +781,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 
 template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, DblHistoryStats * dblHistoryStats, ExtendedMove* killerMove, Move * counterMoves, Move hashmove = MOVE_NONE) {
 	if (SMGT == MAIN_SEARCH && killerMove) {
-		killer = killerMove;  
+		killer = killerMove;
 	}
 	CounterMoves = counterMoves;
 	if (!attackedByThem) attackedByThem = calculateAttacks(Color(SideToMove ^ 1));

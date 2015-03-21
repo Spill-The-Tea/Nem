@@ -113,6 +113,7 @@ namespace kpk {
 		}
 		// Immediate draw if it is a stalemate or a king captures undefended pawn
 		else if (!(KingAttacks[bksq] & (~(KingAttacks[wksq] | PawnAttacks[WHITE][psq]))) //Stalemate detection
+#pragma warning(suppress: 6385)
 			|| (KingAttacks[bksq] & psq & ~KingAttacks[wksq]))
 			result = DRAW;
 	}

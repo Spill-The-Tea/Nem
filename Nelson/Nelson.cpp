@@ -47,7 +47,6 @@ int main(int argc, const char* argv[]) {
 			position pos;
 			std::cout << pos.GetMaterialKey() << std::endl;
 			while (true) {
-				std::string input;
 				std::getline(std::cin, input);
 				if (!input.compare(0, 4, "quit")) break;
 				else if (!input.compare(0, 8, "position")) {

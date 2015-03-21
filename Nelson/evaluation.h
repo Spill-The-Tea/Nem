@@ -62,7 +62,7 @@ template <Color WinningSide> Value easyMate(const position& pos) {
 
 //Copied from SF: Doesn't recognize drawn positions (could be improved)
 //Idea create bitbase for all positions where pawn is on A7 and C7 and the Black King is controlling
-//the conversion square => Size: 8 (black king pawn constellations) * 64 (wking squares) * 64 (wqueen squares) 
+//the conversion square => Size: 8 (black king pawn constellations) * 64 (wking squares) * 64 (wqueen squares)
 // results in a bitbase of 4k (Problem there are some very rare positions where even a pawn on 5th rank draws)
 template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 	Square winnerKSq = lsb(pos.PieceBB(KING, WinningSide));
@@ -197,7 +197,7 @@ template <Color COL> eval evaluateSpace(const position& pos) {
 	Bitboard space;
 	Color OTHER = Color(COL ^ 1);
 	if (COL == WHITE) space = 0x3c3c3c00; else space = 0x3c3c3c00000000;
-	Bitboard safe = space & ~pos.PieceBB(PAWN, COL) & ~pos.AttacksByPieceType(OTHER, PAWN) 
+	Bitboard safe = space & ~pos.PieceBB(PAWN, COL) & ~pos.AttacksByPieceType(OTHER, PAWN)
 		& (pos.AttacksByColor(COL) | ~pos.AttacksByColor(OTHER));
 	// Find all squares which are at most three squares behind some friendly pawn
 	Bitboard behind = pos.PieceBB(PAWN, COL);

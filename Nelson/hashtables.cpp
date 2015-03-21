@@ -50,6 +50,7 @@ namespace pawn {
 		east = (bbBlack << 1) & NOT_A_FILE;
 		Bitboard  bbIsolatedBlack = bbBlack & ~(FrontFillNorth(west) | FrontFillSouth(west) | FrontFillNorth(east) | FrontFillSouth(east));
 		result->Score -= (popcount(bbIsolatedWhite) - popcount(bbIsolatedBlack)) * MALUS_ISOLATED_PAWN;
+		result->Key = pos.GetPawnKey();
 		return result;
 	}
 }
@@ -60,6 +61,7 @@ namespace tt {
     uint64_t ProbeCounter = 0;
 	uint64_t HitCounter = 0;
 	uint64_t FillCounter = 0;
+	std::atomic_flag lock = ATOMIC_FLAG_INIT;
 
 	uint64_t GetProbeCounter() { return ProbeCounter; }
 	uint64_t GetHitCounter() { return HitCounter; }
@@ -87,28 +89,6 @@ namespace tt {
 			delete[](Table);
 			Table = nullptr;
 		}
-	}
-
-	Entry* probe(const uint64_t hash, bool& found) {
-	   ProbeCounter++;
-       Entry* const tte = firstEntry(hash);
-		for (unsigned i = 0; i < CLUSTER_SIZE; ++i)
-			if (!tte[i].key || tte[i].key == hash)
-			{
-				if (tte[i].key) {
-					tte[i].gentype = uint8_t(_generation | tte[i].type()); // Refresh
-					HitCounter++;
-				}
-				return found = tte[i].key != 0, &tte[i];
-			}
-		// Find an entry to be replaced according to the replacement strategy
-		Entry* replace = tte;
-		for (unsigned i = 1; i < CLUSTER_SIZE; ++i)
-			if ((tte[i].generation() == _generation || tte[i].type() == EXACT)
-				- (replace->generation() == _generation)
-				- (tte[i].depth < replace->depth) < 0)
-				replace = &tte[i];
-		return found = false, replace;
 	}
 
 	Entry* firstEntry(const uint64_t hash) {

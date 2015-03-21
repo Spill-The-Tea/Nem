@@ -58,7 +58,7 @@ int64_t bench(int depth) {
 		<< std::setw(6) << "C1st" << std::setw(6) << "CIndx" << std::setw(40) << "PV" << std::endl;
 	for (int i = 0; i < 30; i++) {
 		position* pos = new position(sfBenchmarks[i]);
-		search srch;
+		search<MASTER> srch;
 		//srch.uciOutput = false;
 		srch.NewGame();
 		ssc.StartTime = now();
@@ -209,7 +209,7 @@ int64_t bench2(int depth) {
 		<< std::setw(6) << "C1st" << std::setw(6) << "CIndx" << std::setw(40) << "PV" << std::endl;
 	for (int i = 0; i < 100; i++) {
 		position* pos = new position(sfBenchmarks[i]);
-		search srch;
+		search<MASTER> srch;
 		//srch.uciOutput = false;
 		srch.NewGame();
 		ssc.StartTime = now();
@@ -347,7 +347,7 @@ void divide(position &pos, int depth) {
 void testSearch(position &pos, int depth) {
 	SearchStopCriteria ssc;
 	ssc.MaxDepth = depth;
-	search engine;
+	search<MASTER> engine;
 	ValuatedMove vm = engine.Think(pos, ssc);
 	std::cout << "Best Move: " << toString(vm.move) << " " << vm.score << std::endl;
 }
@@ -356,7 +356,7 @@ void testRepetition() {
 	position pos("5r1k/R7/5p2/4p3/1p1pP3/1npP1P2/rqn1b1R1/7K w - - 0 1");
 	SearchStopCriteria ssc;
 	ssc.MaxDepth = 5;
-	search engine;
+	search<MASTER> engine;
 	ValuatedMove vm = engine.Think(pos, ssc);
 	std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << vm.score << std::endl;
 }
@@ -389,7 +389,7 @@ void testFindMate() {
 	//Mate in 5
 	puzzles["5@6r1/p3p1rk/1p1pPp1p/q3n2R/4P3/3BR2P/PPP2QP1/7K w - -"] = createMove(H5, H6);
 	puzzles["5@2q1nk1r/4Rp2/1ppp1P2/6Pp/3p1B2/3P3P/PPP1Q3/6K1 w - - 0 1"] = createMove(E7, E8);
-	search engine;
+	search<MASTER> engine;
 	std::map<std::string, Move>::iterator iter;
 	int count = 0;
 	for (iter = puzzles.begin(); iter != puzzles.end(); iter++) {
@@ -710,7 +710,7 @@ void testParsePGN() {
 void testMateInDos() {
 	std::string filename = "C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/MateenDos.pgn";
 	std::map<std::string, Move> exercises = pgn::parsePGNExerciseFile(filename);
-	search engine;
+	search<MASTER> engine;
 	int count = 0;
 	int failed = 0;
 	for (std::map<std::string, Move>::iterator it = exercises.begin(); it != exercises.end(); ++it) {

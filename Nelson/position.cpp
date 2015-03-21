@@ -238,6 +238,7 @@ Move position::NextMove() {
 			}
 			break;
 		case CHECK_EVASION: case QUIET_CHECKS:
+#pragma warning(suppress: 6385)
 			move = moves[phaseStartIndex + moveIterationPointer].move;
 			++moveIterationPointer;
 			generationPhase += (move == MOVE_NONE);
@@ -552,7 +553,7 @@ void position::setFromFEN(const std::string& fen) {
 	Hash = ZobristMoveColor;
 	std::istringstream ss(fen);
 	ss >> std::noskipws;
-	char token;
+	unsigned char token;
 
 	//Piece placement
 	size_t piece;
@@ -592,6 +593,7 @@ void position::setFromFEN(const std::string& fen) {
 			AddCastlingOption(W0_0_0);
 			InitialKingSquareBB[WHITE] = PieceBB(KING, WHITE);
 			InitialKingSquare[WHITE] = lsb(InitialKingSquareBB[WHITE]);
+#pragma warning(suppress: 6295)
 			for (Square k = InitialKingSquare[WHITE]; k >= A1; --k) {
 				if (Board[k] == WROOK) {
 					InitialRookSquare[1] = k;
