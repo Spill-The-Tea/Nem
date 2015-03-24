@@ -28,7 +28,7 @@ namespace tt {
 	enum NodeType { UNDEFINED = 0, UPPER_BOUND = 1, LOWER_BOUND = 2, EXACT = 3 };
 	enum ProbeType { UNSAFE, THREAD_SAFE };
 
-	const int CLUSTER_SIZE = 3;
+	const int CLUSTER_SIZE = 4;
 
 	extern uint8_t _generation;
 	inline void newSearch() { _generation += 4; }
@@ -36,7 +36,7 @@ namespace tt {
 	extern uint64_t ProbeCounter;
 	extern uint64_t HitCounter;
 	extern uint64_t FillCounter;
-	extern std::atomic_flag lock;
+	extern uint64_t MASK;
 
 	uint64_t GetProbeCounter();
 	uint64_t GetHitCounter();
@@ -45,43 +45,52 @@ namespace tt {
 
 	inline void ResetCounter() { ProbeCounter = HitCounter = FillCounter = 0; }
 
-	struct Entry {
-		uint16_t key;
+	struct nodeData {
 		Move move;
 		Value value;
 		Value evalValue;
 		uint8_t gentype; //2 bits type 6 bits generation
 		int8_t depth;
+	};
 
-		NodeType type() const { return (NodeType)(gentype & 0x03); }
-		uint8_t generation() const { return gentype & 0xFC; }
+	union dataUnion {
+		nodeData details;
+		uint64_t dataAsInt;
+	};
+
+	struct Entry {
+		uint64_t key;
+		dataUnion data;
+
+		NodeType type() const { return (NodeType)(data.details.gentype & 0x03); }
+		uint8_t generation() const { return data.details.gentype & 0xFC; }
+		Value value() { return data.details.value; }
+		Move move() { return data.details.move;  }
+		Value evalValue() { return data.details.evalValue; }
+		int8_t depth() { return data.details.depth; }
+		uint64_t GetKey() { return key ^ data.dataAsInt; }
 
 		template <ProbeType PT> inline void update(uint64_t hash, Value v, NodeType nt, int d, Move m, Value ev) {
-			if (PT)
-			{
-				while (std::atomic_flag_test_and_set_explicit(&lock, std::memory_order_acquire)); //spinlock
-				if (generation() == _generation
-					&& (d < depth || (d == depth && type() == EXACT))) { //Check if other thread already stored better entry
-					std::atomic_flag_clear_explicit(&lock, std::memory_order_release);
-					return;
-				}
-			}
 			FillCounter += (key == 0); //Initial entry get's overwritten
-			if (m || (hash >> 48) != key) // Preserve any existing move for the same position
-				move = m;
-			key = (uint16_t)(hash >> 48);
-			value = v;
-			evalValue = ev;
-			gentype = (uint8_t)(_generation | nt);
-			depth = (int8_t)d;
-			if (PT) std::atomic_flag_clear_explicit(&lock, std::memory_order_release);
+			if (PT == THREAD_SAFE) {
+				if (m || hash != GetKey()) // Preserve any existing move for the same position
+					data.details.move = m;
+			}
+			else {
+				if (m || hash != key) // Preserve any existing move for the same position
+					data.details.move = m;
+			}
+			data.details.value = v;
+			data.details.evalValue = ev;
+			data.details.gentype = (uint8_t)(_generation | nt);
+			data.details.depth = (int8_t)d;
+			key = PT == THREAD_SAFE ? hash ^ data.dataAsInt : hash;
 		}
 
 	};
 
 	struct Cluster {
 		Entry entry[CLUSTER_SIZE];
-		char padding[2];
 	};
 
 	void InitializeTranspositionTable(int sizeInMB);
@@ -92,27 +101,41 @@ namespace tt {
 	template <ProbeType PT> inline Entry* probe(const uint64_t hash, bool& found, Entry& entry) {
 		ProbeCounter++;
 		Entry* const tte = firstEntry(hash);
-		if (PT) while (std::atomic_flag_test_and_set_explicit(&lock, std::memory_order_acquire));
-		for (unsigned i = 0; i < CLUSTER_SIZE; ++i)
-			if (!tte[i].key || tte[i].key == (hash >> 48))
-			{
-				if (tte[i].key) {
-					tte[i].gentype = uint8_t(_generation | tte[i].type()); // Refresh
-					HitCounter++;
+		if (PT == THREAD_SAFE) {
+			for (unsigned i = 0; i < CLUSTER_SIZE; ++i) {
+				if (!tte[i].key || tte[i].GetKey() == hash)
+				{
+					if (tte[i].key) {
+						tte[i].data.details.gentype = uint8_t(_generation | tte[i].type()); // Refresh
+						HitCounter++;
+					}
+					found = tte[i].key != 0;
+					entry = tte[i];
+					return &tte[i];
 				}
-				found = tte[i].key != 0;
-				entry = tte[i];
-				if (PT) std::atomic_flag_clear_explicit(&lock, std::memory_order_release);
-				return &tte[i];
 			}
+		}
+		else {
+			for (unsigned i = 0; i < CLUSTER_SIZE; ++i) {
+				if (!tte[i].key || tte[i].key == hash)
+				{
+					if (tte[i].key) {
+						tte[i].data.details.gentype = uint8_t(_generation | tte[i].type()); // Refresh
+						HitCounter++;
+					}
+					found = tte[i].key != 0;
+					entry = tte[i];
+					return &tte[i];
+				}
+			}
+		}
 		// Find an entry to be replaced according to the replacement strategy
 		Entry* replace = tte;
 		for (unsigned i = 1; i < CLUSTER_SIZE; ++i)
 			if ((tte[i].generation() == _generation || tte[i].type() == EXACT)
 				- (replace->generation() == _generation)
-				- (tte[i].depth < replace->depth) < 0)
+				- (tte[i].depth() < replace->depth()) < 0)
 				replace = &tte[i];
-		if (PT) std::atomic_flag_clear_explicit(&lock, std::memory_order_release);
 		return found = false, replace;
 	}
 

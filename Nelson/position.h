@@ -60,6 +60,8 @@ public:
 	inline int GetMoveNumberInPhase() const { return moveIterationPointer; }
 	inline Value GetMaterialScore() const { return material->Score; }
 	inline MaterialTableEntry * GetMaterialTableEntry() const { return material; }
+	inline pawn::Entry * GetPawnEntry() const { return pawn; }
+	inline void InitMaterialPointer() { material = &MaterialTable[MaterialKey]; }
 	inline Value PawnStructureScore() const { return pawn->Score; }
 	Result GetResult();
 	inline Bitboard GetAttacksFrom(Square square) const { return attacks[square]; }
@@ -100,12 +102,11 @@ private:
 	unsigned char DrawPlyCount;
 	Color SideToMove;
 	int pliesFromRoot;
-	MaterialTableEntry * material;
-	pawn::Entry * pawn;
 	Piece Board[64];
 
 	position * previous = nullptr;
-
+	MaterialTableEntry * material;
+	pawn::Entry * pawn;
 	ValuatedMove moves[MAX_MOVE_COUNT];
 	int movepointer = 0;
 	Bitboard attacks[64];

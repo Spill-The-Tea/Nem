@@ -182,7 +182,9 @@ void setoption(char *line){
 	}
 	if (!strcmp(name, "OwnBook") && (token)) USE_BOOK = !strcmp(token, "true");
 	if (!strcmp(name, "Ponder") && (token)) ponderActive = !strcmp(token, "true");
-	if (!strcmp(name, "Threads") && (token)) HelperThreads = atoi(token) - 1;
+	if (!strcmp(name, "Threads") && (token)) {
+		HelperThreads = atoi(token) - 1;
+	}
 	//if (!strcmp(name, "bpf")) BETA_PRUNING_FACTOR = Value(atoi(token));
 	//else if (!strcmp(name, "DrawValue"))
 	//	DrawValue = atoi(token);

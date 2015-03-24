@@ -61,7 +61,6 @@ namespace tt {
     uint64_t ProbeCounter = 0;
 	uint64_t HitCounter = 0;
 	uint64_t FillCounter = 0;
-	std::atomic_flag lock = ATOMIC_FLAG_INIT;
 
 	uint64_t GetProbeCounter() { return ProbeCounter; }
 	uint64_t GetHitCounter() { return HitCounter; }

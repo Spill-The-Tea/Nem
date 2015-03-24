@@ -142,7 +142,8 @@
       <OptimizeReferences>true</OptimizeReferences>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\</Command>
+      <Command>copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\
+copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nelson2.exe</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy Exe to Test Server</Message>

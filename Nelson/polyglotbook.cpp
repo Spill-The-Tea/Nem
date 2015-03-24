@@ -19,6 +19,9 @@ namespace polyglot {
 
 	}
 
+	polyglotbook::polyglotbook(const polyglotbook &obj) {
+		fileName = obj.fileName;
+	}
 
 	polyglotbook::~polyglotbook()
 	{

@@ -9,5 +9,7 @@
 #include "search.h"
 #include "hashtables.h"
 
-
+void startThread(search<SLAVE> & slave) {
+	slave.startHelper();
+}
 

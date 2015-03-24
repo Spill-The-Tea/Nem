@@ -41,6 +41,7 @@ namespace polyglot {
 	public:
 		polyglotbook();
 		~polyglotbook();
+		polyglotbook(const polyglotbook &obj);
 
 		Move probe(position& pos, const std::string& fName, bool pickBest, ValuatedMove * moves, int moveCount);
 
