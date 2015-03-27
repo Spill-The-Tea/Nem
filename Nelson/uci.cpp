@@ -12,7 +12,7 @@
 #include "settings.h"
 
 
-search<MASTER> Engine;
+baseSearch * Engine = new search<SINGLE>;
 position * pos = nullptr;
 std::thread * Mainthread = nullptr;
 int64_t ponderStartTime = 0;
@@ -126,7 +126,7 @@ void dispatch(char *line)
 
 
 void uci() {
-	Engine.UciOutput = true;
+	Engine->UciOutput = true;
 	puts("id name Nelson");
 	puts("id author Christian Günther");
 	printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
@@ -163,6 +163,7 @@ void setoption(char *line){
 		if (hashSize != HashSizeMB) {
 			HashSizeMB = hashSize;
 			tt::InitializeTranspositionTable(HashSizeMB);
+			if (HelperThreads) tt::InitializeNproc(HashSizeMB);
 		}
 	}
 	//if (!strcmp(name, "GaviotaTablebasePaths")) {
@@ -184,6 +185,16 @@ void setoption(char *line){
 	if (!strcmp(name, "Ponder") && (token)) ponderActive = !strcmp(token, "true");
 	if (!strcmp(name, "Threads") && (token)) {
 		HelperThreads = atoi(token) - 1;
+		if (HelperThreads && Engine->GetType() == SINGLE) {
+			delete Engine;
+			Engine = new search<MASTER>;
+			tt::InitializeNproc(HashSizeMB);
+		} 
+		else if (!HelperThreads && Engine->GetType() == MASTER) {
+			delete Engine;
+			Engine = new search<SINGLE>;
+			tt::FreeNproc();
+		}
 	}
 	//if (!strcmp(name, "bpf")) BETA_PRUNING_FACTOR = Value(atoi(token));
 	//else if (!strcmp(name, "DrawValue"))
@@ -192,9 +203,9 @@ void setoption(char *line){
 bool initialized = false;
 void ucinewgame(){
 	initialized = true;
-	Engine.NewGame();
+	Engine->NewGame();
 	//tt::InitializeTranspositionTable(HashSizeMB);
-	if (USE_BOOK) Engine.BookFile = BOOK_FILE; else Engine.BookFile = "";
+	if (USE_BOOK) Engine->BookFile = BOOK_FILE; else Engine->BookFile = "";
 	//tablebase::initialize();
 	//if (tablebase::AvailableTableBaseLevel > 0)std::cout << "infostd::string Using Tablebases up to " << tablebase::AvailableTableBaseLevel << " pieces" << std::endl;
 }
@@ -247,30 +258,33 @@ void setPosition(char *line){
 }
 
 void deleteThread() {
-	Engine.PonderMode = false;
-	Engine.StopThinking();
+	Engine->PonderMode = false;
+	Engine->StopThinking();
 	if (Mainthread != nullptr) {
 		if (Mainthread->joinable())  Mainthread->join();
 		else std::cout << "info string Can't stop Engine Thread!" << std::endl;
 		free(Mainthread);
 		Mainthread = nullptr;
 	}
-	Engine.Reset();
+	Engine->Reset();
 }
 
 void thinkAsync(SearchStopCriteria ssc) {
-	ValuatedMove BestMove = Engine.Think(*pos, ssc);
+	ValuatedMove BestMove;
+	if (Engine == NULL) return;
+	if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*pos, ssc);
+	else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*pos, ssc);
 	if (!ponderActive) std::cout << "bestmove " << toString(BestMove.move) << std::endl;
 	else {
 		//First try move from principal variation
-		Move ponderMove = Engine.PonderMove();
+		Move ponderMove = Engine->PonderMove();
 		if (ponderMove == MOVE_NONE) {
 			//Then try to find any move to ponder on (as Arena seems to have problems when no ponder move is provided)
 			position next(*pos);
 			next.ApplyMove(BestMove.move);
 			ValuatedMove * moves = next.GenerateMoves<LEGAL>();
 			int movecount = next.GeneratedMoveCount();
-			ponderMove = Engine.GetBestBookMove(next, moves, movecount);
+			ponderMove = Engine->GetBestBookMove(next, moves, movecount);
 			if (ponderMove == MOVE_NONE && movecount > 0) ponderMove = moves->move;
 		}
 		if (ponderMove == MOVE_NONE || !ponderActive) std::cout << "bestmove " << toString(BestMove.move) << std::endl;
@@ -287,7 +301,7 @@ void thinkAsync(SearchStopCriteria ssc) {
 	//		//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 	//		<< " pv " << Engine.PrincipalVariation(Engine.Depth()) << std::endl;
 	//}
-	Engine.Reset();
+	Engine->Reset();
 }
 
 void go(char *line){
@@ -335,7 +349,7 @@ void go(char *line){
 			}
 		}
 	deleteThread();
-	Engine.PonderMode = ponder;
+	Engine->PonderMode = ponder;
 	Mainthread = new std::thread(thinkAsync, ssc);
 
 	//Engine.Think(pos, ssc);
@@ -350,8 +364,8 @@ void go(char *line){
 }
 
 void ponderhit() {
-	Engine.ExtendStopTimes(now() - ponderStartTime);
-	Engine.PonderMode = false;
+	Engine->ExtendStopTimes(now() - ponderStartTime);
+	Engine->PonderMode = false;
 	ponderHits++;
 }
 

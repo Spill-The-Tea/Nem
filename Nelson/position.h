@@ -8,11 +8,12 @@
 
 struct evaluation;
 
-const MoveGenerationType generationPhases[22] = { HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, KILLER, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, //Main Search Phases
+const MoveGenerationType generationPhases[24] = { HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, KILLER, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, //Main Search Phases
 HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
 HASHMOVE, CHECK_EVASION, NONE,
-HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIET_CHECKS, NONE };
-const int generationPhaseOffset[] = { 0, 8, 13, 16 };
+HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIET_CHECKS, NONE,
+REPEAT_ALL, NONE };
+const int generationPhaseOffset[] = { 0, 8, 13, 16, 22 };
 
 struct position
 {
@@ -781,6 +782,11 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 
 
 template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, DblHistoryStats * dblHistoryStats, ExtendedMove* killerMove, Move * counterMoves, Move hashmove = MOVE_NONE) {
+	if (SMGT == REPETITION) {
+		moveIterationPointer = 0;
+		generationPhaseOffset[SMGT];
+		return;
+	}
 	if (SMGT == MAIN_SEARCH && killerMove) {
 		killer = killerMove;
 	}

@@ -113,7 +113,10 @@ int main(int argc, const char* argv[]) {
 					testKPK();
 				}
 				else if (!input.compare(0, 7, "threads")) {
-					if (input.length() > 8) HelperThreads = atoi(input.substr(8).c_str()) - 1;
+					if (input.length() > 8) {
+						HelperThreads = atoi(input.substr(8).c_str()) - 1;
+						tt::InitializeNproc(HashSizeMB);
+					}
 				}
 			}
 			std::getline(std::cin, input);

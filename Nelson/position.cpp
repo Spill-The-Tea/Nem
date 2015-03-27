@@ -250,6 +250,10 @@ Move position::NextMove() {
 			++moveIterationPointer;
 			generationPhase += (move == lastPositive->move);
 			return move;
+		case REPEAT_ALL:
+			move = moves[moveIterationPointer].move;
+			++moveIterationPointer;
+			generationPhase += (moveIterationPointer >= movepointer);
 		}
 	} while (generationPhases[generationPhase] != NONE);
 	return MOVE_NONE;

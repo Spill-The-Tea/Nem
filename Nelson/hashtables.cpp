@@ -70,6 +70,7 @@ namespace tt {
 	}
 
 	Cluster * Table = nullptr;
+	unsigned char * Nproc = nullptr;
 	uint64_t MASK;
 
 	void InitializeTranspositionTable(int sizeInMB) {
@@ -90,6 +91,23 @@ namespace tt {
 		}
 	}
 
+	void FreeNproc() {
+		if (Nproc != nullptr) {
+			delete[](Nproc);
+			Nproc = nullptr;
+		}
+	}
+
+	uint64_t NMASK;
+
+	void InitializeNproc(int sizeInMB) {
+		FreeNproc();
+		int clusterCount = sizeInMB * 1024 * 1024 / sizeof(Cluster);
+		//NProc table is created so that it has the same entry count as Transposition Table
+		Nproc = (unsigned char *)calloc(GetEntryCount(), 1);
+		NMASK = GetEntryCount() - 1;
+	}
+
 	Entry* firstEntry(const uint64_t hash) {
 		return &Table[hash & MASK].entry[0];
 	}
@@ -97,9 +115,11 @@ namespace tt {
 	void prefetch(uint64_t hash) {
 #ifdef _MSC_VER
 		_mm_prefetch((char*)&Table[hash & MASK], _MM_HINT_T0);
+		if (Nproc) _mm_prefetch((char*)&Nproc[hash & NMASK], _MM_HINT_T0);
 #endif // _MSC_VER
 #ifdef __GNUC__
         __builtin_prefetch((char*)&Table[hash & MASK]);
+		if (Nproc) __builtin_prefetch((char*)&Nproc[hash & NMASK]);
 #endif // __GNUC__
 	}
 

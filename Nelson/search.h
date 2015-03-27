@@ -12,30 +12,27 @@
 
 enum NodeType { PV, NULL_MOVE, EXPECTED_CUT_NODE, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
 
-enum ThreadType { MASTER, SLAVE };
+enum ThreadType { SINGLE, MASTER, SLAVE };
 
-template<ThreadType T> struct search {
+struct baseSearch {
 public:
+	bool UciOutput = false;
+	bool PonderMode = false;
 	ValuatedMove BestMove;
 	int64_t NodeCount;
 	int64_t QNodeCount;
-	bool UciOutput = false;
-	bool PonderMode = false;
+	bool Stop;
 	double BranchingFactor = 0;
 	std::string BookFile = "";
-	search<MASTER> * master = nullptr;
 	int rootMoveCount;
 	ValuatedMove * rootMoves;
-	bool Stop;
 	position rootPosition;
-	DblHistoryStats * DblHistory = nullptr;
 
-	search();
-	~search();
-	inline ValuatedMove Think(position &pos, SearchStopCriteria ssc);
-	inline std::string PrincipalVariation(int depth = PV_MAX_LENGTH);
-	inline void Reset();
-	inline void NewGame();
+	baseSearch();
+	~baseSearch();
+	void Reset();
+	std::string PrincipalVariation(int depth = PV_MAX_LENGTH);
+	void NewGame();
 	inline int Depth() const { return _depth; }
 	inline int64_t ThinkTime() const { return _thinkTime; }
 	inline double cutoffAt1stMoveRate() const { return 100.0 * cutoffAt1stMove / cutoffCount; }
@@ -43,70 +40,51 @@ public:
 	inline Move PonderMove() const { return PVMoves[1]; }
 	inline void ExtendStopTimes(int64_t extensionTime) { searchStopCriteria.HardStopTime += extensionTime; searchStopCriteria.SoftStopTime += extensionTime; }
 	inline void StopThinking(){ Stop = true; searchStopCriteria.HardStopTime = 0; }
-	inline Move GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount);
-	void startHelper();
-	void initializeSlave(search<MASTER> * masterSearch);
+	Move GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount);
+	virtual ThreadType GetType() = 0;
 
-private:
-	SearchStopCriteria searchStopCriteria;
-	Move PVMoves[PV_MAX_LENGTH];
-	HistoryStats History;
-	int _depth = 0;
-	int64_t _thinkTime;
+	//protected:
+	polyglot::polyglotbook book;
+	DblHistoryStats DblHistory;
 	uint64_t cutoffAt1stMove = 0;
 	uint64_t cutoffCount = 0;
 	uint64_t cutoffMoveIndexSum = 0;
+	HistoryStats History;
 	ExtendedMove killer[2 * MAX_DEPTH];
+	SearchStopCriteria searchStopCriteria;
+	Move PVMoves[PV_MAX_LENGTH];
+	int _depth = 0;
+	int64_t _thinkTime;
 	Move counterMove[12 * 64];
 	Value gains[12 * 64];
-	polyglot::polyglotbook book;
 	int instance;
 
+	inline bool Stopped() { return Stop && (!PonderMode); }
+
+
+};
+
+template<ThreadType T> struct search : public baseSearch {
+public:
+	baseSearch * master = nullptr;
+
+	search();
+	~search();
+	inline ValuatedMove Think(position &pos, SearchStopCriteria ssc);
+
+	void startHelper();
+	void initializeSlave(baseSearch * masterSearch);
+	ThreadType GetType() { return T; }
+
+private:
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	Value SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<NodeType NT> Value QSearch(Value alpha, Value beta, position &pos, int depth);
 	void updateCutoffStats(const Move cutoffMove, int depth, position &pos, int moveIndex);
-	inline bool Stopped() { return Stop && (!PonderMode); }
+
 };
 
-template<ThreadType T> inline void search<T>::Reset() {
-	BestMove.move = MOVE_NONE;
-	BestMove.score = VALUE_ZERO;
-	NodeCount = 0;
-	QNodeCount = 0;
-	cutoffAt1stMove = 0;
-	cutoffCount = 0;
-	cutoffMoveIndexSum = 0;
-	Stop = false;
-	PonderMode = false;
-	History.initialize();
-	if (!DblHistory) DblHistory = new DblHistoryStats();
-	DblHistory->initialize();
-	for (int i = 0; i < 2 * MAX_DEPTH; ++i) killer[i] = EXTENDED_MOVE_NONE;
-}
 
-template<ThreadType T> inline void search<T>::NewGame() {
-	Reset();
-	for (int i = 0; i < 12 * 64; ++i) {
-		counterMove[i] = MOVE_NONE;
-		//gains[i] = VALUE_ZERO;
-	}
-	for (int i = 0; i < 12 * 64; ++i) gains[i] = VALUE_ZERO;
-}
-
-template<ThreadType T> inline std::string search<T>::PrincipalVariation(int depth) {
-	std::stringstream ss;
-	for (int i = 0; i < depth; ++i) {
-		if (PVMoves[i] == MOVE_NONE) break;
-		if (i>0) ss << " ";
-		ss << toString(PVMoves[i]);
-	}
-	return ss.str();
-}
-
-template<ThreadType T> inline Move search<T>::GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount) {
-	return (USE_BOOK && BookFile.size() > 0) ? book.probe(pos, BookFile, true, moves, moveCount) : MOVE_NONE;
-}
 
 void startThread(search<SLAVE> & slave);
 
@@ -139,7 +117,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 	rootMoves = new ValuatedMove[rootMoveCount];
 	memcpy(rootMoves, generatedMoves, rootMoveCount * sizeof(ValuatedMove));
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
-	if (T == MASTER && HelperThreads) {
+	if (T == MASTER) {
 		slaves = new search<SLAVE>[HelperThreads];
 		for (int i = 0; i < HelperThreads; ++i) {
 			slaves[i].initializeSlave(this);
@@ -189,7 +167,7 @@ END:	while (PonderMode) { std::this_thread::sleep_for(std::chrono::milliseconds(
 	return BestMove;
 }
 
-template<ThreadType T> void search<T>::initializeSlave(search<MASTER> * masterSearch) {
+template<ThreadType T> void search<T>::initializeSlave(baseSearch * masterSearch) {
 	if (T == SLAVE) {
 		master = masterSearch;
 		rootMoveCount = masterSearch->rootMoveCount;
@@ -198,7 +176,7 @@ template<ThreadType T> void search<T>::initializeSlave(search<MASTER> * masterSe
 		rootPosition = position(masterSearch->rootPosition);
 		rootPosition.copy(masterSearch->rootPosition);
 		rootPosition.InitMaterialPointer();
-		DblHistory = masterSearch->DblHistory;
+		//this->DblHistory = masterSearch->DblHistory;
 		Stop = false;
 	}
 }
@@ -219,7 +197,7 @@ template<ThreadType T> void search<T>::startHelper() {
 template<ThreadType T> search<T>::search() {  }
 
 template<ThreadType T> search<T>::~search() {
-	if (T == MASTER) delete DblHistory;
+
 }
 
 template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv) {
@@ -229,15 +207,22 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	bool ZWS = false;
+	//	int repetitions = T == SINGLE ? 1 : 1;
+	//	for (int repetition = 0; repetition < repetitions; ++repetition){
 	for (int i = 0; i < rootMoveCount; ++i) {
 		position next(pos);
 		next.ApplyMove(rootMoves[i].move);
+		//Check if other thread is already processing this node 
+		//if (T != SINGLE) {
+		//	if (repetition == 0 && i > 0 && tt::GetNProc(next.GetHash())> 0) continue; else tt::IncrementNProc(next.GetHash());
+		//}
 		if (type(rootMoves[i].move) == CASTLING) bonus = BONUS_CASTLING; else bonus = VALUE_ZERO;
 		if (ZWS) {
 			score = bonus - Search<EXPECTED_CUT_NODE>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1, &subpv[0]);
 			if (score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
 		}
 		else score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
+		//if (T != SINGLE) tt::DecrementNProc(next.GetHash());
 		if (Stopped()) break;
 		rootMoves[i].score = score;
 		if (score >= beta) {
@@ -254,12 +239,13 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 			}
 		}
 	}
+	//	}
 	return bestScore;
 }
 
 template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv) {
 	++NodeCount;
-	if (T == MASTER) {
+	if (T != SLAVE) {
 		Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime));
 	}
 	if (Stopped()) return VALUE_ZERO;
@@ -269,13 +255,12 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	beta = Value(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, int(beta)));
 	if (alpha >= beta) return alpha;
 	if (depth <= 0) {
-		if (T == SLAVE || HelperThreads) return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, depth);
-		else return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, depth);
+		return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, depth);
 	}
 	//TT lookup
 	bool ttFound;
 	tt::Entry ttEntry;
-	tt::Entry* ttPointer = (T == SLAVE || HelperThreads > 0) ? tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry);
+	tt::Entry* ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 	Value ttValue = ttFound ? tt::fromTT(ttEntry.value(), pos.GetPliesFromRoot()) : VALUE_NOTYETDETERMINED;
 	if (ttFound
 		&& ttEntry.depth() >= depth
@@ -316,7 +301,9 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		pos.NullMove();
 		Value nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction - 1, &subpv[0]);
 		pos.NullMove(epsquare);
-		if (nullscore >= beta) return beta;
+		if (nullscore >= beta) {
+			return beta;
+		}
 		//{
 		//	if (nullscore > VALUE_MATE_THRESHOLD) nullscore = beta;
 		//	if (depth < 12 && abs(beta) < VALUE_KNOWN_WIN) return nullscore;
@@ -338,7 +325,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		next.copy(pos);
 		Search<NT>(alpha, beta, next, depth - 2, &subpv[0]);
 		if (Stopped()) return VALUE_ZERO;
-		ttPointer = (T == SLAVE || HelperThreads > 0) ? tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry);
+		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	}
 	Value score;
@@ -347,13 +334,17 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	//Futility Pruning: Prune quiet moves that give no check if they can't raise alpha
 	bool futilityPruning = NT != NULL_MOVE && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
 	if (futilityPruning && alpha >(staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
-		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, DblHistory, nullptr, counterMove, ttMove);
+		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &DblHistory, nullptr, counterMove, ttMove);
 	else
-		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, DblHistory, &killer[2 * pos.GetPliesFromRoot()], counterMove, ttMove);
+		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &DblHistory, &killer[2 * pos.GetPliesFromRoot()], counterMove, ttMove);
 	bool lmr = !checked && depth >= 3;
 	Move move;
 	int moveIndex = 0;
 	bool ZWS = false;
+	int validMoveCount = 0;
+	//int repetitions = T == SINGLE ? 1 : 2;
+	//for (int repetition = 0; repetition < repetitions; ++repetition) {
+	//if (T != SINGLE && repetition > 0) pos.InitializeMoveIterator<REPETITION>(&History, &DblHistory, &killer[2 * pos.GetPliesFromRoot()], counterMove, ttMove);
 	while ((move = pos.NextMove())) {
 		if (futilityPruning
 			&& moveIndex > 0
@@ -367,6 +358,10 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
+			//Check if other thread is already processing this node 
+			/*if (T != SINGLE) {
+				if (repetition == 0 && moveIndex > 0 && tt::GetNProc(next.GetHash()) > 0) continue; else tt::IncrementNProc(next.GetHash());
+				}*/
 			int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
 			int reduction = 0;
 			if (lmr && moveIndex >= 2 && !extension && pos.IsQuietAndNoCastles(move) && !next.Checked()) {
@@ -383,9 +378,10 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			}
 			else
 				score = -Search<PV>(-beta, -alpha, next, depth - 1 - reduction + extension, &subpv[0]);
+			//if (T != SINGLE) tt::DecrementNProc(next.GetHash());
 			if (score >= beta) {
 				updateCutoffStats(move, depth, pos, moveIndex);
-				if (T == SLAVE || HelperThreads > 0) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
+				if (T != SINGLE)  ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
 				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
 				return score;
 			}
@@ -403,7 +399,8 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		}
 		moveIndex++;
 	}
-	if (T == SLAVE || HelperThreads > 0) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
+	//}
+	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
 	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
 	return bestScore;
 }
@@ -422,7 +419,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 	tt::Entry ttEntry;
 	bool ttFound;
 	tt::Entry* ttPointer;
-	ttPointer = (T == SLAVE || HelperThreads > 0) ? tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry);
+	ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 	Value ttValue = ttFound ? tt::fromTT(ttEntry.value(), pos.GetPliesFromRoot()) : VALUE_NOTYETDETERMINED;
 	if (ttFound
 		&& ttEntry.depth() >= depth
@@ -438,8 +435,8 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 	else {
 		standPat = ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
 		if (standPat >= beta) {
-			if (T == SLAVE || HelperThreads > 0) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
-			else ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
+			if (T == SINGLE) ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
+			else ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
 			return beta;
 		}
 		//Delta Pruning
@@ -449,8 +446,8 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 		}
 		if (alpha < standPat) alpha = standPat;
 	}
-	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, DblHistory, nullptr, nullptr);
-	else pos.InitializeMoveIterator<QSEARCH>(&History, DblHistory, nullptr, nullptr);
+	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &DblHistory, nullptr, nullptr);
+	else pos.InitializeMoveIterator<QSEARCH>(&History, &DblHistory, nullptr, nullptr);
 	Move move;
 	Value score;
 	tt::NodeType nt = tt::UPPER_BOUND;
@@ -460,7 +457,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 		if (next.ApplyMove(move)) {
 			score = -QSearch<QSEARCH_DEPTH_NEGATIVE>(-beta, -alpha, next, depth - 1);
 			if (score >= beta) {
-				if (T == SLAVE || HelperThreads > 0) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, move, standPat);
+				if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, move, standPat);
 				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, move, standPat);
 				return beta;
 			}
@@ -470,7 +467,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 			}
 		}
 	}
-	if (T == SLAVE || HelperThreads > 0) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), alpha, nt, depth, MOVE_NONE, standPat);
+	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), alpha, nt, depth, MOVE_NONE, standPat);
 	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), alpha, nt, depth, MOVE_NONE, standPat);
 	return alpha;
 }
@@ -491,13 +488,11 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 		History.update(v, movingPiece, toSquare);
 		Piece prevPiece = BLANK;
 		Square prevTo = OUTSIDE;
-		if (T == MASTER) {
-			if (pos.GetLastAppliedMove()) {
-				prevTo = to(pos.GetLastAppliedMove());
-				prevPiece = pos.GetPieceOnSquare(prevTo);
-				counterMove[(pos.GetPieceOnSquare(prevTo) << 6) + prevTo] = cutoffMove;
-				DblHistory->update(v, prevPiece, prevTo, movingPiece, toSquare);
-			}
+		if (pos.GetLastAppliedMove()) {
+			prevTo = to(pos.GetLastAppliedMove());
+			prevPiece = pos.GetPieceOnSquare(prevTo);
+			counterMove[(pos.GetPieceOnSquare(prevTo) << 6) + prevTo] = cutoffMove;
+			DblHistory.update(v, prevPiece, prevTo, movingPiece, toSquare);
 		}
 		if (moveIndex > 0) {
 			ValuatedMove * alreadyProcessedQuiets = pos.GetMovesOfCurrentPhase();
@@ -505,8 +500,8 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 				movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedQuiets->move));
 				toSquare = to(alreadyProcessedQuiets->move);
 				History.update(-v, movingPiece, toSquare);
-				if (T == MASTER && pos.GetLastAppliedMove())
-					DblHistory->update(-v, prevPiece, prevTo, movingPiece, toSquare);
+				if (pos.GetLastAppliedMove())
+					DblHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
 				alreadyProcessedQuiets++;
 			}
 		}

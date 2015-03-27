@@ -543,6 +543,7 @@ void Initialize() {
 	pawn::initialize();
 	kpk::init_kpk();
 	tt::InitializeTranspositionTable(HashSizeMB);
+	if (HelperThreads) tt::InitializeNproc(HashSizeMB);
 	std::chrono::system_clock::time_point end = std::chrono::high_resolution_clock::now();
 	auto runtime = end - begin;
 	std::chrono::microseconds runtimeMS = std::chrono::duration_cast<std::chrono::microseconds>(runtime);
