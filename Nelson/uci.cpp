@@ -13,7 +13,7 @@
 
 
 baseSearch * Engine = new search<SINGLE>;
-position * pos = nullptr;
+position * _position = nullptr;
 std::thread * Mainthread = nullptr;
 int64_t ponderStartTime = 0;
 bool ponderActive = false;
@@ -75,10 +75,9 @@ char *my_strtok(char **str, char *delim)
 }
 
 void loop() {
-	setvbuf(stdout, NULL, _IOLBF, 2048);
-	while (!feof(stdin)) {
-		std::string line;
-		std::getline(std::cin, line);
+	//setvbuf(stdout, NULL, _IOLBF, 2048);
+	std::string line;
+	while (std::getline(std::cin, line)) {
 		dispatch(&line[0]);
 	}
 }
@@ -107,7 +106,7 @@ void dispatch(char *line)
 	else if (!strcmp(token, "ponderhit"))
 		ponderhit();
 	else if (!strcmp(token, "print"))
-		std::cout << pos->print() << std::endl;
+		std::cout << _position->print() << std::endl;
 	else if (!strcmp(token, "perft"))
 		perft(line);
 	else if (!strcmp(token, "divide"))
@@ -163,7 +162,6 @@ void setoption(char *line){
 		if (hashSize != HashSizeMB) {
 			HashSizeMB = hashSize;
 			tt::InitializeTranspositionTable(HashSizeMB);
-			if (HelperThreads) tt::InitializeNproc(HashSizeMB);
 		}
 	}
 	//if (!strcmp(name, "GaviotaTablebasePaths")) {
@@ -188,12 +186,10 @@ void setoption(char *line){
 		if (HelperThreads && Engine->GetType() == SINGLE) {
 			delete Engine;
 			Engine = new search<MASTER>;
-			tt::InitializeNproc(HashSizeMB);
 		} 
 		else if (!HelperThreads && Engine->GetType() == MASTER) {
 			delete Engine;
 			Engine = new search<SINGLE>;
-			tt::FreeNproc();
 		}
 	}
 	//if (!strcmp(name, "bpf")) BETA_PRUNING_FACTOR = Value(atoi(token));
@@ -215,10 +211,10 @@ void ucinewgame(){
 void setPosition(char *line){
 	//Chessbase GUI doesn't send "ucinewgame" command => assure that Hashtable get's initialized in any case
 	if (!initialized) ucinewgame();
-	if (pos) {
-		pos->deleteParents();
-		delete(pos);
-		pos = nullptr;
+	if (_position) {
+		_position->deleteParents();
+		delete(_position);
+		_position = nullptr;
 	}
 	int idx = 0;
 	position * startpos = nullptr;
@@ -252,8 +248,8 @@ void setPosition(char *line){
 				pp = next;
 			}
 		}
-		pos = pp;
-		pos->SetPrevious(pp->Previous());
+		_position = pp;
+		_position->SetPrevious(pp->Previous());
 	}
 }
 
@@ -272,15 +268,15 @@ void deleteThread() {
 void thinkAsync(SearchStopCriteria ssc) {
 	ValuatedMove BestMove;
 	if (Engine == NULL) return;
-	if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*pos, ssc);
-	else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*pos, ssc);
+	if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*_position, ssc);
+	else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*_position, ssc);
 	if (!ponderActive) std::cout << "bestmove " << toString(BestMove.move) << std::endl;
 	else {
 		//First try move from principal variation
 		Move ponderMove = Engine->PonderMove();
 		if (ponderMove == MOVE_NONE) {
 			//Then try to find any move to ponder on (as Arena seems to have problems when no ponder move is provided)
-			position next(*pos);
+			position next(*_position);
 			next.ApplyMove(BestMove.move);
 			ValuatedMove * moves = next.GenerateMoves<LEGAL>();
 			int movecount = next.GeneratedMoveCount();
@@ -305,7 +301,7 @@ void thinkAsync(SearchStopCriteria ssc) {
 }
 
 void go(char *line){
-	if (!pos) pos = new position();
+	if (!_position) _position = new position();
 	SearchStopCriteria ssc;
 	ssc.StartTime = now();
 	char *token;
@@ -315,9 +311,9 @@ void go(char *line){
 	int movestogo = 30;
 	bool ponder = false;
 	while ((token = my_strtok(&line, " "))) {
-		if (!strcmp(token, pos->GetSideToMove() == WHITE ? "wtime" : "btime"))
+		if (!strcmp(token, _position->GetSideToMove() == WHITE ? "wtime" : "btime"))
 			moveTime = atoi(my_strtok(&line, " "));
-		else if (!strcmp(token, pos->GetSideToMove() == WHITE ? "winc" : "binc"))
+		else if (!strcmp(token, _position->GetSideToMove() == WHITE ? "winc" : "binc"))
 			increment = atoi(my_strtok(&line, " "));
 		else if (!strcmp(token, "depth"))
 			ssc.MaxDepth = atoi(my_strtok(&line, " "));
@@ -337,7 +333,7 @@ void go(char *line){
 	//Simple timemanagement
 	if (moveTime == INT_MAX) {
 		ssc.SoftStopTime = ssc.StartTime + int64_t(31536000000); //1 Year
-		ssc.HardStopTime = ssc.StartTime;
+		ssc.HardStopTime = ssc.SoftStopTime;
 	}
 	else if (moveTime > 0) {
 			//if (movestogo > 30) movestogo = 30;
@@ -406,9 +402,9 @@ void perft(char *line) {
 		return;
 	}
 	int64_t start = now();
-	uint64_t result = perft(*pos, depth);
+	uint64_t result = perft(*_position, depth);
 	int64_t runtime = now() - start;
-	std::cout << "Result: " << result << "\t" << runtime << " ms\t" << pos->fen() << std::endl;
+	std::cout << "Result: " << result << "\t" << runtime << " ms\t" << _position->fen() << std::endl;
 }
 
 void divide(char *line) {
@@ -423,7 +419,7 @@ void divide(char *line) {
 		return;
 	}
 	int64_t start = now();
-	divide(*pos, depth);
+	divide(*_position, depth);
 	int64_t runtime = now() - start;
 	std::cout << "Runtime: " << runtime << " ms\t" << std::endl;
 }

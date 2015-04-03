@@ -167,12 +167,4 @@ namespace tt {
 	uint64_t GetClusterCount();
 	uint64_t GetEntryCount();
 
-
-	extern uint64_t NMASK;
-	extern unsigned char * Nproc;
-	void InitializeNproc(int sizeInMB);
-	void FreeNproc();
-	inline unsigned char GetNProc(uint64_t hash) { return Nproc[hash & NMASK]; }
-	inline void IncrementNProc(uint64_t hash) { Nproc[hash & NMASK]++; }
-	inline void DecrementNProc(uint64_t hash) { if (Nproc[hash & NMASK] > 0) Nproc[hash & NMASK]--; }
 }

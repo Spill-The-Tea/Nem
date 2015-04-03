@@ -351,18 +351,20 @@ void divide(position &pos, int depth) {
 void testSearch(position &pos, int depth) {
 	SearchStopCriteria ssc;
 	ssc.MaxDepth = depth;
-	search<SINGLE> engine;
-	ValuatedMove vm = engine.Think(pos, ssc);
+	search<SINGLE> * engine = new search<SINGLE>;
+	ValuatedMove vm = engine->Think(pos, ssc);
 	std::cout << "Best Move: " << toString(vm.move) << " " << vm.score << std::endl;
+	delete engine;
 }
 
 void testRepetition() {
 	position pos("5r1k/R7/5p2/4p3/1p1pP3/1npP1P2/rqn1b1R1/7K w - - 0 1");
 	SearchStopCriteria ssc;
 	ssc.MaxDepth = 5;
-	search<SINGLE> engine;
-	ValuatedMove vm = engine.Think(pos, ssc);
+	search<SINGLE> * engine = new search<SINGLE>;
+	ValuatedMove vm = engine->Think(pos, ssc);
 	std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << vm.score << std::endl;
+	delete engine;
 }
 
 void testFindMate() {
@@ -393,22 +395,22 @@ void testFindMate() {
 	//Mate in 5
 	puzzles["5@6r1/p3p1rk/1p1pPp1p/q3n2R/4P3/3BR2P/PPP2QP1/7K w - -"] = createMove(H5, H6);
 	puzzles["5@2q1nk1r/4Rp2/1ppp1P2/6Pp/3p1B2/3P3P/PPP1Q3/6K1 w - - 0 1"] = createMove(E7, E8);
-	search<SINGLE> engine;
+	search<SINGLE> * engine = new search<SINGLE>;
 	std::map<std::string, Move>::iterator iter;
 	int count = 0;
 	for (iter = puzzles.begin(); iter != puzzles.end(); iter++) {
-		engine.Reset();
+		engine->Reset();
 		std::string mateIn = iter->first.substr(0, 1);
 		std::string fen = iter->first.substr(2, std::string::npos);
 		SearchStopCriteria ssc;
 		ssc.MaxDepth = 2 * atoi(mateIn.c_str()) - 1;
 		position pos(fen);
-		ValuatedMove vm = engine.Think(pos, ssc);
+		ValuatedMove vm = engine->Think(pos, ssc);
 		std::cout << ((vm.move == iter->second) && (vm.score == VALUE_MATE - ssc.MaxDepth) ? "OK    " : "ERROR ") << "\t" << toString(vm.move) << "/" << toString(iter->second)
 			<< "\t" << vm.score << "/" << VALUE_MATE - ssc.MaxDepth << "\t" << fen << std::endl;
 		count++;
 	}
-
+	delete engine;
 }
 
 void testTacticalMoveGeneration() {
@@ -714,22 +716,23 @@ void testParsePGN() {
 void testMateInDos() {
 	std::string filename = "C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/MateenDos.pgn";
 	std::map<std::string, Move> exercises = pgn::parsePGNExerciseFile(filename);
-	search<SINGLE> engine;
+	search<SINGLE> * engine = new search<SINGLE>;
 	int count = 0;
 	int failed = 0;
 	for (std::map<std::string, Move>::iterator it = exercises.begin(); it != exercises.end(); ++it) {
-		engine.Reset();
+		engine->Reset();
 		position pos(it->first);
 		SearchStopCriteria ssc;
 		ssc.MaxDepth = 3;
 		++count;
-		ValuatedMove result = engine.Think(pos, ssc);
+		ValuatedMove result = engine->Think(pos, ssc);
 		std::cout << count << "\t" << ((result.move == it->second) ? "OK\t" : "ERROR\t") << toString(result.move) << "\t" << toString(it->second)
 				<< "\t" << result.score << "\t" << it->first << std::endl;
 			failed += result.move != it->second;
 	}
 	std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 	std::cout << failed << " of " << count << " failed!";
+	delete engine;
 }
 
 uint64_t perftNodes = 0;
