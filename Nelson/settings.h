@@ -51,6 +51,9 @@ const eval Threat[][2][6] = {
 const eval Hanging(16, 13);
 const eval KingOnOne(1, 29);
 const eval KingOnMany(3, 63);
+const eval ROOK_ON_OPENFILE(10, 0);
+const eval ROOK_ON_SEMIOPENFILE(10, 0);
+const eval ROOK_ON_7TH(20, 0);
 
 const Value BONUS_KNIGHT_OUTPOST = Value(5);
 const Value BONUS_BISHOP_OUTPOST = Value(0);

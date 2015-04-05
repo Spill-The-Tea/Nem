@@ -10,12 +10,12 @@ public:
 	eval Mobility = EVAL_ZERO;
 	eval Threats = EVAL_ZERO;
 	eval KingSafety = EVAL_ZERO;
-	eval Outposts = EVAL_ZERO;
+	eval Pieces = EVAL_ZERO;
 	//eval Space = EVAL_ZERO;
 	Value PawnStructure = VALUE_ZERO;
 
 	inline Value GetScore(const Phase_t phase, const Color sideToMove) {
-		return (Material + PawnStructure + (Mobility + KingSafety + Threats + Outposts).getScore(phase)) * (1 - 2 * sideToMove);
+		return (Material + PawnStructure + (Mobility + KingSafety + Threats + Pieces).getScore(phase)) * (1 - 2 * sideToMove);
 	}
 };
 
@@ -209,11 +209,12 @@ template <Color COL> eval evaluateSpace(const position& pos) {
 	return result;
 }
 
-template <Color COL> eval evaluateOutposts(const position& pos) {
+template <Color COL> eval evaluatePieces(const position& pos) {
 	Color OTHER = Color(COL ^ 1);
+	//Knights
 	Bitboard outpostArea = COL == WHITE ? 0x3c3c00000000 : 0x3c3c0000;
 	Bitboard outposts = pos.PieceBB(KNIGHT, COL) & outpostArea & pos.AttacksByPieceType(COL, PAWN);
-	Value bonus = BONUS_KNIGHT_OUTPOST * popcount(outposts);
+	Value bonusKnightOutpost = BONUS_KNIGHT_OUTPOST * popcount(outposts);
 	//Value bonus = VALUE_ZERO;
 	//Value ptBonus = BONUS_BISHOP_OUTPOST;
 	//for (PieceType pt = BISHOP; pt <= KNIGHT; ++pt) {
@@ -230,6 +231,16 @@ template <Color COL> eval evaluateOutposts(const position& pos) {
 	//	}
 	//	ptBonus = BONUS_KNIGHT_OUTPOST;
 	//}
-	return eval(bonus, 0);
+	//Rooks
+	Bitboard seventhRank = COL == WHITE ? RANK7 : RANK2;
+	Bitboard rooks = pos.PieceBB(ROOK, COL);
+	eval bonusRook = popcount(rooks & seventhRank) * ROOK_ON_7TH;
+	while (rooks) {
+		Square rookSquare = lsb(rooks);
+		Bitboard rookFile = FILES[rookSquare & 7];
+		if ((pos.PieceBB(PAWN, COL) & rookFile) == 0) bonusRook += ROOK_ON_SEMIOPENFILE;
+		if ((pos.PieceBB(PAWN, OTHER) & rookFile) == 0) bonusRook += ROOK_ON_OPENFILE;
+		rooks &= rooks - 1;
+	}
+	return bonusRook + eval(bonusKnightOutpost, 0);
 }
-
