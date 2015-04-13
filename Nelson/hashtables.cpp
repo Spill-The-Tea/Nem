@@ -29,19 +29,20 @@ namespace pawn {
 		//attacksets
 		Bitboard bbWAttackset = FrontFillNorth(attacksWhite);
 		Bitboard bbBAttackset = FrontFillSouth(attacksBlack);
-		result->passedPawns[WHITE] = bbWhite & (~(bbBAttackset | bbBFrontspan));
-		result->passedPawns[BLACK] = bbBlack & (~(bbWAttackset | bbWFrontspan));
-		result->Score += popcount(result->passedPawns[WHITE] & RANK4) * PASSED_PAWN_BONUS[0]
-			+ popcount(result->passedPawns[WHITE] & RANK5) * PASSED_PAWN_BONUS[1]
-			+ popcount(result->passedPawns[WHITE] & RANK6) * PASSED_PAWN_BONUS[2]
-			+ popcount(result->passedPawns[WHITE] & RANK7) * PASSED_PAWN_BONUS[3];
-		result->Score -= popcount(result->passedPawns[BLACK] & RANK5) * PASSED_PAWN_BONUS[0]
-			+ popcount(result->passedPawns[BLACK] & RANK4) * PASSED_PAWN_BONUS[1]
-			+ popcount(result->passedPawns[BLACK] & RANK3) * PASSED_PAWN_BONUS[2]
-			+ popcount(result->passedPawns[BLACK] & RANK2) * PASSED_PAWN_BONUS[3];
+		Bitboard ppW = bbWhite & (~(bbBAttackset | bbBFrontspan));
+		Bitboard ppB = bbBlack & (~(bbWAttackset | bbWFrontspan));
+		result->passedPawns = ppW | ppB;
+		result->Score += popcount(ppW & RANK4) * PASSED_PAWN_BONUS[0]
+			+ popcount(ppW & RANK5) * PASSED_PAWN_BONUS[1]
+			+ popcount(ppW & RANK6) * PASSED_PAWN_BONUS[2]
+			+ popcount(ppW & RANK7) * PASSED_PAWN_BONUS[3];
+		result->Score -= popcount(ppB & RANK5) * PASSED_PAWN_BONUS[0]
+			+ popcount(ppB & RANK4) * PASSED_PAWN_BONUS[1]
+			+ popcount(ppB & RANK3) * PASSED_PAWN_BONUS[2]
+			+ popcount(ppB & RANK2) * PASSED_PAWN_BONUS[3];
 		//bonus for protected passed pawns (on 5th rank or further)
-		result->Score += (popcount(result->passedPawns[WHITE] & attacksWhite & HALF_OF_BLACK)
-			- popcount(result->passedPawns[BLACK] & attacksBlack & HALF_OF_WHITE)) * BONUS_PROTECTED_PASSED_PAWN;
+		result->Score += (popcount(ppW & attacksWhite & HALF_OF_BLACK)
+			- popcount(ppB & attacksBlack & HALF_OF_WHITE)) * BONUS_PROTECTED_PASSED_PAWN;
 		//isolated pawns
 		Bitboard west = (bbWhite >> 1) & NOT_H_FILE;
 		Bitboard east = (bbWhite << 1) & NOT_A_FILE;

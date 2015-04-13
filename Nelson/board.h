@@ -72,6 +72,8 @@ extern Bitboard ShadowedFields[64][64];
 extern Bitboard KnightAttacks[64];
 extern Bitboard KingAttacks[64];
 extern Bitboard PawnAttacks[2][64];
+extern Bitboard SquareOfKingWPawn[48]; 
+extern Bitboard SquareOfKingBPawn[48];
 
 void Initialize();
 
@@ -136,6 +138,10 @@ inline int ChebishevDistance(Square sq1, Square sq2) {
 inline int ManhattanDistance(Square sq1, Square sq2) {
 	return abs((sq1 >> 3) - (sq2 >> 3)) + abs((sq1 & 7) - (sq2 & 7));
 }
+
+template<Color COLOR_OF_PAWN> inline Bitboard SquareOfKing(Square pawnSquare) { if (COLOR_OF_PAWN == WHITE) SquareOfKingWPawn[pawnSquare - 8]; else SquareOfKingBPawn[pawnSquare - 8]; }
+
+template<Color COLOR_OF_PAWN> inline Square ConversionSquare(Square pawnSquare) { if (COLOR_OF_PAWN == WHITE) return Square(56 + (pawnSquare & 7)); else return Square(pawnSquare & 7); }
 
 #define ZKBPawn { 0x9D39247E33776D41, 0x2AF7398005AAA5C7,            \
 		0x44DB015024623547, 0x9C15F73E62A76AE2, 0x75834465489C0C89, \

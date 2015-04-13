@@ -27,9 +27,11 @@ Value evaluateFromScratch(const position& pos);
 template<Color WinningSide> Value evaluateKBPK(const position& pos);
 template <Color WinningSide> Value easyMate(const position& pos);
 template <Color WinningSide> Value evaluateKQKP(const position& pos);
+template <Color StrongerSide> Value evaluateKRKP(const position& pos);
 eval evaluateMobility(const position& pos);
 eval evaluateMobility2(const position& pos);
 eval evaluateKingSafety(const position& pos);
+Value evaluatePawnEnding(const position& pos);
 
 const int PSQ_GoForMate[64] = {
 	100, 90, 80, 70, 70, 80, 90, 100,
@@ -76,7 +78,7 @@ template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 	if (relativeRank != Rank7
 		|| ChebishevDistance(loserKSq, pawnSq) != 1
 		|| !((A_FILE | C_FILE | F_FILE | H_FILE) & pos.PieceBB(PAWN, ~WinningSide)))
-		result += PieceValuesEG[QUEEN] - PieceValuesEG[PAWN];
+		result += VALUE_KNOWN_WIN + PieceValuesEG[QUEEN] - PieceValuesEG[PAWN];
 
 	return WinningSide == pos.GetSideToMove() ? result : -result;
 }
@@ -144,6 +146,47 @@ template <Color WinningSide> Value evaluateKNBK(const position& pos) {
 
 	if (WinningSide == BLACK) result = -result;
 	return result * (1 - 2 * pos.GetSideToMove());
+}
+
+template <Color StrongerSide> Value evaluateKRKP(const position& pos) {
+	Value result;
+	//if the stronger King is in the front of the pawn it's a win
+	Square pawnSquare = lsb(pos.PieceTypeBB(PAWN));	
+	Square strongerKingSquare = lsb(pos.PieceBB(KING, StrongerSide));
+	int dtc = StrongerSide == WHITE ? pawnSquare >> 3 : 7 - (pawnSquare >> 3);
+	Bitboard pfront = StrongerSide == WHITE ? FrontFillSouth(pos.PieceTypeBB(PAWN)) : FrontFillNorth(pos.PieceTypeBB(PAWN));
+	if (pfront & pos.PieceBB(KING, StrongerSide)) {
+		result = VALUE_KNOWN_WIN + PieceValuesEG[ROOK] - PieceValuesEG[PAWN] + Value(dtc - ChebishevDistance(strongerKingSquare,pawnSquare));
+		return StrongerSide == pos.GetSideToMove() ? result : -result;
+	}
+	Color WeakerSide = Color(StrongerSide ^ 1);
+	int pawnRank = pawnSquare >> 3;
+	if (StrongerSide == WHITE && pawnRank == 6) pawnSquare = Square(pawnSquare -8);
+	else if (StrongerSide == BLACK && pawnRank == 1) pawnSquare = Square(pawnSquare + 8);
+	//if the weaker king is far away from rook and pawn it's a win
+	Square weakKingSquare = lsb(pos.PieceBB(KING, WeakerSide));
+	Square rookSquare = lsb(pos.PieceTypeBB(ROOK));
+	if (ChebishevDistance(weakKingSquare,pawnSquare) > (3 + (pos.GetSideToMove() == WeakerSide))
+		&& ChebishevDistance(weakKingSquare,rookSquare) >= 3) {
+		result = VALUE_KNOWN_WIN + PieceValuesEG[ROOK] - PieceValuesEG[PAWN] + Value(dtc - ChebishevDistance(strongerKingSquare, pawnSquare));
+		return StrongerSide == pos.GetSideToMove() ? result : -result;
+	}
+	// If the pawn is far advanced and supported by the defending king,
+	// the position is drawish
+	Square conversionSquare = StrongerSide == WHITE ? Square(pawnSquare & 7) : Square((pawnSquare & 7) + 56);
+	if (ChebishevDistance(pawnSquare,weakKingSquare) == 1
+		&& ChebishevDistance(conversionSquare,weakKingSquare) <= 2
+		&& ChebishevDistance(conversionSquare,strongerKingSquare) >= (3 + (pos.GetSideToMove() == StrongerSide))) {
+		result = Value(80) - 8 * ChebishevDistance(strongerKingSquare,pawnSquare);
+		return StrongerSide == pos.GetSideToMove() ? result : -result;
+	}
+	else {
+		int pawnStep = StrongerSide == WHITE ? -8 : 8;
+		result = Value(200) - 8 * (ChebishevDistance(strongerKingSquare,Square(pawnSquare + pawnStep))
+			- ChebishevDistance(weakKingSquare, Square(pawnSquare + pawnStep))
+			- dtc);
+		return StrongerSide == pos.GetSideToMove() ? result : -result;
+	}
 }
 
 template <Color COL> eval evaluateThreats(const position& pos) {
@@ -239,6 +282,8 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 		Square rookSquare = lsb(rooks);
 		Bitboard rookFile = FILES[rookSquare & 7];
 		if ((pos.PieceBB(PAWN, COL) & rookFile) == 0) bonusRook += ROOK_ON_SEMIOPENFILE;
+		//This seems to be wrong, as it also gives bonus to rooks behind own pawns
+		//but fixing it didn't improve performance
 		if ((pos.PieceBB(PAWN, OTHER) & rookFile) == 0) bonusRook += ROOK_ON_OPENFILE;
 		rooks &= rooks - 1;
 	}

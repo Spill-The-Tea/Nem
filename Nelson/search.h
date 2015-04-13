@@ -274,6 +274,11 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
 		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
+	//Check if Value from TT is better
+	Value effectiveEvaluation = staticEvaluation;
+	if (!checked && ttFound && 
+		((ttValue > staticEvaluation && ttEntry.type() == tt::LOWER_BOUND)
+		|| (ttValue < staticEvaluation && ttEntry.type() == tt::UPPER_BOUND))) effectiveEvaluation = ttValue;
 	Move ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	//Razoring a la SF (no measurable ELO change)
 	//if (!checked && depth < 4
@@ -289,13 +294,13 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	// Beta Pruning
 	if (!checked
 		&& depth < 7
-		&& staticEvaluation < VALUE_KNOWN_WIN
-		&& (staticEvaluation - BETA_PRUNING_FACTOR * depth) >= beta
+		&& effectiveEvaluation < VALUE_KNOWN_WIN
+		&& (effectiveEvaluation - BETA_PRUNING_FACTOR * depth) >= beta
 		//&& !pos.GetMaterialTableEntry()->IsLateEndgame()
 		&& pos.NonPawnMaterial(pos.GetSideToMove()))
-		return staticEvaluation - BETA_PRUNING_FACTOR * depth;
+		return effectiveEvaluation - BETA_PRUNING_FACTOR * depth;
 	//Null Move Pruning
-	if (NT != NULL_MOVE && !checked && staticEvaluation > beta && depth > 4 && !pos.GetMaterialTableEntry()->IsLateEndgame() && pos.NonPawnMaterial(pos.GetSideToMove())) {
+	if (NT != NULL_MOVE && !checked && effectiveEvaluation > beta && depth > 4 && !pos.GetMaterialTableEntry()->IsLateEndgame() && pos.NonPawnMaterial(pos.GetSideToMove())) {
 		int reduction = depth >> 1;
 		Square epsquare = pos.GetEPSquare();
 		pos.NullMove();

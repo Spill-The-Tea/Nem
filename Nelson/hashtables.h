@@ -13,7 +13,7 @@ namespace pawn {
 	struct Entry {
 		PawnKey_t Key;
 		Value Score;
-		Bitboard passedPawns[2];
+		Bitboard passedPawns;
 	};
 
 	extern Entry Table[PAWN_TABLE_SIZE];

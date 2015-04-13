@@ -242,5 +242,33 @@ Value evaluateFromScratch(const position& pos) {
 	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
 }
 
+Value evaluatePawnEnding(const position& pos) {
+	 //try to find unstoppable pawns
+	Value unstoppable = VALUE_ZERO;
+	if (pos.GetPawnEntry()->passedPawns) {
+		Bitboard wpassed = pos.GetPawnEntry()->passedPawns & pos.PieceBB(PAWN, WHITE);
+		while (wpassed) {
+			Square passedPawnSquare = lsb(wpassed);
+			Square convSquare = ConversionSquare<WHITE>(passedPawnSquare);
+			int distToConv = std::min(7 - (passedPawnSquare >> 3), 5);
+			if (distToConv < (ChebishevDistance(lsb(pos.PieceBB(KING, BLACK)), convSquare) - (pos.GetSideToMove() == BLACK))) {
+				unstoppable += Value(PieceValuesEG[QUEEN] - ((distToConv+1 + (pos.GetSideToMove() == BLACK)) * PieceValuesEG[PAWN]));
+			}
+			wpassed &= wpassed - 1;
+		}
+		Bitboard bpassed = pos.GetPawnEntry()->passedPawns & pos.PieceBB(PAWN, BLACK);
+		while (bpassed) {
+			Square passedPawnSquare = lsb(bpassed);
+			Square convSquare = ConversionSquare<BLACK>(passedPawnSquare);
+			int distToConv = std::min((passedPawnSquare >> 3), 5);
+			if (distToConv < (ChebishevDistance(lsb(pos.PieceBB(KING, WHITE)), convSquare) - (pos.GetSideToMove() == WHITE))) {
+				unstoppable -= Value(PieceValuesEG[QUEEN] - ((distToConv + 1 + (pos.GetSideToMove() == WHITE)) * PieceValuesEG[PAWN]));
+			}
+			bpassed &= bpassed - 1;
+		}
+	}
+	return (pos.GetMaterialScore() + pos.GetPawnEntry()->Score + unstoppable) * (1 - 2 * pos.GetSideToMove());
+}
+
 
 

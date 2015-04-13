@@ -67,6 +67,7 @@ void InitializeMaterialTable() {
 											MaterialTable[key].Phase = phase;
 											if (nWP == 0 && nWN == 0 && nWB == 0 && nWR == 0 && nWQ == 0) MaterialTable[key].EvaluationFunction = &easyMate < BLACK > ;
 											else if (nBP == 0 && nBN == 0 && nBB == 0 && nBR == 0 && nBQ == 0) MaterialTable[key].EvaluationFunction = &easyMate < WHITE > ;
+											else if (nWQ == 0 && nBQ == 0 && nWR == 0 && nBR == 0 && nWB == 0 && nBB == 0 && nWN == 0 && nBN == 0) MaterialTable[key].EvaluationFunction = &evaluatePawnEnding;
 											else MaterialTable[key].EvaluationFunction = &evaluateDefault;
 										}
 									}
@@ -208,5 +209,14 @@ void InitializeMaterialTable() {
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].EvaluationFunction = &evaluateKQKP < BLACK > ;
 	pieceCounts[BQUEEN] = pieceCounts[WPAWN] = 0;
+	//KRKP
+	pieceCounts[WROOK] = pieceCounts[BPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKRKP<WHITE>;
+	pieceCounts[WROOK] = pieceCounts[BPAWN] = 0;
+	pieceCounts[BROOK] = pieceCounts[WPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKRKP<BLACK>;
+	pieceCounts[BROOK] = pieceCounts[WPAWN] = 0;
 
 }
