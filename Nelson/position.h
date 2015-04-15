@@ -42,7 +42,7 @@ public:
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, DblHistoryStats *dblHistoryStats, ExtendedMove * killerMove, Move * counterMoves, Move hashmove);
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, DblHistoryStats *dblHistoryStats, ExtendedMove * killerMove, Move * counterMoves, Move hashmove, Value limit);
 	Move NextMove();
 	const Value SEE(Square from, const Square to) const;
 	Value SEE_Sign(Move move) const;
@@ -127,6 +127,7 @@ private:
 	HistoryStats * history;
 	DblHistoryStats * dblHistory;
 	Move * CounterMoves = nullptr;
+	Value minMoveValue = -VALUE_MATE;
 
 	template<bool SquareIsEmpty> void set(const Piece piece, const Square square);
 	void remove(const Square square);
@@ -781,7 +782,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, DblHistoryStats * dblHistoryStats, ExtendedMove* killerMove, Move * counterMoves, Move hashmove = MOVE_NONE) {
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, DblHistoryStats * dblHistoryStats, ExtendedMove* killerMove, Move * counterMoves, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE) {
 	if (SMGT == REPETITION) {
 		moveIterationPointer = 0;
 		generationPhaseOffset[SMGT];

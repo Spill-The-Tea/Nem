@@ -269,79 +269,107 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		//if (ttValue > beta && ttEntry->move != MOVE_NONE && pos.IsQuiet(ttEntry->move)) updateCutoffStats(ttEntry->move, depth, pos, 0);
 		return ttValue;
 	}
+			Move ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
 		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
-	//Check if Value from TT is better
-	Value effectiveEvaluation = staticEvaluation;
-	if (!checked && ttFound && 
-		((ttValue > staticEvaluation && ttEntry.type() == tt::LOWER_BOUND)
-		|| (ttValue < staticEvaluation && ttEntry.type() == tt::UPPER_BOUND))) effectiveEvaluation = ttValue;
-	Move ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
-	//Razoring a la SF (no measurable ELO change)
-	//if (!checked && depth < 4
-	//	&& (staticEvaluation + Value(512 + 32 * depth)) <= alpha
-	//	&& ttMove == MOVE_NONE
-	//	&& !pos.PawnOn7thRank())
-	//{
-	//	if (depth <= 1 && (staticEvaluation + 608) <= alpha) return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, 0);
-	//	Value ralpha = alpha - Value(512 + 32 * depth);
-	//	Value v = QSearch<QSEARCH_DEPTH_0>(ralpha, Value(ralpha + 1), pos, 0);
-	//	if (v <= ralpha) return v;
-	//}
-	// Beta Pruning
-	if (!checked
-		&& depth < 7
-		&& effectiveEvaluation < VALUE_KNOWN_WIN
-		&& (effectiveEvaluation - BETA_PRUNING_FACTOR * depth) >= beta
-		//&& !pos.GetMaterialTableEntry()->IsLateEndgame()
-		&& pos.NonPawnMaterial(pos.GetSideToMove()))
-		return effectiveEvaluation - BETA_PRUNING_FACTOR * depth;
-	//Null Move Pruning
-	if (NT != NULL_MOVE && !checked && effectiveEvaluation > beta && depth > 4 && !pos.GetMaterialTableEntry()->IsLateEndgame() && pos.NonPawnMaterial(pos.GetSideToMove())) {
-		int reduction = depth >> 1;
-		Square epsquare = pos.GetEPSquare();
-		pos.NullMove();
-		Value nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction - 1, &subpv[0]);
-		pos.NullMove(epsquare);
-		if (nullscore >= beta) {
-			return beta;
+	if (!checked) {
+		//Check if Value from TT is better
+		Value effectiveEvaluation = staticEvaluation;
+		if (ttFound &&
+			((ttValue > staticEvaluation && ttEntry.type() == tt::LOWER_BOUND)
+			|| (ttValue < staticEvaluation && ttEntry.type() == tt::UPPER_BOUND))) effectiveEvaluation = ttValue;
+
+		//Razoring a la SF (no measurable ELO change)
+		/*if (!checked && depth < 4
+			&& (effectiveEvaluation + Value(512 + 32 * depth)) <= alpha
+			&& ttMove == MOVE_NONE
+			&& !pos.PawnOn7thRank())
+			{
+			if (depth <= 1 && (effectiveEvaluation + 608) <= alpha) return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, 0);
+			Value ralpha = alpha - Value(512 + 32 * depth);
+			Value v = QSearch<QSEARCH_DEPTH_0>(ralpha, Value(ralpha + 1), pos, 0);
+			if (v <= ralpha) return v;
+			}*/
+		// Beta Pruning
+		if (depth < 7
+			&& effectiveEvaluation < VALUE_KNOWN_WIN
+			&& (effectiveEvaluation - BETA_PRUNING_FACTOR * depth) >= beta
+			//&& !pos.GetMaterialTableEntry()->IsLateEndgame()
+			&& pos.NonPawnMaterial(pos.GetSideToMove()))
+			return effectiveEvaluation - BETA_PRUNING_FACTOR * depth;
+		//Null Move Pruning
+		if (NT != NULL_MOVE && effectiveEvaluation > beta && depth > 4 && !pos.GetMaterialTableEntry()->IsLateEndgame() && pos.NonPawnMaterial(pos.GetSideToMove())) {
+			int reduction = depth >> 1;
+			Square epsquare = pos.GetEPSquare();
+			pos.NullMove();
+			Value nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction - 1, &subpv[0]);
+			pos.NullMove(epsquare);
+			if (nullscore >= beta) {
+				return beta;
+			}
+			//{
+			//	if (nullscore > VALUE_MATE_THRESHOLD) nullscore = beta;
+			//	if (depth < 12 && abs(beta) < VALUE_KNOWN_WIN) return nullscore;
+
+			//	//Verification Search
+			//	Value verificationValue = Search<NULL_MOVE>(beta - 1, beta, pos, depth - reduction, &subpv[0]);
+			//	if (verificationValue >= beta) return nullscore;
+			//}
 		}
-		//{
-		//	if (nullscore > VALUE_MATE_THRESHOLD) nullscore = beta;
-		//	if (depth < 12 && abs(beta) < VALUE_KNOWN_WIN) return nullscore;
+		if (pos.IsQuiet(pos.GetLastAppliedMove())) {
+			Square lastToSquare = to(pos.GetLastAppliedMove());
+			int gainIndx = (pos.GetPieceOnSquare(lastToSquare) << 6) + lastToSquare;
+			gains[gainIndx] = std::max(staticEvaluation - pos.Previous()->GetStaticEval(), gains[gainIndx] - 1);
+		}
 
-		//	//Verification Search
-		//	Value verificationValue = Search<NULL_MOVE>(beta - 1, beta, pos, depth - reduction, &subpv[0]);
-		//	if (verificationValue >= beta) return nullscore;
-		//}
-	}
-	if (pos.IsQuiet(pos.GetLastAppliedMove())) {
-		Square lastToSquare = to(pos.GetLastAppliedMove());
-		int gainIndx = (pos.GetPieceOnSquare(lastToSquare) << 6) + lastToSquare;
-		gains[gainIndx] = std::max(staticEvaluation - pos.Previous()->GetStaticEval(), gains[gainIndx] - 1);
-	}
+		// Step 9. ProbCut (skipped when in check)
+		// If we have a very good capture (i.e. SEE > seeValues[captured_piece_type])
+		// and a reduced search returns a value much above beta, we can (almost) safely
+		// prune the previous move.
+		if (NT != PV
+			&&  depth >= 5
+			&&  std::abs(beta) < VALUE_MATE_THRESHOLD)
+		{
+			Value rbeta = std::min(Value(beta + 100), VALUE_INFINTE);
+			int rdepth = depth - 4;
 
-	//IID (Seems to be neutral => therefore deactivated
-	if (NT == PV && depth >= 3 && !ttMove) {
-		position next(pos);
-		next.copy(pos);
-		Search<NT>(alpha, beta, next, depth - 2, &subpv[0]);
-		if (Stopped()) return VALUE_ZERO;
-		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
-		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
+			position cpos(pos);
+			cpos.copy(pos);
+			Value limit = PieceValuesMG[pos.getCapturedInLastMove()];
+			cpos.InitializeMoveIterator<QSEARCH>(&History, &DblHistory, nullptr, nullptr, ttMove, PieceValuesMG[GetPieceType(pos.getCapturedInLastMove())]);
+			Move move;
+			while ((move = cpos.NextMove())) {
+				position next(cpos);
+				if (next.ApplyMove(move)) {
+					Value score = -Search<EXPECTED_CUT_NODE>(-rbeta, Value(-rbeta + 1), next, rdepth, &subpv[0]);
+					if (score >= rbeta)
+						return score;
+				}
+			}
+		}
+
+		//IID (Seems to be neutral => therefore deactivated
+		if (NT == PV && depth >= 3 && !ttMove) {
+			position next(pos);
+			next.copy(pos);
+			Search<NT>(alpha, beta, next, depth - 2, &subpv[0]);
+			if (Stopped()) return VALUE_ZERO;
+			ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
+			ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
+		}
 	}
-	Value score;
-	Value bestScore = -VALUE_MATE;
-	tt::NodeType nodeType = tt::UPPER_BOUND;
 	//Futility Pruning: Prune quiet moves that give no check if they can't raise alpha
 	bool futilityPruning = NT != NULL_MOVE && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
 	if (futilityPruning && alpha >(staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &DblHistory, nullptr, counterMove, ttMove);
 	else
 		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &DblHistory, &killer[2 * pos.GetPliesFromRoot()], counterMove, ttMove);
+	Value score;
+	Value bestScore = -VALUE_MATE;
+	tt::NodeType nodeType = tt::UPPER_BOUND;
 	bool lmr = !checked && depth >= 3;
 	Move move;
 	int moveIndex = 0;

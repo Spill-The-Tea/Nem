@@ -310,7 +310,7 @@ Move position::getBestMove(int startIndex) {
 			bestmove = moves[startIndex];
 		}
 	}
-	return moves[startIndex].move;
+	return moves[startIndex].score > minMoveValue ? moves[startIndex].move : MOVE_NONE;
 }
 
 template<bool SquareIsEmpty> void position::set(const Piece piece, const Square square) {
