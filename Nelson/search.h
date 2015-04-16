@@ -333,13 +333,15 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			&&  depth >= 5
 			&&  std::abs(beta) < VALUE_MATE_THRESHOLD)
 		{
-			Value rbeta = std::min(Value(beta + 100), VALUE_INFINTE);
+			Value rbeta = std::min(Value(beta + 90), VALUE_INFINTE);
 			int rdepth = depth - 4;
 
 			position cpos(pos);
 			cpos.copy(pos);
-			Value limit = PieceValuesMG[pos.getCapturedInLastMove()];
-			cpos.InitializeMoveIterator<QSEARCH>(&History, &DblHistory, nullptr, nullptr, ttMove, PieceValuesMG[GetPieceType(pos.getCapturedInLastMove())]);
+			Value limit = PieceValuesMG[GetPieceType(pos.getCapturedInLastMove())];
+			Move ttm = ttMove; 
+			if (ttm != MOVE_NONE && cpos.SEE(from(ttMove), to(ttMove)) < limit) ttm = MOVE_NONE;
+			cpos.InitializeMoveIterator<QSEARCH>(&History, &DblHistory, nullptr, nullptr, ttm, limit);
 			Move move;
 			while ((move = cpos.NextMove())) {
 				position next(cpos);
