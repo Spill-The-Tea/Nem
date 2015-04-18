@@ -28,6 +28,8 @@ public:
 	int rootMoveCount;
 	ValuatedMove * rootMoves;
 	position rootPosition;
+	std::vector<Move> searchMoves;
+	int MultiPv = 1;
 
 	baseSearch();
 	~baseSearch();
@@ -80,7 +82,7 @@ public:
 
 private:
 	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true);
-	Value SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv);
+	Value SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove = 0);
 	template<NodeType NT> Value QSearch(Value alpha, Value beta, position &pos, int depth);
 	void updateCutoffStats(const Move cutoffMove, int depth, position &pos, int moveIndex);
 
@@ -93,7 +95,7 @@ void startThread(search<SLAVE> & slave);
 template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, SearchStopCriteria ssc) {
 	std::vector<std::thread> subThreads;
 	search<SLAVE> * slaves = nullptr;
-	searchStopCriteria = ssc;
+	searchStopCriteria = ssc; 
 	_thinkTime = 1;
 	rootPosition = pos;
 	int64_t * nodeCounts = new int64_t[searchStopCriteria.MaxDepth + 1];
@@ -116,8 +118,16 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 			goto END;
 		}
 	}
-	rootMoves = new ValuatedMove[rootMoveCount];
-	memcpy(rootMoves, generatedMoves, rootMoveCount * sizeof(ValuatedMove));
+	if (searchMoves.size()) {
+		rootMoveCount = int(searchMoves.size());
+		rootMoves = new ValuatedMove[rootMoveCount];
+		for (int i = 0; i < rootMoveCount; ++i) rootMoves[i].move = searchMoves[i];
+		searchMoves.clear();
+	}
+	else {
+		rootMoves = new ValuatedMove[rootMoveCount];
+		memcpy(rootMoves, generatedMoves, rootMoveCount * sizeof(ValuatedMove));
+	}
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
 	if (T == MASTER) {
 		slaves = new search<SLAVE>[HelperThreads];
@@ -128,32 +138,35 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 	}
 	//Iterativ Deepening Loop
 	for (_depth = 1; _depth <= searchStopCriteria.MaxDepth; ++_depth) {
-		Value alpha = -VALUE_MATE;
-		Value beta = VALUE_MATE;
-		SearchRoot(alpha, beta, pos, _depth, &PVMoves[0]);
-		std::stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
-		BestMove = rootMoves[0];
-		int64_t tNow = now();
-		_thinkTime = std::max(tNow - searchStopCriteria.StartTime, int64_t(1));
-		if (!Stopped()) {
-			nodeCounts[_depth] = NodeCount - nodeCounts[_depth - 1];
-			if (_depth > 3) BranchingFactor = sqrt(1.0 * nodeCounts[_depth] / nodeCounts[_depth - 2]);
-			if (!PonderMode && (tNow > searchStopCriteria.SoftStopTime || (3 * (tNow - searchStopCriteria.StartTime) + searchStopCriteria.StartTime) > searchStopCriteria.SoftStopTime)) Stop = true;
-		}
-		if (Stopped() || (UciOutput && _thinkTime > 200)) {
-			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
-				std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv 1" << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
-				<< " hashfull " << tt::GetHashFull()
-				//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
-				<< " pv " << PrincipalVariation(_depth) << std::endl;
-			else {
-				int pliesToMate;
-				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
-				std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv 1" << " score mate " << pliesToMate / 2 << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+		for (int pvIndx = 0; pvIndx < MultiPv; ++pvIndx) {
+			Value alpha = -VALUE_MATE;
+			Value beta = VALUE_MATE;
+			SearchRoot(alpha, beta, pos, _depth, &PVMoves[0], pvIndx);
+			std::stable_sort(rootMoves+pvIndx, &rootMoves[rootMoveCount], sortByScore);
+			BestMove = rootMoves[0];
+			int64_t tNow = now();
+			_thinkTime = std::max(tNow - searchStopCriteria.StartTime, int64_t(1));
+			if (!Stopped()) {
+				nodeCounts[_depth] = NodeCount - nodeCounts[_depth - 1];
+				if (_depth > 3) BranchingFactor = sqrt(1.0 * nodeCounts[_depth] / nodeCounts[_depth - 2]);
+				if (!PonderMode && (tNow > searchStopCriteria.SoftStopTime || (3 * (tNow - searchStopCriteria.StartTime) + searchStopCriteria.StartTime) > searchStopCriteria.SoftStopTime)) Stop = true;
+			}
+			if (Stopped() || (UciOutput && _thinkTime > 200)) {
+				if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
+					std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
 					//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 					<< " pv " << PrincipalVariation(_depth) << std::endl;
+				else {
+					int pliesToMate;
+					if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
+					std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+						<< " hashfull " << tt::GetHashFull()
+						//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
+						<< " pv " << PrincipalVariation(_depth) << std::endl;
+				}
 			}
+			if (Stopped()) break;
 		}
 		if (Stopped()) break;
 	}
@@ -202,7 +215,7 @@ template<ThreadType T> search<T>::~search() {
 
 }
 
-template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv) {
+template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove = 0) {
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	Value bonus;
@@ -211,7 +224,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	bool ZWS = false;
 	//	int repetitions = T == SINGLE ? 1 : 1;
 	//	for (int repetition = 0; repetition < repetitions; ++repetition){
-	for (int i = 0; i < rootMoveCount; ++i) {
+	for (int i = startWithMove; i < rootMoveCount; ++i) {
 		position next(pos);
 		next.ApplyMove(rootMoves[i].move);
 		//Check if other thread is already processing this node 

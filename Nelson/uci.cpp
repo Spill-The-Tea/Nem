@@ -130,6 +130,7 @@ void uci() {
 	puts("id author Christian Günther");
 	printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
 	printf("option name Hash type spin default %li min 1 max 16384\n", HashSizeMB);
+	printf("option name MultiPV type spin default %li min 1 max 216\n", Engine->MultiPv);
 	printf("option name Threads type spin default %li min 1 max 128\n", HelperThreads+1);
 	printf("option name Ponder type check");
 	//printf("option name Draw Value type spin default %d min -100 max 100\n", DrawValue);
@@ -191,6 +192,9 @@ void setoption(char *line){
 			delete Engine;
 			Engine = new search<SINGLE>;
 		}
+	}
+	if (!strcmp(name, "MultiPV") && (token)) {
+		Engine->MultiPv = atoi(token);
 	}
 	//if (!strcmp(name, "bpf")) BETA_PRUNING_FACTOR = Value(atoi(token));
 	//else if (!strcmp(name, "DrawValue"))
@@ -310,24 +314,45 @@ void go(char *line){
 	long long nodes = 0;
 	int movestogo = 30;
 	bool ponder = false;
+	bool searchmoves = false;
 	while ((token = my_strtok(&line, " "))) {
-		if (!strcmp(token, _position->GetSideToMove() == WHITE ? "wtime" : "btime"))
+		if (!strcmp(token, _position->GetSideToMove() == WHITE ? "wtime" : "btime")) {
 			moveTime = atoi(my_strtok(&line, " "));
-		else if (!strcmp(token, _position->GetSideToMove() == WHITE ? "winc" : "binc"))
+			searchmoves = false;
+		}
+		else if (!strcmp(token, _position->GetSideToMove() == WHITE ? "winc" : "binc")) {
 			increment = atoi(my_strtok(&line, " "));
-		else if (!strcmp(token, "depth"))
+			searchmoves = false;
+		}
+		else if (!strcmp(token, "depth")) {
 			ssc.MaxDepth = atoi(my_strtok(&line, " "));
-		else if (!strcmp(token, "nodes"))
+			searchmoves = false;
+		}
+		else if (!strcmp(token, "nodes")) {
 			ssc.MaxNumberOfNodes = atoll(my_strtok(&line, " "));
-		else if (!strcmp(token, "movestogo"))
+			searchmoves = false;
+		}
+		else if (!strcmp(token, "movestogo")) {
 			movestogo = atoi(my_strtok(&line, " "));
+			searchmoves = false;
+		}
 		else if (!strcmp(token, "ponder")) {
 			ponderStartTime = ssc.StartTime;
 			ponder = true;
 			ponderedMoves++;
+			searchmoves = false;
 		}
 		else if (!strcmp(token, "infinite")) {
 			moveTime = INT_MAX;
+			searchmoves = false;
+		}
+		else if (!strcmp(token, "searchmoves")) {
+			searchmoves = true;
+		}
+		else if (searchmoves) {
+			std::string tokenString(token);
+			Move m = parseMoveInUCINotation(tokenString, *_position);
+			Engine->searchMoves.push_back(m);
 		}
 	}
 	//Simple timemanagement
@@ -370,7 +395,7 @@ void setvalue(char *line) {
 	if (token[0] == 'P' && token[1] == 'P' && token[2] == 'B') {
 		int indx = int(token[3] - '0');
 		token = my_strtok(&line, " ");
-		int value = round(atof(token));
+		int value = int(round(atof(token)));
 		//PASSED_PAWN_BONUS[indx] = Value(value);
 		std::cout << "info string Passed Pawn Bonus " << indx << ": " << PASSED_PAWN_BONUS[indx] << std::endl;
 	} 
