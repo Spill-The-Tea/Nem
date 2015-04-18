@@ -21,6 +21,7 @@ public:
 	ValuatedMove BestMove;
 	int64_t NodeCount;
 	int64_t QNodeCount;
+	int MaxDepth;
 	bool Stop;
 	double BranchingFactor = 0;
 	std::string BookFile = "";
@@ -51,6 +52,7 @@ public:
 	uint64_t cutoffMoveIndexSum = 0;
 	HistoryStats History;
 	ExtendedMove killer[2 * MAX_DEPTH];
+	//Move excludedMoves[MAX_DEPTH];
 	SearchStopCriteria searchStopCriteria;
 	Move PVMoves[PV_MAX_LENGTH];
 	int _depth = 0;
@@ -77,7 +79,7 @@ public:
 	ThreadType GetType() { return T; }
 
 private:
-	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv);
+	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true);
 	Value SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv);
 	template<NodeType NT> Value QSearch(Value alpha, Value beta, position &pos, int depth);
 	void updateCutoffStats(const Move cutoffMove, int depth, position &pos, int moveIndex);
@@ -140,14 +142,14 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 		}
 		if (Stopped() || (UciOutput && _thinkTime > 200)) {
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
-				std::cout << "info depth " << _depth << " seldepth 0 multipv 1" << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+				std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv 1" << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 				<< " hashfull " << tt::GetHashFull()
 				//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 				<< " pv " << PrincipalVariation(_depth) << std::endl;
 			else {
 				int pliesToMate;
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
-				std::cout << "info depth " << _depth << " seldepth 0 multipv 1" << " score mate " << pliesToMate / 2 << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+				std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv 1" << " score mate " << pliesToMate / 2 << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
 					//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 					<< " pv " << PrincipalVariation(_depth) << std::endl;
@@ -243,7 +245,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	return bestScore;
 }
 
-template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv) {
+template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true) {
 	++NodeCount;
 	if (T != SLAVE) {
 		Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime));
@@ -269,13 +271,13 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		//if (ttValue > beta && ttEntry->move != MOVE_NONE && pos.IsQuiet(ttEntry->move)) updateCutoffStats(ttEntry->move, depth, pos, 0);
 		return ttValue;
 	}
-			Move ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
+	Move ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
 		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
-	if (!checked) {
+	if (prune && !checked) {
 		//Check if Value from TT is better
 		Value effectiveEvaluation = staticEvaluation;
 		if (ttFound &&
@@ -305,7 +307,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			int reduction = depth >> 1;
 			Square epsquare = pos.GetEPSquare();
 			pos.NullMove();
-			Value nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction - 1, &subpv[0]);
+			Value nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction - 1, &subpv[0], false);
 			pos.NullMove(epsquare);
 			if (nullscore >= beta) {
 				return beta;
@@ -325,13 +327,10 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			gains[gainIndx] = std::max(staticEvaluation - pos.Previous()->GetStaticEval(), gains[gainIndx] - 1);
 		}
 
-		// Step 9. ProbCut (skipped when in check)
-		// If we have a very good capture (i.e. SEE > seeValues[captured_piece_type])
-		// and a reduced search returns a value much above beta, we can (almost) safely
-		// prune the previous move.
+		// ProbCut (copied from SF)
 		if (NT != PV
 			&&  depth >= 5
-			&&  std::abs(beta) < VALUE_MATE_THRESHOLD)
+			&& std::abs(beta) < VALUE_MATE_THRESHOLD)
 		{
 			Value rbeta = std::min(Value(beta + 90), VALUE_INFINTE);
 			int rdepth = depth - 4;
@@ -339,7 +338,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			position cpos(pos);
 			cpos.copy(pos);
 			Value limit = PieceValuesMG[GetPieceType(pos.getCapturedInLastMove())];
-			Move ttm = ttMove; 
+			Move ttm = ttMove;
 			if (ttm != MOVE_NONE && cpos.SEE(from(ttMove), to(ttMove)) < limit) ttm = MOVE_NONE;
 			cpos.InitializeMoveIterator<QSEARCH>(&History, &DblHistory, nullptr, nullptr, ttm, limit);
 			Move move;
@@ -357,7 +356,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		if (NT == PV && depth >= 3 && !ttMove) {
 			position next(pos);
 			next.copy(pos);
-			Search<NT>(alpha, beta, next, depth - 2, &subpv[0]);
+			Search<NT>(alpha, beta, next, depth - 2, &subpv[0], false);
 			if (Stopped()) return VALUE_ZERO;
 			ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 			ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
@@ -377,10 +376,13 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	int moveIndex = 0;
 	bool ZWS = false;
 	int validMoveCount = 0;
+	//	bool singularExtensionNode = depth >= 8 && ttMove != MOVE_NONE &&  std::abs(ttValue) < VALUE_KNOWN_WIN
+	//		&& excludedMoves[pos.GetPliesFromRoot()] == MOVE_NONE && ttEntry.type() == tt::LOWER_BOUND && ttEntry.depth() >= depth - 3;
 	//int repetitions = T == SINGLE ? 1 : 2;
 	//for (int repetition = 0; repetition < repetitions; ++repetition) {
 	//if (T != SINGLE && repetition > 0) pos.InitializeMoveIterator<REPETITION>(&History, &DblHistory, &killer[2 * pos.GetPliesFromRoot()], counterMove, ttMove);
 	while ((move = pos.NextMove())) {
+		//		if (move == excludedMoves[pos.GetPliesFromRoot()]) continue;
 		if (futilityPruning
 			&& moveIndex > 0
 			&& type(move) != PROMOTION
@@ -398,6 +400,23 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 				if (repetition == 0 && moveIndex > 0 && tt::GetNProc(next.GetHash()) > 0) continue; else tt::IncrementNProc(next.GetHash());
 				}*/
 			int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
+
+			//Singular extension search. If all moves but one fail low on a search of
+			//(alpha-s, beta-s), and just one fails high on (alpha, beta), then that move
+			//is singular and should be extended. To verify this we do a reduced search
+			//on all the other moves but the ttMove and if the result is lower than
+			//ttValue minus a margin then we extend the ttMove.
+			//if (singularExtensionNode
+			//	&&  move == ttMove
+			//	&& !extension)
+			//{
+			//	Value rBeta = ttValue - 2 * depth;
+			//	excludedMoves[pos.GetPliesFromRoot()] = move;
+			//	Value score = Search<EXPECTED_CUT_NODE>(Value(rBeta - 1), rBeta, pos, depth / 2, &subpv[0], false);
+			//	excludedMoves[pos.GetPliesFromRoot()] = MOVE_NONE;
+			//	if (score < rBeta)
+			//		extension = 1;
+			//}
 			int reduction = 0;
 			if (lmr && moveIndex >= 2 && !extension && pos.IsQuietAndNoCastles(move) && !next.Checked()) {
 				if (NT == PV) {
@@ -443,6 +462,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alpha, Value beta, position &pos, int depth) {
 	++QNodeCount;
 	if (NT == QSEARCH_DEPTH_NEGATIVE) {
+		MaxDepth = std::max(MaxDepth, pos.GetPliesFromRoot());
 		++NodeCount;
 		if (T == MASTER) {
 			Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime));

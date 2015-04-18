@@ -18,6 +18,7 @@ void baseSearch::Reset() {
 	BestMove.score = VALUE_ZERO;
 	NodeCount = 0;
 	QNodeCount = 0;
+	MaxDepth = 0;
 	cutoffAt1stMove = 0;
 	cutoffCount = 0;
 	cutoffMoveIndexSum = 0;
@@ -25,7 +26,11 @@ void baseSearch::Reset() {
 	PonderMode = false;
 	History.initialize();
 	DblHistory.initialize();
-	for (int i = 0; i < 2 * MAX_DEPTH; ++i) killer[i] = EXTENDED_MOVE_NONE;
+	for (int i = 0; i < MAX_DEPTH; ++i){
+		killer[2*i] = EXTENDED_MOVE_NONE;
+		killer[2 * i + 1] = EXTENDED_MOVE_NONE;
+		//excludedMoves[i] = MOVE_NONE;
+	}
 }
 
 void baseSearch::NewGame() {
