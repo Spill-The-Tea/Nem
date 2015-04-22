@@ -83,7 +83,7 @@ public:
 		return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING);
 	}
 	inline bool IsQuietAndNoCastles(const Move move) const {
-		return type(move) == NORMAL && Board[to(move)] == BLANK ;
+		return type(move) == NORMAL && Board[to(move)] == BLANK;
 	}
 	inline Value GetStaticEval() { return StaticEval; }
 	inline PieceType GetMostValuablePieceType(Color col) const;
@@ -92,6 +92,7 @@ public:
 	inline bool CastlingAllowed(CastleFlag castling) { return (CastlingOptions & castling) != 0; }
 	std::string toSan(Move move);
 	Move parseSan(std::string move);
+	inline bool IsAdvancedPawnMove(Move move) const { Square toSquare = to(move); return GetPieceType(Board[toSquare]) == PAWN && ((toSquare >> 5) & GetSideToMove()) == 0; };
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];

@@ -345,7 +345,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			&&  depth >= 5
 			&& std::abs(beta) < VALUE_MATE_THRESHOLD)
 		{
-			Value rbeta = std::min(Value(beta + 90), VALUE_INFINTE);
+			Value rbeta = std::min(Value(beta + 90), VALUE_INFINITE);
 			int rdepth = depth - 4;
 
 			position cpos(pos);
@@ -439,6 +439,14 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 					if (moveIndex >= 5) reduction = depth / 3; else reduction = 1;
 				}
 			}
+			//Prune moves with negative sign
+			//if ( type(move) == NORMAL
+			//	&&  bestScore > -VALUE_MATE_THRESHOLD
+			//	&& (depth - 1 - reduction + extension) < 4
+			//	&& !next.Checked()
+			//	&& pos.IsQuiet(move)				
+			//	&& !pos.IsAdvancedPawnMove(move)
+			//	&& pos.SEE(from(move), to(move)) < VALUE_ZERO) continue;
 			if (ZWS) {
 				score = -Search<EXPECTED_CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0]);
 				if (score > alpha && score < beta) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0]);
@@ -496,16 +504,19 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 		return ttValue;
 	}
 	bool checked = pos.Checked();
+	int ttDepth = NT == QSEARCH_DEPTH_0 || checked ? 0 : -1;
 	Value standPat;
 	if (checked) {
 		standPat = VALUE_NOTYETDETERMINED;
 	}
 	else {
 		standPat = ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
+		//check if ttValue is better
+		if (ttFound && ttValue != VALUE_NOTYETDETERMINED && ((ttValue > standPat && ttEntry.type() == tt::LOWER_BOUND) || (ttValue < standPat && ttEntry.type() == tt::UPPER_BOUND))) standPat = ttValue;
 		if (standPat >= beta) {
-			if (T == SINGLE) ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
-			else ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
-			return beta;
+			if (T == SINGLE) ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, MOVE_NONE, standPat);
+			else ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, MOVE_NONE, standPat);
+			return standPat;
 		}
 		//Delta Pruning
 		if (!pos.GetMaterialTableEntry()->IsLateEndgame()) {
@@ -525,8 +536,8 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 		if (next.ApplyMove(move)) {
 			score = -QSearch<QSEARCH_DEPTH_NEGATIVE>(-beta, -alpha, next, depth - 1);
 			if (score >= beta) {
-				if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, move, standPat);
-				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, move, standPat);
+				if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, move, standPat);
+				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, move, standPat);
 				return beta;
 			}
 			if (score > alpha) {
@@ -535,8 +546,8 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 			}
 		}
 	}
-	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), alpha, nt, depth, MOVE_NONE, standPat);
-	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), alpha, nt, depth, MOVE_NONE, standPat);
+	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), alpha, nt, ttDepth, MOVE_NONE, standPat);
+	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), alpha, nt, ttDepth, MOVE_NONE, standPat);
 	return alpha;
 }
 
