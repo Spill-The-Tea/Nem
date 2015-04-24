@@ -516,7 +516,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 		if (standPat >= beta) {
 			if (T == SINGLE) ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, MOVE_NONE, standPat);
 			else ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, MOVE_NONE, standPat);
-			return standPat;
+			return beta;
 		}
 		//Delta Pruning
 		if (!pos.GetMaterialTableEntry()->IsLateEndgame()) {

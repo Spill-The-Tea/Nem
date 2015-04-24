@@ -8,12 +8,12 @@
 
 struct evaluation;
 
-const MoveGenerationType generationPhases[24] = { HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, KILLER, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, //Main Search Phases
+const MoveGenerationType generationPhases[26] = { HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, KILLER, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, UNDERPROMOTION, NONE, //Main Search Phases
 HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
-HASHMOVE, CHECK_EVASION, NONE,
-HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIET_CHECKS, NONE,
+HASHMOVE, CHECK_EVASION, UNDERPROMOTION, NONE, //Check Evasion
+HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIET_CHECKS, NONE, //QSearch with Checks
 REPEAT_ALL, NONE };
-const int generationPhaseOffset[] = { 0, 8, 13, 16, 22 };
+const int generationPhaseOffset[] = { 0, 9, 14, 18, 24 };
 
 struct position
 {
@@ -122,13 +122,14 @@ private:
 	Result result = RESULT_UNKNOWN;
 	Value StaticEval = VALUE_NOTYETDETERMINED;
 	ExtendedMove *killer;
-	Move lastAppliedMove;
+	Move lastAppliedMove = MOVE_NONE;
 	Piece capturedInLastMove = BLANK;
-	ValuatedMove * lastPositive;
+	ValuatedMove * firstNegative;
 	HistoryStats * history;
 	DblHistoryStats * dblHistory;
 	Move * CounterMoves = nullptr;
 	Value minMoveValue = -VALUE_MATE;
+	bool canPromote = false;
 
 	template<bool SquareIsEmpty> void set(const Piece piece, const Square square);
 	void remove(const Square square);
@@ -587,9 +588,10 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 					while (pawnTargets) {
 						Square to = lsb(pawnTargets);
 						AddMove(createMove<PROMOTION>(from, to, QUEEN));
-						AddMove(createMove<PROMOTION>(from, to, ROOK));
-						AddMove(createMove<PROMOTION>(from, to, BISHOP));
-						AddMove(createMove<PROMOTION>(from, to, KNIGHT));
+						//AddMove(createMove<PROMOTION>(from, to, ROOK));
+						//AddMove(createMove<PROMOTION>(from, to, BISHOP));
+						//AddMove(createMove<PROMOTION>(from, to, KNIGHT));
+						canPromote = true;
 						pawnTargets &= pawnTargets - 1;
 					}
 					pawns &= pawns - 1;
@@ -642,9 +644,10 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 					Square to = lsb(promotionTarget);
 					Square from = Square(to - PawnStep());
 					AddMove(createMove<PROMOTION>(from, to, QUEEN));
-					AddMove(createMove<PROMOTION>(from, to, ROOK));
-					AddMove(createMove<PROMOTION>(from, to, BISHOP));
-					AddMove(createMove<PROMOTION>(from, to, KNIGHT));
+					//AddMove(createMove<PROMOTION>(from, to, ROOK));
+					//AddMove(createMove<PROMOTION>(from, to, BISHOP));
+					//AddMove(createMove<PROMOTION>(from, to, KNIGHT));
+					canPromote = true;
 					promotionTarget &= promotionTarget - 1;
 				}
 				Bitboard epAttacker;
@@ -730,9 +733,10 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				while (pawnTargets) {
 					Square to = lsb(pawnTargets);
 					AddMove(createMove<PROMOTION>(from, to, QUEEN));
-					AddMove(createMove<PROMOTION>(from, to, ROOK));
-					AddMove(createMove<PROMOTION>(from, to, BISHOP));
-					AddMove(createMove<PROMOTION>(from, to, KNIGHT));
+					//AddMove(createMove<PROMOTION>(from, to, ROOK));
+					//AddMove(createMove<PROMOTION>(from, to, BISHOP));
+					//AddMove(createMove<PROMOTION>(from, to, KNIGHT));
+					canPromote = true;
 					pawnTargets &= pawnTargets - 1;
 				}
 				pawns &= pawns - 1;
@@ -764,9 +768,10 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				Square to = lsb(promotionTarget);
 				Square from = Square(to - PawnStep());
 				AddMove(createMove<PROMOTION>(from, to, QUEEN));
-				AddMove(createMove<PROMOTION>(from, to, ROOK));
-				AddMove(createMove<PROMOTION>(from, to, BISHOP));
-				AddMove(createMove<PROMOTION>(from, to, KNIGHT));
+				//AddMove(createMove<PROMOTION>(from, to, ROOK));
+				//AddMove(createMove<PROMOTION>(from, to, BISHOP));
+				//AddMove(createMove<PROMOTION>(from, to, KNIGHT));
+				canPromote = true;
 				promotionTarget &= promotionTarget - 1;
 			}
 			//King Captures are always winning as kings can only capture uncovered pieces
@@ -789,12 +794,13 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 		generationPhaseOffset[SMGT];
 		return;
 	}
-	if (SMGT == MAIN_SEARCH && killerMove) {
+	if (SMGT == MAIN_SEARCH) {
 		killer = killerMove;
 	}
 	CounterMoves = counterMoves;
 	if (!attackedByThem) attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	moveIterationPointer = -1;
+	movepointer = 0;
 	phaseStartIndex = 0;
 	history = historyStats;
 	dblHistory = dblHistoryStats;

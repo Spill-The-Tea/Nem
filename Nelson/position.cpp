@@ -194,8 +194,8 @@ Move position::NextMove() {
 			case QUIETS_POSITIVE:
 				GenerateMoves<QUIETS>();
 				evaluateByHistory(phaseStartIndex);
-				lastPositive = std::partition(moves + phaseStartIndex, &moves[movepointer - 1], positiveScore);
-				insertionSort(moves + phaseStartIndex, lastPositive);
+				firstNegative = std::partition(moves + phaseStartIndex, &moves[movepointer - 1], positiveScore);
+				insertionSort(moves + phaseStartIndex, firstNegative);
 				moveIterationPointer = 0;
 				break;
 			case CHECK_EVASION:
@@ -206,6 +206,24 @@ Move position::NextMove() {
 				GenerateMoves<QUIET_CHECKS>();
 				moveIterationPointer = 0;
 				break;
+			case UNDERPROMOTION:
+				if (canPromote) {
+					movepointer--;
+					int moveCount = movepointer;
+					for (int i = 0; i < moveCount; ++i) {
+						Move pmove = moves[i].move;
+						if (type(pmove) == PROMOTION) {
+							AddMove(createMove<PROMOTION>(from(pmove), to(pmove), ROOK));
+							AddMove(createMove<PROMOTION>(from(pmove), to(pmove), BISHOP));
+							AddMove(createMove<PROMOTION>(from(pmove), to(pmove), KNIGHT));
+						}
+					}
+					AddNullMove();
+					phaseStartIndex = moveCount;
+					moveIterationPointer = 0;
+					break;
+				}
+				else return MOVE_NONE;
 			}
 
 		}
@@ -217,13 +235,15 @@ Move position::NextMove() {
 			if (validateMove(hashMove)) return hashMove;
 			break;
 		case KILLER:
-			if (moveIterationPointer == 0) {
-				moveIterationPointer++;
-				if (!(killer->move == MOVE_NONE) && validateMove(*killer)) return killer->move;
-			}
-			if (moveIterationPointer == 1) {
-				moveIterationPointer++;
-				if (!((killer + 1)->move == MOVE_NONE) && validateMove(*(killer + 1))) return (killer + 1)->move;
+			if (killer) {
+				if (moveIterationPointer == 0) {
+					moveIterationPointer++;
+					if (!(killer->move == MOVE_NONE) && validateMove(*killer)) return killer->move;
+				}
+				if (moveIterationPointer == 1) {
+					moveIterationPointer++;
+					if (!((killer + 1)->move == MOVE_NONE) && validateMove(*(killer + 1))) return (killer + 1)->move;
+				}
 			}
 			++generationPhase;
 			moveIterationPointer = -1;
@@ -242,18 +262,35 @@ Move position::NextMove() {
 		case CHECK_EVASION: case QUIET_CHECKS:
 #pragma warning(suppress: 6385)
 			move = moves[phaseStartIndex + moveIterationPointer].move;
-			++moveIterationPointer;
-			generationPhase += (move == MOVE_NONE);
-			return move;
+			if (move) {
+				++moveIterationPointer;
+				return move;
+			}
+			else {
+				++generationPhase;
+				moveIterationPointer = -1;
+			}
+			break;
 		case QUIETS_POSITIVE:
 			move = moves[phaseStartIndex + moveIterationPointer].move;
-			++moveIterationPointer;
-			generationPhase += (move == lastPositive->move);
-			return move;
+			if (move == firstNegative->move) {
+				++generationPhase;
+			}
+			else {
+				++moveIterationPointer;
+				return move;
+			}
+			break;
 		case REPEAT_ALL:
 			move = moves[moveIterationPointer].move;
 			++moveIterationPointer;
 			generationPhase += (moveIterationPointer >= movepointer);
+			return move;
+		case UNDERPROMOTION:
+			move = moves[phaseStartIndex + moveIterationPointer].move;
+			++moveIterationPointer;
+			generationPhase += (moveIterationPointer >= movepointer);
+			return move;
 		}
 	} while (generationPhases[generationPhase] != NONE);
 	return MOVE_NONE;

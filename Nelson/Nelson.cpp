@@ -59,6 +59,10 @@ int main(int argc, const char* argv[]) {
 					int depth = atoi(input.substr(7).c_str());
 					divide(pos, depth);
 				}
+				else if (!input.compare(0, 8, "divide3 ")) {
+					int depth = atoi(input.substr(8).c_str());
+					divide3(pos, depth);
+				}
 				else if (!input.compare(0, 10, "perftSuite")) {
 					PerftType pt = BASIC;
 					if (input.length() > 11) {
@@ -70,6 +74,10 @@ int main(int argc, const char* argv[]) {
 				else if (!input.compare(0, 6, "perft ")) {
 					int depth = atoi(input.substr(6).c_str());
 					std::cout << "Perft:\t" << perft(pos, depth) << "\t" << pos.fen() << std::endl;
+				}
+				else if (!input.compare(0, 7, "perft3 ")) {
+					int depth = atoi(input.substr(7).c_str());
+					std::cout << "Perft:\t" << perft3(pos, depth) << "\t" << pos.fen() << std::endl;
 				}
 				else if (!input.compare(0, 6, "bench2")) {
 					int depth = 10;

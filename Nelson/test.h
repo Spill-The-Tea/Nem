@@ -15,8 +15,10 @@ int64_t bench(int depth); //Benchmark positions from SF
 int64_t bench2(int depth); //Random positions
 
 uint64_t perft(position &pos, int depth);
+uint64_t perft3(position &pos, int depth);
 
 void divide(position &pos, int depth);
+void divide3(position &pos, int depth);
 bool testPerft(PerftType perftType = BASIC);
 void testPolyglotKey();
 bool testSEE();
