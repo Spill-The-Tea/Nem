@@ -451,8 +451,10 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 				score = -Search<EXPECTED_CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0]);
 				if (score > alpha && score < beta) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0]);
 			}
-			else
+			else {
 				score = -Search<PV>(-beta, -alpha, next, depth - 1 - reduction + extension, &subpv[0]);
+				if (score > alpha && reduction > 0) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0]);
+			}
 			//if (T != SINGLE) tt::DecrementNProc(next.GetHash());
 			if (score >= beta) {
 				updateCutoffStats(move, depth, pos, moveIndex);
