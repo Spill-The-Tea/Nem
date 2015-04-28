@@ -222,6 +222,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	bool ZWS = false;
+	bool lmr = !pos.Checked() && depth >= 3;
 	//	int repetitions = T == SINGLE ? 1 : 1;
 	//	for (int repetition = 0; repetition < repetitions; ++repetition){
 	for (int i = startWithMove; i < rootMoveCount; ++i) {
@@ -231,12 +232,19 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 		//if (T != SINGLE) {
 		//	if (repetition == 0 && i > 0 && tt::GetNProc(next.GetHash())> 0) continue; else tt::IncrementNProc(next.GetHash());
 		//}
+		int reduction = 0;
+		if (lmr && i >= startWithMove + 5 && pos.IsQuietAndNoCastles(rootMoves[i].move) && !next.Checked()) {
+			reduction = 1;
+		}
 		if (type(rootMoves[i].move) == CASTLING) bonus = BONUS_CASTLING; else bonus = VALUE_ZERO;
 		if (ZWS) {
-			score = bonus - Search<EXPECTED_CUT_NODE>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1, &subpv[0]);
+			score = bonus - Search<EXPECTED_CUT_NODE>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, &subpv[0]);
 			if (score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
 		}
-		else score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
+		else {
+			score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1 - reduction, &subpv[0]);
+			if (reduction > 0 && score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
+		}
 		//if (T != SINGLE) tt::DecrementNProc(next.GetHash());
 		if (Stopped()) break;
 		rootMoves[i].score = score;
