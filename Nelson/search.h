@@ -95,7 +95,7 @@ void startThread(search<SLAVE> & slave);
 template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, SearchStopCriteria ssc) {
 	std::vector<std::thread> subThreads;
 	search<SLAVE> * slaves = nullptr;
-	searchStopCriteria = ssc; 
+	searchStopCriteria = ssc;
 	_thinkTime = 1;
 	rootPosition = pos;
 	int64_t * nodeCounts = new int64_t[searchStopCriteria.MaxDepth + 1];
@@ -142,7 +142,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 			Value alpha = -VALUE_MATE;
 			Value beta = VALUE_MATE;
 			SearchRoot(alpha, beta, pos, _depth, &PVMoves[0], pvIndx);
-			std::stable_sort(rootMoves+pvIndx, &rootMoves[rootMoveCount], sortByScore);
+			std::stable_sort(rootMoves + pvIndx, &rootMoves[rootMoveCount], sortByScore);
 			BestMove = rootMoves[0];
 			int64_t tNow = now();
 			_thinkTime = std::max(tNow - searchStopCriteria.StartTime, int64_t(1));
@@ -306,16 +306,16 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			|| (ttValue < staticEvaluation && ttEntry.type() == tt::UPPER_BOUND))) effectiveEvaluation = ttValue;
 
 		//Razoring a la SF (no measurable ELO change)
-		/*if (!checked && depth < 4
-			&& (effectiveEvaluation + Value(512 + 32 * depth)) <= alpha
+		if (!checked && depth < 4
+			&& (effectiveEvaluation + Value(256 + 16 * depth)) <= alpha
 			&& ttMove == MOVE_NONE
 			&& !pos.PawnOn7thRank())
-			{
-			if (depth <= 1 && (effectiveEvaluation + 608) <= alpha) return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, 0);
-			Value ralpha = alpha - Value(512 + 32 * depth);
+		{
+			if (depth <= 1 && (effectiveEvaluation + 302) <= alpha) return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, 0);
+			Value ralpha = alpha - Value(256 + 16 * depth);
 			Value v = QSearch<QSEARCH_DEPTH_0>(ralpha, Value(ralpha + 1), pos, 0);
 			if (v <= ralpha) return v;
-			}*/
+		}
 		// Beta Pruning
 		if (depth < 7
 			&& effectiveEvaluation < VALUE_KNOWN_WIN
