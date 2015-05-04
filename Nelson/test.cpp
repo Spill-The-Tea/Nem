@@ -413,7 +413,7 @@ void testFindMate() {
 	search<SINGLE> * engine = new search<SINGLE>;
 	std::map<std::string, Move>::iterator iter;
 	int count = 0;
-	for (iter = puzzles.begin(); iter != puzzles.end(); iter++) {
+	for (iter = puzzles.begin(); iter != puzzles.end(); ++iter) {
 		engine->Reset();
 		std::string mateIn = iter->first.substr(0, 1);
 		std::string fen = iter->first.substr(2, std::string::npos);
@@ -527,14 +527,14 @@ void testResult(std::string filename, Result result) {
 	std::string l;
 	if (s.is_open())
 	{
-		long lineCount = 0;
+		unsigned long lineCount = 0;
 		while (s)
 		{
 			std::getline(s, l);
 
 			if ((lineCount & 32767) == 0)std::cout << ".";
 			if (l.length() < 10 || !s) {
-				long count = 0;
+				unsigned long count = 0;
 				for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); ++it) {
 					++count;
 					std::string line = *it;
@@ -592,13 +592,12 @@ void testKPK() {
 }
 
 void testResult() {
-	std::chrono::system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+	int64_t begin = now();
 	testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/stalemate.epd", DRAW);
 	testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/mate.epd", MATE);
-	std::chrono::system_clock::time_point end = std::chrono::high_resolution_clock::now();
-	auto runtime = end - begin;
-	std::chrono::microseconds runtimeMS = std::chrono::duration_cast<std::chrono::microseconds>(runtime);
-	std::cout << "Runtime: " << runtimeMS.count() / 1000000.0 << " s" << std::endl;
+	int64_t end = now();
+	int64_t runtime = end - begin;
+	std::cout << "Runtime: " << runtime / 1000.0 << " s" << std::endl;
 }
 
 void testCheckQuietCheckMoveGeneration() {
@@ -752,12 +751,12 @@ void testMateInDos() {
 
 uint64_t perftNodes = 0;
 uint64_t testCount = 0;
-std::chrono::microseconds perftRuntime;
+int64_t perftRuntime;
 bool checkPerft(std::string fen, int depth, uint64_t expectedResult, PerftType perftType = BASIC) {
 	testCount++;
 	position pos(fen);
 	uint64_t perftResult;
-	std::chrono::system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+	int64_t begin = now();
 	switch (perftType) {
 	case BASIC:
 		perftResult = perft(pos, depth); break;
@@ -768,17 +767,16 @@ bool checkPerft(std::string fen, int depth, uint64_t expectedResult, PerftType p
 	case P3:
 		perftResult = perft3(pos, depth); break;
 	}
-	std::chrono::system_clock::time_point end = std::chrono::high_resolution_clock::now();
-	auto runtime = end - begin;
-	std::chrono::microseconds runtimeMS = std::chrono::duration_cast<std::chrono::microseconds>(runtime);
-	perftRuntime += runtimeMS;
+	int64_t end = now();
+	int64_t runtime = end - begin;
+	perftRuntime += runtime;
 	perftNodes += expectedResult;
 	if (perftResult == expectedResult) {
-		if (runtimeMS.count() > 0) {
-			std::cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << expectedResult / runtimeMS.count() << " MNodes/s\t" << std::endl << "\t" << fen << std::endl;
+		if (runtime > 0) {
+			std::cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtime << " ms\t" << expectedResult / runtime / 1000 << " MNodes/s\t" << std::endl << "\t" << fen << std::endl;
 		}
 		else {
-			std::cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtimeMS.count() / 1000 << " ms\t" << std::endl << "\t" << fen << std::endl;
+			std::cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtime << " ms\t" << std::endl << "\t" << fen << std::endl;
 		}
 		return true;
 	}
@@ -793,7 +791,7 @@ bool testPerft(PerftType perftType) {
 	bool result = true;
 	testCount = 0;
 	perftNodes = 0;
-	perftRuntime = perftRuntime.zero();
+	perftRuntime = 0;
 	std::cout << "Initial Position" << std::endl;
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 1, 20, perftType);
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 2, 400, perftType);
@@ -1569,10 +1567,10 @@ bool testPerft(PerftType perftType) {
 	result = result && checkPerft("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 5, 3605103, perftType);
 	result = result && checkPerft("n1n5/PPPk4/8/8/8/8/4Kppp/5N1N b - - 0 1", 6, 71179139, perftType);
 	if (result)std::cout << "Done OK" << std::endl; else std::cout << "Error!" << std::endl;
-	std::cout << "Runtime: " << std::setprecision(3) << perftRuntime.count() / 1000000.0 << " s" << std::endl;
+	std::cout << "Runtime: " << std::setprecision(3) << perftRuntime / 1000.0 << " s" << std::endl;
 	std::cout << "Count:   " << std::setprecision(3) << perftNodes / 1000000.0 << " MNodes" << std::endl;
-	std::cout << "Leafs: " << std::setprecision(3) << (1.0 * perftNodes) / perftRuntime.count() << " MNodes/s" << std::endl;
-	std::cout << "Nodes: " << std::setprecision(3) << (1.0 * nodeCount) / perftRuntime.count() << " MNodes/s" << std::endl;
+	std::cout << "Leafs: " << std::setprecision(3) << (1.0 * perftNodes) / perftRuntime / 1000 << " MNodes/s" << std::endl;
+	std::cout << "Nodes: " << std::setprecision(3) << (1.0 * nodeCount) / perftRuntime / 1000 << " MNodes/s" << std::endl;
 	return result;
 }
 

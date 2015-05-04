@@ -19,20 +19,20 @@ public:
 	bool UciOutput = false;
 	bool PonderMode = false;
 	ValuatedMove BestMove;
-	int64_t NodeCount;
-	int64_t QNodeCount;
-	int MaxDepth;
-	bool Stop;
+	int64_t NodeCount = 0;
+	int64_t QNodeCount = 0;
+	int MaxDepth = 0;
+	bool Stop = false;
 	double BranchingFactor = 0;
 	std::string BookFile = "";
-	int rootMoveCount;
-	ValuatedMove * rootMoves;
+	int rootMoveCount = 0;
+	ValuatedMove * rootMoves = nullptr;
 	position rootPosition;
 	std::vector<Move> searchMoves;
 	int MultiPv = 1;
 
 	baseSearch();
-	~baseSearch();
+	virtual ~baseSearch();
 	void Reset();
 	std::string PrincipalVariation(int depth = PV_MAX_LENGTH);
 	void NewGame();
@@ -61,7 +61,6 @@ public:
 	int64_t _thinkTime;
 	Move counterMove[12 * 64];
 	Value gains[12 * 64];
-	int instance;
 
 	inline bool Stopped() { return Stop && (!PonderMode); }
 
@@ -215,7 +214,7 @@ template<ThreadType T> search<T>::~search() {
 
 }
 
-template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove = 0) {
+template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove ) {
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	Value bonus;
@@ -228,7 +227,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	for (int i = startWithMove; i < rootMoveCount; ++i) {
 		position next(pos);
 		next.ApplyMove(rootMoves[i].move);
-		//Check if other thread is already processing this node 
+		//Check if other thread is already processing this node
 		//if (T != SINGLE) {
 		//	if (repetition == 0 && i > 0 && tt::GetNProc(next.GetHash())> 0) continue; else tt::IncrementNProc(next.GetHash());
 		//}
@@ -266,7 +265,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	return bestScore;
 }
 
-template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true) {
+template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune) {
 	++NodeCount;
 	if (T != SLAVE) {
 		Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime));
@@ -351,7 +350,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		// ProbCut (copied from SF)
 		if (NT != PV
 			&&  depth >= 5
-			&& std::abs(beta) < VALUE_MATE_THRESHOLD)
+			&& std::abs(int(beta)) < VALUE_MATE_THRESHOLD)
 		{
 			Value rbeta = std::min(Value(beta + 90), VALUE_INFINITE);
 			int rdepth = depth - 4;
@@ -396,7 +395,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	Move move;
 	int moveIndex = 0;
 	bool ZWS = false;
-	int validMoveCount = 0;
+	//int validMoveCount = 0;
 	//	bool singularExtensionNode = depth >= 8 && ttMove != MOVE_NONE &&  std::abs(ttValue) < VALUE_KNOWN_WIN
 	//		&& excludedMoves[pos.GetPliesFromRoot()] == MOVE_NONE && ttEntry.type() == tt::LOWER_BOUND && ttEntry.depth() >= depth - 3;
 	//int repetitions = T == SINGLE ? 1 : 2;
@@ -416,7 +415,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
-			//Check if other thread is already processing this node 
+			//Check if other thread is already processing this node
 			/*if (T != SINGLE) {
 				if (repetition == 0 && moveIndex > 0 && tt::GetNProc(next.GetHash()) > 0) continue; else tt::IncrementNProc(next.GetHash());
 				}*/
@@ -452,7 +451,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			//	&&  bestScore > -VALUE_MATE_THRESHOLD
 			//	&& (depth - 1 - reduction + extension) < 4
 			//	&& !next.Checked()
-			//	&& pos.IsQuiet(move)				
+			//	&& pos.IsQuiet(move)
 			//	&& !pos.IsAdvancedPawnMove(move)
 			//	&& pos.SEE(from(move), to(move)) < VALUE_ZERO) continue;
 			if (ZWS) {

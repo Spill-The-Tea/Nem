@@ -64,6 +64,10 @@ baseSearch::~baseSearch() {
 }
 
 baseSearch::baseSearch() {
+	BestMove.move = MOVE_NONE;
+	BestMove.score = VALUE_NOTYETDETERMINED;
 	DblHistory.initialize();
+	History.initialize();
+	_thinkTime = 0;
 }
 

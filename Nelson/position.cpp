@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <ctype.h>
 #include <regex>
+#include <cstddef>
 #include "position.h"
 #include "material.h"
 #include "settings.h"
@@ -26,7 +27,7 @@ position::position(std::string fen)
 }
 
 position::position(position &pos) {
-	memcpy(this, &pos, offsetof(position, previous));
+	std::memcpy(this, &pos, offsetof(position, previous));
 	material = pos.GetMaterialTableEntry();
 	pawn = pos.GetPawnEntry();
 	previous = &pos;
@@ -224,6 +225,8 @@ Move position::NextMove() {
 					break;
 				}
 				else return MOVE_NONE;
+			default:
+				break;
 			}
 
 		}
@@ -282,15 +285,19 @@ Move position::NextMove() {
 			}
 			break;
 		case REPEAT_ALL:
+#pragma warning(suppress: 6385)
 			move = moves[moveIterationPointer].move;
 			++moveIterationPointer;
 			generationPhase += (moveIterationPointer >= movepointer);
 			return move;
 		case UNDERPROMOTION:
+#pragma warning(suppress: 6385)
 			move = moves[phaseStartIndex + moveIterationPointer].move;
 			++moveIterationPointer;
 			generationPhase += (moveIterationPointer >= movepointer);
 			return move;
+		default:
+			assert(true);
 		}
 	} while (generationPhases[generationPhase] != NONE);
 	return MOVE_NONE;
@@ -701,13 +708,12 @@ void position::setFromFEN(const std::string& fen) {
 	if (CastlingOptions) {
 		Chess960 = Chess960 || (InitialKingSquare[WHITE] != E1) || (InitialRookSquare[0] != H1) || (InitialRookSquare[1] != A1);
 		for (int i = 0; i < 4; ++i) InitialRookSquareBB[i] = 1ull << InitialRookSquare[i];
-		Square ks;
 		Square kt[4] = { G1, C1, G8, C8 };
 		Square rt[4] = { F1, D1, F8, D8 };
 		for (int i = 0; i < 4; ++i) {
 			SquaresToBeEmpty[i] = 0ull;
 			SquaresToBeUnattacked[i] = 0ull;
-			if ((i & 1) == 0) ks = lsb(InitialKingSquareBB[i / 2]);
+			Square ks = lsb(InitialKingSquareBB[i / 2]);
 			for (int j = std::min(ks, kt[i]); j <= std::max(ks, kt[i]); ++j) SquaresToBeUnattacked[i] |= 1ull << j;
 			for (int j = std::min(InitialRookSquare[i], rt[i]); j <= std::max(InitialRookSquare[i], rt[i]); ++j) {
 				SquaresToBeEmpty[i] |= 1ull << j;
@@ -924,6 +930,9 @@ bool position::validateMove(Move move) {
 				break;
 			case ENPASSANT:
 				result = toSquare == EPSquare;
+				break;
+			default:
+				assert(false);
 			}
 		}
 		else if (pt == KING && type(move) == CASTLING) {
@@ -960,7 +969,7 @@ bool position::validateMove(Move move) {
 	//		__debugbreak();
 #endif
 	return result;
-}
+		}
 
 bool position::validateMove(ExtendedMove move) {
 	Square fromSquare = from(move.move);
@@ -1056,7 +1065,7 @@ std::string position::toSan(Move move) {
 	ch[indx] = toChar(File(toSquare & 7));
 	indx++;
 	ch[indx] = toChar(Rank(toSquare >> 3));
-	indx++ ;
+	indx++;
 	ch[indx] = 0;
 	return ch;
 }

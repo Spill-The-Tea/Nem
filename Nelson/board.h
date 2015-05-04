@@ -139,7 +139,7 @@ inline int ManhattanDistance(Square sq1, Square sq2) {
 	return abs((sq1 >> 3) - (sq2 >> 3)) + abs((sq1 & 7) - (sq2 & 7));
 }
 
-template<Color COLOR_OF_PAWN> inline Bitboard SquareOfKing(Square pawnSquare) { if (COLOR_OF_PAWN == WHITE) SquareOfKingWPawn[pawnSquare - 8]; else SquareOfKingBPawn[pawnSquare - 8]; }
+template<Color COLOR_OF_PAWN> inline Bitboard SquareOfKing(Square pawnSquare) { if (COLOR_OF_PAWN == WHITE) return SquareOfKingWPawn[pawnSquare - 8]; else return SquareOfKingBPawn[pawnSquare - 8]; }
 
 template<Color COLOR_OF_PAWN> inline Square ConversionSquare(Square pawnSquare) { if (COLOR_OF_PAWN == WHITE) return Square(56 + (pawnSquare & 7)); else return Square(pawnSquare & 7); }
 

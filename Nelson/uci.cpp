@@ -4,6 +4,7 @@
 #include <iostream>
 #include <cstring>
 #include <cstdlib>
+#include <vector>
 #include "uci.h"
 #include "position.h"
 #include "board.h"
@@ -12,7 +13,7 @@
 #include "settings.h"
 
 
-baseSearch * Engine = new search<SINGLE>;
+baseSearch * Engine = new search < SINGLE > ;
 position * _position = nullptr;
 std::thread * Mainthread = nullptr;
 int64_t ponderStartTime = 0;
@@ -22,116 +23,93 @@ int ponderedMoves = 0;
 int ponderHits = 0;
 
 void dispatch(char *line);
+void dispatch(std::string line);
 
 // UCI command handlers
 void uci();
 void isready();
-void setoption(char *line);
+void setoption(std::vector<std::string> &tokens);
 void ucinewgame();
-void setPosition(char *line);
-void go(char *line);
-void perft(char *line);
-void divide(char *line);
-void setvalue(char *line);
+void setPosition(std::vector<std::string> &tokens);
+void go(std::vector<std::string> &tokens);
+void perft(std::vector<std::string> &tokens);
+void divide(std::vector<std::string> &tokens);
+void setvalue(std::vector<std::string> &tokens);
 void evaluatePosition();
 void quit();
 void stop();
 void thinkAsync(SearchStopCriteria ssc);
 void ponderhit();
 
-bool fexists(const std::string& filename) {
-	std::ifstream f(filename.c_str());
-	if (f.good()) {
-		f.close();
-		return true;
+std::vector<std::string> split(std::string str) {
+	std::vector<std::string> tokens;
+	std::stringstream ss(str); // Turn the string into a stream.
+	std::string tok;
+
+	while (std::getline(ss, tok, ' ')) {
+		tokens.push_back(tok);
 	}
-	else {
-		f.close();
-		return false;
-	}
+
+	return tokens;
 }
 
-char *my_strtok(char **str, char *delim)
-{
-	assert(str && *str && delim);
-	char *token = *str, *p = token;
-
-	// special case: if end ofstd::string reached return NULL
-	if (!*p)
-		return NULL;
-
-	// parse token until first delimiter
-	while (*p && !strchr(delim, *p))
-		p++;
-
-	// replace subsequent delimiter(s) by 0
-	while (*p && strchr(delim, *p))
-		*p++ = '\0';
-
-	// set new parser position
-	*str = p;
-
-	return token;
-}
 
 void loop() {
 	//setvbuf(stdout, NULL, _IOLBF, 2048);
 	std::string line;
 	while (std::getline(std::cin, line)) {
-		dispatch(&line[0]);
+		dispatch(line);
 	}
 }
 
-
-void dispatch(char *line)
-{
-	const char *token = my_strtok(&line, " ");
-
-	if (!token)
-		return;
-	else if (!strcmp(token, "stop"))
+void dispatch(std::string line) {
+	std::vector<std::string> tokens = split(line);
+	if (tokens.size() == 0) return;
+	std::string command = tokens[0];
+	if (!command.compare("stop"))
 		stop();
-	else if (!strcmp(token, "go"))
-		go(line);
-	else if (!strcmp(token, "uci"))
+	else if (!command.compare("go"))
+		go(tokens);
+	else if (!command.compare("uci"))
 		uci();
-	else if (!strcmp(token, "isready"))
+	else if (!command.compare("isready"))
 		isready();
-	else if (!strcmp(token, "setoption"))
-		setoption(line);
-	else if (!strcmp(token, "ucinewgame"))
+	else if (!command.compare("setoption"))
+		setoption(tokens);
+	else if (!command.compare("ucinewgame"))
 		ucinewgame();
-	else if (!strcmp(token, "position"))
-		setPosition(line);
-	else if (!strcmp(token, "ponderhit"))
+	else if (!command.compare("position"))
+		setPosition(tokens);
+	else if (!command.compare("ponderhit"))
 		ponderhit();
-	else if (!strcmp(token, "print"))
+	else if (!command.compare("print"))
 		std::cout << _position->print() << std::endl;
-	else if (!strcmp(token, "perft"))
-		perft(line);
-	else if (!strcmp(token, "divide"))
-		divide(line);
-	else if (!strcmp(token, "setvalue"))
-		setvalue(line);
-	else if (!strcmp(token, "bench"))
-		bench2(7);
+	else if (!command.compare("perft"))
+		perft(tokens);
+	else if (!command.compare("divide"))
+		divide(tokens);
+	else if (!command.compare("setvalue"))
+		setvalue(tokens);
+	else if (!command.compare("bench")) {
+		bench(10);
+		bench2(10);
+	}
 	//else if (!strcmp(token, "eval"))
 	//	cout << printEvaluation(pos);
 	//else if (!strcmp(token, "qeval"))
 	//	cout << "QEval: " << Engine.QEval(pos) << std::endl;
-	else if (!strcmp(token, "quit"))
+	else if (!command.compare("quit"))
 		quit();
 }
-
 
 void uci() {
 	Engine->UciOutput = true;
 	puts("id name Nelson");
 	puts("id author Christian Günther");
 	printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
-	printf("option name Hash type spin default %li min 1 max 16384\n", HashSizeMB);
-	printf("option name MultiPV type spin default %li min 1 max 216\n", Engine->MultiPv);
-	printf("option name Threads type spin default %li min 1 max 128\n", HelperThreads+1);
+	printf("option name Hash type spin default %i min 1 max 16384\n", HashSizeMB);
+	printf("option name MultiPV type spin default %i min 1 max 216\n", Engine->MultiPv);
+	printf("option name Threads type spin default %i min 1 max 128\n", HelperThreads + 1);
 	printf("option name Ponder type check");
 	//printf("option name Draw Value type spin default %d min -100 max 100\n", DrawValue);
 	//printf("option name GaviotaTablebasePaths type string\n");
@@ -145,61 +123,52 @@ void uci() {
 
 void isready() {
 	//tt_alloc(HashSizeMB << 20);
-	puts("readyok");
+	std::cout << "readyok" << std::endl;
 }
-void setoption(char *line){
-	const char *token = my_strtok(&line, " ");
-	if (strcmp(token, "name")) return;
 
-	char name[64] = "";
-	while ((token = my_strtok(&line, " ")) && strcmp(token, "value")) strcat(name, token);
-
-	if (!token)	 return;
-
-	token = my_strtok(&line, " ");
-	if (!strcmp(name, "UCI_Chess960")) Chess960 = !strcmp(token, "true");
-	if (!strcmp(name, "Hash")) {
-		int hashSize = atoi(token);
+void setoption(std::vector<std::string> &tokens) {
+	if (tokens.size() < 5 || tokens[1].compare("name") || tokens[3].compare("value")) return;
+	if (!tokens[2].compare("UCI_Chess960")) Chess960 = !tokens[4].compare("true");
+	else if (!tokens[2].compare("Hash")) {
+		int hashSize = stoi(tokens[4]);
 		if (hashSize != HashSizeMB) {
 			HashSizeMB = hashSize;
 			tt::InitializeTranspositionTable(HashSizeMB);
 		}
 	}
-	//if (!strcmp(name, "GaviotaTablebasePaths")) {
-	//	if (token) GTB_PATH = token; else GTB_PATH = "";
-	//}
-	//if (!strcmp(name, "GaviotaTablebaseCache")) GTB_CACHE = atoi(token);
-	//if (!strcmp(name, "GaviotaTablebaseCache")) GTB_COMPRESSION_SCHEME = TB_compression_scheme(atoi(token));
-	if (!strcmp(name, "BookFile")) {
-		if (token)  {
-			BOOK_FILE = token;
-			while ((token = my_strtok(&line, " "))) {
-				BOOK_FILE.append(" ");
-				BOOK_FILE.append(token);
-			}
+	else if (!tokens[2].compare("BookFile")) {
+		std::stringstream ssBookfile;
+		if (tokens.size() < 5) {
+			USE_BOOK = false;
 		}
-		else USE_BOOK = false;
+		else {		
+			unsigned int idx = 4;
+			while (idx < tokens.size()) {
+				ssBookfile << ' ' << tokens[idx];
+				++idx;
+
+			}
+			BOOK_FILE = ssBookfile.str().substr(1);
+		}
 	}
-	if (!strcmp(name, "OwnBook") && (token)) USE_BOOK = !strcmp(token, "true");
-	if (!strcmp(name, "Ponder") && (token)) ponderActive = !strcmp(token, "true");
-	if (!strcmp(name, "Threads") && (token)) {
-		HelperThreads = atoi(token) - 1;
+	else if (!tokens[2].compare("OwnBook")) USE_BOOK = !tokens[4].compare("true");
+	else if (!tokens[2].compare("Ponder")) ponderActive = !tokens[4].compare("true");
+	else if (!tokens[2].compare("Threads")) {
+		HelperThreads = stoi(tokens[4]) - 1;
 		if (HelperThreads && Engine->GetType() == SINGLE) {
 			delete Engine;
-			Engine = new search<MASTER>;
-		} 
+			Engine = new search < MASTER >;
+		}
 		else if (!HelperThreads && Engine->GetType() == MASTER) {
 			delete Engine;
-			Engine = new search<SINGLE>;
+			Engine = new search < SINGLE >;
 		}
 	}
-	if (!strcmp(name, "MultiPV") && (token)) {
-		Engine->MultiPv = atoi(token);
+	else if (!tokens[2].compare("MultiPV")) {
+		Engine->MultiPv = stoi(tokens[4]);
 	}
-	//if (!strcmp(name, "bpf")) BETA_PRUNING_FACTOR = Value(atoi(token));
-	//else if (!strcmp(name, "DrawValue"))
-	//	DrawValue = atoi(token);
 }
+
 bool initialized = false;
 void ucinewgame(){
 	initialized = true;
@@ -212,44 +181,39 @@ void ucinewgame(){
 
 #define MAX_FEN 0x80
 
-void setPosition(char *line){
-	//Chessbase GUI doesn't send "ucinewgame" command => assure that Hashtable get's initialized in any case
+void setPosition(std::vector<std::string> &tokens) {
 	if (!initialized) ucinewgame();
 	if (_position) {
 		_position->deleteParents();
 		delete(_position);
 		_position = nullptr;
 	}
-	int idx = 0;
+	unsigned int idx = 0;
 	position * startpos = nullptr;
-
-	char *token = my_strtok(&line, " ");
-	if (!token)
-		return;
-	else if (!strcmp(token, "startpos")) {
+	if (!tokens[1].compare("startpos")) {
 		startpos = new position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
-		token = my_strtok(&line, " ");
+		idx = 2;
 	}
-	else if (!strcmp(token, "fen")) {
-		char fen[MAX_FEN] = "";
-		while ((token = my_strtok(&line, " ")) && strcmp(token, "moves"))
-			strcat(strcat(fen, token), " ");
+	else if (!tokens[1].compare("fen")) {
+		std::stringstream ssFen;
+		idx = 2;
+		while (idx < tokens.size() && tokens[idx].compare("moves")) {
+			ssFen << ' ' << tokens[idx];
+			++idx;
+		}
+		std::string fen = ssFen.str().substr(1);
 		startpos = new position(fen);
 	}
-	else if (!strcmp(token, "p")) {
-		token = my_strtok(&line, " ");
-		if (!strcmp(token, "fine70")) startpos = new position("8/k7/3p4/p2P1p2/P2P1P2/8/8/K7 w - -");
-	}
-	bool moves = false;
 	if (startpos) {
 		position * pp = startpos;
-		if (token && !strcmp(token, "moves")) {
-			while ((token = my_strtok(&line, " "))) {
-				std::string tokenString(token);
+		if (tokens.size() > idx && !tokens[idx].compare("moves")) {
+			++idx;
+			while (idx < tokens.size()) {
 				position * next = new position(*pp);
-				next->ApplyMove(parseMoveInUCINotation(tokenString, *next));
+				next->ApplyMove(parseMoveInUCINotation(tokens[idx], *next));
 				next->AppliedMovesBeforeRoot++;
 				pp = next;
+				++idx;
 			}
 		}
 		_position = pp;
@@ -304,56 +268,62 @@ void thinkAsync(SearchStopCriteria ssc) {
 	Engine->Reset();
 }
 
-void go(char *line){
+void go(std::vector<std::string> &tokens) {
 	if (!_position) _position = new position();
 	SearchStopCriteria ssc;
 	ssc.StartTime = now();
-	char *token;
 	int moveTime = 0;
 	int increment = 0;
-	long long nodes = 0;
 	int movestogo = 30;
 	bool ponder = false;
 	bool searchmoves = false;
-	while ((token = my_strtok(&line, " "))) {
-		if (!strcmp(token, _position->GetSideToMove() == WHITE ? "wtime" : "btime")) {
-			moveTime = atoi(my_strtok(&line, " "));
+	unsigned int idx = 1;
+	std::string time = _position->GetSideToMove() == WHITE ? "wtime" : "btime";
+	std::string inc = _position->GetSideToMove() == WHITE ? "winc" : "binc";
+	while (idx < tokens.size()) {
+		if (!tokens[idx].compare(time)) {
+			++idx;
+			moveTime = stoi(tokens[idx]);
 			searchmoves = false;
 		}
-		else if (!strcmp(token, _position->GetSideToMove() == WHITE ? "winc" : "binc")) {
-			increment = atoi(my_strtok(&line, " "));
+		else if (!tokens[idx].compare(inc)) {
+			++idx;
+			increment = stoi(tokens[idx]);
 			searchmoves = false;
 		}
-		else if (!strcmp(token, "depth")) {
-			ssc.MaxDepth = atoi(my_strtok(&line, " "));
+		else if (!tokens[idx].compare("depth")) {
+			++idx;
+			ssc.MaxDepth = stoi(tokens[idx]);
 			searchmoves = false;
 		}
-		else if (!strcmp(token, "nodes")) {
-			ssc.MaxNumberOfNodes = atoll(my_strtok(&line, " "));
+		else if (!tokens[idx].compare("nodes")) {
+			++idx;
+			ssc.MaxNumberOfNodes = stoll(tokens[idx]);
 			searchmoves = false;
 		}
-		else if (!strcmp(token, "movestogo")) {
-			movestogo = atoi(my_strtok(&line, " "));
+		else if (!tokens[idx].compare("movestogo")) {
+			++idx;
+			movestogo = stoi(tokens[idx]);
 			searchmoves = false;
 		}
-		else if (!strcmp(token, "ponder")) {
+		else if (!tokens[idx].compare("ponder")) {
 			ponderStartTime = ssc.StartTime;
 			ponder = true;
 			ponderedMoves++;
 			searchmoves = false;
 		}
-		else if (!strcmp(token, "infinite")) {
+		else if (!tokens[idx].compare("infinite")) {
 			moveTime = INT_MAX;
 			searchmoves = false;
 		}
-		else if (!strcmp(token, "searchmoves")) {
+		else if (!tokens[idx].compare("searchmoves")) {
 			searchmoves = true;
 		}
 		else if (searchmoves) {
-			std::string tokenString(token);
-			Move m = parseMoveInUCINotation(tokenString, *_position);
+			Move m = parseMoveInUCINotation(tokens[idx], *_position);
 			Engine->searchMoves.push_back(m);
 		}
+		++idx;
 	}
 	//Simple timemanagement
 	if (moveTime == INT_MAX) {
@@ -361,27 +331,17 @@ void go(char *line){
 		ssc.HardStopTime = ssc.SoftStopTime;
 	}
 	else if (moveTime > 0) {
-			//if (movestogo > 30) movestogo = 30;
-			int avalaibleTime = moveTime + movestogo * increment;
-			ssc.SoftStopTime = ssc.StartTime + avalaibleTime / movestogo;
-			ssc.HardStopTime = ssc.StartTime + moveTime - EmergencyTime;
-			if ((ssc.HardStopTime - ssc.StartTime) < 2 * (ssc.SoftStopTime - ssc.StartTime)) {
-				ssc.SoftStopTime = ssc.StartTime + (ssc.HardStopTime - ssc.StartTime) / 2;
-			}
+		//if (movestogo > 30) movestogo = 30;
+		int avalaibleTime = moveTime + movestogo * increment;
+		ssc.SoftStopTime = ssc.StartTime + avalaibleTime / movestogo;
+		ssc.HardStopTime = ssc.StartTime + moveTime - EmergencyTime;
+		if ((ssc.HardStopTime - ssc.StartTime) < 2 * (ssc.SoftStopTime - ssc.StartTime)) {
+			ssc.SoftStopTime = ssc.StartTime + (ssc.HardStopTime - ssc.StartTime) / 2;
 		}
+	}
 	deleteThread();
 	Engine->PonderMode = ponder;
 	Mainthread = new std::thread(thinkAsync, ssc);
-
-	//Engine.Think(pos, ssc);
-	//cout << "bestmove " << toString(Engine.bestMove) << std::endl;
-	//Engine.Reset();
-
-	//const move_t m = id_loop(&board, &lim);
-
-	//char m_str[6];
-	//move_to_uci(&board, m, m_str);
-	//printf("bestmove %s\n", m_str);
 }
 
 void ponderhit() {
@@ -390,40 +350,22 @@ void ponderhit() {
 	ponderHits++;
 }
 
-void setvalue(char *line) {
-	char * token = my_strtok(&line, " ");
-	if (token[0] == 'P' && token[1] == 'P' && token[2] == 'B') {
-		int indx = int(token[3] - '0');
-		token = my_strtok(&line, " ");
-		int value = int(round(atof(token)));
-		//PASSED_PAWN_BONUS[indx] = Value(value);
-		std::cout << "info string Passed Pawn Bonus " << indx << ": " << PASSED_PAWN_BONUS[indx] << std::endl;
-	} 
-	//	token = my_strtok(&line, " ");
-	//	MOBILITY_FACTOR = atoi(token);
-	//	cout << "infostd::string Mobility Factor: " << MOBILITY_FACTOR << std::endl;
-	//}
-	//else if (!strcmp(token, "ppf")) {
-	//	token = my_strtok(&line, " ");
-	//	PASSED_PAWN_FACTOR = float(atof(token));
-	//	pawn::updateBonusFactors();
-	//	cout << "infostd::string Passed Pawn Factor: " << PASSED_PAWN_FACTOR << std::endl;
-	//}
+void setvalue(std::vector<std::string> &tokens) {
+	//Only for CLOP to be implemented per experiment
 }
 
 void stop() {
 	deleteThread();
 }
 
-void perft(char *line) {
-	char * token = my_strtok(&line, " ");
-	if (!token) {
+void perft(std::vector<std::string> &tokens) {
+	if (tokens.size() < 2) {
 		std::cout << "No depth specified!" << std::endl;
 		return;
 	}
-	int depth = atoi(token);
+	int depth = stoi(tokens[1]);
 	if (depth == 0) {
-		std::cout << token << " is no valid depth!" << std::endl;
+		std::cout << tokens[1] << " is no valid depth!" << std::endl;
 		return;
 	}
 	int64_t start = now();
@@ -432,15 +374,14 @@ void perft(char *line) {
 	std::cout << "Result: " << result << "\t" << runtime << " ms\t" << _position->fen() << std::endl;
 }
 
-void divide(char *line) {
-	char * token = my_strtok(&line, " ");
-	if (!token) {
+void divide(std::vector<std::string> &tokens) {
+	if (tokens.size() < 2) {
 		std::cout << "No depth specified!" << std::endl;
 		return;
 	}
-	int depth = atoi(token);
+	int depth = stoi(tokens[1]);
 	if (depth == 0) {
-		std::cout << token << " is no valid depth!" << std::endl;
+		std::cout << tokens[1] << " is no valid depth!" << std::endl;
 		return;
 	}
 	int64_t start = now();

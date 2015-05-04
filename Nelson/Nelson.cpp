@@ -12,15 +12,8 @@
 
 
 static bool popcountSupport();
-static bool is64Bit();
 
 int main(int argc, const char* argv[]) {
-#ifdef _MSC_VER
-#ifndef _WIN64
-	cout << "Only 64 bit operating systems are supported!" << std::endl;
-	return 0;
-#endif
-#endif // _MSC_VER
 #ifdef __GNUC__
 //#ifndef __x86_64__
 //	cout << "Only 64 bit operating systems are supported!" << std::endl;

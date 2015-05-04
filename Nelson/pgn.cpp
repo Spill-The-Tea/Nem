@@ -77,10 +77,8 @@ namespace pgn {
 		PieceType movingPieceType = getPieceType(move[0]);
 		bool isPromotion = movingPieceType == PAWN && move.find("=") != std::string::npos;
 		size_t len = move.length();
-		PieceType promotionType;
 		Square targetSquare;
 		if (isPromotion) {
-			promotionType = getPieceType(move[len - 1]);
 			targetSquare = getSquare(move[len - 4], move[len - 3]);
 			m = moves->move;
 			while (m) {
@@ -175,7 +173,6 @@ namespace pgn {
 		std::vector<std::string> * gameLines = new std::vector<std::string>();
 		if (s.is_open())
 		{
-			long lineCount = 0;
 			while (s)
 			{
 				std::getline(s, l);
@@ -213,7 +210,6 @@ namespace pgn {
 		std::vector<std::string> * gameLines = new std::vector<std::string>();
 		if (s.is_open())
 		{
-			long lineCount = 0;
 			while (s)
 			{
 				std::getline(s, l);

@@ -95,7 +95,6 @@ namespace kpk {
 
 		// Check if two pieces are on the same square or if a king can be captured
 		Bitboard bbBKing = ToBitboard(bksq);
-		Bitboard bbWPawnAttacksToBKing = ((bbBKing >> 7) & NOT_A_FILE) | ((bbBKing >> 9) & NOT_H_FILE);
 		if ((KingAttacks[wksq] & bbBKing) != 0
 			|| wksq == bksq
 			|| wksq == psq

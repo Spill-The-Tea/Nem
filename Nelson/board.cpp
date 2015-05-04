@@ -216,7 +216,6 @@ void InitializeRaysBySquares() {
 Bitboard ShadowedFields[64][64];
 void InitializeShadowedFields()
 {
-	Bitboard border = FileA | FileH | Rank1 | Rank8;
 	for (int square = 0; square < 64; square++)
 	{
 		for (int i = 0; i < 64; i++) ShadowedFields[square][i] = 0;
@@ -224,8 +223,6 @@ void InitializeShadowedFields()
 	for (int square = 0; square < 64; square++)
 	{
 		int col = square & 7;
-		int row = square >> 3;
-		Bitboard squareMask = ToBitboard(square);
 		//North
 		for (int blocker = square + 8; blocker <= 55; blocker += 8)
 		{
@@ -465,13 +462,11 @@ void InitializeMaxIndices() {
 			IndexOffsetBishop[i] = IndexOffsetBishop[i - 1] + MaxIndexBishop[i - 1];
 		}
 	}
-	int totalRook = IndexOffsetRook[63] + MaxIndexRook[63];
-	int totalBishop = IndexOffsetBishop[63] + MaxIndexBishop[63];
 }
 
 void InitializeMoveDB(bool isRook) {
 	for (int square = A1; square <= H8; square++) {
-		for (int i = 0; i < occupancyVariation[square].size(); i++) {
+		for (unsigned int i = 0; i < occupancyVariation[square].size(); i++) {
 			if (isRook) {
 				int magicIndex = (int)((occupancyVariation[square][i] * RookMagics[square]) >> RookShift[square]);
 				Bitboard attacks = 0;

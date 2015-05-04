@@ -13,11 +13,15 @@
 #include <cmath>
 #include <cstring>
 
-#pragma intrinsic(_BitScanForward64)
-#pragma intrinsic(_BitScanReverse64)
-
 #define CACHE_LINE 64
 #ifdef _MSC_VER
+#ifdef _WIN64
+#pragma intrinsic(_BitScanForward64)
+#pragma intrinsic(_BitScanReverse64)
+#else
+#pragma intrinsic(_BitScanForward)
+#pragma intrinsic(_BitScanReverse)
+#endif
 #define CACHE_ALIGN __declspec(align(CACHE_LINE))
 #endif
 
@@ -178,18 +182,40 @@ inline uint64_t GetEPAttackersForToField(Square to) { return EPAttackersForToFie
 inline uint64_t GetEPAttackersForToField(int to) { return EPAttackersForToField[to - A4]; }
 
 #ifdef _MSC_VER
+#ifdef _WIN64
 inline int popcount(Bitboard bb) { return (int)_mm_popcnt_u64(bb); }
+#else
+inline int popcount(Bitboard bb) {
+	bb -= (bb >> 1) & 0x5555555555555555ULL;
+	bb = ((bb >> 2) & 0x3333333333333333ULL) + (bb & 0x3333333333333333ULL);
+	bb = ((bb >> 4) + bb) & 0x0F0F0F0F0F0F0F0FULL;
+	return (bb * 0x0101010101010101ULL) >> 56;
+}
+#endif
 
 inline Square lsb(Bitboard bb) {
 	unsigned long  index;
+#ifdef _WIN64
 	_BitScanForward64(&index, bb);
+#else
+	if (index) return Square(index);
+	if (unsigned long(bb) != 0) _BitScanForward(&index, unsigned long(bb));
+	else {
+		_BitScanForward(&index, unsigned long(bb >> 32));
+		index += 31;
+	}
+#endif
 #pragma warning(suppress: 6102)
 	return Square(index);
 }
 
 inline int msb(int n) {
 	unsigned long result;
+#ifdef _WIN64
 	_BitScanReverse64(&result, n);
+#else
+	BitScanReverse(&result, n);
+#endif
 #pragma warning(suppress: 6102)
 	return result;
 }
@@ -201,7 +227,7 @@ inline int popcount(Bitboard bb) { return __builtin_popcountll(bb); }
 
 inline Square lsb(Bitboard b) {  return Square(__builtin_ctzll(b)); }
 
-inline Square msb(int n) { return Square(__builtin_clzll(n)); }
+inline Square msb(int n) { return Square(31 - __builtin_clz(n)); }
 //#define offsetof(type, member)  __builtin_offsetof (type, member)
 #endif // __GNUC__
 
@@ -317,6 +343,10 @@ struct SearchStopCriteria {
 
 
 struct position;
+
+typedef Value(*EvalFunction)(const position&);
+
+Value evaluateDefault(const position& pos);
 
 #ifdef _MSC_VER
 inline int64_t now() {

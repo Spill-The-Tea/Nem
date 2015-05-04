@@ -2,6 +2,8 @@
 
 #include "types.h"
 #include "board.h"
+#include "position.h"
+
 
 struct evaluation
 {
@@ -19,9 +21,6 @@ public:
 	}
 };
 
-typedef Value(*EvalFunction)(const position&);
-
-Value evaluateDefault(const position& pos);
 Value evaluateDraw(const position& pos);
 Value evaluateFromScratch(const position& pos);
 template<Color WinningSide> Value evaluateKBPK(const position& pos);
@@ -151,7 +150,7 @@ template <Color WinningSide> Value evaluateKNBK(const position& pos) {
 template <Color StrongerSide> Value evaluateKRKP(const position& pos) {
 	Value result;
 	//if the stronger King is in the front of the pawn it's a win
-	Square pawnSquare = lsb(pos.PieceTypeBB(PAWN));	
+	Square pawnSquare = lsb(pos.PieceTypeBB(PAWN));
 	Square strongerKingSquare = lsb(pos.PieceBB(KING, StrongerSide));
 	int dtc = StrongerSide == WHITE ? pawnSquare >> 3 : 7 - (pawnSquare >> 3);
 	Bitboard pfront = StrongerSide == WHITE ? FrontFillSouth(pos.PieceTypeBB(PAWN)) : FrontFillNorth(pos.PieceTypeBB(PAWN));
@@ -231,7 +230,7 @@ template <Color COL> eval evaluateThreats(const position& pos) {
 		b = weak & ~pos.AttacksByColor(OTHER);
 		if (b) result += Hanging * popcount(b);
 		b = weak & pos.AttacksByPieceType(COL, KING);
-		if (b) result += (b & b - 1) ? KingOnMany : KingOnOne;
+		if (b) result += (b & (b - 1)) ? KingOnMany : KingOnOne;
 	}
 	return result;
 }

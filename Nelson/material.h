@@ -1,7 +1,6 @@
 #pragma once
 
 #include "types.h"
-#include "evaluation.h"
 
 const int materialKeyFactors[] = { 729, 1458, 486, -405, 279, -270, 246, -244, 2916, 26244, 0, 0, 0 };
 const int MAX_PIECE_COUNT[] = { 1, 1, 2, 2, 2, 2, 2, 2 }; //Max piece count "normal" positions

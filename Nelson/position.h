@@ -2,7 +2,6 @@
 #include "types.h"
 #include "board.h"
 #include "material.h"
-#include "evaluation.h"
 #include "hashtables.h"
 #include <string>
 
@@ -42,7 +41,7 @@ public:
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, DblHistoryStats *dblHistoryStats, ExtendedMove * killerMove, Move * counterMoves, Move hashmove, Value limit);
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, DblHistoryStats *dblHistoryStats, ExtendedMove * killerMove, Move * counterMoves, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE);
 	Move NextMove();
 	const Value SEE(Square from, const Square to) const;
 	Value SEE_Sign(Move move) const;
@@ -473,7 +472,9 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 			&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 			&& !(SquaresToBeUnattacked[2 * SideToMove] & attackedByThem) //Fields passed by the king are unattacked
 			&& (RookTargets(opposedKingSquare, ~targets & ~PieceBB(KING, SideToMove)) & RookSquareAfterCastling[2 * SideToMove])) //Rook is giving check after castling
-			if (Chess960) AddMove(createMove<CASTLING>(kingSquare, InitialRookSquare[2*SideToMove])); else AddMove(createMove<CASTLING>(kingSquare, Square(G1 + SideToMove * 56)));
+		{
+			if (Chess960) AddMove(createMove<CASTLING>(kingSquare, InitialRookSquare[2 * SideToMove])); else AddMove(createMove<CASTLING>(kingSquare, Square(G1 + SideToMove * 56)));
+		}
 		//Queen-side castles
 		if ((CastlingOptions & (1 << (2 * SideToMove + 1))) //Short castle allowed
 			&& (InitialRookSquareBB[2 * SideToMove + 1] & PieceBB(ROOK, SideToMove)) //Rook on initial square
@@ -481,7 +482,9 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 			&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 			&& !(SquaresToBeUnattacked[2 * SideToMove + 1] & attackedByThem) //Fields passed by the king are unattacked
 			&& (RookTargets(opposedKingSquare, ~targets & ~PieceBB(KING, SideToMove)) & RookSquareAfterCastling[2 * SideToMove + 1])) //Rook is giving check after castling
-			if (Chess960) AddMove(createMove<CASTLING>(kingSquare, InitialRookSquare[2 * SideToMove+1])); else AddMove(createMove<CASTLING>(kingSquare, Square(C1 + SideToMove * 56)));
+		{
+			if (Chess960) AddMove(createMove<CASTLING>(kingSquare, InitialRookSquare[2 * SideToMove + 1])); else AddMove(createMove<CASTLING>(kingSquare, Square(C1 + SideToMove * 56)));
+		}
 	}
 	AddNullMove();
 	return result;
@@ -494,7 +497,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 	Bitboard targets;
 	if (MGT == ALL || MGT == TACTICAL || MGT == QUIETS || MGT == CHECK_EVASION) {
 		Square kingSquare = lsb(PieceBB(KING, SideToMove));
-		Bitboard checkBlocker;
+		Bitboard checkBlocker = 0;
 		bool doubleCheck = false;
 		if (MGT == CHECK_EVASION) {
 			Bitboard checker = AttacksOfField(kingSquare, Color(SideToMove ^ 1));
@@ -502,12 +505,13 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				checkBlocker = checker | InBetweenFields[kingSquare][lsb(checker)];
 			}
 			else doubleCheck = true;
-		}
+		} 
 		Bitboard empty = ~ColorBB(BLACK) & ~ColorBB(WHITE);
 		if (MGT == ALL) targets = ~ColorBB(SideToMove);
 		else if (MGT == TACTICAL) targets = ColorBB(SideToMove ^ 1);
 		else if (MGT == QUIETS) targets = empty;
 		else if (MGT == CHECK_EVASION && !doubleCheck) targets = ~ColorBB(SideToMove) & checkBlocker;
+		else targets = 0;
 		//Kings
 		Bitboard kingTargets;
 		if (MGT == CHECK_EVASION) kingTargets = KingAttacks[kingSquare] & ~OccupiedByColor[SideToMove] & ~attackedByThem;
@@ -525,16 +529,20 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 					&& !(SquaresToBeEmpty[2 * SideToMove] & OccupiedBB()) //Fields between Rook and King are empty
 					&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 					&& !(SquaresToBeUnattacked[2 * SideToMove] & attackedByThem)) //Fields passed by the king are unattacked
+				{
 					if (Chess960) AddMove(createMove<CASTLING>(kingSquare, InitialRookSquare[2 * SideToMove]));
 					else AddMove(createMove<CASTLING>(kingSquare, Square(G1 + SideToMove * 56)));
+				}
 				//Queen-side castles
 				if ((CastlingOptions & (1 << (2 * SideToMove + 1))) //Short castle allowed
 					&& (InitialRookSquareBB[2 * SideToMove + 1] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 					&& !(SquaresToBeEmpty[2 * SideToMove + 1] & OccupiedBB()) //Fields between Rook and King are empty
 					&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 					&& !(SquaresToBeUnattacked[2 * SideToMove + 1] & attackedByThem)) //Fields passed by the king are unattacked
+				{
 					if (Chess960) AddMove(createMove<CASTLING>(kingSquare, InitialRookSquare[2 * SideToMove + 1]));
 					else AddMove(createMove<CASTLING>(kingSquare, Square(C1 + SideToMove * 56)));
+				}
 			}
 		}
 		if (!doubleCheck) {
@@ -597,9 +605,9 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 					pawns &= pawns - 1;
 				}
 			}
-			Bitboard singleStepTarget;
-			Bitboard doubleSteptarget;
-			Bitboard promotionTarget;
+			Bitboard singleStepTarget = 0;
+			Bitboard doubleSteptarget = 0;
+			Bitboard promotionTarget = 0;
 			if (SideToMove == WHITE) {
 				if (MGT == ALL || MGT == QUIETS) {
 					singleStepTarget = (PieceBB(PAWN, WHITE) << 8) & empty & ~RANK8;
@@ -666,6 +674,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 			sliders = PieceBB(QUEEN, SideToMove);
 			if (MGT == EQUAL_CAPTURES) targets = PieceBB(QUEEN, Color(SideToMove ^ 1));
 			else if (MGT == LOOSING_CAPTURES) targets = PieceBB(ROOK, Color(SideToMove ^ 1)) | PieceBB(BISHOP, Color(SideToMove ^ 1)) | PieceBB(KNIGHT, Color(SideToMove ^ 1)) | PieceBB(PAWN, Color(SideToMove ^ 1));
+			else targets = 0;
 			while (sliders) {
 				Square from = lsb(sliders);
 				Bitboard sliderTargets = attacks[from] & targets;
@@ -681,6 +690,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 		if (MGT == WINNING_CAPTURES) targets = PieceBB(QUEEN, Color(SideToMove ^ 1));
 		else if (MGT == EQUAL_CAPTURES) targets = PieceBB(ROOK, Color(SideToMove ^ 1));
 		else if (MGT == LOOSING_CAPTURES) targets = PieceBB(BISHOP, Color(SideToMove ^ 1)) | PieceBB(KNIGHT, Color(SideToMove ^ 1)) | PieceBB(PAWN, Color(SideToMove ^ 1));
+		else targets = 0;
 		while (sliders) {
 			Square from = lsb(sliders);
 			Bitboard sliderTargets = attacks[from] & targets;
@@ -788,10 +798,10 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, DblHistoryStats * dblHistoryStats, ExtendedMove* killerMove, Move * counterMoves, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE) {
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, DblHistoryStats * dblHistoryStats, ExtendedMove* killerMove, Move * counterMoves, Move hashmove, Value limit) {
 	if (SMGT == REPETITION) {
 		moveIterationPointer = 0;
-		generationPhaseOffset[SMGT];
+		generationPhase = generationPhaseOffset[SMGT];
 		return;
 	}
 	if (SMGT == MAIN_SEARCH) {

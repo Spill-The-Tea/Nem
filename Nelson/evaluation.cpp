@@ -32,7 +32,7 @@ eval evaluateKingSafety(const position& pos) {
 	int attackCount;
 	Bitboard pieceBB = pos.PieceBB(BISHOP, WHITE) | pos.PieceBB(KNIGHT, WHITE);
 	while (pieceBB) {
-		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack)) {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack))) {
 			attackUnits += 2 * attackCount;
 			++attackerCount;
 		}
@@ -40,7 +40,7 @@ eval evaluateKingSafety(const position& pos) {
 	}
 	pieceBB = pos.PieceBB(ROOK, WHITE);
 	while (pieceBB) {
-		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack))  {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack)))  {
 			attackUnits += 3 * attackCount;
 			++attackerCount;
 		}
@@ -48,7 +48,7 @@ eval evaluateKingSafety(const position& pos) {
 	}
 	pieceBB = pos.PieceBB(QUEEN, WHITE);
 	while (pieceBB) {
-		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack)) {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack))) {
 			attackUnits += 5 * attackCount;
 			++attackerCount;
 		}
@@ -59,7 +59,7 @@ eval evaluateKingSafety(const position& pos) {
 	attackerCount = 0;
 	pieceBB = pos.PieceBB(BISHOP, BLACK) | pos.PieceBB(KNIGHT, BLACK);
 	while (pieceBB) {
-		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite)) {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite))) {
 			attackUnits += 2 * attackCount;
 			++attackerCount;
 		}
@@ -67,7 +67,7 @@ eval evaluateKingSafety(const position& pos) {
 	}
 	pieceBB = pos.PieceBB(ROOK, BLACK);
 	while (pieceBB) {
-		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite)) {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite))) {
 			attackUnits += 3 * attackCount;
 			++attackerCount;
 		}
@@ -75,7 +75,7 @@ eval evaluateKingSafety(const position& pos) {
 	}
 	pieceBB = pos.PieceBB(QUEEN, BLACK);
 	while (pieceBB) {
-		if (attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite)) {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite))) {
 			attackUnits += 5 * attackCount;
 			++attackerCount;
 		}

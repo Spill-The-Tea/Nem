@@ -146,13 +146,13 @@ namespace polyglot {
 		size_t low = 0, mid, high = (size_t)tellg() / sizeof(Entry) - 1;
 		Entry e;
 
-		_ASSERT(low <= high);
+		assert(low <= high);
 
 		while (low < high && good())
 		{
 			mid = (low + high) / 2;
 
-			_ASSERT(mid >= low && mid < high);
+			assert(mid >= low && mid < high);
 
 			seekg(mid * sizeof(Entry), ios_base::beg);
 			*this >> e;
@@ -163,7 +163,7 @@ namespace polyglot {
 				low = mid + 1;
 		}
 
-		_ASSERT(low == high);
+		assert(low == high);
 
 		return low;
 	}
