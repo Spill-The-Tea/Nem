@@ -80,6 +80,9 @@ inline Color operator~(Color c) { return Color(c ^ 1); }
 enum Rank {
 	Rank1, Rank2, Rank3, Rank4, Rank5, Rank6, Rank7, Rank8
 };
+
+inline Rank relativeRank(Color color, Rank rank) { return Rank(rank ^ (color * 7)); }
+
 enum File {
 	FileA, FileB, FileC, FileD, FileE, FileF, FileG, FileH
 };
@@ -91,7 +94,7 @@ enum CastleFlag {
 const int CastlesbyColor[] = { W0_0 | W0_0_0, B0_0 | B0_0_0 };
 
 enum MoveGenerationType {
-	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, TACTICAL, QUIETS, CHECK_EVASION, QUIET_CHECKS, ALL, LEGAL, FIND_ANY, FIND_ANY_CHECKED, HASHMOVE, KILLER, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, REPEAT_ALL, UNDERPROMOTION
+	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NON_LOOSING_CAPTURES, TACTICAL, QUIETS, CHECK_EVASION, QUIET_CHECKS, ALL, LEGAL, FIND_ANY, FIND_ANY_CHECKED, HASHMOVE, KILLER, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, REPEAT_ALL, UNDERPROMOTION
 };
 
 enum StagedMoveGenerationType {

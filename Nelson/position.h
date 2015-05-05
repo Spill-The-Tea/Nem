@@ -7,12 +7,12 @@
 
 struct evaluation;
 
-const MoveGenerationType generationPhases[26] = { HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, KILLER, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, UNDERPROMOTION, NONE, //Main Search Phases
-HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
+const MoveGenerationType generationPhases[24] = { HASHMOVE, NON_LOOSING_CAPTURES, KILLER, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, UNDERPROMOTION, NONE, //Main Search Phases
+HASHMOVE, NON_LOOSING_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
 HASHMOVE, CHECK_EVASION, UNDERPROMOTION, NONE, //Check Evasion
 HASHMOVE, WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, QUIET_CHECKS, NONE, //QSearch with Checks
 REPEAT_ALL, NONE };
-const int generationPhaseOffset[] = { 0, 9, 14, 18, 24 };
+const int generationPhaseOffset[] = { 0, 8, 12, 16, 22 };
 
 struct position
 {
@@ -670,9 +670,9 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 	}
 	else { //Winning, Equal and loosing captures
 		Bitboard sliders;
-		if (MGT == EQUAL_CAPTURES || MGT == LOOSING_CAPTURES) { //Queen Captures are never winning
+		if (MGT == EQUAL_CAPTURES || MGT == LOOSING_CAPTURES || MGT == NON_LOOSING_CAPTURES) { //Queen Captures are never winning
 			sliders = PieceBB(QUEEN, SideToMove);
-			if (MGT == EQUAL_CAPTURES) targets = PieceBB(QUEEN, Color(SideToMove ^ 1));
+			if (MGT == EQUAL_CAPTURES || MGT == NON_LOOSING_CAPTURES) targets = PieceBB(QUEEN, Color(SideToMove ^ 1));
 			else if (MGT == LOOSING_CAPTURES) targets = PieceBB(ROOK, Color(SideToMove ^ 1)) | PieceBB(BISHOP, Color(SideToMove ^ 1)) | PieceBB(KNIGHT, Color(SideToMove ^ 1)) | PieceBB(PAWN, Color(SideToMove ^ 1));
 			else targets = 0;
 			while (sliders) {
@@ -690,10 +690,11 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 		if (MGT == WINNING_CAPTURES) targets = PieceBB(QUEEN, Color(SideToMove ^ 1));
 		else if (MGT == EQUAL_CAPTURES) targets = PieceBB(ROOK, Color(SideToMove ^ 1));
 		else if (MGT == LOOSING_CAPTURES) targets = PieceBB(BISHOP, Color(SideToMove ^ 1)) | PieceBB(KNIGHT, Color(SideToMove ^ 1)) | PieceBB(PAWN, Color(SideToMove ^ 1));
+		else if (MGT == NON_LOOSING_CAPTURES) targets = PieceBB(QUEEN, Color(SideToMove ^ 1)) | PieceBB(ROOK, Color(SideToMove ^ 1));
 		else targets = 0;
 		while (sliders) {
 			Square from = lsb(sliders);
-			Bitboard sliderTargets = attacks[from] & targets;
+			Bitboard sliderTargets = attacks[from] & targets; 
 			while (sliderTargets) {
 				AddMove(createMove(from, lsb(sliderTargets)));
 				sliderTargets &= sliderTargets - 1;
@@ -705,6 +706,8 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 		if (MGT == WINNING_CAPTURES) targets = PieceBB(QUEEN, Color(SideToMove ^ 1)) | PieceBB(ROOK, Color(SideToMove ^ 1));
 		else if (MGT == EQUAL_CAPTURES) targets = PieceBB(BISHOP, Color(SideToMove ^ 1)) | PieceBB(KNIGHT, Color(SideToMove ^ 1));
 		else if (MGT == LOOSING_CAPTURES) targets = PieceBB(PAWN, Color(SideToMove ^ 1));
+		else if (MGT == NON_LOOSING_CAPTURES) targets = PieceBB(BISHOP, Color(SideToMove ^ 1)) | PieceBB(KNIGHT, Color(SideToMove ^ 1)) | PieceBB(QUEEN, Color(SideToMove ^ 1)) | PieceBB(ROOK, Color(SideToMove ^ 1));
+		else targets = 0;
 		while (sliders) {
 			Square from = lsb(sliders);
 			Bitboard sliderTargets = attacks[from] & targets;
@@ -718,6 +721,8 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 		if (MGT == WINNING_CAPTURES) targets = PieceBB(QUEEN, Color(SideToMove ^ 1)) | PieceBB(ROOK, Color(SideToMove ^ 1));
 		else if (MGT == EQUAL_CAPTURES) targets = PieceBB(BISHOP, Color(SideToMove ^ 1)) | PieceBB(KNIGHT, Color(SideToMove ^ 1));
 		else if (MGT == LOOSING_CAPTURES) targets = PieceBB(PAWN, Color(SideToMove ^ 1));
+		else if (MGT == NON_LOOSING_CAPTURES) targets = PieceBB(BISHOP, Color(SideToMove ^ 1)) | PieceBB(KNIGHT, Color(SideToMove ^ 1)) | PieceBB(QUEEN, Color(SideToMove ^ 1)) | PieceBB(ROOK, Color(SideToMove ^ 1));
+		else targets = 0;
 		Bitboard knights = PieceBB(KNIGHT, SideToMove);
 		while (knights) {
 			Square from = lsb(knights);
@@ -771,7 +776,37 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				}
 			}
 		}
-		if (MGT == WINNING_CAPTURES) {
+		else if (MGT == NON_LOOSING_CAPTURES) {
+			Bitboard pawns = PieceBB(PAWN, SideToMove);
+			while (pawns) {
+				Square from = lsb(pawns);
+				Bitboard pawnTargets = ColorBB(SideToMove ^ 1) & attacks[from] & ~RANK1and8;
+				while (pawnTargets) {
+					AddMove(createMove(from, lsb(pawnTargets)));
+					pawnTargets &= pawnTargets - 1;
+				}
+				//Promotion captures
+				pawnTargets = ColorBB(SideToMove ^ 1) & attacks[from] & RANK1and8;
+				while (pawnTargets) {
+					Square to = lsb(pawnTargets);
+					AddMove(createMove<PROMOTION>(from, to, QUEEN));
+					//AddMove(createMove<PROMOTION>(from, to, ROOK));
+					//AddMove(createMove<PROMOTION>(from, to, BISHOP));
+					//AddMove(createMove<PROMOTION>(from, to, KNIGHT));
+					canPromote = true;
+					pawnTargets &= pawnTargets - 1;
+				}
+				pawns &= pawns - 1;
+			}
+			Bitboard epAttacker;
+			if (EPSquare != OUTSIDE && (epAttacker = (GetEPAttackersForToField(EPSquare - PawnStep()) & PieceBB(PAWN, SideToMove)))) {
+				while (epAttacker) {
+					AddMove(createMove<ENPASSANT>(lsb(epAttacker), EPSquare));
+					epAttacker &= epAttacker - 1;
+				}
+			}
+		}
+		if (MGT == WINNING_CAPTURES || MGT == NON_LOOSING_CAPTURES) {
 			Bitboard promotionTarget;
 			if (SideToMove == WHITE)  promotionTarget = (PieceBB(PAWN, WHITE) << 8) & ~OccupiedBB() & RANK8; else promotionTarget = (PieceBB(PAWN, BLACK) >> 8) & ~OccupiedBB() & RANK1;
 			while (promotionTarget) {
