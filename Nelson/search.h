@@ -10,7 +10,7 @@
 #include <thread>
 #include <vector>
 
-enum NodeType { PV, NULL_MOVE, EXPECTED_CUT_NODE, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
+enum NodeType { PV, NULL_MOVE, NULL_MOVE_2, EXPECTED_CUT_NODE, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
 
 enum ThreadType { SINGLE, MASTER, SLAVE };
 
@@ -214,7 +214,7 @@ template<ThreadType T> search<T>::~search() {
 
 }
 
-template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove ) {
+template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove) {
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	Value bonus;
@@ -323,11 +323,18 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			&& pos.NonPawnMaterial(pos.GetSideToMove()))
 			return effectiveEvaluation - BETA_PRUNING_FACTOR * depth;
 		//Null Move Pruning
-		if (NT != NULL_MOVE && effectiveEvaluation > beta && depth > 4 && !pos.GetMaterialTableEntry()->IsLateEndgame() && pos.NonPawnMaterial(pos.GetSideToMove())) {
-			int reduction = depth >> 1;
+		if (NT != NULL_MOVE_2 //no triple null move
+			&& depth > 1 //only if there is available depth to reduce
+			&& (NT == NULL_MOVE || effectiveEvaluation > beta)
+			&& pos.GetMaterialTableEntry()->Phase < 256 //no pawn endings
+			&& (NT != NULL_MOVE || pos.GetMaterialTableEntry()->Phase >= 192) //double null move only when Zugzwang might occur
+			) {
+			int reduction = (depth >> 1) + 1;
 			Square epsquare = pos.GetEPSquare();
 			pos.NullMove();
-			Value nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction - 1, &subpv[0], false);
+			Value nullscore;
+			if (NT == NULL_MOVE) nullscore = -Search<NULL_MOVE_2>(-beta, -alpha, pos, depth - reduction, &subpv[0], false);
+			else nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction, &subpv[0], false);
 			pos.NullMove(epsquare);
 			if (nullscore >= beta) {
 				return beta;

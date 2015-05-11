@@ -161,7 +161,7 @@ private:
 	Bitboard checkBlocker(Color colorOfBlocker, Color kingColor);
 	MaterialKey_t calculateMaterialKey();
 	PawnKey_t calculatePawnKey();
-	void evaluateByMVVLVA();
+	void evaluateByMVVLVA(int startIndex = 0);
 	void evaluateBySEE(int startIndex);
 	void evaluateByHistory(int startIndex);
 	Move getBestMove(int startIndex);

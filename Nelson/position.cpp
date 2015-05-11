@@ -184,7 +184,7 @@ Move position::NextMove() {
 				break;
 			case EQUAL_CAPTURES:
 				GenerateMoves<EQUAL_CAPTURES>();
-				evaluateBySEE(phaseStartIndex);
+				evaluateByMVVLVA(phaseStartIndex);
 				moveIterationPointer = 0;
 				break;
 			case NON_LOOSING_CAPTURES:
@@ -321,10 +321,10 @@ void position::insertionSort(ValuatedMove* begin, ValuatedMove* end)
 	}
 }
 
-void position::evaluateByMVVLVA() {
-	for (int i = 0; i < movepointer - 1; ++i) {
+void position::evaluateByMVVLVA(int startIndex) {
+	for (int i = startIndex; i < movepointer - 1; ++i) {
 		//moves[i].score = PieceValuesMG[GetPieceType(Board[to(moves[i].move)])];
-		moves[i].score = PieceValuesMG[GetPieceType(Board[to(moves[i].move)])] - 100 * relativeRank(GetSideToMove(), Rank(to(moves[i].move)>>3));
+		moves[i].score = PieceValuesMG[GetPieceType(Board[to(moves[i].move)])] - 150 * relativeRank(GetSideToMove(), Rank(to(moves[i].move)>>3));
 	}
 }
 

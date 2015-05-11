@@ -350,6 +350,7 @@ struct position;
 typedef Value(*EvalFunction)(const position&);
 
 Value evaluateDefault(const position& pos);
+Value evaluatePawnEnding(const position& pos);
 
 #ifdef _MSC_VER
 inline int64_t now() {

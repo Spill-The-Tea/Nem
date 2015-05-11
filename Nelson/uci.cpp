@@ -91,8 +91,8 @@ void dispatch(std::string line) {
 	else if (!command.compare("setvalue"))
 		setvalue(tokens);
 	else if (!command.compare("bench")) {
-		bench(10);
-		bench2(10);
+		bench(11);
+		bench2(11);
 	}
 	//else if (!strcmp(token, "eval"))
 	//	cout << printEvaluation(pos);
