@@ -10,7 +10,7 @@
 #include <thread>
 #include <vector>
 
-enum NodeType { PV, NULL_MOVE, NULL_MOVE_2, EXPECTED_CUT_NODE, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
+enum NodeType { PV, NULL_MOVE, EXPECTED_CUT_NODE, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
 
 enum ThreadType { SINGLE, MASTER, SLAVE };
 
@@ -60,7 +60,6 @@ public:
 	int _depth = 0;
 	int64_t _thinkTime;
 	Move counterMove[12 * 64];
-	Value gains[12 * 64];
 
 	inline bool Stopped() { return Stop && (!PonderMode); }
 
@@ -288,7 +287,6 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		&& ttEntry.depth() >= depth
 		&& ttValue != VALUE_NOTYETDETERMINED
 		&& ((ttEntry.type() == tt::EXACT) || (ttValue >= beta && ttEntry.type() == tt::LOWER_BOUND) || (ttValue <= alpha && ttEntry.type() == tt::UPPER_BOUND))) {
-		//if (ttValue > beta && ttEntry->move != MOVE_NONE && pos.IsQuiet(ttEntry->move)) updateCutoffStats(ttEntry->move, depth, pos, 0);
 		return ttValue;
 	}
 	Move ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
@@ -297,14 +295,14 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
 		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
-	if (prune && !checked) {
+	if (NT != NULL_MOVE && prune && !checked) {
 		//Check if Value from TT is better
 		Value effectiveEvaluation = staticEvaluation;
 		if (ttFound &&
 			((ttValue > staticEvaluation && ttEntry.type() == tt::LOWER_BOUND)
 			|| (ttValue < staticEvaluation && ttEntry.type() == tt::UPPER_BOUND))) effectiveEvaluation = ttValue;
 
-		//Razoring a la SF (no measurable ELO change)
+		//Razoring a la SF 
 		if (!checked && depth < 4
 			&& (effectiveEvaluation + Value(256 + 16 * depth)) <= alpha
 			&& ttMove == MOVE_NONE
@@ -319,39 +317,21 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		if (depth < 7
 			&& effectiveEvaluation < VALUE_KNOWN_WIN
 			&& (effectiveEvaluation - BETA_PRUNING_FACTOR * depth) >= beta
-			//&& !pos.GetMaterialTableEntry()->IsLateEndgame()
 			&& pos.NonPawnMaterial(pos.GetSideToMove()))
 			return effectiveEvaluation - BETA_PRUNING_FACTOR * depth;
 		//Null Move Pruning
-		if (NT != NULL_MOVE_2 //no triple null move
-			&& depth > 1 //only if there is available depth to reduce
-			&& (NT == NULL_MOVE || effectiveEvaluation > beta)
+		if (depth > 1 //only if there is available depth to reduce
+			&& effectiveEvaluation > beta
 			&& pos.GetMaterialTableEntry()->Phase < 256 //no pawn endings
-			&& (NT != NULL_MOVE || pos.GetMaterialTableEntry()->Phase >= 192) //double null move only when Zugzwang might occur
 			) {
 			int reduction = (depth >> 1) + 1;
 			Square epsquare = pos.GetEPSquare();
 			pos.NullMove();
-			Value nullscore;
-			if (NT == NULL_MOVE) nullscore = -Search<NULL_MOVE_2>(-beta, -alpha, pos, depth - reduction, &subpv[0], false);
-			else nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction, &subpv[0], false);
+			Value nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction, &subpv[0], false);
 			pos.NullMove(epsquare);
 			if (nullscore >= beta) {
 				return beta;
 			}
-			//{
-			//	if (nullscore > VALUE_MATE_THRESHOLD) nullscore = beta;
-			//	if (depth < 12 && abs(beta) < VALUE_KNOWN_WIN) return nullscore;
-
-			//	//Verification Search
-			//	Value verificationValue = Search<NULL_MOVE>(beta - 1, beta, pos, depth - reduction, &subpv[0]);
-			//	if (verificationValue >= beta) return nullscore;
-			//}
-		}
-		if (pos.IsQuiet(pos.GetLastAppliedMove())) {
-			Square lastToSquare = to(pos.GetLastAppliedMove());
-			int gainIndx = (pos.GetPieceOnSquare(lastToSquare) << 6) + lastToSquare;
-			gains[gainIndx] = std::max(staticEvaluation - pos.Previous()->GetStaticEval(), gains[gainIndx] - 1);
 		}
 
 		// ProbCut (copied from SF)
@@ -379,7 +359,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			}
 		}
 
-		//IID (Seems to be neutral => therefore deactivated
+		//IID: No Hash move available => Try to find one with a reduced search
 		if (NT == PV && depth >= 3 && !ttMove) {
 			position next(pos);
 			next.copy(pos);
@@ -389,7 +369,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 		}
 	}
-	//Futility Pruning: Prune quiet moves that give no check if they can't raise alpha
+	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
 	bool futilityPruning = NT != NULL_MOVE && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
 	if (futilityPruning && alpha >(staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &DblHistory, nullptr, counterMove, ttMove);
@@ -402,49 +382,19 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	Move move;
 	int moveIndex = 0;
 	bool ZWS = false;
-	//int validMoveCount = 0;
-	//	bool singularExtensionNode = depth >= 8 && ttMove != MOVE_NONE &&  std::abs(ttValue) < VALUE_KNOWN_WIN
-	//		&& excludedMoves[pos.GetPliesFromRoot()] == MOVE_NONE && ttEntry.type() == tt::LOWER_BOUND && ttEntry.depth() >= depth - 3;
-	//int repetitions = T == SINGLE ? 1 : 2;
-	//for (int repetition = 0; repetition < repetitions; ++repetition) {
-	//if (T != SINGLE && repetition > 0) pos.InitializeMoveIterator<REPETITION>(&History, &DblHistory, &killer[2 * pos.GetPliesFromRoot()], counterMove, ttMove);
+
 	while ((move = pos.NextMove())) {
-		//		if (move == excludedMoves[pos.GetPliesFromRoot()]) continue;
-		if (futilityPruning
-			&& moveIndex > 0
-			&& type(move) != PROMOTION
-			&& (staticEvaluation + FUTILITY_PRUNING_MARGIN[depth]
-			+ gains[(pos.GetPieceOnSquare(from(move)) << 6) + to(move)]
-			+ PieceValuesMG[GetPieceType(pos.GetPieceOnSquare(to(move)))]) <= alpha
-			) continue;
-		if (NT != PV && depth <= 3 && moveIndex >= depth * 4 && std::abs(bestScore) <= VALUE_MATE_THRESHOLD  && pos.IsQuietAndNoCastles(move)) { // late-move pruning
+		// late-move pruning
+		if (NT != PV && depth <= 3 && moveIndex >= depth * 4 && std::abs(bestScore) <= VALUE_MATE_THRESHOLD  && pos.IsQuietAndNoCastles(move)) { 
+			moveIndex++;
 			continue;
 		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
-			//Check if other thread is already processing this node
-			/*if (T != SINGLE) {
-				if (repetition == 0 && moveIndex > 0 && tt::GetNProc(next.GetHash()) > 0) continue; else tt::IncrementNProc(next.GetHash());
-				}*/
+			//Check extension
 			int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
-
-			//Singular extension search. If all moves but one fail low on a search of
-			//(alpha-s, beta-s), and just one fails high on (alpha, beta), then that move
-			//is singular and should be extended. To verify this we do a reduced search
-			//on all the other moves but the ttMove and if the result is lower than
-			//ttValue minus a margin then we extend the ttMove.
-			//if (singularExtensionNode
-			//	&&  move == ttMove
-			//	&& !extension)
-			//{
-			//	Value rBeta = ttValue - 2 * depth;
-			//	excludedMoves[pos.GetPliesFromRoot()] = move;
-			//	Value score = Search<EXPECTED_CUT_NODE>(Value(rBeta - 1), rBeta, pos, depth / 2, &subpv[0], false);
-			//	excludedMoves[pos.GetPliesFromRoot()] = MOVE_NONE;
-			//	if (score < rBeta)
-			//		extension = 1;
-			//}
 			int reduction = 0;
+			//LMR: Late move reduction
 			if (lmr && moveIndex >= 2 && !extension && pos.IsQuietAndNoCastles(move) && !next.Checked()) {
 				if (NT == PV) {
 					if (moveIndex >= 5) reduction = 1;
@@ -453,14 +403,6 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 					if (moveIndex >= 5) reduction = depth / 3; else reduction = 1;
 				}
 			}
-			//Prune moves with negative sign
-			//if ( type(move) == NORMAL
-			//	&&  bestScore > -VALUE_MATE_THRESHOLD
-			//	&& (depth - 1 - reduction + extension) < 4
-			//	&& !next.Checked()
-			//	&& pos.IsQuiet(move)
-			//	&& !pos.IsAdvancedPawnMove(move)
-			//	&& pos.SEE(from(move), to(move)) < VALUE_ZERO) continue;
 			if (ZWS) {
 				score = -Search<EXPECTED_CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0]);
 				if (score > alpha && score < beta) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0]);
@@ -469,7 +411,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 				score = -Search<PV>(-beta, -alpha, next, depth - 1 - reduction + extension, &subpv[0]);
 				if (score > alpha && reduction > 0) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0]);
 			}
-			//if (T != SINGLE) tt::DecrementNProc(next.GetHash());
+
 			if (score >= beta) {
 				updateCutoffStats(move, depth, pos, moveIndex);
 				if (T != SINGLE)  ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
@@ -490,7 +432,6 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		}
 		moveIndex++;
 	}
-	//}
 	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
 	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
 	return bestScore;

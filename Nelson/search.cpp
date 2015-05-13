@@ -37,9 +37,7 @@ void baseSearch::NewGame() {
 	Reset();
 	for (int i = 0; i < 12 * 64; ++i) {
 		counterMove[i] = MOVE_NONE;
-		//gains[i] = VALUE_ZERO;
 	}
-	for (int i = 0; i < 12 * 64; ++i) gains[i] = VALUE_ZERO;
 }
 
 std::string baseSearch::PrincipalVariation(int depth) {
