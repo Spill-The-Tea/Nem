@@ -382,7 +382,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	Move move;
 	int moveIndex = 0;
 	bool ZWS = false;
-
+	Square recaptureSquare = pos.GetLastAppliedMove() && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	while ((move = pos.NextMove())) {
 		// late-move pruning
 		if (NT != PV && depth <= 3 && moveIndex >= depth * 4 && std::abs(bestScore) <= VALUE_MATE_THRESHOLD  && pos.IsQuietAndNoCastles(move)) { 
@@ -393,6 +393,11 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		if (next.ApplyMove(move)) {
 			//Check extension
 			int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
+			if (!extension && to(move) == recaptureSquare 
+				//&& (PieceValuesMG[next.GetPieceOnSquare(to(move))] < PieceValuesMG[pos.GetPieceOnSquare(to(move))])
+				) {
+				++extension;
+			}
 			int reduction = 0;
 			//LMR: Late move reduction
 			if (lmr && moveIndex >= 2 && !extension && pos.IsQuietAndNoCastles(move) && !next.Checked()) {
