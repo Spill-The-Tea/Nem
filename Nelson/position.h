@@ -839,9 +839,7 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 		generationPhase = generationPhaseOffset[SMGT];
 		return;
 	}
-	if (SMGT == MAIN_SEARCH) {
-		killer = killerMove;
-	}
+	if (SMGT == MAIN_SEARCH) killer = killerMove; else killer = nullptr;
 	CounterMoves = counterMoves;
 	if (!attackedByThem) attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	moveIterationPointer = -1;

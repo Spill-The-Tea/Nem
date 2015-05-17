@@ -170,6 +170,7 @@ bool position::ApplyMove(Move move) {
 
 Move position::NextMove() {
 	if (generationPhases[generationPhase] == NONE) return MOVE_NONE;
+	Move move;
 	do {
 		if (moveIterationPointer < 0) {
 			phaseStartIndex = movepointer - (movepointer != 0);
@@ -219,9 +220,9 @@ Move position::NextMove() {
 					for (int i = 0; i < moveCount; ++i) {
 						Move pmove = moves[i].move;
 						if (type(pmove) == PROMOTION) {
+							AddMove(createMove<PROMOTION>(from(pmove), to(pmove), KNIGHT));
 							AddMove(createMove<PROMOTION>(from(pmove), to(pmove), ROOK));
 							AddMove(createMove<PROMOTION>(from(pmove), to(pmove), BISHOP));
-							AddMove(createMove<PROMOTION>(from(pmove), to(pmove), KNIGHT));
 						}
 					}
 					AddNullMove();
@@ -235,7 +236,6 @@ Move position::NextMove() {
 			}
 
 		}
-		Move move;
 		switch (generationPhases[generationPhase]) {
 		case HASHMOVE:
 			++generationPhase;
@@ -256,11 +256,22 @@ Move position::NextMove() {
 			++generationPhase;
 			moveIterationPointer = -1;
 			break;
-		case WINNING_CAPTURES: case EQUAL_CAPTURES: case LOOSING_CAPTURES: case QUIETS_NEGATIVE: case NON_LOOSING_CAPTURES:
+		case WINNING_CAPTURES: case NON_LOOSING_CAPTURES:
 			move = getBestMove(phaseStartIndex + moveIterationPointer);
 			if (move) {
 				++moveIterationPointer;
-				return move;
+				goto end;
+			}
+			else {
+				++generationPhase;
+				moveIterationPointer = -1;
+			}
+			break;
+		case EQUAL_CAPTURES: case LOOSING_CAPTURES: case QUIETS_NEGATIVE: 
+			move = getBestMove(phaseStartIndex + moveIterationPointer);
+			if (move) {
+				++moveIterationPointer;
+				goto end_post_killer;
 			}
 			else {
 				++generationPhase;
@@ -272,7 +283,7 @@ Move position::NextMove() {
 			move = moves[phaseStartIndex + moveIterationPointer].move;
 			if (move) {
 				++moveIterationPointer;
-				return move;
+				goto end;
 			}
 			else {
 				++generationPhase;
@@ -286,7 +297,7 @@ Move position::NextMove() {
 			}
 			else {
 				++moveIterationPointer;
-				return move;
+				goto end_post_killer;
 			}
 			break;
 		case REPEAT_ALL:
@@ -294,18 +305,22 @@ Move position::NextMove() {
 			move = moves[moveIterationPointer].move;
 			++moveIterationPointer;
 			generationPhase += (moveIterationPointer >= movepointer);
-			return move;
+			goto end;
 		case UNDERPROMOTION:
 #pragma warning(suppress: 6385)
 			move = moves[phaseStartIndex + moveIterationPointer].move;
 			++moveIterationPointer;
-			generationPhase += (moveIterationPointer >= movepointer);
-			return move;
+			generationPhase += (phaseStartIndex + moveIterationPointer >= movepointer);
+			goto end_post_killer;
 		default:
 			assert(true);
 		}
 	} while (generationPhases[generationPhase] != NONE);
 	return MOVE_NONE;
+end_post_killer:
+	if (killer != nullptr && (killer->move == move || (killer + 1)->move == move)) return NextMove();
+end:
+	if (hashMove && move == hashMove) return NextMove(); else return move;
 }
 
 //copied from Stockfish
@@ -324,7 +339,7 @@ void position::insertionSort(ValuatedMove* begin, ValuatedMove* end)
 void position::evaluateByMVVLVA(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
 		//moves[i].score = PieceValuesMG[GetPieceType(Board[to(moves[i].move)])];
-		moves[i].score = PieceValuesMG[GetPieceType(Board[to(moves[i].move)])] - 150 * relativeRank(GetSideToMove(), Rank(to(moves[i].move)>>3));
+		moves[i].score = PieceValuesMG[GetPieceType(Board[to(moves[i].move)])] - 150 * relativeRank(GetSideToMove(), Rank(to(moves[i].move) >> 3));
 	}
 }
 
