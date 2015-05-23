@@ -140,7 +140,9 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 			Value alpha = -VALUE_MATE;
 			Value beta = VALUE_MATE;
 			SearchRoot(alpha, beta, pos, _depth, &PVMoves[0], pvIndx);
-			std::stable_sort(rootMoves + pvIndx, &rootMoves[rootMoveCount], sortByScore);
+			//Best move is already in first place, this is assured by SearchRoot
+			//therefore we sort only the other moves
+			std::stable_sort(rootMoves + pvIndx + 1, &rootMoves[rootMoveCount], sortByScore);
 			BestMove = rootMoves[0];
 			int64_t tNow = now();
 			_thinkTime = std::max(tNow - searchStopCriteria.StartTime, int64_t(1));
@@ -257,6 +259,12 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 				alpha = score;
 				pv[0] = rootMoves[i].move;
 				memcpy(pv + 1, subpv, (PV_MAX_LENGTH - 1)*sizeof(Move));
+				if (i > 0) {
+					//make sure that best move is always in first place 
+					ValuatedMove bm = rootMoves[i];
+					for (int j = i; j > 0; --j) rootMoves[j] = rootMoves[j - 1];
+					rootMoves[0] = bm;
+				}
 			}
 		}
 	}
