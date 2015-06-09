@@ -45,6 +45,7 @@ public:
 	Move NextMove();
 	const Value SEE(Square from, const Square to) const;
 	Value SEE_Sign(Move move) const;
+	inline bool IsCheck() const { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
 	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
 	friend evaluation evaluate(position& pos);
 	friend evaluation evaluateFromScratch(position &pos);
@@ -170,7 +171,6 @@ private:
 	const Bitboard AttacksOfField(const Square targetField) const;
 	const Bitboard AttacksOfField(const Square targetField, const Color attackingSide) const;
 	const Bitboard getSquareOfLeastValuablePiece(const Bitboard attadef, const int side) const;
-	inline bool IsCheck() { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
 	inline bool isValid(Move move) { position next(*this); return next.ApplyMove(move); }
 	bool validateMove(Move move);
 	bool validateMove(ExtendedMove move);

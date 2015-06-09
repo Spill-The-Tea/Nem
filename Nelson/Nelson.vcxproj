@@ -30,6 +30,7 @@
     <ProjectGuid>{B23D2DB6-4387-478B-A153-4C34596B8C7E}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Nelson</RootNamespace>
+    <ProjectName>Nemorino</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -197,8 +198,8 @@
     <PostBuildEvent>
       <Command>copy /Y  "$(SolutionDir)\Nelson\*.cpp"  "$(USERPROFILE)\workspace\Nelson\*.*"
 copy /Y  "$(SolutionDir)\Nelson\*.h"  "$(USERPROFILE)\workspace\Nelson\*.*"
-copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\
-copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nelson2.exe</Command>
+copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\
+copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nelson2.exe</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy Exe to Test Server</Message>
@@ -236,17 +237,18 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Text Include="EvaluationContinuity.txt" />
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="board.cpp" />
+    <ClCompile Include="book.cpp" />
     <ClCompile Include="evaluation.cpp" />
     <ClCompile Include="hashtables.cpp" />
-    <ClCompile Include="kpk.cpp" />
+    <ClCompile Include="bbEndings.cpp" />
     <ClCompile Include="Material.cpp" />
-    <ClCompile Include="Nelson.cpp" />
+    <ClCompile Include="Nemorino.cpp" />
     <ClCompile Include="pgn.cpp" />
-    <ClCompile Include="polyglotbook.cpp" />
     <ClCompile Include="position.cpp" />
     <ClCompile Include="search.cpp" />
     <ClCompile Include="settings.cpp" />
@@ -255,12 +257,12 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="board.h" />
+    <ClInclude Include="book.h" />
     <ClInclude Include="evaluation.h" />
     <ClInclude Include="hashtables.h" />
-    <ClInclude Include="kpk.h" />
+    <ClInclude Include="bbEndings.h" />
     <ClInclude Include="material.h" />
     <ClInclude Include="pgn.h" />
-    <ClInclude Include="polyglotbook.h" />
     <ClInclude Include="position.h" />
     <ClInclude Include="resource.h" />
     <ClInclude Include="search.h" />

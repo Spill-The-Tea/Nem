@@ -52,7 +52,7 @@ namespace pgn {
 		}
 		return tokens;
 	}
-	//Parses a single move (assuming that only move data is part of thestd::string - no annotations,
+	//Parses a single move (assuming that only move data is part of the std::string - no annotations,
 	//no check symbol, ...
 	Move parseSANMove(std::string move, position & pos) {
 		size_t indx = move.find("+");

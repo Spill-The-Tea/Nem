@@ -9,7 +9,7 @@
 #include "test.h"
 #include "search.h"
 #include "hashtables.h"
-#include "kpk.h"
+#include "bbEndings.h"
 
 int64_t bench(int depth) {
 	std::string sfBenchmarks[] = {
@@ -576,10 +576,10 @@ void testResult(std::string filename, Result result) {
 }
 
 void testKPK() {
-	assert(!kpk::probe_kpk(A6, A5, A8, WHITE));
-	assert(!kpk::probe_kpk(A6, A5, A8, BLACK));
-	assert(kpk::probe_kpk(A6, B6, B8, WHITE));
-	assert(!kpk::probe_kpk(A6, B6, B8, BLACK));
+	assert(!kpk::probe(A6, A5, A8, WHITE));
+	assert(!kpk::probe(A6, A5, A8, BLACK));
+	assert(kpk::probe(A6, B6, B8, WHITE));
+	assert(!kpk::probe(A6, B6, B8, BLACK));
 	position pos("1k6/8/KP6/8/8/8/8/8 w - -0 1");
 	assert(pos.evaluate() > VALUE_DRAW);
 	position pos1("1k6/8/KP6/8/8/8/8/8 b - -0 1");

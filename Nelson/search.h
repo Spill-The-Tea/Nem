@@ -1,7 +1,7 @@
 #pragma once
 
 #include "types.h"
-#include "polyglotbook.h"
+#include "book.h"
 #include "board.h"
 #include "position.h"
 #include "settings.h"
@@ -47,7 +47,7 @@ public:
 	virtual ThreadType GetType() = 0;
 
 	//protected:
-	polyglot::polyglotbook book;
+	polyglot::book * book = nullptr;
 	DblHistoryStats DblHistory;
 	uint64_t cutoffAt1stMove = 0;
 	uint64_t cutoffCount = 0;
@@ -108,7 +108,8 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 	}
 	//check for book
 	if (USE_BOOK && BookFile.size() > 0) {
-		Move bookMove = book.probe(pos, BookFile, false, generatedMoves, rootMoveCount);
+		if (book == nullptr) book = new polyglot::book(BookFile);
+		Move bookMove = book->probe(pos, false, generatedMoves, rootMoveCount);
 		if (bookMove != MOVE_NONE) {
 			BestMove.move = bookMove;
 			BestMove.score = VALUE_ZERO;
@@ -155,6 +156,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 				if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 					std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
+					<< " time " << _thinkTime
 					//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 					<< " pv " << PrincipalVariation(_depth) << std::endl;
 				else {
@@ -162,6 +164,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 					if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
 					std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 						<< " hashfull " << tt::GetHashFull()
+						<< " time " << _thinkTime
 						//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
 						<< " pv " << PrincipalVariation(_depth) << std::endl;
 				}
@@ -226,6 +229,9 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	//	int repetitions = T == SINGLE ? 1 : 1;
 	//	for (int repetition = 0; repetition < repetitions; ++repetition){
 	for (int i = startWithMove; i < rootMoveCount; ++i) {
+		if (depth > 5 && (now() - searchStopCriteria.StartTime) > 3000) {
+			std::cout << "info depth " << depth << " currmove " << toString(rootMoves[i].move) << " currmovenumber " << i+1 << std::endl;
+		}
 		position next(pos);
 		next.ApplyMove(rootMoves[i].move);
 		//Check if other thread is already processing this node
@@ -238,12 +244,12 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 		}
 		if (type(rootMoves[i].move) == CASTLING) bonus = BONUS_CASTLING; else bonus = VALUE_ZERO;
 		if (ZWS) {
-			score = bonus - Search<EXPECTED_CUT_NODE>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, &subpv[0]);
-			if (score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
+			score = bonus - Search<EXPECTED_CUT_NODE>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+			if (score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 		}
 		else {
-			score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1 - reduction, &subpv[0]);
-			if (reduction > 0 && score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0]);
+			score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1 - reduction, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+			if (reduction > 0 && score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 		}
 		//if (T != SINGLE) tt::DecrementNProc(next.GetHash());
 		if (Stopped()) break;
@@ -360,7 +366,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			while ((move = cpos.NextMove())) {
 				position next(cpos);
 				if (next.ApplyMove(move)) {
-					Value score = -Search<EXPECTED_CUT_NODE>(-rbeta, Value(-rbeta + 1), next, rdepth, &subpv[0]);
+					Value score = -Search<EXPECTED_CUT_NODE>(-rbeta, Value(-rbeta + 1), next, rdepth, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 					if (score >= rbeta)
 						return score;
 				}
@@ -393,7 +399,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	Square recaptureSquare = pos.GetLastAppliedMove() && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	while ((move = pos.NextMove())) {
 		// late-move pruning
-		if (NT != PV && depth <= 3 && moveIndex >= depth * 4 && std::abs(bestScore) <= VALUE_MATE_THRESHOLD  && pos.IsQuietAndNoCastles(move)) { 
+		if (NT != PV && depth <= 3 && moveIndex >= depth * 4 && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD  && pos.IsQuietAndNoCastles(move)) { 
 			moveIndex++;
 			continue;
 		}
@@ -417,12 +423,12 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 				}
 			}
 			if (ZWS) {
-				score = -Search<EXPECTED_CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0]);
-				if (score > alpha && score < beta) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0]);
+				score = -Search<EXPECTED_CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+				if (score > alpha && score < beta) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 			}
 			else {
-				score = -Search<PV>(-beta, -alpha, next, depth - 1 - reduction + extension, &subpv[0]);
-				if (score > alpha && reduction > 0) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0]);
+				score = -Search<PV>(-beta, -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+				if (score > alpha && reduction > 0) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 			}
 
 			if (score >= beta) {

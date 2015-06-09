@@ -146,6 +146,9 @@ ENABLE_FULL_OPERATORS_ON(PieceType);
 ENABLE_FULL_OPERATORS_ON(Piece);
 
 inline Value operator-(Value v, int i) { return Value(int(v) - i); }
+inline Value operator+=(Value v, int i) { return Value(int(v) + i); }
+inline Value operator-=(Value v, int i) { return Value(int(v) - i); }
+inline Value operator+(Value v, int i) { return Value(int(v) + i); }
 
 inline Color& operator^=(Color& col, int i) { return col = Color(((int)col) ^ 1); }
 
@@ -201,11 +204,10 @@ inline Square lsb(Bitboard bb) {
 #ifdef _WIN64
 	_BitScanForward64(&index, bb);
 #else
-	if (index) return Square(index);
 	if (unsigned long(bb) != 0) _BitScanForward(&index, unsigned long(bb));
 	else {
 		_BitScanForward(&index, unsigned long(bb >> 32));
-		index += 31;
+		index += 32;
 	}
 #endif
 #pragma warning(suppress: 6102)
@@ -226,7 +228,16 @@ inline int msb(int n) {
 #endif
 
 #ifdef __GNUC__
+#ifdef NO_POPCOUNT
+inline int popcount(Bitboard bb) {
+	bb -= (bb >> 1) & 0x5555555555555555ULL;
+	bb = ((bb >> 2) & 0x3333333333333333ULL) + (bb & 0x3333333333333333ULL);
+	bb = ((bb >> 4) + bb) & 0x0F0F0F0F0F0F0F0FULL;
+	return (bb * 0x0101010101010101ULL) >> 56;
+}
+#else
 inline int popcount(Bitboard bb) { return __builtin_popcountll(bb); }
+#endif
 
 inline Square lsb(Bitboard b) {  return Square(__builtin_ctzll(b)); }
 

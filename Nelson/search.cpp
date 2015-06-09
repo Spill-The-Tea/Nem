@@ -52,13 +52,14 @@ std::string baseSearch::PrincipalVariation(int depth) {
 
 Move baseSearch::GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount) {
 	if (USE_BOOK && BookFile.size() > 0) {
-		book.probe(pos, BookFile, true, moves, moveCount);
+		if (book == nullptr) book = new polyglot::book(BookFile);
+		book->probe(pos, true, moves, moveCount);
 	}
 	return MOVE_NONE;
 }
 
 baseSearch::~baseSearch() {
-
+	if (book != nullptr) delete book;
 }
 
 baseSearch::baseSearch() {

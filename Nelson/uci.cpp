@@ -22,7 +22,6 @@ bool ponderActive = false;
 int ponderedMoves = 0;
 int ponderHits = 0;
 
-void dispatch(char *line);
 void dispatch(std::string line);
 
 // UCI command handlers
@@ -35,7 +34,6 @@ void go(std::vector<std::string> &tokens);
 void perft(std::vector<std::string> &tokens);
 void divide(std::vector<std::string> &tokens);
 void setvalue(std::vector<std::string> &tokens);
-void evaluatePosition();
 void quit();
 void stop();
 void thinkAsync(SearchStopCriteria ssc);
@@ -94,6 +92,10 @@ void dispatch(std::string line) {
 		bench(11);
 		bench2(11);
 	}
+	else if (!command.compare("sbench")) {
+		int64_t nc = bench(11);
+		std::cout << "bench: " << nc << std::endl;
+	}
 	//else if (!strcmp(token, "eval"))
 	//	cout << printEvaluation(pos);
 	//else if (!strcmp(token, "qeval"))
@@ -104,7 +106,7 @@ void dispatch(std::string line) {
 
 void uci() {
 	Engine->UciOutput = true;
-	puts("id name Nelson");
+	puts("id name Nemorino");
 	puts("id author Christian Günther");
 	printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
 	printf("option name Hash type spin default %i min 1 max 16384\n", HashSizeMB);

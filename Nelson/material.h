@@ -8,13 +8,22 @@ const int MATERIAL_KEY_OFFSET = 1839; //this assures that the Material Key is al
 const int MATERIAL_KEY_MAX = 729 + 1458 + 2 * (486 + 279 + 246) + 8 * (2916 + 26244) + MATERIAL_KEY_OFFSET;
 const int MATERIAL_KEY_UNUSUAL = MATERIAL_KEY_MAX + 1; //Entry for unusual Material distribution (like 3 Queens, 5 Bishops, ...)
 
+enum MaterialSearchFlags : uint8_t {
+	MSF_DEFAULT = 0,
+	MSF_SKIP_PRUNING = 1,
+	MSF_THEORETICAL_DRAW = 2
+};
+
 struct MaterialTableEntry {
 	Value Score;
 	Phase_t Phase;
 	EvalFunction EvaluationFunction;
+	uint8_t Flags;
 
 	inline bool IsLateEndgame() { return EvaluationFunction != &evaluateDefault || Phase > 200; }
 	inline bool IsPawnEnding() { return Phase == 256; }
+	inline bool SkipPruning() { return (Flags & MSF_SKIP_PRUNING) != 0; }
+	inline bool IsTheoreticalDraw() { return (Flags & MSF_THEORETICAL_DRAW) != 0; }
 };
 
 extern MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 2];

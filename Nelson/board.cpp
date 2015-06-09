@@ -8,7 +8,7 @@
 #include "material.h"
 #include "position.h"
 #include "hashtables.h"
-#include "kpk.h"
+#include "bbEndings.h"
 
 bool Chess960 = false;
 
@@ -536,7 +536,6 @@ void Initialize() {
 	InitializeMaterialTable();
 	InitializeShadowedFields();
 	pawn::initialize();
-	kpk::init_kpk();
 	tt::InitializeTranspositionTable(HashSizeMB);
 	std::chrono::system_clock::time_point end = std::chrono::high_resolution_clock::now();
 	auto runtime = end - begin;

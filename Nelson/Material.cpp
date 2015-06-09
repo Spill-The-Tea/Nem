@@ -1,7 +1,7 @@
 #include "material.h"
 #include "settings.h"
 #include "evaluation.h"
-#include "kpk.h"
+#include "bbEndings.h"
 #include "position.h"
 
 
@@ -30,6 +30,7 @@ void InitializeMaterialTable() {
 	undetermined.Score = VALUE_NOTYETDETERMINED;
 	undetermined.Phase = 128;
 	undetermined.EvaluationFunction = nullptr;
+	undetermined.Flags = MSF_DEFAULT;
 	std::fill_n(MaterialTable, MATERIAL_KEY_MAX + 2, undetermined);
 	MaterialTable[MATERIAL_KEY_UNUSUAL].EvaluationFunction = &evaluateDefault;
 	int pieceCounts[10];
@@ -65,9 +66,9 @@ void InitializeMaterialTable() {
 											assert(MaterialTable[key].Score == VALUE_NOTYETDETERMINED);
 											MaterialTable[key].Score = evaluation.getScore(phase);
 											MaterialTable[key].Phase = phase;
-											if (nWP == 0 && nWN == 0 && nWB == 0 && nWR == 0 && nWQ == 0) MaterialTable[key].EvaluationFunction = &easyMate < BLACK > ;
-											else if (nBP == 0 && nBN == 0 && nBB == 0 && nBR == 0 && nBQ == 0) MaterialTable[key].EvaluationFunction = &easyMate < WHITE > ;
-											else if (nWQ == 0 && nBQ == 0 && nWR == 0 && nBR == 0 && nWB == 0 && nBB == 0 && nWN == 0 && nBN == 0) MaterialTable[key].EvaluationFunction = &evaluatePawnEnding;
+											if (nWQ == 0 && nBQ == 0 && nWR == 0 && nBR == 0 && nWB == 0 && nBB == 0 && nWN == 0 && nBN == 0) MaterialTable[key].EvaluationFunction = &evaluatePawnEnding;
+											else if (nWP == 0 && nWN == 0 && nWB == 0 && nWR == 0 && nWQ == 0) MaterialTable[key].EvaluationFunction = &easyMate < BLACK >;
+											else if (nBP == 0 && nBN == 0 && nBB == 0 && nBR == 0 && nBQ == 0) MaterialTable[key].EvaluationFunction = &easyMate < WHITE > ;										
 											else MaterialTable[key].EvaluationFunction = &evaluateDefault;
 										}
 									}
@@ -88,35 +89,42 @@ void InitializeMaterialTable() {
 	MaterialKey_t key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].Score = VALUE_DRAW;
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
 	//KBK
 	pieceCounts[WBISHOP] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].Score = VALUE_DRAW;
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
 	pieceCounts[WBISHOP] = 0; pieceCounts[BBISHOP] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].Score = VALUE_DRAW;
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
 	pieceCounts[BBISHOP] = 0;
 	//KNK 
 	pieceCounts[WKNIGHT] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].Score = VALUE_DRAW;
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
 	pieceCounts[WKNIGHT] = 0; pieceCounts[BKNIGHT] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].Score = VALUE_DRAW;
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
 	pieceCounts[BKNIGHT] = 0;
 	//KNNK 
 	pieceCounts[WKNIGHT] = 2;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].Score = VALUE_DRAW;
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
 	pieceCounts[WKNIGHT] = 0; pieceCounts[BKNIGHT] = 2;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].Score = VALUE_DRAW;
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
 	pieceCounts[BKNIGHT] = 0;
 	for (int i = 0; i < 10; ++i) pieceCounts[i] = 0;
 	//KPK
@@ -204,10 +212,12 @@ void InitializeMaterialTable() {
 	pieceCounts[WQUEEN] = pieceCounts[BPAWN] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].EvaluationFunction = &evaluateKQKP < WHITE > ;
+	MaterialTable[key].Flags |= MSF_SKIP_PRUNING;
 	pieceCounts[WQUEEN] = pieceCounts[BPAWN] = 0;
 	pieceCounts[BQUEEN] = pieceCounts[WPAWN] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].EvaluationFunction = &evaluateKQKP < BLACK > ;
+	MaterialTable[key].Flags |= MSF_SKIP_PRUNING;
 	pieceCounts[BQUEEN] = pieceCounts[WPAWN] = 0;
 	//KRKP
 	pieceCounts[WROOK] = pieceCounts[BPAWN] = 1;
@@ -218,5 +228,63 @@ void InitializeMaterialTable() {
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].EvaluationFunction = &evaluateKRKP<BLACK>;
 	pieceCounts[BROOK] = pieceCounts[WPAWN] = 0;
-
+	//KNKP
+	pieceCounts[WKNIGHT] = pieceCounts[BPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKNKP<WHITE>;
+	pieceCounts[WKNIGHT] = pieceCounts[BPAWN] = 0;
+	pieceCounts[BKNIGHT] = pieceCounts[WPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKNKP<BLACK>;
+	pieceCounts[BKNIGHT] = pieceCounts[WPAWN] = 0;
+	//KBKP
+	pieceCounts[WBISHOP] = pieceCounts[BPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKBKP<WHITE>;
+	pieceCounts[WBISHOP] = pieceCounts[BPAWN] = 0;
+	pieceCounts[BBISHOP] = pieceCounts[WPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKBKP<BLACK>;
+	pieceCounts[BBISHOP] = pieceCounts[WPAWN] = 0;
+	//KNKPx
+	pieceCounts[WKNIGHT] = 1;
+	for (int pawnCount = 2; pawnCount < 9; ++pawnCount) {
+		pieceCounts[BPAWN] = pawnCount;
+		key = calculateMaterialKey(&pieceCounts[0]);
+		MaterialTable[key].EvaluationFunction = &evaluateKNKPx<WHITE>;
+	}
+	pieceCounts[WKNIGHT] = pieceCounts[BPAWN] = 0;
+	pieceCounts[BKNIGHT] = 1;
+	for (int pawnCount = 2; pawnCount < 9; ++pawnCount) {
+		pieceCounts[WPAWN] = pawnCount;
+		key = calculateMaterialKey(&pieceCounts[0]);
+		MaterialTable[key].EvaluationFunction = &evaluateKNKPx<BLACK>;
+	}
+	pieceCounts[BKNIGHT] = pieceCounts[WPAWN] = 0;
+	//KBKPx
+	pieceCounts[WBISHOP] = 1;
+	for (int pawnCount = 2; pawnCount < 9; ++pawnCount) {
+		pieceCounts[BPAWN] = pawnCount;
+		key = calculateMaterialKey(&pieceCounts[0]);
+		MaterialTable[key].EvaluationFunction = &evaluateKBKPx<WHITE>;
+	}
+	pieceCounts[WBISHOP] = pieceCounts[BPAWN] = 0;
+	pieceCounts[BBISHOP] = 1;
+	for (int pawnCount = 2; pawnCount < 9; ++pawnCount) {
+		pieceCounts[WPAWN] = pawnCount;
+		key = calculateMaterialKey(&pieceCounts[0]);
+		MaterialTable[key].EvaluationFunction = &evaluateKBKPx<BLACK>;
+	}
+	pieceCounts[BBISHOP] = pieceCounts[WPAWN] = 0;
+	//KQKQP
+	pieceCounts[WQUEEN] = pieceCounts[WPAWN] = pieceCounts[BQUEEN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKQPKQ<WHITE>;
+	//MaterialTable[key].Flags |= MSF_SKIP_PRUNING;
+	pieceCounts[WPAWN] = 0;
+	pieceCounts[BPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKQPKQ<BLACK>;
+	//MaterialTable[key].Flags |= MSF_SKIP_PRUNING;
+	pieceCounts[WQUEEN] = pieceCounts[BPAWN] = pieceCounts[BQUEEN] = 0;
 }

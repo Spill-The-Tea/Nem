@@ -162,6 +162,7 @@ bool position::ApplyMove(Move move) {
 	assert(PawnKey == calculatePawnKey());
 	if (pawn->Key != PawnKey) pawn = pawn::probe(*this);
 	lastAppliedMove = move;
+	if (material->IsTheoreticalDraw()) result = DRAW;
 	return !(attackedByUs & PieceBB(KING, Color(SideToMove ^ 1)));
 	//if (attackedByUs & PieceBB(KING, Color(SideToMove ^ 1))) return false;
 	//attackedByThem = calculateAttacks(Color(SideToMove ^1));
@@ -323,15 +324,14 @@ end:
 	if (hashMove && move == hashMove) return NextMove(); else return move;
 }
 
-//copied from Stockfish
-void position::insertionSort(ValuatedMove* begin, ValuatedMove* end)
+//Insertion Sort
+void position::insertionSort(ValuatedMove* first, ValuatedMove* last)
 {
 	ValuatedMove tmp, *p, *q;
-	for (p = begin + 1; p < end; ++p)
+	for (p = first + 1; p < last; ++p)
 	{
 		tmp = *p;
-		for (q = p; q != begin && *(q - 1) < tmp; --q)
-			*q = *(q - 1);
+		for (q = p; q != first && *(q - 1) < tmp; --q) *q = *(q - 1);
 		*q = tmp;
 	}
 }
@@ -611,7 +611,6 @@ const Value position::SEE(Square from, const Square to) const
 }
 
 
-//"Copied" from Stockfish source code
 void position::setFromFEN(const std::string& fen) {
 	material = nullptr;
 	std::fill_n(Board, 64, BLANK);

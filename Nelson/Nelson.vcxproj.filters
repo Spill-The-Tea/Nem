@@ -16,11 +16,9 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
+    <Text Include="EvaluationContinuity.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Nelson.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="position.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -48,13 +46,16 @@
     <ClCompile Include="hashtables.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="kpk.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="polyglotbook.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="settings.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Nemorino.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="book.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="bbEndings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -92,13 +93,13 @@
     <ClInclude Include="hashtables.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="kpk.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="polyglotbook.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="book.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="bbEndings.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

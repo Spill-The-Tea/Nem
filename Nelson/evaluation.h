@@ -27,6 +27,11 @@ template<Color WinningSide> Value evaluateKBPK(const position& pos);
 template <Color WinningSide> Value easyMate(const position& pos);
 template <Color WinningSide> Value evaluateKQKP(const position& pos);
 template <Color StrongerSide> Value evaluateKRKP(const position& pos);
+template <Color StrongerSide> Value evaluateKNKP(const position& pos);
+template <Color StrongerSide> Value evaluateKBKP(const position& pos);
+template <Color SideWithoutPawns> Value evaluateKNKPx(const position& pos);
+template <Color SideWithoutPawns> Value evaluateKBKPx(const position& pos);
+template <Color StrongerSide> Value evaluateKQPKQ(const position& pos);
 eval evaluateMobility(const position& pos);
 eval evaluateMobility2(const position& pos);
 eval evaluateKingSafety(const position& pos);
@@ -61,23 +66,52 @@ template <Color WinningSide> Value easyMate(const position& pos) {
 	return result * (1 - 2 * pos.GetSideToMove());
 }
 
-//Copied from SF: Doesn't recognize drawn positions (could be improved)
-//Idea create bitbase for all positions where pawn is on A7 and C7 and the Black King is controlling
-//the conversion square => Size: 8 (black king pawn constellations) * 64 (wking squares) * 64 (wqueen squares)
-// results in a bitbase of 4k (Problem there are some very rare positions where even a pawn on 5th rank draws)
+//If Pawn isn't on 7th Rank it's always a win for stronger side
+//on 7th Rank it is a if pawn is no rook or bishop pawn
+//for rook or bishop pawns there is a bitbase in bbEndings
 template<Color WinningSide> Value evaluateKQKP(const position& pos) {
-	Square winnerKSq = lsb(pos.PieceBB(KING, WinningSide));
-	Square loserKSq = lsb(pos.PieceBB(KING, ~WinningSide));
-	Square pawnSq = lsb(pos.PieceBB(PAWN, ~WinningSide));
-
-	Value result = Value(BonusDistance[ChebishevDistance(winnerKSq, loserKSq)]);
-
-	int relativeRank = pawnSq >> 3;;
+	Value result;
+	//First check if it's a "clear" win
+	Bitboard pawnBB = pos.PieceBB(PAWN, ~WinningSide);
+	Square pawnSq = lsb(pawnBB);
+	Square winningKingSquare = lsb(pos.PieceBB(KING, WinningSide));
+	int relativeRank = pawnSq >> 3;
 	if (WinningSide == WHITE) relativeRank = 7 - relativeRank;
-	if (relativeRank != Rank7
-		|| ChebishevDistance(loserKSq, pawnSq) != 1
-		|| !((A_FILE | C_FILE | F_FILE | H_FILE) & pos.PieceBB(PAWN, ~WinningSide)))
-		result += VALUE_KNOWN_WIN + PieceValuesEG[QUEEN] - PieceValuesEG[PAWN];
+	if ((pawnBB & (A_FILE | C_FILE | F_FILE | H_FILE)) == 0) 
+		result = VALUE_KNOWN_WIN + PieceValuesEG[QUEEN] - PieceValuesEG[PAWN] - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
+	else {		
+
+		if (relativeRank != Rank7)
+			result = VALUE_KNOWN_WIN + PieceValuesEG[QUEEN] - PieceValuesEG[PAWN] - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
+		else {
+//Now we need to probe the bitbase => therefore normalize position (White is winning and pawn is on left hals of board)
+			Square wKingSquare, bKingSquare, wQueenSquare;
+			Color stm;
+			if (WinningSide == WHITE) {
+				wKingSquare = winningKingSquare;
+				bKingSquare = lsb(pos.PieceBB(KING, BLACK));
+				wQueenSquare = lsb(pos.PieceBB(QUEEN, WHITE));
+				stm = pos.GetSideToMove();
+			}
+			else {
+				//flip colors
+				pawnSq = Square(pawnSq ^ 56);
+				wKingSquare = Square(winningKingSquare ^ 56);
+				bKingSquare = Square(lsb(pos.PieceBB(KING, WHITE)) ^ 56);
+				wQueenSquare = Square(lsb(pos.PieceBB(QUEEN, BLACK)) ^ 56);
+				stm = Color(pos.GetSideToMove() ^ 1);
+			}
+			if ((pawnSq & 7) > FileD) {
+				pawnSq = Square(pawnSq ^ 7);
+				wKingSquare = Square(wKingSquare ^ 7);
+				bKingSquare = Square(bKingSquare ^ 7);
+				wQueenSquare = Square(wQueenSquare ^ 7);
+			}
+			bool isWin = pawnSq == A2 ? kqkp::probeA2(wKingSquare, wQueenSquare, bKingSquare, stm) : kqkp::probeC2(wKingSquare, wQueenSquare, bKingSquare, stm);
+			if (isWin) result = VALUE_KNOWN_WIN + PieceValuesEG[QUEEN] - PieceValuesEG[PAWN] - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
+			else result = VALUE_DRAW;
+		}
+	}
 
 	return WinningSide == pos.GetSideToMove() ? result : -result;
 }
@@ -101,11 +135,13 @@ template<Color WinningSide> Value evaluateKBPK(const position& pos) {
 					&& (ChebishevDistance(weakKing, conversionSquare) - (pos.GetSideToMove() != WinningSide) <= ChebishevDistance(strongKing, conversionSquare))) {
 					//Weak King is in pawn square and at least as near to the conversion square as the Strong King => search must solve it
 					if (WinningSide == WHITE) {
+						//Todo: heck if factors 10 and 5can't be replaced with 2 and 1
 						result = pos.GetMaterialScore()
 							+ Value(10 * (ChebishevDistance(weakKing, conversionSquare) - ChebishevDistance(strongKing, conversionSquare)))
 							+ Value(5 * (pawnSquare >> 3));
 					}
 					else {
+						//Todo: heck if factors 10 and 5can't be replaced with 2 and 1
 						result = pos.GetMaterialScore()
 							- Value(10 * (ChebishevDistance(weakKing, conversionSquare) - ChebishevDistance(strongKing, conversionSquare)))
 							- Value(5 * (7 - (pawnSquare >> 3)));
@@ -142,9 +178,130 @@ template <Color WinningSide> Value evaluateKNBK(const position& pos) {
 	}
 
 	Value result = VALUE_KNOWN_WIN + Value(BonusDistance[ChebishevDistance(winnerKingSquare, loosingKingSquare)]) + Value(PSQ_MateInCorner[loosingKingSquare]);
+	return WinningSide == pos.GetSideToMove() ? result : -result;
+}
 
-	if (WinningSide == BLACK) result = -result;
-	return result * (1 - 2 * pos.GetSideToMove());
+//KQP vs KQ: Try to centralize Queens and weaker side should try to get his king to the "safe" areas
+template <Color StrongerSide> Value evaluateKQPKQ(const position& pos) {
+	Value result = pos.GetMaterialScore() + pos.PawnStructureScore() + evaluateMobility(pos).egScore 
+		+ evaluateThreats<WHITE>(pos).egScore - evaluateThreats<BLACK>(pos).egScore;
+	//result.Pieces = evaluatePieces<WHITE>(pos) -evaluatePieces<BLACK>(pos);
+	if (StrongerSide == BLACK) result = -result;
+	Square pawnSquare = lsb(pos.PieceTypeBB(PAWN));
+	File pawnFile = File(pawnSquare & 7);
+	Square conversionSquare = ConversionSquare<StrongerSide>(pawnSquare);
+	Bitboard safeArea = KingAttacks[conversionSquare] & ToBitboard(conversionSquare);
+	if (pawnFile <= FileB) {
+		safeArea |= StrongerSide == BLACK ? KingAttacks[H8] | ToBitboard(H8) : KingAttacks[H1] | ToBitboard(H1);
+	}
+	else if (pawnFile >= FileG) {
+		safeArea |= StrongerSide == BLACK ? KingAttacks[A8] | ToBitboard(A8) : KingAttacks[A1] | ToBitboard(A1);
+	}
+	if ((pos.PieceBB(KING, ~StrongerSide)&safeArea) != 0) result -= 30;
+	if ((pos.PieceBB(QUEEN, StrongerSide) & CENTER) != 0) result += 10;
+	//if ((pos.PieceBB(QUEEN, StrongerSide) & EXTENDED_CENTER) != 0) result += 10;
+	//if ((pos.PieceBB(QUEEN, ~StrongerSide) & CENTER) != 0) result -= 5;
+	//if ((pos.PieceBB(QUEEN, ~StrongerSide) & EXTENDED_CENTER) != 0) result -= 5;
+	return StrongerSide == pos.GetSideToMove() ? result : -result;
+	//Square pawnSquare = lsb(pos.PieceTypeBB(PAWN));
+	//File pawnFile = File(pawnSquare & 7);
+	//Square conversionSquare = ConversionSquare<StrongerSide>(pawnSquare);
+	//Bitboard safeArea = KingAttacks[conversionSquare] & ToBitboard(conversionSquare);
+	//if (pawnFile <= FileB) {
+	//	safeArea |= StrongerSide == BLACK ? KingAttacks[H8] | ToBitboard(H8) : KingAttacks[H1] | ToBitboard(H1);
+	//}
+	//else if (pawnFile >= FileG) {
+	//	safeArea |= StrongerSide == BLACK ? KingAttacks[A8] | ToBitboard(A8) : KingAttacks[A1] | ToBitboard(A1);
+	//}
+	//Value result = pos.PawnStructureScore() + pos.GetMaterialTableEntry()->Score;
+	//if (StrongerSide == BLACK) result = -result;
+	//if ((pos.PieceBB(QUEEN, StrongerSide) & CENTER) != 0) result += 1;
+	//if ((pos.PieceBB(QUEEN, StrongerSide) & EXTENDED_CENTER) != 0) result += 1;
+	//if ((pos.PieceBB(QUEEN, ~StrongerSide) & CENTER) != 0) result -= 1;
+	//if ((pos.PieceBB(QUEEN, ~StrongerSide) & EXTENDED_CENTER) != 0) result -= 1;
+	//if ((pos.PieceBB(KING, ~StrongerSide)&safeArea) != 0) result -= 4;
+	////Strong King's best place is in front and near of his pawn
+	//Bitboard kingArea = StrongerSide == WHITE ? KingAttacks[pawnSquare + 8] : KingAttacks[pawnSquare - 8];
+	//if ((pos.PieceBB(KING, StrongerSide) & kingArea) != 0) result += 4;
+	//else if ((kingArea & KingAttacks[lsb(pos.PieceBB(KING, StrongerSide))]) != 0) result += 2;
+	//return StrongerSide == pos.GetSideToMove() ? result - 4 * pos.IsCheck() : -result;
+}
+
+//Stronger Side has no chance to win - this endgame is totally drawish, however if anybody can win, 
+//it's the weaker side
+template <Color StrongerSide> Value evaluateKNKP(const position& pos) {
+	Square pawnSquare = lsb(pos.PieceBB(PAWN, ~StrongerSide));
+	Square conversionSquare = StrongerSide == WHITE ? Square(pawnSquare & 7) : Square((pawnSquare & 7) + 56);
+	int dtc = ChebishevDistance(pawnSquare, conversionSquare);
+	//max dtc is 6 =>
+	Value result = Value(dtc * dtc - 37); //From stronger side's POV
+	return StrongerSide == pos.GetSideToMove() ? result : -result;
+}
+
+//Stronger Side has no chance to win - this endgame is totally drawish, however if anybody can win, 
+//it's the weaker side
+template <Color StrongerSide> Value evaluateKBKP(const position& pos) {
+	Value result;
+	Square pawnSquare = lsb(pos.PieceBB(PAWN, ~StrongerSide));
+	Square bishopSquare = lsb(pos.PieceBB(BISHOP, StrongerSide));
+	Square conversionSquare = StrongerSide == WHITE ? Square(pawnSquare & 7) : Square((pawnSquare & 7) + 56);
+	Bitboard pawnPath = InBetweenFields[pawnSquare][conversionSquare] | ToBitboard(conversionSquare);
+	if ((pawnPath & pos.PieceBB(KING, StrongerSide)) != 0 || (pawnPath & pos.GetAttacksFrom(bishopSquare)) != 0) {
+		result = VALUE_DRAW - 1;
+	}
+	else {
+		int dtc = ChebishevDistance(pawnSquare, conversionSquare);
+		result = Value(dtc * dtc - 38); //From stronger side's POV
+	}
+	return StrongerSide == pos.GetSideToMove() ? result : -result;
+}
+
+//Knight vs 2 or more pawns => Knight can nearly never win
+//might convert to KNKQPx-1 Which will be evaluated in the default way 
+//=> Therefore evaluation should never exceed default evaluation for this ending
+//Evaluation should be positive for SideWithoutPawns (but drawish for 2 pawns)
+template <Color SideWithoutPawns> Value evaluateKNKPx(const position& pos) {
+	Bitboard pawns = pos.PieceTypeBB(PAWN);
+	int pawnCount = popcount(pawns);
+	//Material with scaled down knight value
+	//2 pawns => Knight counts half => total Material value = 0.5 Bishop - 2 Pawns = -40
+	//3 pawns => Knight counts 2/3  => total Material Value = -80
+	//4 pawns => Knight counts 3/4  => total Material Value = -160
+	Value result = Value(int(int(PieceValuesEG[KNIGHT])*(1.0 - 1.0 / pawnCount))) - pawnCount * PieceValuesEG[PAWN]; //from Side without Pawns POV
+	//King and Knight should try to control or block the pawns frontfill
+	Bitboard frontspan = SideWithoutPawns == WHITE ? FrontFillSouth(pawns) : FrontFillNorth(pawns);
+	//result += Value(5 * popcount(frontspan & (pos.AttacksByPieceType(SideWithoutPawns, KNIGHT) | pos.PieceTypeBB(KNIGHT)))
+	//	          + 5 * popcount(frontspan & (pos.AttacksByPieceType(SideWithoutPawns, KING) | pos.PieceBB(KING, SideWithoutPawns)))
+	//			  - 10 * popcount((frontspan | pos.PieceTypeBB(PAWN)) & pos.AttacksByPieceType(~SideWithoutPawns, KING))
+	//	);
+	result += Value(popcount(frontspan & (pos.AttacksByPieceType(SideWithoutPawns, KNIGHT) | pos.PieceTypeBB(KNIGHT) | pos.AttacksByPieceType(SideWithoutPawns, KING) | pos.PieceBB(KING, SideWithoutPawns))));
+	result -= Value(2*popcount(pos.PieceTypeBB(PAWN) & pos.AttacksByPieceType(~SideWithoutPawns, KING)));
+	if (SideWithoutPawns == BLACK) result = -result; //now White's POV
+	result += pos.PawnStructureScore();
+	return (1 - 2 * pos.GetSideToMove()) * result;
+}
+
+//Bishop vs 2 or more pawns => Bishop can nearly never win
+//therefore evaluation should be always positive for Side with Pawns
+//To keep evaluation continuity evluation should be less than standard evaluation
+//with an additional Knight => we try to use default evaluation but reduce material value
+//of Bishop
+template <Color SideWithoutPawns> Value evaluateKBKPx(const position& pos) {
+	Bitboard pawns = pos.PieceTypeBB(PAWN);
+	//Bitboard frontspan = SideWithoutPawns == WHITE ? FrontFillSouth(pawns) : FrontFillNorth(pawns);
+	int pawnCount = popcount(pawns);
+	//Material with scaled down bishop value
+    //2 pawns => Bishop counts half => total Material value = 0.5 Bishop - 2 Pawns = -40
+	//3 pawns => Bishop counts 2/3  => total Material Value = -80
+	//4 pawns => Bishop counts 3/4  => total Material Value = -160
+	Value result = Value(int(int(PieceValuesEG[BISHOP])*(1.0 - 1.0/pawnCount))) - pawnCount * PieceValuesEG[PAWN]; //from Side without Pawns POV
+	Bitboard frontspan = SideWithoutPawns == WHITE ? FrontFillSouth(pawns) : FrontFillNorth(pawns);
+	result += Value(popcount(frontspan & (pos.AttacksByPieceType(SideWithoutPawns, BISHOP) | pos.PieceTypeBB(BISHOP) | pos.AttacksByPieceType(SideWithoutPawns, KING) | pos.PieceBB(KING, SideWithoutPawns))));
+	result -= Value(2 * popcount(pos.PieceTypeBB(PAWN) & pos.AttacksByPieceType(~SideWithoutPawns, KING)));
+	if (SideWithoutPawns == BLACK) result = -result; //now White's POV
+	//result += evaluateMobility(pos).egScore + pos.PawnStructureScore() + evaluateThreats<WHITE>(pos).egScore - evaluateThreats<BLACK>(pos).egScore;
+	result += pos.PawnStructureScore();
+	return (1 - 2 * pos.GetSideToMove()) * result;
 }
 
 template <Color StrongerSide> Value evaluateKRKP(const position& pos) {

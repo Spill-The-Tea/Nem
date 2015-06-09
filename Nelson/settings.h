@@ -26,7 +26,29 @@ const eval MOBILITY_BONUS_QUEEN[] = { eval(-14, -13), eval(-9, -8), eval(-2, -2)
                                       eval(7, 14), eval(7, 14), eval(7, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), 
 									  eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14) };
 
+const int KING_SAFETY_MAXVAL = 500;
+const int KING_SAFETY_MAXINDEX = 61;
+const double KING_SAFETY_LINEAR = 0.5;
+
+#define KSV(I) Value(std::min(KING_SAFETY_MAXVAL, int(I*I / (KING_SAFETY_MAXINDEX * KING_SAFETY_MAXINDEX / KING_SAFETY_MAXVAL) + KING_SAFETY_LINEAR * I)))
+
 const Value KING_SAFETY[100] = {
+	Value(0), KSV(1), KSV(2), KSV(3), KSV(4), KSV(5), KSV(6), KSV(7), KSV(8), KSV(9),
+	KSV(10), KSV(11), KSV(12), KSV(13), KSV(14), KSV(15), KSV(16), KSV(17), KSV(18), KSV(19),
+	KSV(20), KSV(21), KSV(22), KSV(23), KSV(24), KSV(25), KSV(26), KSV(27), KSV(28), KSV(29),
+	KSV(30), KSV(31), KSV(32), KSV(33), KSV(34), KSV(35), KSV(36), KSV(37), KSV(38), KSV(39),
+	KSV(40), KSV(41), KSV(42), KSV(43), KSV(44), KSV(45), KSV(46), KSV(47), KSV(48), KSV(49),
+	KSV(50), KSV(51), KSV(52), KSV(53), KSV(54), KSV(55), KSV(56), KSV(57), KSV(58), KSV(59),
+	KSV(60), KSV(61), KSV(62), KSV(63), KSV(64), KSV(65), KSV(66), KSV(67), KSV(68), KSV(69),
+	KSV(70), KSV(71), KSV(72), KSV(73), KSV(74), KSV(75), KSV(76), KSV(77), KSV(78), KSV(79),
+	KSV(80), KSV(81), KSV(82), KSV(83), KSV(84), KSV(85), KSV(86), KSV(87), KSV(88), KSV(89),
+	KSV(90), KSV(91), KSV(92), KSV(93), KSV(94), KSV(95), KSV(96), KSV(97), KSV(98), KSV(99)
+};
+
+#undef KSV
+
+/*const Value KING_SAFETY[100] = {
+	Value(0), KSV(1), KSV(2), KSV(3), KSV(4), KSV(5), KSV(6), KSV(7), KSV(8), KSV(9),
 	Value(0), Value(0), Value(1), Value(2), Value(3), Value(5), Value(7), Value(9), Value(12), Value(15),
 	Value(18), Value(22), Value(26), Value(30), Value(35), Value(39), Value(44), Value(50), Value(56), Value(62),
 	Value(68), Value(75), Value(82), Value(85), Value(89), Value(97), Value(105), Value(113), Value(122), Value(131),
@@ -37,7 +59,7 @@ const Value KING_SAFETY[100] = {
 	Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500),
 	Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500),
 	Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500), Value(500)
-};
+}*/;
 
 // Threat[defended/weak][minor/major attacking][attacked PieceType] contains
 // bonuses according to which piece type attacks which one.
