@@ -37,6 +37,7 @@ const Bitboard BORDER = RANK1 | RANK8 | A_FILE | H_FILE;
 const Bitboard EXTENDED_BORDER = BORDER | RANK7 | RANK2 | B_FILE | G_FILE;
 const Bitboard CENTER = ~(EXTENDED_BORDER & C_FILE & F_FILE & RANK3 & RANK6);
 const Bitboard EXTENDED_CENTER = ~EXTENDED_BORDER;
+const Bitboard EDGE[4] = { A_FILE, H_FILE, RANK1, RANK8 };
 const Bitboard AntiDiagonals[] = { 0x102, 0x10204, 0x1020408, 0x102040810, 0x10204081020,
                  0x1020408102040, 0x102040810204080, 0x204081020408000, 0x408102040800000,
                  0x810204080000000, 0x1020408000000000, 0x2040800000000000, 0x4080000000000000 };
@@ -58,6 +59,13 @@ const Bitboard SaveSquaresForKing = 0xe7c300000000c3e7;
 const Bitboard ShelterPawns2ndRank = 0xe700000000e700;
 const Bitboard ShelterPawns3rdRank = 0xe70000e70000;
 
+#ifdef USE_PEXT
+extern Bitboard ROOK_MASKS[64];
+extern Bitboard BISHOP_MASKS[64];
+extern int ROOK_OFFSETS[64];
+extern int BISHOP_OFFSETS[64];
+extern Bitboard ATTACKS[107648];
+#else
 extern Bitboard MagicMovesRook[88576];
 extern Bitboard MagicMovesBishop[4800];
 extern int BishopShift[64];
@@ -68,6 +76,7 @@ extern int IndexOffsetRook[64];
 extern int IndexOffsetBishop[64];
 extern uint64_t RookMagics[64];
 extern uint64_t BishopMagics[64];
+#endif
 extern Bitboard InBetweenFields[64][64];
 extern Bitboard RaysBySquares[64][64];
 extern Bitboard ShadowedFields[64][64];
@@ -105,6 +114,20 @@ inline Bitboard squaresOfSameColor(Square s) {
 	return DARKSQUARES & s ? DARKSQUARES : ~DARKSQUARES;
 }
 
+#ifdef USE_PEXT
+
+inline Bitboard RookTargets(Square rookSquare, Bitboard occupied) {
+	return ATTACKS[ROOK_OFFSETS[rookSquare]
+		+ pext(occupied, ROOK_MASKS[rookSquare])];
+}
+
+inline Bitboard BishopTargets(Square bishopSquare, Bitboard occupied) {
+	return ATTACKS[BISHOP_OFFSETS[bishopSquare]
+		+ pext(occupied, BISHOP_MASKS[bishopSquare])];
+}
+
+#else
+
 inline Bitboard RookTargets(Square rookSquare, Bitboard occupied) {
 	int index = (int)(((OccupancyMaskRook[rookSquare] & occupied) * RookMagics[rookSquare]) >> RookShift[rookSquare]);
 	return MagicMovesRook[index + IndexOffsetRook[rookSquare]];
@@ -114,6 +137,8 @@ inline Bitboard BishopTargets(Square bishopSquare, Bitboard occupied) {
 	int index = (int)(((OccupancyMaskBishop[bishopSquare] & occupied) * BishopMagics[bishopSquare]) >> BishopShift[bishopSquare]);
 	return MagicMovesBishop[index + IndexOffsetBishop[bishopSquare]];
 }
+
+#endif
 
 inline Bitboard QueenTargets(Square queenSquare, Bitboard occupied) {
 	return RookTargets(queenSquare, occupied) | BishopTargets(queenSquare, occupied);

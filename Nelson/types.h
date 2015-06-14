@@ -353,6 +353,7 @@ struct SearchStopCriteria {
 	int64_t StartTime = 0;
 	int64_t HardStopTime = INT64_MAX;
 	int64_t SoftStopTime = INT64_MAX;
+	int64_t MinStopTime = INT64_MIN;
 };
 
 
@@ -375,6 +376,23 @@ inline int64_t now() {
 inline int64_t now() {
 	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 	//return GetTickCount64();
+}
+#endif
+
+#ifdef USE_PEXT 
+#include <immintrin.h> // Header for _pext_u64() intrinsic
+inline Bitboard pext(Bitboard val, Bitboard mask) {
+	return _pext_u64(val, mask);
+}
+#else
+inline Bitboard pext(Bitboard val, Bitboard mask) {
+	Bitboard res = 0;
+	for (Bitboard bb = 1; mask; bb += bb) {
+		if (val & mask & (0 - mask))
+			res |= bb;
+		mask &= mask - 1;
+	}
+	return res;
 }
 #endif
 

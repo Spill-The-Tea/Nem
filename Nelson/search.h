@@ -150,9 +150,9 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 			if (!Stopped()) {
 				nodeCounts[_depth] = NodeCount - nodeCounts[_depth - 1];
 				if (_depth > 3) BranchingFactor = sqrt(1.0 * nodeCounts[_depth] / nodeCounts[_depth - 2]);
-				if (!PonderMode && (tNow > searchStopCriteria.SoftStopTime || (3 * (tNow - searchStopCriteria.StartTime) + searchStopCriteria.StartTime) > searchStopCriteria.SoftStopTime)) Stop = true;
+				if (!PonderMode && tNow >= searchStopCriteria.MinStopTime && (tNow > searchStopCriteria.SoftStopTime || (3 * (tNow - searchStopCriteria.StartTime) + searchStopCriteria.StartTime) > searchStopCriteria.SoftStopTime)) Stop = true;
 			}
-			if (Stopped() || (UciOutput && _thinkTime > 200)) {
+			if (Stopped() || UciOutput) {
 				if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 					std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
@@ -335,8 +335,8 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			return effectiveEvaluation - BETA_PRUNING_FACTOR * depth;
 		//Null Move Pruning
 		if (depth > 1 //only if there is available depth to reduce
-			&& effectiveEvaluation > beta
-			&& pos.GetMaterialTableEntry()->Phase < 256 //no pawn endings
+			&& effectiveEvaluation >= beta
+			&& pos.NonPawnMaterial(pos.GetSideToMove())
 			) {
 			int reduction = (depth >> 1) + 1;
 			Square epsquare = pos.GetEPSquare();

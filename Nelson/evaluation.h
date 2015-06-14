@@ -3,6 +3,7 @@
 #include "types.h"
 #include "board.h"
 #include "position.h"
+#include "bbEndings.h"
 
 
 struct evaluation
@@ -36,6 +37,7 @@ eval evaluateMobility(const position& pos);
 eval evaluateMobility2(const position& pos);
 eval evaluateKingSafety(const position& pos);
 Value evaluatePawnEnding(const position& pos);
+template <Color COL> eval evaluateThreats(const position& pos);
 
 const int PSQ_GoForMate[64] = {
 	100, 90, 80, 70, 70, 80, 90, 100,

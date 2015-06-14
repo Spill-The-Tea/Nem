@@ -300,6 +300,172 @@ void InitializeShadowedFields()
 	}
 }
 
+#ifdef USE_PEXT
+Bitboard ROOK_MASKS[64];
+Bitboard BISHOP_MASKS[64];
+int ROOK_OFFSETS[64];
+int BISHOP_OFFSETS[64];
+Bitboard ATTACKS[107648];
+
+void initializePextMasks() {
+	for (int rank = 0; rank < 8; ++rank) {
+		for (int file = 0; file < 8; ++file) {
+			int square = 8 * rank + file;
+			Bitboard squareBB = 1ull << square;
+			ROOK_MASKS[square] = RANKS[rank] | FILES[file];
+			for (int edge = 0; edge < 4; ++edge) {
+				if (!(EDGE[edge] & squareBB))
+					ROOK_MASKS[square] &= ~EDGE[edge];
+			}
+			ROOK_MASKS[square] &= ~squareBB;
+			BISHOP_MASKS[square] = 0ull;
+			for (int i = 1; i < 8; ++i) {
+				int to = square + 9 * i;
+				Bitboard toBB = 1ull << to;
+				if (to > 63 || (toBB & A_FILE))
+					break;
+				BISHOP_MASKS[square] |= toBB;
+			}
+			for (int i = 1; i < 8; ++i) {
+				int to = square + 7 * i;
+				Bitboard toBB = 1ull << to;
+				if (to > 63 || (toBB & H_FILE))
+					break;
+				BISHOP_MASKS[square] |= toBB;
+			}
+			for (int i = 1; i < 8; ++i) {
+				int to = square - 9 * i;
+				Bitboard toBB = 1ull << to;
+				if (to < 0 || (toBB & H_FILE))
+					break;
+				BISHOP_MASKS[square] |= toBB;
+			}
+			for (int i = 1; i < 8; ++i) {
+				int to = square - 7 * i;
+				Bitboard toBB = 1ull << to;
+				if (to < 0 || (toBB & A_FILE))
+					break;
+				BISHOP_MASKS[square] |= toBB;
+			}
+			BISHOP_MASKS[square] &= ~BORDER;
+		}
+	}
+}
+
+void initializePextAttacks() {
+	int offset = 0;
+	int maxIndex = 0;
+	for (int square = 0; square < 64; ++square) {
+		ROOK_OFFSETS[square] = offset;
+		//Traverse all subsets
+		Bitboard occupany = 0ull;
+		Bitboard bbMask = ROOK_MASKS[square];
+		do {
+			int index = (int)pext(occupany, bbMask) + offset;
+			if (index > maxIndex)
+				maxIndex = index;
+			Bitboard attacks = 0ull;
+			for (int i = 1; i < 8; ++i) {
+				int to = square + i * 8;
+				if (to > 63)
+					break;
+				Bitboard toBB = 1ull << to;
+				attacks |= toBB;
+				if (occupany & toBB)
+					break;
+			}
+			for (int i = 1; i < 8; ++i) {
+				int to = square - i * 8;
+				if (to < 0)
+					break;
+				Bitboard toBB = 1ull << to;
+				attacks |= toBB;
+				if (occupany & toBB)
+					break;
+			}
+			for (int i = 1; i < 8; ++i) {
+				int to = square + i;
+				Bitboard toBB = 1ull << to;
+				if (to > 63 || (toBB & A_FILE))
+					break;
+				attacks |= toBB;
+				if (occupany & toBB)
+					break;
+			}
+			for (int i = 1; i < 8; ++i) {
+				int to = square - i;
+				Bitboard toBB = 1ull << to;
+				if (to < 0 || (toBB & H_FILE))
+					break;
+				attacks |= toBB;
+				if (occupany & toBB)
+					break;
+			}
+			ATTACKS[index] = attacks;
+			occupany = (occupany - bbMask) & bbMask;
+		} while (occupany);
+		offset = maxIndex + 1;
+	}
+	//Same procedure for Bishops
+	for (int square = 0; square < 64; ++square) {
+		BISHOP_OFFSETS[square] = offset;
+		Bitboard bbMask = BISHOP_MASKS[square];
+		//Traverse all subsets
+		Bitboard occupany = 0ull;
+		do {
+			int index = (int)pext(occupany, bbMask) + offset;
+			if (index > maxIndex)
+				maxIndex = index;
+			Bitboard attacks = 0ull;
+			for (int i = 1; i < 8; ++i) {
+				int to = square + i * 9;
+				Bitboard toBB = 1ull << to;
+				if (to > 63 || (toBB & A_FILE))
+					break;
+				attacks |= toBB;
+				if (occupany & toBB)
+					break;
+			}
+			for (int i = 1; i < 8; ++i) {
+				int to = square + i * 7;
+				Bitboard toBB = 1ull << to;
+				if (to > 63 || (toBB & H_FILE))
+					break;
+				attacks |= toBB;
+				if (occupany & toBB)
+					break;
+			}
+			for (int i = 1; i < 8; ++i) {
+				int to = square - i * 9;
+				Bitboard toBB = 1ull << to;
+				if (to < 0 || (toBB & H_FILE))
+					break;
+				attacks |= toBB;
+				if (occupany & toBB)
+					break;
+			}
+			for (int i = 1; i < 8; ++i) {
+				int to = square - i * 7;
+				Bitboard toBB = 1ull << to;
+				if (to < 0 || (toBB & A_FILE))
+					break;
+				attacks |= toBB;
+				if (occupany & toBB)
+					break;
+			}
+			ATTACKS[index] = attacks;
+			occupany = (occupany - bbMask) & bbMask;
+		} while (occupany);
+		offset = maxIndex + 1;
+	}
+}
+
+void initializePext() {
+	initializePextMasks();
+	initializePextAttacks();
+}
+#else
+
 int BishopShift[] = { 59, 60, 59, 59, 59, 59, 60, 59, 60, 60, 59, 59, 59, //a1 - e2
 59, 60, 60, 60, 60, 57, 57, 57, 57, 60, 60, 59, 59, 57, 55, 55, 57, //f2 - f4
 59, 59, 59, 59, 57, 55, 55, 57, 59, 59, 60, 60, 57, 57, 57, 57, 60, //g4 - g6
@@ -522,6 +688,8 @@ void InitializeMagic() {
 	InitializeMoveDB(true);
 }
 
+#endif
+
 void Initialize() {
 	Chess960 = false;
 	std::chrono::system_clock::time_point begin = std::chrono::high_resolution_clock::now();
@@ -532,7 +700,11 @@ void Initialize() {
 	//	InitializeAffectedBy();
 	InitializeSlidingAttacksTo();
 	InitializeRaysBySquares();
+#ifdef USE_PEXT
+	initializePext();
+#else
 	InitializeMagic();
+#endif
 	InitializeMaterialTable();
 	InitializeShadowedFields();
 	pawn::initialize();

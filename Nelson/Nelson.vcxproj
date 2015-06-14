@@ -199,7 +199,7 @@
       <Command>copy /Y  "$(SolutionDir)\Nelson\*.cpp"  "$(USERPROFILE)\workspace\Nelson\*.*"
 copy /Y  "$(SolutionDir)\Nelson\*.h"  "$(USERPROFILE)\workspace\Nelson\*.*"
 copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\
-copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nelson2.exe</Command>
+copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nemorino2.exe</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy Exe to Test Server</Message>

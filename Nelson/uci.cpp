@@ -342,8 +342,7 @@ void go(std::vector<std::string> &tokens) {
 		ssc.HardStopTime = ssc.SoftStopTime;
 	}
 	else if (fixedTime) {
-		ssc.HardStopTime = ssc.StartTime + moveTime - EmergencyTime;
-		ssc.SoftStopTime = 3 * (ssc.HardStopTime - ssc.StartTime) + ssc.StartTime;
+		ssc.HardStopTime = ssc.SoftStopTime = ssc.MinStopTime = ssc.StartTime + moveTime;
 	}
 	else if (moveTime > 0) {
 		//if (movestogo > 30) movestogo = 30;
