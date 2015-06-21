@@ -230,7 +230,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	//	for (int repetition = 0; repetition < repetitions; ++repetition){
 	for (int i = startWithMove; i < rootMoveCount; ++i) {
 		if (depth > 5 && (now() - searchStopCriteria.StartTime) > 3000) {
-			std::cout << "info depth " << depth << " currmove " << toString(rootMoves[i].move) << " currmovenumber " << i+1 << std::endl;
+			std::cout << "info depth " << depth << " currmove " << toString(rootMoves[i].move) << " currmovenumber " << i + 1 << std::endl;
 		}
 		position next(pos);
 		next.ApplyMove(rootMoves[i].move);
@@ -399,7 +399,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	Square recaptureSquare = pos.GetLastAppliedMove() && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	while ((move = pos.NextMove())) {
 		// late-move pruning
-		if (NT != PV && depth <= 3 && moveIndex >= depth * 4 && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD  && pos.IsQuietAndNoCastles(move)) { 
+		if (NT != PV && depth <= 3 && moveIndex >= depth * 4 && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD  && pos.IsQuietAndNoCastles(move)) {
 			moveIndex++;
 			continue;
 		}
@@ -407,7 +407,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		if (next.ApplyMove(move)) {
 			//Check extension
 			int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
-			if (!extension && to(move) == recaptureSquare 
+			if (!extension && to(move) == recaptureSquare
 				//&& (PieceValuesMG[next.GetPieceOnSquare(to(move))] < PieceValuesMG[pos.GetPieceOnSquare(to(move))])
 				) {
 				++extension;

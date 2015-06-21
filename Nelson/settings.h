@@ -7,7 +7,7 @@ extern std::string BOOK_FILE;
 extern bool USE_BOOK;
 extern int HelperThreads;
 
-const int EmergencyTime = 50; //50 ms Emergency time
+const int EmergencyTime = 100; //50 ms Emergency time
 const int PV_MAX_LENGTH = 32; //Maximum Length of displayed Principal Variation
 const int MAX_DEPTH = 128; //Maximal search depth
 const int MASK_TIME_CHECK = (1 << 14) - 1;
@@ -18,13 +18,13 @@ const Value PieceValuesEG[] { Value(950), Value(520), Value(325), Value(325), Va
 const int PAWN_TABLE_SIZE = 1 << 14; //has to be power of 2
 
 const eval MOBILITY_BONUS_KNIGHT[] = { eval(-21, -17), eval(-14, -10), eval(-3, -3), eval(1, 0), eval(5, 3), eval(9, 7), eval(12, 9), eval(14, 10), eval(15, 11) };
-const eval MOBILITY_BONUS_BISHOP[] = { eval(-17, -16), eval(-9, -8), eval(2, 0), eval(7, 5), eval(11, 10), eval(16, 14),  eval(20, 18), eval(23, 21), eval(24, 23), 
-                                       eval(26, 24), eval(27, 25), eval(27, 26), eval(28, 26), eval(29, 27) };
+const eval MOBILITY_BONUS_BISHOP[] = { eval(-17, -16), eval(-9, -8), eval(2, 0), eval(7, 5), eval(11, 10), eval(16, 14), eval(20, 18), eval(23, 21), eval(24, 23),
+eval(26, 24), eval(27, 25), eval(27, 26), eval(28, 26), eval(29, 27) };
 const eval MOBILITY_BONUS_ROOK[] = { eval(-16, -18), eval(-10, -9), eval(-2, 0), eval(0, 5), eval(2, 11), eval(4, 16), eval(6, 21), eval(7, 27), eval(9, 32),
-                                     eval(10, 36), eval(10, 38), eval(11, 40), eval(12, 41), eval(12, 41), eval(12, 42) };
-const eval MOBILITY_BONUS_QUEEN[] = { eval(-14, -13), eval(-9, -8), eval(-2, -2), eval(0, 0), eval(2, 3), eval(4, 6), eval(4, 10), eval(6, 13), eval(7, 13), eval(7, 14), 
-                                      eval(7, 14), eval(7, 14), eval(7, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), 
-									  eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14) };
+eval(10, 36), eval(10, 38), eval(11, 40), eval(12, 41), eval(12, 41), eval(12, 42) };
+const eval MOBILITY_BONUS_QUEEN[] = { eval(-14, -13), eval(-9, -8), eval(-2, -2), eval(0, 0), eval(2, 3), eval(4, 6), eval(4, 10), eval(6, 13), eval(7, 13), eval(7, 14),
+eval(7, 14), eval(7, 14), eval(7, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14),
+eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14) };
 
 const int KING_SAFETY_MAXVAL = 500;
 const int KING_SAFETY_MAXINDEX = 61;
@@ -76,12 +76,22 @@ const Value BONUS_CASTLING = Value(10);
 
 const Value DELTA_PRUNING_SAFETY_MARGIN = Value(PieceValuesEG[PAWN] >> 1);
 
-const Value PAWN_SHELTER_2ND_RANK = Value(10); 
+const Value PAWN_SHELTER_2ND_RANK = Value(10);
 const Value PAWN_SHELTER_3RD_RANK = Value(5);
 
 const Value BETA_PRUNING_MARGIN[8] = { Value(0), Value(200), Value(400), Value(600), Value(800), Value(1000), Value(1200), Value(1400) };
-const Value BETA_PRUNING_FACTOR = Value(120);
+const Value BETA_PRUNING_FACTOR = Value(100);
 
 const int FULTILITY_PRUNING_DEPTH = 3;
 const Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValuesMG[BISHOP], PieceValuesMG[ROOK], PieceValuesMG[QUEEN] };
 const Value FUTILITY_PRUNING_MARGIN[4] = { VALUE_ZERO, PieceValuesMG[BISHOP], PieceValuesMG[ROOK], PieceValuesMG[QUEEN] };
+
+const Value CAPTURE_SCORES[6][6] = {
+// Captured:  QUEEN, ROOK,   BISHOP,   KNIGHT,    PAWN,      EP-Capture
+	{ Value(26), Value(6),  Value(8),  Value(5),  Value(1),  Value(0) },   // QUEEN
+	{ Value(25), Value(20), Value(10), Value(7),  Value(4),  Value(0) },   // ROOK
+	{ Value(27), Value(15), Value(21), Value(9),  Value(2),  Value(0) },   // BISHOP
+	{ Value(29), Value(17), Value(19), Value(18), Value(3),  Value(0) },   // KNIGHT
+	{ Value(28), Value(22), Value(14), Value(16), Value(12), Value(12)},   // PAWN
+	{ Value(30), Value(24), Value(23), Value(13), Value(11), Value(0) }    // KING
+};

@@ -191,12 +191,12 @@ Move position::NextMove() {
 				break;
 			case NON_LOOSING_CAPTURES:
 				GenerateMoves<NON_LOOSING_CAPTURES>();
-				evaluateByMVVLVA();
+				evaluateByCaptureScore();
 				moveIterationPointer = 0;
 				break;
 			case LOOSING_CAPTURES:
 				GenerateMoves<LOOSING_CAPTURES>();
-				evaluateBySEE(phaseStartIndex);
+				evaluateByCaptureScore(phaseStartIndex);
 				moveIterationPointer = 0;
 				break;
 			case QUIETS_POSITIVE:
@@ -333,6 +333,12 @@ void position::insertionSort(ValuatedMove* first, ValuatedMove* last)
 		tmp = *p;
 		for (q = p; q != first && *(q - 1) < tmp; --q) *q = *(q - 1);
 		*q = tmp;
+	}
+}
+
+void position::evaluateByCaptureScore(int startIndex) {
+	for (int i = startIndex; i < movepointer - 1; ++i) {
+		moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 20 * (type(moves[i].move)==PROMOTION);
 	}
 }
 
