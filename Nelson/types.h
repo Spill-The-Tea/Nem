@@ -75,8 +75,6 @@ inline Bitboard operator&(Bitboard b, Square s) {
 	return b & (1ull << s);
 }
 
-inline Color operator~(Color c) { return Color(c ^ 1); }
-
 enum Rank {
 	Rank1, Rank2, Rank3, Rank4, Rank5, Rank6, Rank7, Rank8
 };

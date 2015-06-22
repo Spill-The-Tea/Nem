@@ -60,6 +60,7 @@ int64_t bench(int depth) {
 		position* pos = new position(sfBenchmarks[i]);
 		baseSearch * srch;
 		if (HelperThreads) srch = new search<MASTER>; else srch = new search<SINGLE>;
+		srch->PrintCurrmove = false;
 		//srch.uciOutput = false;
 		srch->NewGame();
 		ssc.StartTime = now();
@@ -213,6 +214,7 @@ int64_t bench2(int depth) {
 		position* pos = new position(sfBenchmarks[i]);
 		baseSearch * srch;
 		if (HelperThreads) srch = new search<MASTER>; else srch = new search<SINGLE>;
+		srch->PrintCurrmove = false;
 		//srch.uciOutput = false;
 		srch->NewGame();
 		ssc.StartTime = now();

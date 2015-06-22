@@ -17,6 +17,7 @@ enum ThreadType { SINGLE, MASTER, SLAVE };
 struct baseSearch {
 public:
 	bool UciOutput = false;
+	bool PrintCurrmove = true;
 	bool PonderMode = false;
 	ValuatedMove BestMove;
 	int64_t NodeCount = 0;
@@ -229,7 +230,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	//	int repetitions = T == SINGLE ? 1 : 1;
 	//	for (int repetition = 0; repetition < repetitions; ++repetition){
 	for (int i = startWithMove; i < rootMoveCount; ++i) {
-		if (depth > 5 && (now() - searchStopCriteria.StartTime) > 3000) {
+		if (PrintCurrmove && depth > 5 && (now() - searchStopCriteria.StartTime) > 3000) {
 			std::cout << "info depth " << depth << " currmove " << toString(rootMoves[i].move) << " currmovenumber " << i + 1 << std::endl;
 		}
 		position next(pos);
@@ -496,7 +497,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 		}
 		//Delta Pruning
 		if (!pos.GetMaterialTableEntry()->IsLateEndgame()) {
-			Value delta = PieceValuesEG[pos.GetMostValuablePieceType(~pos.GetSideToMove())] + int(pos.PawnOn7thRank()) * (PieceValuesEG[QUEEN] - PieceValuesEG[PAWN]) + DELTA_PRUNING_SAFETY_MARGIN;
+			Value delta = PieceValuesEG[pos.GetMostValuablePieceType(Color(pos.GetSideToMove() ^ 1))] + int(pos.PawnOn7thRank()) * (PieceValuesEG[QUEEN] - PieceValuesEG[PAWN]) + DELTA_PRUNING_SAFETY_MARGIN;
 			if (standPat + delta < alpha) return alpha;
 		}
 		if (alpha < standPat) alpha = standPat;
