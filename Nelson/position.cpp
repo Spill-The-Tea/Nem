@@ -208,6 +208,7 @@ Move position::NextMove() {
 				break;
 			case CHECK_EVASION:
 				GenerateMoves<CHECK_EVASION>();
+				evaluateCheckEvasions(phaseStartIndex);
 				moveIterationPointer = 0;
 				break;
 			case QUIET_CHECKS:
@@ -232,6 +233,10 @@ Move position::NextMove() {
 					break;
 				}
 				else return MOVE_NONE;
+			case ALL:
+				GenerateMoves<ALL>();
+				moveIterationPointer = 0;
+				break;
 			default:
 				break;
 			}
@@ -261,14 +266,14 @@ Move position::NextMove() {
 			move = getBestMove(phaseStartIndex + moveIterationPointer);
 			if (move) {
 				++moveIterationPointer;
-				goto end;
+				goto end_post_hash;
 			}
 			else {
 				++generationPhase;
 				moveIterationPointer = -1;
 			}
 			break;
-		case EQUAL_CAPTURES: case LOOSING_CAPTURES: case QUIETS_NEGATIVE: 
+		case EQUAL_CAPTURES: case LOOSING_CAPTURES: case QUIETS_NEGATIVE:
 			move = getBestMove(phaseStartIndex + moveIterationPointer);
 			if (move) {
 				++moveIterationPointer;
@@ -284,7 +289,7 @@ Move position::NextMove() {
 			move = moves[phaseStartIndex + moveIterationPointer].move;
 			if (move) {
 				++moveIterationPointer;
-				goto end;
+				goto end_post_hash;
 			}
 			else {
 				++generationPhase;
@@ -301,7 +306,7 @@ Move position::NextMove() {
 				goto end_post_killer;
 			}
 			break;
-		case REPEAT_ALL:
+		case REPEAT_ALL: case ALL:
 #pragma warning(suppress: 6385)
 			move = moves[moveIterationPointer].move;
 			++moveIterationPointer;
@@ -320,8 +325,10 @@ Move position::NextMove() {
 	return MOVE_NONE;
 end_post_killer:
 	if (killer != nullptr && (killer->move == move || (killer + 1)->move == move)) return NextMove();
-end:
+end_post_hash:
 	if (hashMove && move == hashMove) return NextMove(); else return move;
+end:
+	return move;
 }
 
 //Insertion Sort
@@ -338,7 +345,7 @@ void position::insertionSort(ValuatedMove* first, ValuatedMove* last)
 
 void position::evaluateByCaptureScore(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
-		moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 20 * (type(moves[i].move)==PROMOTION);
+		moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 20 * (type(moves[i].move) == PROMOTION);
 	}
 }
 
@@ -351,6 +358,26 @@ void position::evaluateByMVVLVA(int startIndex) {
 
 void position::evaluateBySEE(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) moves[i].score = SEE(from(moves[i].move), to(moves[i].move));
+}
+
+void position::evaluateCheckEvasions(int startIndex) {
+	ValuatedMove * firstQuiet = std::partition(moves + startIndex, &moves[movepointer - 1], [this](ValuatedMove m) { return IsTactical(m); });
+	bool quiets = false;
+	int quietsIndex = startIndex;
+	for (int i = startIndex; i < movepointer - 1; ++i) {
+		quiets = quiets || (moves[i].move == firstQuiet->move);
+		if (quiets) {
+			Square toSquare = to(moves[i].move);
+			Piece p = Board[from(moves[i].move)];
+			moves[i].score = history->getValue(p, toSquare);
+		}
+		else {
+			moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 20 * (type(moves[i].move) == PROMOTION);
+			quietsIndex++;
+		}
+	}
+	if (quietsIndex > startIndex + 1) std::sort(moves + startIndex, moves + quietsIndex - 1, sortByScore);
+	if (movepointer-2 > quietsIndex) std::sort(moves + quietsIndex, &moves[movepointer - 1], sortByScore);
 }
 
 void position::evaluateByHistory(int startIndex) {
@@ -995,7 +1022,7 @@ bool position::validateMove(Move move) {
 	//		__debugbreak();
 #endif
 	return result;
-		}
+}
 
 bool position::validateMove(ExtendedMove move) {
 	Square fromSquare = from(move.move);

@@ -96,7 +96,7 @@ enum MoveGenerationType {
 };
 
 enum StagedMoveGenerationType {
-	MAIN_SEARCH, QSEARCH, CHECK, QSEARCH_WITH_CHECKS, REPETITION
+	MAIN_SEARCH, QSEARCH, CHECK, QSEARCH_WITH_CHECKS, REPETITION, ALL_MOVES
 };
 
 enum Result { RESULT_UNKNOWN, OPEN, DRAW, MATE };
@@ -345,9 +345,11 @@ inline bool operator<(const ValuatedMove& f, const ValuatedMove& s) {
 
 inline bool sortByScore(const ValuatedMove m1, const ValuatedMove m2) { return m1.score > m2.score; }
 
+const int MAX_DEPTH = 128;
+
 struct SearchStopCriteria {
 	int64_t MaxNumberOfNodes = INT64_MAX;
-	int MaxDepth = 128;
+	int MaxDepth = MAX_DEPTH;
 	int64_t StartTime = 0;
 	int64_t HardStopTime = INT64_MAX;
 	int64_t SoftStopTime = INT64_MAX;

@@ -9,7 +9,6 @@ extern int HelperThreads;
 
 const int EmergencyTime = 100; //50 ms Emergency time
 const int PV_MAX_LENGTH = 32; //Maximum Length of displayed Principal Variation
-const int MAX_DEPTH = 128; //Maximal search depth
 const int MASK_TIME_CHECK = (1 << 14) - 1;
 
 const Value PieceValuesMG[] { Value(950), Value(520), Value(325), Value(325), Value(80), VALUE_ZERO, VALUE_ZERO };
@@ -81,6 +80,8 @@ const Value PAWN_SHELTER_3RD_RANK = Value(5);
 
 const Value BETA_PRUNING_MARGIN[8] = { Value(0), Value(200), Value(400), Value(600), Value(800), Value(1000), Value(1200), Value(1400) };
 const Value BETA_PRUNING_FACTOR = Value(100);
+
+const Value PROBCUT_MARGIN = Value(90);
 
 const int FULTILITY_PRUNING_DEPTH = 3;
 const Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValuesMG[BISHOP], PieceValuesMG[ROOK], PieceValuesMG[QUEEN] };

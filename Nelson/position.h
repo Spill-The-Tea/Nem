@@ -7,12 +7,13 @@
 
 struct evaluation;
 
-const MoveGenerationType generationPhases[24] = { HASHMOVE, NON_LOOSING_CAPTURES, KILLER, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, UNDERPROMOTION, NONE, //Main Search Phases
+const MoveGenerationType generationPhases[26] = { HASHMOVE, NON_LOOSING_CAPTURES, KILLER, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, UNDERPROMOTION, NONE, //Main Search Phases
 HASHMOVE, NON_LOOSING_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
 HASHMOVE, CHECK_EVASION, UNDERPROMOTION, NONE, //Check Evasion
 HASHMOVE, NON_LOOSING_CAPTURES, LOOSING_CAPTURES, QUIET_CHECKS, UNDERPROMOTION, NONE, //QSearch with Checks
-REPEAT_ALL, NONE };
-const int generationPhaseOffset[] = { 0, 8, 12, 16, 22 };
+REPEAT_ALL, NONE,
+ALL, NONE };
+const int generationPhaseOffset[] = { 0, 8, 12, 16, 22, 24 };
 
 struct position
 {
@@ -84,6 +85,9 @@ public:
 	}
 	inline bool IsQuietAndNoCastles(const Move move) const {
 		return type(move) == NORMAL && Board[to(move)] == BLANK;
+	}
+	inline bool IsTactical(const ValuatedMove move) const {
+		return Board[to(move.move)] != BLANK || type(move.move) == ENPASSANT || type(move.move) == PROMOTION;
 	}
 	inline Value GetStaticEval() { return StaticEval; }
 	inline PieceType GetMostValuablePieceType(Color col) const;
@@ -165,6 +169,7 @@ private:
 	void evaluateByCaptureScore(int startIndex = 0);
 	void evaluateByMVVLVA(int startIndex = 0);
 	void evaluateBySEE(int startIndex);
+	void evaluateCheckEvasions(int startIndex);
 	void evaluateByHistory(int startIndex);
 	Move getBestMove(int startIndex);
 	void insertionSort(ValuatedMove* begin, ValuatedMove* end);
@@ -837,6 +842,11 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, DblHistoryStats * dblHistoryStats, ExtendedMove* killerMove, Move * counterMoves, Move hashmove, Value limit) {
 	if (SMGT == REPETITION) {
 		moveIterationPointer = 0;
+		generationPhase = generationPhaseOffset[SMGT];
+		return;
+	}
+	if (SMGT == ALL_MOVES) {
+		moveIterationPointer = -1;
 		generationPhase = generationPhaseOffset[SMGT];
 		return;
 	}

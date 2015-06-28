@@ -324,9 +324,9 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			&& !pos.PawnOn7thRank())
 		{
 			if (depth <= 1 && (effectiveEvaluation + 302) <= alpha) return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, 0);
-			Value ralpha = alpha - Value(256 + 16 * depth);
-			Value v = QSearch<QSEARCH_DEPTH_0>(ralpha, Value(ralpha + 1), pos, 0);
-			if (v <= ralpha) return v;
+			Value razorAlpha = alpha - Value(256 + 16 * depth);
+			Value razorScore = QSearch<QSEARCH_DEPTH_0>(razorAlpha, Value(razorAlpha + 1), pos, 0);
+			if (razorScore <= razorAlpha) return razorScore;
 		}
 		// Beta Pruning
 		if (depth < 7
