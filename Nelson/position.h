@@ -80,15 +80,10 @@ public:
 	inline Move GetLastAppliedMove() { return lastAppliedMove; }
 	inline Piece GetPreviousMovingPiece() { if (previous) return previous->GetPieceOnSquare(to(lastAppliedMove)); else return BLANK; }
 	inline Piece getCapturedInLastMove() { return capturedInLastMove; }
-	inline bool IsQuiet(const Move move) const {
-		return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING);
-	}
-	inline bool IsQuietAndNoCastles(const Move move) const {
-		return type(move) == NORMAL && Board[to(move)] == BLANK;
-	}
-	inline bool IsTactical(const ValuatedMove move) const {
-		return Board[to(move.move)] != BLANK || type(move.move) == ENPASSANT || type(move.move) == PROMOTION;
-	}
+	inline bool IsQuiet(const Move move) const { return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING); }
+	inline bool IsQuietAndNoCastles(const Move move) const { return type(move) == NORMAL && Board[to(move)] == BLANK; }
+	inline bool IsTactical(const ValuatedMove move) const { return Board[to(move.move)] != BLANK || type(move.move) == ENPASSANT || type(move.move) == PROMOTION; }
+	inline bool IsWinningCapture(const ValuatedMove move) const;
 	inline Value GetStaticEval() { return StaticEval; }
 	inline PieceType GetMostValuablePieceType(Color col) const;
 	inline bool PawnOn7thRank() { return (PieceBB(PAWN, SideToMove) & RANKS[6 - 5 * SideToMove]) != 0; } //Side to Move has pawn on 7th Rank
@@ -196,6 +191,10 @@ inline Bitboard position::ColorBB(const int c) const { return OccupiedByColor[c]
 inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | OccupiedByColor[BLACK]; }
 inline Bitboard position::NonPawnMaterial(const Color c) const { return OccupiedByColor[c] & ~OccupiedByPieceType[PAWN] & ~OccupiedByPieceType[KING]; }
 inline Bitboard position::PieceTypeBB(const PieceType pt) const { return OccupiedByPieceType[pt]; }
+
+inline bool position::IsWinningCapture(const ValuatedMove move) const {
+	return (Board[to(move.move)] != BLANK && (PieceValuesMG[GetPieceType(Board[from(move.move)])] - PieceValuesMG[GetPieceType(Board[to(move.move)])]) < PieceValuesMG[PAWN])
+                                                                     || type(move.move) == ENPASSANT || type(move.move) == PROMOTION; }
 
 inline PieceType position::GetMostValuablePieceType(Color color) const {
 	for (PieceType pt = QUEEN; pt < KING; ++pt) {
