@@ -89,10 +89,10 @@ const Value FUTILITY_PRUNING_MARGIN[4] = { VALUE_ZERO, PieceValuesMG[BISHOP], Pi
 
 const Value CAPTURE_SCORES[6][6] = {
 // Captured:  QUEEN, ROOK,   BISHOP,   KNIGHT,    PAWN,      EP-Capture
-	{ Value(25), Value(6),  Value(8),  Value(5),  Value(1),  Value(0) },   // QUEEN
-	{ Value(26), Value(20), Value(10), Value(7),  Value(4),  Value(0) },   // ROOK
-	{ Value(27), Value(15), Value(21), Value(9),  Value(2),  Value(0) },   // BISHOP
-	{ Value(28), Value(17), Value(19), Value(18), Value(3),  Value(0) },   // KNIGHT
-	{ Value(29), Value(22), Value(14), Value(16), Value(12), Value(12)},   // PAWN
-	{ Value(30), Value(24), Value(23), Value(13), Value(11), Value(0) }    // KING
+	{ Value(250), Value(60),  Value(80),  Value(50),  Value(10),  Value(0) },   // QUEEN
+	{ Value(260), Value(200), Value(100), Value(70),  Value(40),  Value(0) },   // ROOK
+	{ Value(270), Value(150), Value(210), Value(90),  Value(20),  Value(0) },   // BISHOP
+	{ Value(280), Value(170), Value(190), Value(180), Value(30),  Value(0) },   // KNIGHT
+	{ Value(290), Value(220), Value(140), Value(160), Value(120), Value(120)},   // PAWN
+	{ Value(300), Value(240), Value(230), Value(130), Value(110), Value(0) }    // KING
 };

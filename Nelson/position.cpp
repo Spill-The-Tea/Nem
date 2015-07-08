@@ -191,7 +191,7 @@ Move position::NextMove() {
 				break;
 			case NON_LOOSING_CAPTURES:
 				GenerateMoves<NON_LOOSING_CAPTURES>();
-				evaluateBySEE(phaseStartIndex);
+				evaluateByCaptureScore();
 				moveIterationPointer = 0;
 				break;
 			case LOOSING_CAPTURES:
@@ -374,13 +374,10 @@ void position::evaluateCheckEvasions(int startIndex) {
 			Piece p = Board[from(moves[i].move)];
 			moves[i].score = history->getValue(p, toSquare);
 		}
-		else if (i > startIndex) {
-			//moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 20 * (type(moves[i].move) == PROMOTION);
-			if (i == startIndex + 1) moves[startIndex].score = SEE(from(moves[startIndex].move), to(from(moves[startIndex].move))) + int(type(moves[startIndex].move) == PROMOTION) * (PieceValuesMG[QUEEN] - PieceValuesMG[PAWN]);
-			moves[i].score = SEE(from(moves[i].move), to(from(moves[i].move))) + int(type(moves[i].move) == PROMOTION) * (PieceValuesMG[QUEEN] - PieceValuesMG[PAWN]);
+		else {
+			moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 20 * (type(moves[i].move) == PROMOTION);
 			quietsIndex++;
 		}
-		else quietsIndex++;
 	}
 	if (quietsIndex > startIndex + 1) std::sort(moves + startIndex, moves + quietsIndex - 1, sortByScore);
 	if (movepointer-2 > quietsIndex) std::sort(moves + quietsIndex, &moves[movepointer - 1], sortByScore);

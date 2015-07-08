@@ -11,8 +11,21 @@
 #include "hashtables.h"
 #include "bbEndings.h"
 
+int64_t bench(std::string filename, int depth) {
+	std::string line;
+	std::ifstream text(filename);
+	if (text.is_open())
+	{
+		std::vector<std::string> fens;
+		while (getline(text, line)) fens.push_back(line);
+		text.close();
+		return bench(fens, depth);
+	}
+	else return -1;
+}
+
 int64_t bench(int depth) {
-	std::string sfBenchmarks[] = {
+	std::vector<std::string> sfBenchmarks = {
 		"rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1",
 		"r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 10",
 		"8/2p5/3p4/KP5r/1R3p1k/8/4P1P1/8 w - - 0 11",
@@ -44,6 +57,14 @@ int64_t bench(int depth) {
 		"6k1/4pp1p/3p2p1/P1pPb3/R7/1r2P1PP/3B1P2/6K1 w - - 0 1",
 		"8/3p3B/5p2/5P2/p7/PP5b/k7/6K1 w - - 0 1"
 	};
+	return bench(sfBenchmarks, depth);
+}
+
+int64_t bench(std::vector<std::string> fens, int depth) {
+#ifdef STAT
+	uint64_t captureNodeCount[6][5] = { 0 };
+	uint64_t captureCutoffCount[6][5] = { 0 };
+#endif
 	std::cout << "Benchmark" << std::endl;
 	std::cout << "------------------------------------------------------------------------" << std::endl;
 	SearchStopCriteria ssc;
@@ -56,10 +77,10 @@ int64_t bench(int depth) {
 	double avgBF = 0.0;
 	std::cout << std::setprecision(3) << std::left << std::setw(3) << "Nr" << std::setw(7) << "Time" << std::setw(10) << "Nodes" << std::setw(6) << "Speed" << std::setw(6) << "BF" << std::setw(6) << "TT[%]"
 		<< std::setw(6) << "C1st" << std::setw(6) << "CIndx" << std::setw(40) << "PV" << std::endl;
-	for (int i = 0; i < 30; i++) {
-		position* pos = new position(sfBenchmarks[i]);
+	for (int i = 0; i < fens.size(); i++) {
+		position* pos = new position(fens[i]);
 		baseSearch * srch;
-		if (HelperThreads) srch = new search<MASTER>; else srch = new search<SINGLE>;
+		if (HelperThreads) srch = new search < MASTER >; else srch = new search < SINGLE >;
 		srch->PrintCurrmove = false;
 		//srch.uciOutput = false;
 		srch->NewGame();
@@ -79,24 +100,37 @@ int64_t bench(int depth) {
 			<< srch->NodeCount / rt << std::setw(6) << srch->BranchingFactor << std::setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
 			<< std::setw(6) << srch->cutoffAt1stMoveRate() << std::setw(6) << srch->cutoffAverageMove()
 			<< std::setw(40) << srch->PrincipalVariation(depth) << std::endl;
+#ifdef STAT
+		for (int capturing = 0; capturing < 6; ++capturing) {
+			for (int captured = 0; captured < 5; ++captured) {
+				captureNodeCount[capturing][captured] += srch->captureNodeCount[capturing][captured];
+				captureCutoffCount[capturing][captured] += srch->captureCutoffCount[capturing][captured];
+			}
+		}
+#endif
 		delete(pos);
 		delete(srch);
 	}
 	avgBF = avgBF / (totalNodes - totalQNodes);
-	avgCIndx = avgCIndx / 30;
-	avgC1st = avgC1st / 30;
+	avgCIndx = avgCIndx / 100;
+	avgC1st = avgC1st / 100;
 	std::cout << "------------------------------------------------------------------------" << std::endl;
 	std::cout << std::setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "
 		"BF: " << std::setprecision(3) << avgBF << "  C1st: " << avgC1st << "  CIndx: " << avgCIndx << std::endl;
-	//tt::printStatistics();
-	//material::printStatistics();
-	//pawn::printStatistics();
-	//cout << "infostd::string Tablebase Hits: " << tablebase::GetTotalHits() << std::endl;
+#ifdef STAT
+	for (int capturing = 0; capturing < 6; ++capturing) {
+		for (int captured = 0; captured < 5; ++captured) {
+			std::cout << "      " << "QRBNPK"[capturing] << "x" << "QRBNP"[captured] << ": " << std::setw(10) << captureCutoffCount[capturing][captured]
+				<< std::setw(20) << captureNodeCount[capturing][captured]
+				<< std::setw(10) << CAPTURE_SCORES[capturing][captured] << std::endl;
+		}
+	}
+#endif
 	return totalNodes;
 }
 
 int64_t bench2(int depth) {
-	std::string sfBenchmarks[] = {
+	std::vector<std::string> sfBenchmarks = {
 		"5r2/4r1kp/1pnb2p1/p4p2/1P1P4/1NPBpRPP/1P6/5RK1 w - a6",
 		"1Q6/8/2N2k2/8/2p4p/6bK/1P6/5n2 b - -",
 		"8/1B2k3/8/1p5R/5n1p/PKP2N1r/1P6/8 b - -",
@@ -198,56 +232,10 @@ int64_t bench2(int depth) {
 		"1q1rr1k1/1p3pp1/pbn3bp/3p4/P2N4/1PP1B2P/3QBPP1/3RRK2 w - -",
 		"rnbqkbnr/pp2pppp/2p5/3p4/2PP4/2N5/PP2PPPP/R1BQKBNR b KQkq -"
 	};
-	std::cout << "Benchmark" << std::endl;
-	std::cout << "------------------------------------------------------------------------" << std::endl;
-	SearchStopCriteria ssc;
-	ssc.MaxDepth = depth;
-	int64_t totalTime = 0;
-	int64_t totalNodes = 0;
-	int64_t totalQNodes = 0;
-	double avgC1st = 0.0;
-	double avgCIndx = 0.0;
-	double avgBF = 0.0;
-	std::cout << std::setprecision(3) << std::left << std::setw(3) << "Nr" << std::setw(7) << "Time" << std::setw(10) << "Nodes" << std::setw(6) << "Speed" << std::setw(6) << "BF" << std::setw(6) << "TT[%]"
-		<< std::setw(6) << "C1st" << std::setw(6) << "CIndx" << std::setw(40) << "PV" << std::endl;
-	for (int i = 0; i < 100; i++) {
-		position* pos = new position(sfBenchmarks[i]);
-		baseSearch * srch;
-		if (HelperThreads) srch = new search<MASTER>; else srch = new search<SINGLE>;
-		srch->PrintCurrmove = false;
-		//srch.uciOutput = false;
-		srch->NewGame();
-		ssc.StartTime = now();
-		if (HelperThreads) (dynamic_cast<search<MASTER>*>(srch))->Think(*pos, ssc); else (dynamic_cast<search<SINGLE>*>(srch))->Think(*pos, ssc);
-		int64_t endTime = now();
-		totalTime += endTime - ssc.StartTime;
-		totalNodes += srch->NodeCount;
-		totalQNodes += srch->QNodeCount;
-		avgBF += srch->BranchingFactor * (srch->NodeCount - srch->QNodeCount);
-		avgC1st += srch->cutoffAt1stMoveRate();
-		avgCIndx += srch->cutoffAverageMove();
-		int64_t runtime = endTime - ssc.StartTime;
-		int64_t rt = runtime;
-		if (rt == 0) rt = 1;
-		std::cout << std::left << std::setw(3) << i << std::setw(7) << runtime << std::setw(10) << srch->NodeCount << std::setw(6)
-			<< srch->NodeCount / rt << std::setw(6) << srch->BranchingFactor << std::setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
-			<< std::setw(6) << srch->cutoffAt1stMoveRate() << std::setw(6) << srch->cutoffAverageMove()
-			<< std::setw(40) << srch->PrincipalVariation(depth) << std::endl;
-		delete(pos);
-		delete(srch);
-	}
-	avgBF = avgBF / (totalNodes - totalQNodes);
-	avgCIndx = avgCIndx / 100;
-	avgC1st = avgC1st / 100;
-	std::cout << "------------------------------------------------------------------------" << std::endl;
-	std::cout << std::setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "
-		"BF: " << std::setprecision(3) << avgBF << "  C1st: " << avgC1st << "  CIndx: " << avgCIndx << std::endl;
-	//tt::printStatistics();
-	//material::printStatistics();
-	//pawn::printStatistics();
-	//cout << "infostd::string Tablebase Hits: " << tablebase::GetTotalHits() << std::endl;
-	return totalNodes;
+	return bench(sfBenchmarks, depth);
 }
+
+
 
 uint64_t nodeCount = 0;
 
@@ -368,7 +356,7 @@ void divide3(position &pos, int depth) {
 void testSearch(position &pos, int depth) {
 	SearchStopCriteria ssc;
 	ssc.MaxDepth = depth;
-	search<SINGLE> * engine = new search<SINGLE>;
+	search<SINGLE> * engine = new search < SINGLE > ;
 	ValuatedMove vm = engine->Think(pos, ssc);
 	std::cout << "Best Move: " << toString(vm.move) << " " << vm.score << std::endl;
 	delete engine;
@@ -378,7 +366,7 @@ void testRepetition() {
 	position pos("5r1k/R7/5p2/4p3/1p1pP3/1npP1P2/rqn1b1R1/7K w - - 0 1");
 	SearchStopCriteria ssc;
 	ssc.MaxDepth = 5;
-	search<SINGLE> * engine = new search<SINGLE>;
+	search<SINGLE> * engine = new search < SINGLE > ;
 	ValuatedMove vm = engine->Think(pos, ssc);
 	std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << vm.score << std::endl;
 	delete engine;
@@ -412,7 +400,7 @@ void testFindMate() {
 	//Mate in 5
 	puzzles["5@6r1/p3p1rk/1p1pPp1p/q3n2R/4P3/3BR2P/PPP2QP1/7K w - -"] = createMove(H5, H6);
 	puzzles["5@2q1nk1r/4Rp2/1ppp1P2/6Pp/3p1B2/3P3P/PPP1Q3/6K1 w - - 0 1"] = createMove(E7, E8);
-	search<SINGLE> * engine = new search<SINGLE>;
+	search<SINGLE> * engine = new search < SINGLE > ;
 	std::map<std::string, Move>::iterator iter;
 	int count = 0;
 	for (iter = puzzles.begin(); iter != puzzles.end(); ++iter) {
@@ -732,7 +720,7 @@ void testParsePGN() {
 void testMateInDos() {
 	std::string filename = "C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/MateenDos.pgn";
 	std::map<std::string, Move> exercises = pgn::parsePGNExerciseFile(filename);
-	search<SINGLE> * engine = new search<SINGLE>;
+	search<SINGLE> * engine = new search < SINGLE > ;
 	int count = 0;
 	int failed = 0;
 	for (std::map<std::string, Move>::iterator it = exercises.begin(); it != exercises.end(); ++it) {
@@ -743,8 +731,8 @@ void testMateInDos() {
 		++count;
 		ValuatedMove result = engine->Think(pos, ssc);
 		std::cout << count << "\t" << ((result.move == it->second) ? "OK\t" : "ERROR\t") << toString(result.move) << "\t" << toString(it->second)
-				<< "\t" << result.score << "\t" << it->first << std::endl;
-			failed += result.move != it->second;
+			<< "\t" << result.score << "\t" << it->first << std::endl;
+		failed += result.move != it->second;
 	}
 	std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
 	std::cout << failed << " of " << count << " failed!";

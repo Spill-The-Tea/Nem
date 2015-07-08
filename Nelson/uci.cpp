@@ -89,8 +89,14 @@ void dispatch(std::string line) {
 	else if (!command.compare("setvalue"))
 		setvalue(tokens);
 	else if (!command.compare("bench")) {
-		bench(11);
-		bench2(11);
+		if (tokens.size() == 1) {
+			bench(11);
+			bench2(11);
+		}
+		else {
+			std::string filename = line.substr(6, std::string::npos);
+			bench(filename, 11);
+		}
 	}
 	else if (!command.compare("sbench")) {
 		int64_t nc = bench(11);

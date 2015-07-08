@@ -64,6 +64,10 @@ public:
 
 	inline bool Stopped() { return Stop && (!PonderMode); }
 
+#ifdef STAT
+	uint64_t captureNodeCount[6][5]; 
+	uint64_t captureCutoffCount[6][5];
+#endif
 
 };
 
@@ -281,6 +285,10 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 
 template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune) {
 	++NodeCount;
+#ifdef STAT
+	int64_t nodeCount4Node = 0;
+	int64_t nodeCount4Move = 0;
+#endif
 	if (T != SLAVE) {
 		Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime));
 	}
@@ -339,7 +347,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			&& effectiveEvaluation >= beta
 			&& pos.NonPawnMaterial(pos.GetSideToMove())
 			) {
-			int reduction = (depth >> 1) + 1;
+			int reduction = (depth + 14) / 5;
 			Square epsquare = pos.GetEPSquare();
 			pos.NullMove();
 			Value nullscore = -Search<NULL_MOVE>(-beta, -alpha, pos, depth - reduction, &subpv[0], false);
@@ -423,6 +431,10 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 					if (moveIndex >= 5) reduction = depth / 3; else reduction = 1;
 				}
 			}
+#ifdef STAT
+			if (moveIndex == int(ttMove!=MOVE_NONE)) nodeCount4Node = NodeCount;
+			nodeCount4Move = NodeCount;
+#endif
 			if (ZWS) {
 				score = -Search<EXPECTED_CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 				if (score > alpha && score < beta) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
@@ -433,6 +445,16 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			}
 
 			if (score >= beta) {
+#ifdef STAT
+				if (type(move) == NORMAL && pos.GetPieceOnSquare(to(move)) != BLANK) {
+					PieceType capturing = GetPieceType(pos.GetPieceOnSquare(from(move)));
+					PieceType captured = GetPieceType(pos.GetPieceOnSquare(to(move)));
+					captureCutoffCount[capturing][captured]++;
+					captureNodeCount[capturing][captured] += (nodeCount4Move - nodeCount4Node);
+					if (captureNodeCount[capturing][captured] > (1ull << 62)) 
+						std::cout << "OVERFLOW!!" << std::endl;
+				}
+#endif
 				updateCutoffStats(move, depth, pos, moveIndex);
 				if (T != SINGLE)  ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
 				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
