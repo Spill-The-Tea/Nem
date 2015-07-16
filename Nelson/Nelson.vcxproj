@@ -253,6 +253,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClCompile Include="search.cpp" />
     <ClCompile Include="settings.cpp" />
     <ClCompile Include="test.cpp" />
+    <ClCompile Include="timemanager.cpp" />
     <ClCompile Include="uci.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -268,6 +269,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClInclude Include="search.h" />
     <ClInclude Include="settings.h" />
     <ClInclude Include="test.h" />
+    <ClInclude Include="timemanager.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="uci.h" />
   </ItemGroup>

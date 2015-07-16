@@ -11,6 +11,7 @@
 #include "search.h"
 #include "test.h"
 #include "settings.h"
+#include "timemanager.h"
 
 
 baseSearch * Engine = new search < SINGLE > ;
@@ -36,7 +37,7 @@ void divide(std::vector<std::string> &tokens);
 void setvalue(std::vector<std::string> &tokens);
 void quit();
 void stop();
-void thinkAsync(SearchStopCriteria ssc);
+void thinkAsync();
 void ponderhit();
 
 std::vector<std::string> split(std::string str) {
@@ -241,11 +242,11 @@ void deleteThread() {
 	Engine->Reset();
 }
 
-void thinkAsync(SearchStopCriteria ssc) {
+void thinkAsync() {
 	ValuatedMove BestMove;
 	if (Engine == NULL) return;
-	if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*_position, ssc);
-	else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*_position, ssc);
+	if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*_position);
+	else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*_position);
 	if (!ponderActive) std::cout << "bestmove " << toString(BestMove.move) << std::endl;
 	else {
 		//First try move from principal variation
@@ -277,9 +278,8 @@ void thinkAsync(SearchStopCriteria ssc) {
 }
 
 void go(std::vector<std::string> &tokens) {
+	int64_t tnow = now();
 	if (!_position) _position = new position();
-	SearchStopCriteria ssc;
-	ssc.StartTime = now();
 	int moveTime = 0;
 	int increment = 0;
 	int movestogo = 30;
@@ -287,6 +287,9 @@ void go(std::vector<std::string> &tokens) {
 	bool searchmoves = false;
 	unsigned int idx = 1;
 	bool fixedTime = false;
+	int depth = MAX_DEPTH;
+	int64_t nodes = INT64_MAX;
+	TimeMode mode = UNDEF;
 	std::string time = _position->GetSideToMove() == WHITE ? "wtime" : "btime";
 	std::string inc = _position->GetSideToMove() == WHITE ? "winc" : "binc";
 	while (idx < tokens.size()) {
@@ -302,12 +305,12 @@ void go(std::vector<std::string> &tokens) {
 		}
 		else if (!tokens[idx].compare("depth")) {
 			++idx;
-			ssc.MaxDepth = stoi(tokens[idx]);
+			depth = stoi(tokens[idx]);
 			searchmoves = false;
 		}
 		else if (!tokens[idx].compare("nodes")) {
 			++idx;
-			ssc.MaxNumberOfNodes = stoll(tokens[idx]);
+			nodes = stoll(tokens[idx]);
 			searchmoves = false;
 		}
 		else if (!tokens[idx].compare("movestogo")) {
@@ -317,21 +320,24 @@ void go(std::vector<std::string> &tokens) {
 		}
 		else if (!tokens[idx].compare("movetime")) {
 			++idx;
-		    moveTime = stoi(tokens[idx]);
+			moveTime = stoi(tokens[idx]);
 			movestogo = 1;
 			searchmoves = false;
 			fixedTime = true;
+			mode = FIXED_TIME_PER_MOVE;
 		}
 		else if (!tokens[idx].compare("ponder")) {
-			ponderStartTime = ssc.StartTime;
+			ponderStartTime = tnow;
 			ponder = true;
 			ponderedMoves++;
 			searchmoves = false;
+			mode = INFINIT;
 		}
 		else if (!tokens[idx].compare("infinite")) {
 			moveTime = INT_MAX;
 			movestogo = 1;
 			searchmoves = false;
+			mode = INFINIT;
 		}
 		else if (!tokens[idx].compare("searchmoves")) {
 			searchmoves = true;
@@ -342,30 +348,16 @@ void go(std::vector<std::string> &tokens) {
 		}
 		++idx;
 	}
-	//Simple timemanagement
-	if (moveTime == INT_MAX) {
-		ssc.SoftStopTime = ssc.StartTime + int64_t(31536000000); //1 Year
-		ssc.HardStopTime = ssc.SoftStopTime;
-	}
-	else if (fixedTime) {
-		ssc.HardStopTime = ssc.SoftStopTime = ssc.MinStopTime = ssc.StartTime + moveTime;
-	}
-	else if (moveTime > 0) {
-		//if (movestogo > 30) movestogo = 30;
-		int avalaibleTime = moveTime + movestogo * increment;
-		ssc.SoftStopTime = ssc.StartTime + avalaibleTime / movestogo;
-		ssc.HardStopTime = ssc.StartTime + moveTime - EmergencyTime;
-		if ((ssc.HardStopTime - ssc.StartTime) < 2 * (ssc.SoftStopTime - ssc.StartTime)) {
-			ssc.SoftStopTime = ssc.StartTime + (ssc.HardStopTime - ssc.StartTime) / 2;
-		}
-	}
+	if (mode == UNDEF && moveTime == 0 && increment == 0 && nodes < INT64_MAX) mode = NODES;
+	Engine->timeManager.initialize(mode, moveTime, depth, nodes, moveTime, increment, movestogo, tnow);
+
 	deleteThread();
 	Engine->PonderMode = ponder;
-	Mainthread = new std::thread(thinkAsync, ssc);
+	Mainthread = new std::thread(thinkAsync);
 }
 
 void ponderhit() {
-	Engine->ExtendStopTimes(now() - ponderStartTime);
+	Engine->timeManager.PonderHit();
 	Engine->PonderMode = false;
 	ponderHits++;
 }

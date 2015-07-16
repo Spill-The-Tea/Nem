@@ -58,6 +58,9 @@
     <ClCompile Include="bbEndings.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="timemanager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="types.h">
@@ -100,6 +103,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="bbEndings.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="timemanager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

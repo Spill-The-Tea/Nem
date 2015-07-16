@@ -10,6 +10,7 @@
 #include "search.h"
 #include "hashtables.h"
 #include "bbEndings.h"
+#include "timemanager.h"
 
 int64_t bench(std::string filename, int depth) {
 	std::string line;
@@ -67,8 +68,6 @@ int64_t bench(std::vector<std::string> fens, int depth) {
 #endif
 	std::cout << "Benchmark" << std::endl;
 	std::cout << "------------------------------------------------------------------------" << std::endl;
-	SearchStopCriteria ssc;
-	ssc.MaxDepth = depth;
 	int64_t totalTime = 0;
 	int64_t totalNodes = 0;
 	int64_t totalQNodes = 0;
@@ -84,16 +83,16 @@ int64_t bench(std::vector<std::string> fens, int depth) {
 		srch->PrintCurrmove = false;
 		//srch.uciOutput = false;
 		srch->NewGame();
-		ssc.StartTime = now();
-		if (HelperThreads) (dynamic_cast<search<MASTER>*>(srch))->Think(*pos, ssc); else (dynamic_cast<search<SINGLE>*>(srch))->Think(*pos, ssc);
+		srch->timeManager.initialize(FIXED_DEPTH, 0, depth);
+		if (HelperThreads) (dynamic_cast<search<MASTER>*>(srch))->Think(*pos); else (dynamic_cast<search<SINGLE>*>(srch))->Think(*pos);
 		int64_t endTime = now();
-		totalTime += endTime - ssc.StartTime;
+		totalTime += endTime - srch->timeManager.GetStartTime();
 		totalNodes += srch->NodeCount;
 		totalQNodes += srch->QNodeCount;
 		avgBF += srch->BranchingFactor * (srch->NodeCount - srch->QNodeCount);
 		avgC1st += srch->cutoffAt1stMoveRate();
 		avgCIndx += srch->cutoffAverageMove();
-		int64_t runtime = endTime - ssc.StartTime;
+		int64_t runtime = endTime - srch->timeManager.GetStartTime();
 		int64_t rt = runtime;
 		if (rt == 0) rt = 1;
 		std::cout << std::left << std::setw(3) << i << std::setw(7) << runtime << std::setw(10) << srch->NodeCount << std::setw(6)
@@ -353,21 +352,19 @@ void divide3(position &pos, int depth) {
 	std::cout << "Total: " << total << std::endl;
 }
 
-void testSearch(position &pos, int depth) {
-	SearchStopCriteria ssc;
-	ssc.MaxDepth = depth;
+void testSearch(position &pos, int depth) {	
 	search<SINGLE> * engine = new search < SINGLE > ;
-	ValuatedMove vm = engine->Think(pos, ssc);
+	engine->timeManager.initialize(FIXED_DEPTH, 0, depth);
+	ValuatedMove vm = engine->Think(pos);
 	std::cout << "Best Move: " << toString(vm.move) << " " << vm.score << std::endl;
 	delete engine;
 }
 
 void testRepetition() {
 	position pos("5r1k/R7/5p2/4p3/1p1pP3/1npP1P2/rqn1b1R1/7K w - - 0 1");
-	SearchStopCriteria ssc;
-	ssc.MaxDepth = 5;
 	search<SINGLE> * engine = new search < SINGLE > ;
-	ValuatedMove vm = engine->Think(pos, ssc);
+	engine->timeManager.initialize(FIXED_DEPTH, 0, 5);
+	ValuatedMove vm = engine->Think(pos);
 	std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << vm.score << std::endl;
 	delete engine;
 }
@@ -407,12 +404,11 @@ void testFindMate() {
 		engine->Reset();
 		std::string mateIn = iter->first.substr(0, 1);
 		std::string fen = iter->first.substr(2, std::string::npos);
-		SearchStopCriteria ssc;
-		ssc.MaxDepth = 2 * atoi(mateIn.c_str()) - 1;
+		engine->timeManager.initialize(FIXED_DEPTH, 0, 2 * atoi(mateIn.c_str()) - 1);
 		position pos(fen);
-		ValuatedMove vm = engine->Think(pos, ssc);
-		std::cout << ((vm.move == iter->second) && (vm.score == VALUE_MATE - ssc.MaxDepth) ? "OK    " : "ERROR ") << "\t" << toString(vm.move) << "/" << toString(iter->second)
-			<< "\t" << vm.score << "/" << VALUE_MATE - ssc.MaxDepth << "\t" << fen << std::endl;
+		ValuatedMove vm = engine->Think(pos);
+		std::cout << ((vm.move == iter->second) && (vm.score == VALUE_MATE - engine->timeManager.GetMaxDepth()) ? "OK    " : "ERROR ") << "\t" << toString(vm.move) << "/" << toString(iter->second)
+			<< "\t" << vm.score << "/" << VALUE_MATE - engine->timeManager.GetMaxDepth() << "\t" << fen << std::endl;
 		count++;
 	}
 	delete engine;
@@ -726,10 +722,9 @@ void testMateInDos() {
 	for (std::map<std::string, Move>::iterator it = exercises.begin(); it != exercises.end(); ++it) {
 		engine->Reset();
 		position pos(it->first);
-		SearchStopCriteria ssc;
-		ssc.MaxDepth = 3;
+		engine->timeManager.initialize(FIXED_DEPTH, 0, 3);
 		++count;
-		ValuatedMove result = engine->Think(pos, ssc);
+		ValuatedMove result = engine->Think(pos);
 		std::cout << count << "\t" << ((result.move == it->second) ? "OK\t" : "ERROR\t") << toString(result.move) << "\t" << toString(it->second)
 			<< "\t" << result.score << "\t" << it->first << std::endl;
 		failed += result.move != it->second;

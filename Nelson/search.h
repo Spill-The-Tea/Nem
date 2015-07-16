@@ -1,14 +1,15 @@
 #pragma once
 
+#include <iostream>
+#include <sstream>
+#include <thread>
+#include <vector>
 #include "types.h"
 #include "book.h"
 #include "board.h"
 #include "position.h"
 #include "settings.h"
-#include <iostream>
-#include <sstream>
-#include <thread>
-#include <vector>
+#include "timemanager.h"
 
 enum NodeType { PV, NULL_MOVE, EXPECTED_CUT_NODE, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
 
@@ -42,8 +43,7 @@ public:
 	inline double cutoffAt1stMoveRate() const { return 100.0 * cutoffAt1stMove / cutoffCount; }
 	inline double cutoffAverageMove() const { return 1 + 1.0 * cutoffMoveIndexSum / cutoffCount; }
 	inline Move PonderMove() const { return PVMoves[1]; }
-	inline void ExtendStopTimes(int64_t extensionTime) { searchStopCriteria.HardStopTime += extensionTime; searchStopCriteria.SoftStopTime += extensionTime; }
-	inline void StopThinking(){ Stop = true; searchStopCriteria.HardStopTime = 0; }
+	inline void StopThinking(){ Stop = true; }
 	Move GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount);
 	virtual ThreadType GetType() = 0;
 
@@ -56,7 +56,7 @@ public:
 	HistoryStats History;
 	ExtendedMove killer[2 * MAX_DEPTH];
 	//Move excludedMoves[MAX_DEPTH];
-	SearchStopCriteria searchStopCriteria;
+	timemanager timeManager;
 	Move PVMoves[PV_MAX_LENGTH];
 	int _depth = 0;
 	int64_t _thinkTime;
@@ -77,7 +77,7 @@ public:
 
 	search();
 	~search();
-	inline ValuatedMove Think(position &pos, SearchStopCriteria ssc);
+	inline ValuatedMove Think(position &pos);
 
 	void startHelper();
 	void initializeSlave(baseSearch * masterSearch);
@@ -95,14 +95,11 @@ private:
 
 void startThread(search<SLAVE> & slave);
 
-template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, SearchStopCriteria ssc) {
+template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	std::vector<std::thread> subThreads;
 	search<SLAVE> * slaves = nullptr;
-	searchStopCriteria = ssc;
 	_thinkTime = 1;
 	rootPosition = pos;
-	int64_t * nodeCounts = new int64_t[searchStopCriteria.MaxDepth + 1];
-	nodeCounts[0] = 0;
 	pos.ResetPliesFromRoot();
 	tt::newSearch();
 	ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
@@ -141,7 +138,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 		}
 	}
 	//Iterativ Deepening Loop
-	for (_depth = 1; _depth <= searchStopCriteria.MaxDepth; ++_depth) {
+	for (_depth = 1; _depth <=timeManager.GetMaxDepth(); ++_depth) {
 		for (int pvIndx = 0; pvIndx < MultiPv; ++pvIndx) {
 			Value alpha = -VALUE_MATE;
 			Value beta = VALUE_MATE;
@@ -151,13 +148,11 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 			std::stable_sort(rootMoves + pvIndx + 1, &rootMoves[rootMoveCount], sortByScore);
 			BestMove = rootMoves[0];
 			int64_t tNow = now();
-			_thinkTime = std::max(tNow - searchStopCriteria.StartTime, int64_t(1));
+			_thinkTime = std::max(tNow - timeManager.GetStartTime(), int64_t(1));
 			if (!Stopped()) {
-				nodeCounts[_depth] = NodeCount - nodeCounts[_depth - 1];
-				if (_depth > 3) BranchingFactor = sqrt(1.0 * nodeCounts[_depth] / nodeCounts[_depth - 2]);
-				if (!PonderMode && tNow >= searchStopCriteria.MinStopTime && (tNow > searchStopCriteria.SoftStopTime || (3 * (tNow - searchStopCriteria.StartTime) + searchStopCriteria.StartTime) > searchStopCriteria.SoftStopTime)) Stop = true;
+				if (!PonderMode && !timeManager.ContinueSearch(_depth, BestMove, tNow)) Stop = true;
 			}
-			if (Stopped() || UciOutput) {
+			if (UciOutput) {
 				if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 					std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
@@ -186,7 +181,6 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos, Searc
 	}
 
 END:	while (PonderMode) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
-	delete[] nodeCounts;
 	return BestMove;
 }
 
@@ -234,7 +228,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	//	int repetitions = T == SINGLE ? 1 : 1;
 	//	for (int repetition = 0; repetition < repetitions; ++repetition){
 	for (int i = startWithMove; i < rootMoveCount; ++i) {
-		if (PrintCurrmove && depth > 5 && (now() - searchStopCriteria.StartTime) > 3000) {
+		if (PrintCurrmove && depth > 5 && (now() - timeManager.GetStartTime()) > 3000) {
 			std::cout << "info depth " << depth << " currmove " << toString(rootMoves[i].move) << " currmovenumber " << i + 1 << std::endl;
 		}
 		position next(pos);
@@ -290,7 +284,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	int64_t nodeCount4Move = 0;
 #endif
 	if (T != SLAVE) {
-		Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime));
+		Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount)));
 	}
 	if (Stopped()) return VALUE_ZERO;
 	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
@@ -347,6 +341,10 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			&& effectiveEvaluation >= beta
 			&& pos.NonPawnMaterial(pos.GetSideToMove())
 			) {
+			//(depth + 11) / 4 = 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,... 
+			//(depth + 14) / 5 = 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5,... 
+			//(depth + 18) / 6 = 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5,...
+			//(depth >> 1) + 1 = 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7,...
 			int reduction = (depth + 14) / 5;
 			Square epsquare = pos.GetEPSquare();
 			pos.NullMove();
@@ -485,7 +483,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 		MaxDepth = std::max(MaxDepth, pos.GetPliesFromRoot());
 		++NodeCount;
 		if (T == MASTER) {
-			Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && now() >= searchStopCriteria.HardStopTime));
+			Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount)));
 		}
 		if (Stopped()) return VALUE_ZERO;
 		if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
