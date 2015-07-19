@@ -97,8 +97,9 @@ void timemanager::init() {
 	}
 }
 
-bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_t tnow) {
+bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_t nodecount, int64_t tnow) {
 	_bestMoves[currentDepth - 1] = bestMove;
+	_nodeCounts[currentDepth - 1] = nodecount;
 	//_iterationTimes[currentDepth - 1] = tnow - _starttime;
 	if (ExitSearch(tnow)) return false;
 	switch (_mode)
@@ -119,4 +120,16 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 		return tnow < _stopTime && (_starttime + int64_t(factor * (tnow - _starttime))) <= _stopTime;
 	}
 
+}
+
+double timemanager::GetEBF(int depth) const {
+	int d = 0;
+	double wbf = 0;
+	int64_t n = 0;
+	for (d = 2; d < depth; ++d) {
+		double bf = sqrt(1.0 * _nodeCounts[d] / _nodeCounts[d - 2]);
+		wbf += bf * _nodeCounts[d - 1];
+		n += _nodeCounts[d - 1];
+	}
+	return wbf / n;
 }

@@ -89,14 +89,14 @@ int64_t bench(std::vector<std::string> fens, int depth) {
 		totalTime += endTime - srch->timeManager.GetStartTime();
 		totalNodes += srch->NodeCount;
 		totalQNodes += srch->QNodeCount;
-		avgBF += srch->BranchingFactor * (srch->NodeCount - srch->QNodeCount);
+		avgBF += srch->timeManager.GetEBF(depth) * (srch->NodeCount - srch->QNodeCount);
 		avgC1st += srch->cutoffAt1stMoveRate();
 		avgCIndx += srch->cutoffAverageMove();
 		int64_t runtime = endTime - srch->timeManager.GetStartTime();
 		int64_t rt = runtime;
 		if (rt == 0) rt = 1;
 		std::cout << std::left << std::setw(3) << i << std::setw(7) << runtime << std::setw(10) << srch->NodeCount << std::setw(6)
-			<< srch->NodeCount / rt << std::setw(6) << srch->BranchingFactor << std::setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
+			<< srch->NodeCount / rt << std::setw(6) << srch->timeManager.GetEBF(depth) << std::setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
 			<< std::setw(6) << srch->cutoffAt1stMoveRate() << std::setw(6) << srch->cutoffAverageMove()
 			<< std::setw(40) << srch->PrincipalVariation(depth) << std::endl;
 #ifdef STAT

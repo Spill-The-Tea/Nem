@@ -92,7 +92,7 @@ enum CastleFlag {
 const int CastlesbyColor[] = { W0_0 | W0_0_0, B0_0 | B0_0_0 };
 
 enum MoveGenerationType {
-	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NON_LOOSING_CAPTURES, TACTICAL, QUIETS, CHECK_EVASION, QUIET_CHECKS, ALL, LEGAL, FIND_ANY, FIND_ANY_CHECKED, HASHMOVE, KILLER, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE, REPEAT_ALL, UNDERPROMOTION
+	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NON_LOOSING_CAPTURES, TACTICAL, QUIETS, CHECK_EVASION, QUIET_CHECKS, ALL, LEGAL, FIND_ANY, FIND_ANY_CHECKED, HASHMOVE, KILLER, REPEAT_ALL, UNDERPROMOTION, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE
 };
 
 enum StagedMoveGenerationType {
@@ -410,6 +410,11 @@ public:
 			for (int s = 0; s < 64; ++s) Table[p][s] = VALUE_ZERO;
 		}
 	}
+	inline void age() {
+		for (int p = 0; p < 12; ++p) {
+			for (int s = 0; s < 64; ++s) Table[p][s] = Table[p][s] / 2;
+		}
+	}
 private:
 	Value Table[12][64];
 };
@@ -423,6 +428,17 @@ public:
 	}
 	inline Value const getValue(const Piece p1, const Square s1, const Piece p2, const Square s2) { return Table[p1][s1][p2][s2]; }
 	inline void initialize() { std::memset(Table, 0, sizeof(Table)); }
+	inline void age() {
+		for (int p = 0; p < 12; ++p) {
+			for (int s = 0; s < 64; ++s) {
+				for (int p1 = 0; p1 < 12; ++p1) {
+					for (int s1 = 0; s1 < 64; ++s1) {
+						Table[p][s][p1][s1] = Table[p][s][p1][s1] / 2;
+					}
+				}
+			}
+		}
+	}
 private:
 	Value Table[12][64][12][64];
 };
