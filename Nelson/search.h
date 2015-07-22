@@ -11,7 +11,7 @@
 #include "settings.h"
 #include "timemanager.h"
 
-enum NodeType { PV, EXPECTED_CUT_NODE, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
+enum NodeType { PV, CUT_NODE, ALL_NODE, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
 
 enum ThreadType { SINGLE, MASTER, SLAVE };
 
@@ -241,7 +241,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 		}
 		if (type(rootMoves[i].move) == CASTLING) bonus = BONUS_CASTLING; else bonus = VALUE_ZERO;
 		if (ZWS) {
-			score = bonus - Search<EXPECTED_CUT_NODE>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+			score = bonus - Search<CUT_NODE>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 			if (score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 		}
 		else {
@@ -337,14 +337,10 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			&& effectiveEvaluation >= beta
 			&& pos.NonPawnMaterial(pos.GetSideToMove())
 			) {
-			//(depth + 11) / 4 = 2, 3, 3, 3, 3, 4, 4, 4, 4, 5, 5, 5, 5,... 
-			//(depth + 14) / 5 = 2, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 5, 5,... 
-			//(depth + 18) / 6 = 3, 3, 3, 3, 3, 3, 4, 4, 4, 4, 4, 4, 5,...
-			//(depth >> 1) + 1 = 1, 1, 2, 2, 3, 3, 4, 4, 5, 5, 6, 6, 7,...
 			int reduction = (depth + 14) / 5;
 			Square epsquare = pos.GetEPSquare();
 			pos.NullMove();
-			Value nullscore = -Search<EXPECTED_CUT_NODE>(-beta, -alpha, pos, depth - reduction, &subpv[0], false, true);
+			Value nullscore = -Search<CUT_NODE>(-beta, -alpha, pos, depth - reduction, &subpv[0], false, true);
 			pos.NullMove(epsquare);
 			if (nullscore >= beta) {
 				return beta;
@@ -369,22 +365,21 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			while ((move = cpos.NextMove())) {
 				position next(cpos);
 				if (next.ApplyMove(move)) {
-					Value score = -Search<EXPECTED_CUT_NODE>(-rbeta, Value(-rbeta + 1), next, rdepth, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+					Value score = -Search<CUT_NODE>(-rbeta, Value(-rbeta + 1), next, rdepth, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 					if (score >= rbeta)
 						return score;
 				}
 			}
 		}
-
-		//IID: No Hash move available => Try to find one with a reduced search
-		if (NT == PV && depth >= 3 && !ttMove) {
-			position next(pos);
-			next.copy(pos);
-			Search<NT>(alpha, beta, next, depth - 2, &subpv[0], false);
-			if (Stopped()) return VALUE_ZERO;
-			ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
-			ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
-		}
+	}
+	//IID: No Hash move available => Try to find one with a reduced search
+	if (!ttMove && NT == PV ? depth >= 4 : depth > 6) {
+		position next(pos);
+		next.copy(pos);
+		Search<PV>(alpha, beta, next, NT == PV ? depth - 2 : depth / 2, &subpv[0], true);
+		if (Stopped()) return VALUE_ZERO;
+		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
+		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	}
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
 	bool futilityPruning = !skipNullMove && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
@@ -430,7 +425,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			nodeCount4Move = NodeCount;
 #endif
 			if (ZWS) {
-				score = -Search<EXPECTED_CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+				score = -Search<CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 				if (score > alpha && score < beta) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 		}
 			else {
