@@ -343,7 +343,11 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			Value nullscore = -Search<CUT_NODE>(-beta, -alpha, pos, depth - reduction, &subpv[0], false, true);
 			pos.NullMove(epsquare);
 			if (nullscore >= beta) {
-				return beta;
+				if (nullscore >= VALUE_MATE_THRESHOLD) nullscore = beta;
+				if (depth < 9  && beta < VALUE_KNOWN_WIN) return nullscore;
+				// Do verification search at high depths
+				Value verificationScore = Search<CUT_NODE>(beta - 1, beta, pos, depth - reduction, &subpv[0], false);
+				if (verificationScore >= beta) return nullscore;
 			}
 		}
 
