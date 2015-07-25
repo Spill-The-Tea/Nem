@@ -111,7 +111,7 @@ inline bool oppositeColors(Square s1, Square s2) {
 }
 
 inline Bitboard squaresOfSameColor(Square s) {
-	return DARKSQUARES & s ? DARKSQUARES : ~DARKSQUARES;
+	return (DARKSQUARES & s) ? DARKSQUARES : ~DARKSQUARES;
 }
 
 #ifdef USE_PEXT

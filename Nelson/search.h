@@ -296,13 +296,15 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	tt::Entry ttEntry;
 	tt::Entry* ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 	Value ttValue = ttFound ? tt::fromTT(ttEntry.value(), pos.GetPliesFromRoot()) : VALUE_NOTYETDETERMINED;
+	Move ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	if (ttFound
 		&& ttEntry.depth() >= depth
 		&& ttValue != VALUE_NOTYETDETERMINED
 		&& ((ttEntry.type() == tt::EXACT) || (ttValue >= beta && ttEntry.type() == tt::LOWER_BOUND) || (ttValue <= alpha && ttEntry.type() == tt::UPPER_BOUND))) {
+		if (ttMove && pos.IsQuiet(ttMove)) updateCutoffStats(ttMove, depth, pos, -1);
 		return ttValue;
 	}
-	Move ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
+
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	bool checked = pos.Checked();
@@ -544,17 +546,20 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 }
 
 template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, int depth, position &pos, int moveIndex) {
-	cutoffAt1stMove += moveIndex == 0;
-	cutoffCount++;
-	cutoffMoveIndexSum += moveIndex;
-	if (pos.GetMoveGenerationType() >= QUIETS_POSITIVE) {
+	if (moveIndex >= 0) {
+		cutoffMoveIndexSum += moveIndex;
+		cutoffCount++;
+		cutoffAt1stMove += moveIndex == 0;
+	}
+	if (moveIndex < 0 || pos.GetMoveGenerationType() >= QUIETS_POSITIVE) {
 		Square toSquare = to(cutoffMove);
 		Piece movingPiece = pos.GetPieceOnSquare(from(cutoffMove));
-		ExtendedMove killerMove(movingPiece, cutoffMove);
-		int pfr = pos.GetPliesFromRoot();
-
-		killer[2 * pfr + 1] = killer[2 * pfr];
-		killer[2 * pfr] = killerMove;
+		if (moveIndex >= 0) {
+			ExtendedMove killerMove(movingPiece, cutoffMove);
+			int pfr = pos.GetPliesFromRoot();
+			killer[2 * pfr + 1] = killer[2 * pfr];
+			killer[2 * pfr] = killerMove;
+		}
 		Value v = Value(depth * depth);
 		History.update(v, movingPiece, toSquare);
 		Piece prevPiece = BLANK;
