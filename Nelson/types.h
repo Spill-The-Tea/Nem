@@ -286,9 +286,9 @@ struct eval {
 
 const eval EVAL_ZERO;
 
-inline eval operator-(const eval e) { return eval(-e.mgScore, -e.egScore); }
+inline eval operator-(const eval &e) { return eval(-e.mgScore, -e.egScore); }
 inline eval operator+(const eval &e1, const eval &e2) { return eval(e1.mgScore + e2.mgScore, e1.egScore + e2.egScore); }
-inline eval operator+=(eval& e1, const eval e2) {
+inline eval operator+=(eval& e1, const eval &e2) {
 	e1.mgScore += e2.mgScore;
 	e1.egScore += e2.egScore;
 	return e1;
@@ -300,7 +300,7 @@ inline eval operator+=(eval& e1, const Value v) {
 	return e1;
 }
 
-inline eval operator-=(eval& e1, const eval e2) {
+inline eval operator-=(eval& e1, const eval& e2) {
 	e1.mgScore -= e2.mgScore;
 	e1.egScore -= e2.egScore;
 	return e1;
@@ -315,8 +315,8 @@ inline eval operator-=(eval& e1, const Value v) {
 inline eval operator-(const eval& e1, const eval& e2) {
 	return eval(e1.mgScore - e2.mgScore, e1.egScore - e2.egScore);
 }
-inline eval operator*(const eval e, const int i) { return eval(e.mgScore * i, e.egScore * i); }
-inline eval operator*(const int i, const eval e) { return eval(e.mgScore * i, e.egScore * i); }
+inline eval operator*(const eval& e, const int i) { return eval(e.mgScore * i, e.egScore * i); }
+inline eval operator*(const int i, const eval& e) { return eval(e.mgScore * i, e.egScore * i); }
 inline eval operator/(const eval& e, const int i) { return eval(e.mgScore / i, e.egScore / i); }
 inline eval operator*(const float f, const eval& e) { return eval(f * e.mgScore, f * e.egScore); }
 

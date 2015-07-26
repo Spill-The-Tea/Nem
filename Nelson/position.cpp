@@ -1040,7 +1040,7 @@ void position::NullMove(Square epsquare) {
 	Bitboard tmp = attackedByThem;
 	attackedByThem = attackedByUs;
 	attackedByUs = tmp;
-	if (StaticEval != VALUE_NOTYETDETERMINED) StaticEval = -StaticEval;
+	if (StaticEval != VALUE_NOTYETDETERMINED) StaticEval = -StaticEval + 2 * BONUS_TEMPO;
 }
 
 void position::deleteParents() {

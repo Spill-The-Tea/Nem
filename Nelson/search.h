@@ -309,7 +309,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	pv[0] = MOVE_NONE;
 	bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
-		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
+		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + BONUS_TEMPO;
 	if (!skipNullMove && prune && !checked) {
 		//Check if Value from TT is better
 		Value effectiveEvaluation = staticEvaluation;
@@ -504,7 +504,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 		standPat = VALUE_NOTYETDETERMINED;
 	}
 	else {
-		standPat = ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
+		standPat = ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + BONUS_TEMPO;
 		//check if ttValue is better
 		if (ttFound && ttValue != VALUE_NOTYETDETERMINED && ((ttValue > standPat && ttEntry.type() == tt::LOWER_BOUND) || (ttValue < standPat && ttEntry.type() == tt::UPPER_BOUND))) standPat = ttValue;
 		if (standPat >= beta) {
