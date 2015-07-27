@@ -432,11 +432,11 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 #endif
 			if (ZWS) {
 				score = -Search<CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
-				if (score > alpha && score < beta) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+				if (score > alpha && score < beta) score = -Search<NT>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 		}
 			else {
-				score = -Search<PV>(-beta, -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
-				if (score > alpha && reduction > 0) score = -Search<PV>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+				score = -Search<NT>(-beta, -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+				if (score > alpha && reduction > 0) score = -Search<NT>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 			}
 
 			if (score >= beta) {
