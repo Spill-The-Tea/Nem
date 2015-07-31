@@ -11,8 +11,6 @@
 #include "settings.h"
 #include "timemanager.h"
 
-enum NodeType { PV, CUT_NODE, ALL_NODE, QSEARCH_DEPTH_0, QSEARCH_DEPTH_NEGATIVE };
-
 enum ThreadType { SINGLE, MASTER, SLAVE };
 
 struct baseSearch {
@@ -84,9 +82,9 @@ public:
 	ThreadType GetType() { return T; }
 
 private:
-	template<NodeType NT> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true, bool skipNullMove = false);
+	template<bool PVNode> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true, bool skipNullMove = false);
 	Value SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove = 0);
-	template<NodeType NT> Value QSearch(Value alpha, Value beta, position &pos, int depth);
+	template<bool WithChecks> Value QSearch(Value alpha, Value beta, position &pos, int depth);
 	void updateCutoffStats(const Move cutoffMove, int depth, position &pos, int moveIndex);
 
 };
@@ -241,12 +239,12 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 		}
 		if (type(rootMoves[i].move) == CASTLING) bonus = BONUS_CASTLING; else bonus = VALUE_ZERO;
 		if (ZWS) {
-			score = bonus - Search<CUT_NODE>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
-			if (score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+			score = bonus - Search<false>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+			if (score > alpha && score < beta) score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 		}
 		else {
-			score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1 - reduction, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
-			if (reduction > 0 && score > alpha && score < beta) score = bonus - Search<PV>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+			score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1 - reduction, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+			if (reduction > 0 && score > alpha && score < beta) score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 		}
 		//if (T != SINGLE) tt::DecrementNProc(next.GetHash());
 		if (Stopped()) break;
@@ -273,7 +271,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	return bestScore;
 }
 
-template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune, bool skipNullMove) {
+template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune, bool skipNullMove) {
 	++NodeCount;
 #ifdef STAT
 	int64_t nodeCount4Node = 0;
@@ -281,7 +279,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 #endif
 	if (T != SLAVE) {
 		Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount)));
-}
+	}
 	if (Stopped()) return VALUE_ZERO;
 	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
 	//Mate distance pruning
@@ -289,7 +287,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	beta = Value(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, int(beta)));
 	if (alpha >= beta) return alpha;
 	if (depth <= 0) {
-		return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, depth);
+		return QSearch<true>(alpha, beta, pos, depth);
 	}
 	//TT lookup
 	bool ttFound;
@@ -323,9 +321,9 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			&& ttMove == MOVE_NONE
 			&& !pos.PawnOn7thRank())
 		{
-			if (depth <= 1 && (effectiveEvaluation + 302) <= alpha) return QSearch<QSEARCH_DEPTH_0>(alpha, beta, pos, 0);
+			if (depth <= 1 && (effectiveEvaluation + 302) <= alpha) return QSearch<true>(alpha, beta, pos, 0);
 			Value razorAlpha = alpha - Value(256 + 16 * depth);
-			Value razorScore = QSearch<QSEARCH_DEPTH_0>(razorAlpha, Value(razorAlpha + 1), pos, 0);
+			Value razorScore = QSearch<true>(razorAlpha, Value(razorAlpha + 1), pos, 0);
 			if (razorScore <= razorAlpha) return razorScore;
 		}
 		// Beta Pruning
@@ -342,19 +340,19 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			int reduction = (depth + 14) / 5;
 			Square epsquare = pos.GetEPSquare();
 			pos.NullMove();
-			Value nullscore = -Search<CUT_NODE>(-beta, -alpha, pos, depth - reduction, &subpv[0], false, true);
+			Value nullscore = -Search<false>(-beta, -alpha, pos, depth - reduction, &subpv[0], false, true);
 			pos.NullMove(epsquare);
 			if (nullscore >= beta) {
 				if (nullscore >= VALUE_MATE_THRESHOLD) nullscore = beta;
-				if (depth < 9  && beta < VALUE_KNOWN_WIN) return nullscore;
+				if (depth < 9 && beta < VALUE_KNOWN_WIN) return nullscore;
 				// Do verification search at high depths
-				Value verificationScore = Search<CUT_NODE>(beta - 1, beta, pos, depth - reduction, &subpv[0], false);
+				Value verificationScore = Search<false>(beta - 1, beta, pos, depth - reduction, &subpv[0], false);
 				if (verificationScore >= beta) return nullscore;
 			}
 		}
 
 		// ProbCut (copied from SF)
-		if (NT != PV
+		if (!PVNode
 			&&  depth >= 5
 			&& std::abs(int(beta)) < VALUE_MATE_THRESHOLD)
 		{
@@ -366,12 +364,12 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			Value limit = PieceValuesMG[GetPieceType(pos.getCapturedInLastMove())];
 			Move ttm = ttMove;
 			if (ttm != MOVE_NONE && cpos.SEE(from(ttMove), to(ttMove)) < limit) ttm = MOVE_NONE;
-			cpos.InitializeMoveIterator<QSEARCH>(&History, &DblHistory, nullptr, nullptr, ttm, limit);
+			cpos.InitializeMoveIterator<QSEARCH>(&History, &DblHistory, nullptr, MOVE_NONE, ttm, limit);
 			Move move;
 			while ((move = cpos.NextMove())) {
 				position next(cpos);
 				if (next.ApplyMove(move)) {
-					Value score = -Search<CUT_NODE>(-rbeta, Value(-rbeta + 1), next, rdepth, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+					Value score = -Search<false>(-rbeta, Value(-rbeta + 1), next, rdepth, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 					if (score >= rbeta)
 						return score;
 				}
@@ -379,20 +377,21 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 		}
 	}
 	//IID: No Hash move available => Try to find one with a reduced search
-	if (!ttMove && NT == PV ? depth >= 4 : depth > 6) {
+	if (!ttMove && PVNode ? depth >= 4 : depth > 6) {
 		position next(pos);
 		next.copy(pos);
-		Search<PV>(alpha, beta, next, NT == PV ? depth - 2 : depth / 2, &subpv[0], true);
+		Search<PVNode>(alpha, beta, next, PVNode ? depth - 2 : depth / 2, &subpv[0], true);
 		if (Stopped()) return VALUE_ZERO;
 		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	}
+	Move counter = pos.GetCounterMove(counterMove);
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
 	bool futilityPruning = !skipNullMove && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
-	if (futilityPruning && alpha >(staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
-		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &DblHistory, nullptr, counterMove, ttMove);
+	if (futilityPruning && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
+		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &DblHistory, nullptr, counter, ttMove);
 	else
-		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &DblHistory, &killer[2 * pos.GetPliesFromRoot()], counterMove, ttMove);
+		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &DblHistory, &killer[2 * pos.GetPliesFromRoot()], counter, ttMove);
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
@@ -402,11 +401,24 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	bool ZWS = false;
 	Square recaptureSquare = pos.GetLastAppliedMove() && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	while ((move = pos.NextMove())) {
-		// late-move pruning
-		if (NT != PV && depth <= 3 && moveIndex >= depth * 4 && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD  && pos.IsQuietAndNoCastles(move)) {
-			moveIndex++;
-			continue;
-		}
+		if (!PVNode && !checked && depth <= 3 && moveIndex >= depth * 4 && pos.GetMoveGenerationType() >= QUIETS_POSITIVE && move != counter) {
+				moveIndex++;
+				continue;
+			}
+		//bool prunable = !PVNode && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
+		//	&& move != killer[2 * pos.GetPliesFromRoot()].move && move != killer[2 * pos.GetPliesFromRoot() + 1].move && pos.IsQuietAndNoCastles(move);
+		//if (prunable) {
+		//	// late-move pruning
+		//	if (depth <= 3 && moveIndex >= depth * 4) {
+		//		moveIndex++;
+		//		continue;
+		//	}
+		//	//SEE pruning
+		//	//if (depth <= 3 && pos.SEE_Sign(move) < 0) {
+		//	//	moveIndex++;
+		//	//	continue;
+		//	//}
+		//}
 		position next(pos);
 		if (next.ApplyMove(move)) {
 			//Check extension
@@ -419,7 +431,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			int reduction = 0;
 			//LMR: Late move reduction
 			if (lmr && moveIndex >= 2 && !extension && pos.IsQuietAndNoCastles(move) && !next.Checked()) {
-				if (NT == PV) {
+				if (PVNode) {
 					if (moveIndex >= 5) reduction = 1;
 				}
 				else {
@@ -431,12 +443,12 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 			nodeCount4Move = NodeCount;
 #endif
 			if (ZWS) {
-				score = -Search<CUT_NODE>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
-				if (score > alpha && score < beta) score = -Search<NT>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
-		}
+				score = -Search<false>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+				if (score > alpha && score < beta) score = -Search<PVNode>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+			}
 			else {
-				score = -Search<NT>(-beta, -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
-				if (score > alpha && reduction > 0) score = -Search<NT>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+				score = -Search<PVNode>(-beta, -alpha, next, depth - 1 - reduction + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
+				if (score > alpha && reduction > 0) score = -Search<PVNode>(-beta, -alpha, next, depth - 1 + extension, &subpv[0], !next.GetMaterialTableEntry()->SkipPruning());
 			}
 
 			if (score >= beta) {
@@ -454,7 +466,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 				if (T != SINGLE)  ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
 				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
 				return score;
-				}
+			}
 			if (score > bestScore) {
 				bestScore = score;
 				if (score > alpha)
@@ -466,7 +478,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 					memcpy(pv + 1, subpv, (PV_MAX_LENGTH - 1)*sizeof(Move));
 				}
 			}
-			}
+		}
 		moveIndex++;
 	}
 	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
@@ -474,9 +486,9 @@ template<ThreadType T> template<NodeType NT> Value search<T>::Search(Value alpha
 	return bestScore;
 }
 
-template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alpha, Value beta, position &pos, int depth) {
+template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value alpha, Value beta, position &pos, int depth) {
 	++QNodeCount;
-	if (NT == QSEARCH_DEPTH_NEGATIVE) {
+	if (!WithChecks) {
 		MaxDepth = std::max(MaxDepth, pos.GetPliesFromRoot());
 		++NodeCount;
 		if (T == MASTER) {
@@ -498,7 +510,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 		return ttValue;
 	}
 	bool checked = pos.Checked();
-	int ttDepth = NT == QSEARCH_DEPTH_0 || checked ? 0 : -1;
+	int ttDepth = WithChecks || checked ? 0 : -1;
 	Value standPat;
 	if (checked) {
 		standPat = VALUE_NOTYETDETERMINED;
@@ -519,8 +531,8 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 		}
 		if (alpha < standPat) alpha = standPat;
 	}
-	if (NT == QSEARCH_DEPTH_0) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &DblHistory, nullptr, nullptr);
-	else pos.InitializeMoveIterator<QSEARCH>(&History, &DblHistory, nullptr, nullptr);
+	if (WithChecks) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &DblHistory, nullptr, MOVE_NONE);
+	else pos.InitializeMoveIterator<QSEARCH>(&History, &DblHistory, nullptr, MOVE_NONE);
 	Move move;
 	Value score;
 	tt::NodeType nt = tt::UPPER_BOUND;
@@ -528,7 +540,7 @@ template<ThreadType T> template<NodeType NT> Value search<T>::QSearch(Value alph
 		if (pos.SEE_Sign(move) < VALUE_ZERO) continue;
 		position next(pos);
 		if (next.ApplyMove(move)) {
-			score = -QSearch<QSEARCH_DEPTH_NEGATIVE>(-beta, -alpha, next, depth - 1);
+			score = -QSearch<false>(-beta, -alpha, next, depth - 1);
 			if (score >= beta) {
 				if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, move, standPat);
 				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, move, standPat);

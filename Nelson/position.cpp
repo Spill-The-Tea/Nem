@@ -383,12 +383,15 @@ void position::evaluateCheckEvasions(int startIndex) {
 	if (movepointer-2 > quietsIndex) std::sort(moves + quietsIndex, &moves[movepointer - 1], sortByScore);
 }
 
-void position::evaluateByHistory(int startIndex) {
-	Move counterMove = MOVE_NONE;
-	if (CounterMoves && previous) {
+Move position::GetCounterMove(Move * counterMoves) {
+	if (counterMoves && previous) {
 		Square lastTo = to(previous->lastAppliedMove);
-		counterMove = CounterMoves[(Board[lastTo] << 6) + lastTo];
+		return counterMoves[(Board[lastTo] << 6) + lastTo];
 	}
+	return MOVE_NONE;
+}
+
+void position::evaluateByHistory(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
 		if (moves[i].move == counterMove) {
 			moves[i].score = VALUE_MATE;

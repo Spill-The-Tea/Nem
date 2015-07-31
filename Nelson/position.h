@@ -42,7 +42,7 @@ public:
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, DblHistoryStats *dblHistoryStats, ExtendedMove * killerMove, Move * counterMoves, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE);
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, DblHistoryStats *dblHistoryStats, ExtendedMove * killerMove, Move counter, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE);
 	Move NextMove();
 	const Value SEE(Square from, const Square to) const;
 	Value SEE_Sign(Move move) const;
@@ -92,6 +92,7 @@ public:
 	std::string toSan(Move move);
 	Move parseSan(std::string move);
 	inline bool IsAdvancedPawnMove(Move move) const { Square toSquare = to(move); return GetPieceType(Board[toSquare]) == PAWN && ((toSquare >> 5) & GetSideToMove()) == 0; };
+	Move GetCounterMove(Move * counterMoves);
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -126,7 +127,7 @@ private:
 	ValuatedMove * firstNegative;
 	HistoryStats * history;
 	DblHistoryStats * dblHistory;
-	Move * CounterMoves = nullptr;
+	Move counterMove = MOVE_NONE;
 	Value minMoveValue = -VALUE_MATE;
 	bool canPromote = false;
 
@@ -838,7 +839,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, DblHistoryStats * dblHistoryStats, ExtendedMove* killerMove, Move * counterMoves, Move hashmove, Value limit) {
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, DblHistoryStats * dblHistoryStats, ExtendedMove* killerMove, Move counter, Move hashmove, Value limit) {
 	if (SMGT == REPETITION) {
 		moveIterationPointer = 0;
 		generationPhase = generationPhaseOffset[SMGT];
@@ -850,7 +851,7 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 		return;
 	}
 	if (SMGT == MAIN_SEARCH) killer = killerMove; else killer = nullptr;
-	CounterMoves = counterMoves;
+	counterMove = counter;
 	if (!attackedByThem) attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	moveIterationPointer = -1;
 	movepointer = 0;

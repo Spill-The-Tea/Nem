@@ -111,8 +111,8 @@ int64_t bench(std::vector<std::string> fens, int depth) {
 		delete(srch);
 	}
 	avgBF = avgBF / (totalNodes - totalQNodes);
-	avgCIndx = avgCIndx / 100;
-	avgC1st = avgC1st / 100;
+	avgCIndx = avgCIndx / fens.size();
+	avgC1st = avgC1st / fens.size();
 	std::cout << "------------------------------------------------------------------------" << std::endl;
 	std::cout << std::setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "
 		"BF: " << std::setprecision(3) << avgBF << "  C1st: " << avgC1st << "  CIndx: " << avgCIndx << std::endl;
@@ -310,7 +310,7 @@ uint64_t perft3(position &pos, int depth) {
 	nodeCount++;
 	if (depth == 0) return 1;
 	uint64_t result = 0;
-	pos.InitializeMoveIterator<MAIN_SEARCH>(&history, &dblHistory, nullptr, nullptr);
+	pos.InitializeMoveIterator<MAIN_SEARCH>(&history, &dblHistory, nullptr, MOVE_NONE);
 	Move move;
 	while ((move = pos.NextMove())) {
 		position next(pos);
@@ -338,7 +338,7 @@ void divide(position &pos, int depth) {
 }
 
 void divide3(position &pos, int depth) {
-	pos.InitializeMoveIterator<MAIN_SEARCH>(&history, &dblHistory, nullptr, nullptr);
+	pos.InitializeMoveIterator<MAIN_SEARCH>(&history, &dblHistory, nullptr, MOVE_NONE);
 	Move move;
 	uint64_t total = 0;
 	while ((move = pos.NextMove())) {
