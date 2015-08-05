@@ -692,7 +692,7 @@ void InitializeMagic() {
 
 void Initialize() {
 	Chess960 = false;
-	std::chrono::system_clock::time_point begin = std::chrono::high_resolution_clock::now();
+	int64_t begin = now();
 	InitializeInBetweenFields();
 	InitializeKingAttacks();
 	InitializeKnightAttacks();
@@ -709,10 +709,9 @@ void Initialize() {
 	InitializeShadowedFields();
 	pawn::initialize();
 	tt::InitializeTranspositionTable(HashSizeMB);
-	std::chrono::system_clock::time_point end = std::chrono::high_resolution_clock::now();
+	int64_t end = now();
 	auto runtime = end - begin;
-	std::chrono::microseconds runtimeMS = std::chrono::duration_cast<std::chrono::microseconds>(runtime);
-	std::cout << "Initialization Time: " << runtimeMS.count() / 1000 << "ms" << std::endl;
+	std::cout << "Initialization Time: " << runtime << "ms" << std::endl;
 }
 
 Move parseMoveInUCINotation(const std::string& uciMove, const position& pos) {

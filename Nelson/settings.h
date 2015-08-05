@@ -98,3 +98,5 @@ const Value CAPTURE_SCORES[6][6] = {
 	{ Value(290), Value(220), Value(140), Value(160), Value(120), Value(120)},   // PAWN
 	{ Value(300), Value(240), Value(230), Value(130), Value(110), Value(0) }    // KING
 };
+
+const int LMPMoveCount[4] = { 0, 5, 9, 13 };

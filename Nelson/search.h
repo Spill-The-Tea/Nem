@@ -401,7 +401,8 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	bool ZWS = false;
 	Square recaptureSquare = pos.GetLastAppliedMove() && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	while ((move = pos.NextMove())) {
-		if (!PVNode && !checked && depth <= 3 && moveIndex >= depth * 4 && pos.GetMoveGenerationType() >= QUIETS_POSITIVE && move != counter) {
+		bool critical = move == counter || pos.GetMoveGenerationType() < QUIETS_POSITIVE || moveIndex == 0;
+		if (!PVNode && !checked && !critical && depth <= 3 && moveIndex >= LMPMoveCount[depth]) {
 				moveIndex++;
 				continue;
 			}
@@ -430,7 +431,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			}
 			int reduction = 0;
 			//LMR: Late move reduction
-			if (lmr && moveIndex >= 2 && !extension && pos.IsQuietAndNoCastles(move) && !next.Checked()) {
+			if (lmr && !critical && moveIndex >= 2 && !extension && !next.Checked()) {
 				if (PVNode) {
 					if (moveIndex >= 5) reduction = 1;
 				}
