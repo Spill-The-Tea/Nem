@@ -400,7 +400,7 @@ void position::evaluateByHistory(int startIndex) {
 			Square toSquare = to(moves[i].move);
 			Piece p = Board[from(moves[i].move)];
 			moves[i].score = history->getValue(p, toSquare);
-			if (lastAppliedMove && dblHistory) moves[i].score += 2 * dblHistory->getValue(Board[to(lastAppliedMove)], to(lastAppliedMove), p, toSquare);
+			if (lastAppliedMove && cmHistory) moves[i].score += 2 * cmHistory->getValue(Board[to(lastAppliedMove)], to(lastAppliedMove), p, toSquare);
 		}
 	}
 }
@@ -612,7 +612,8 @@ const Bitboard position::getSquareOfLeastValuablePiece(const Bitboard attadef, c
 	subset = attadef & PieceBB(BISHOP, diff); if (subset) return subset & (0 - subset); // single bit
 	subset = attadef & PieceBB(ROOK, diff); if (subset) return subset & (0 - subset); // single bit
 	subset = attadef & PieceBB(QUEEN, diff); if (subset) return subset & (0 - subset); // single bit
-	return 0; // empty set
+	subset = attadef & PieceBB(KING, diff); 
+	return subset & (0 - subset);
 }
 
 //SEE with early return if SEE value can't be negative

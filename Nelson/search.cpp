@@ -25,7 +25,7 @@ void baseSearch::Reset() {
 	Stop = false;
 	PonderMode = false;
 	History.initialize();
-	DblHistory.initialize();
+	cmHistory.initialize();
 	for (int i = 0; i < MAX_DEPTH; ++i){
 		killer[2*i] = EXTENDED_MOVE_NONE;
 		killer[2 * i + 1] = EXTENDED_MOVE_NONE;
@@ -73,7 +73,7 @@ baseSearch::~baseSearch() {
 baseSearch::baseSearch() {
 	BestMove.move = MOVE_NONE;
 	BestMove.score = VALUE_NOTYETDETERMINED;
-	DblHistory.initialize();
+	cmHistory.initialize();
 	History.initialize();
 	_thinkTime = 0;
 }

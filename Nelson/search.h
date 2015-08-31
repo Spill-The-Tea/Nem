@@ -4,6 +4,7 @@
 #include <sstream>
 #include <thread>
 #include <vector>
+#include <atomic>
 #include "types.h"
 #include "book.h"
 #include "board.h"
@@ -17,12 +18,13 @@ struct baseSearch {
 public:
 	bool UciOutput = false;
 	bool PrintCurrmove = true;
-	bool PonderMode = false;
+	std::atomic<bool> PonderMode = false;
 	ValuatedMove BestMove;
 	int64_t NodeCount = 0;
 	int64_t QNodeCount = 0;
 	int MaxDepth = 0;
-	bool Stop = false;
+	std::atomic<bool> Stop = false;
+	//bool Stop = false;
 	double BranchingFactor = 0;
 	std::string BookFile = "";
 	int rootMoveCount = 0;
@@ -41,17 +43,20 @@ public:
 	inline double cutoffAt1stMoveRate() const { return 100.0 * cutoffAt1stMove / cutoffCount; }
 	inline double cutoffAverageMove() const { return 1 + 1.0 * cutoffMoveIndexSum / cutoffCount; }
 	inline Move PonderMove() const { return PVMoves[1]; }
-	inline void StopThinking(){ Stop = true; }
+	inline void StopThinking(){ 
+		PonderMode = false;
+		Stop = true; 
+	}
 	Move GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount);
 	virtual ThreadType GetType() = 0;
 
 	//protected:
 	polyglot::book * book = nullptr;
-	DblHistoryStats DblHistory;
+	CounterMoveHistoryManager cmHistory;
 	uint64_t cutoffAt1stMove = 0;
 	uint64_t cutoffCount = 0;
 	uint64_t cutoffMoveIndexSum = 0;
-	HistoryStats History;
+	HistoryManager History;
 	ExtendedMove killer[2 * MAX_DEPTH];
 	//Move excludedMoves[MAX_DEPTH];
 	timemanager timeManager;
@@ -278,7 +283,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	int64_t nodeCount4Move = 0;
 #endif
 	if (T != SLAVE) {
-		Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount)));
+		if (!PonderMode && !Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop = true;
 	}
 	if (Stopped()) return VALUE_ZERO;
 	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
@@ -302,7 +307,6 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		if (ttMove && pos.IsQuiet(ttMove)) updateCutoffStats(ttMove, depth, pos, -1);
 		return ttValue;
 	}
-
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	bool checked = pos.Checked();
@@ -364,7 +368,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			Value limit = PieceValuesMG[GetPieceType(pos.getCapturedInLastMove())];
 			Move ttm = ttMove;
 			if (ttm != MOVE_NONE && cpos.SEE(from(ttMove), to(ttMove)) < limit) ttm = MOVE_NONE;
-			cpos.InitializeMoveIterator<QSEARCH>(&History, &DblHistory, nullptr, MOVE_NONE, ttm, limit);
+			cpos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, nullptr, MOVE_NONE, ttm, limit);
 			Move move;
 			while ((move = cpos.NextMove())) {
 				position next(cpos);
@@ -389,9 +393,9 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
 	bool futilityPruning = !skipNullMove && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
 	if (futilityPruning && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
-		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &DblHistory, nullptr, counter, ttMove);
+		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, nullptr, counter, ttMove);
 	else
-		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &DblHistory, &killer[2 * pos.GetPliesFromRoot()], counter, ttMove);
+		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &cmHistory, &killer[2 * pos.GetPliesFromRoot()], counter, ttMove);
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
@@ -493,7 +497,7 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		MaxDepth = std::max(MaxDepth, pos.GetPliesFromRoot());
 		++NodeCount;
 		if (T == MASTER) {
-			Stop = !PonderMode && (Stop || ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount)));
+			if (!PonderMode && !Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop = true;
 		}
 		if (Stopped()) return VALUE_ZERO;
 		if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
@@ -532,8 +536,8 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		}
 		if (alpha < standPat) alpha = standPat;
 	}
-	if (WithChecks) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &DblHistory, nullptr, MOVE_NONE);
-	else pos.InitializeMoveIterator<QSEARCH>(&History, &DblHistory, nullptr, MOVE_NONE);
+	if (WithChecks) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, nullptr, MOVE_NONE);
+	else pos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, nullptr, MOVE_NONE);
 	Move move;
 	Value score;
 	tt::NodeType nt = tt::UPPER_BOUND;
@@ -581,7 +585,7 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 			prevTo = to(pos.GetLastAppliedMove());
 			prevPiece = pos.GetPieceOnSquare(prevTo);
 			counterMove[(pos.GetPieceOnSquare(prevTo) << 6) + prevTo] = cutoffMove;
-			DblHistory.update(v, prevPiece, prevTo, movingPiece, toSquare);
+			cmHistory.update(v, prevPiece, prevTo, movingPiece, toSquare);
 		}
 		if (moveIndex > 0) {
 			ValuatedMove * alreadyProcessedQuiets = pos.GetMovesOfCurrentPhase();
@@ -590,7 +594,7 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 				toSquare = to(alreadyProcessedQuiets->move);
 				History.update(-v, movingPiece, toSquare);
 				if (pos.GetLastAppliedMove())
-					DblHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
+					cmHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
 				alreadyProcessedQuiets++;
 			}
 		}

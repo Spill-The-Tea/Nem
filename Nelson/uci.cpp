@@ -119,7 +119,7 @@ void uci() {
 	printf("option name Hash type spin default %i min 1 max 16384\n", HashSizeMB);
 	printf("option name MultiPV type spin default %i min 1 max 216\n", Engine->MultiPv);
 	printf("option name Threads type spin default %i min 1 max 128\n", HelperThreads + 1);
-	printf("option name Ponder type check");
+	printf("option name Ponder type check\n");
 	//printf("option name Draw Value type spin default %d min -100 max 100\n", DrawValue);
 	//printf("option name GaviotaTablebasePaths type string\n");
 	//printf("option name GaviotaTablebaseCache type spin default %lu min 1 max 16384\n", GTB_CACHE);
@@ -281,7 +281,9 @@ void go(std::vector<std::string> &tokens) {
 	int64_t tnow = now();
 	if (!_position) _position = new position();
 	int moveTime = 0;
+	int pmoveTime = 0;
 	int increment = 0;
+	int pincrement = 0;
 	int movestogo = 30;
 	bool ponder = false;
 	bool searchmoves = false;
@@ -292,15 +294,26 @@ void go(std::vector<std::string> &tokens) {
 	TimeMode mode = UNDEF;
 	std::string time = _position->GetSideToMove() == WHITE ? "wtime" : "btime";
 	std::string inc = _position->GetSideToMove() == WHITE ? "winc" : "binc";
+	std::string ptime = _position->GetSideToMove() == BLACK ? "wtime" : "btime";
+	std::string pinc = _position->GetSideToMove() == BLACK ? "winc" : "binc";
 	while (idx < tokens.size()) {
 		if (!tokens[idx].compare(time)) {
 			++idx;
 			moveTime = stoi(tokens[idx]);
 			searchmoves = false;
+		} else if (!tokens[idx].compare(ptime)) {
+			++idx;
+			pmoveTime = stoi(tokens[idx]);
+			searchmoves = false;
 		}
 		else if (!tokens[idx].compare(inc)) {
 			++idx;
 			increment = stoi(tokens[idx]);
+			searchmoves = false;
+		}
+		else if (!tokens[idx].compare(pinc)) {
+			++idx;
+			pincrement = stoi(tokens[idx]);
 			searchmoves = false;
 		}
 		else if (!tokens[idx].compare("depth")) {
@@ -347,6 +360,10 @@ void go(std::vector<std::string> &tokens) {
 			Engine->searchMoves.push_back(m);
 		}
 		++idx;
+	}
+	if (ponder) {
+		moveTime = pmoveTime;
+		increment = pincrement;
 	}
 	if (mode == UNDEF && moveTime == 0 && increment == 0 && nodes < INT64_MAX) mode = NODES;
 	Engine->timeManager.initialize(mode, moveTime, depth, nodes, moveTime, increment, movestogo, tnow);

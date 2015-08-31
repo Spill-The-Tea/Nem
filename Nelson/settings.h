@@ -11,8 +11,9 @@ const int EmergencyTime = 100; //50 ms Emergency time
 const int PV_MAX_LENGTH = 32; //Maximum Length of displayed Principal Variation
 const int MASK_TIME_CHECK = (1 << 14) - 1;
 
-const Value PieceValuesMG[] { Value(950), Value(520), Value(325), Value(325), Value(80), VALUE_ZERO, VALUE_ZERO };
-const Value PieceValuesEG[] { Value(950), Value(520), Value(325), Value(325), Value(100), VALUE_ZERO, VALUE_ZERO };
+//King piece value is set to a large number, to ensure that any capture sequence where the king is "captured" is << 0
+const Value PieceValuesMG[] { Value(950), Value(520), Value(325), Value(325), Value(80), VALUE_KNOWN_WIN, VALUE_ZERO };
+const Value PieceValuesEG[] { Value(950), Value(520), Value(325), Value(325), Value(100), VALUE_KNOWN_WIN, VALUE_ZERO };
 
 const int PAWN_TABLE_SIZE = 1 << 14; //has to be power of 2
 

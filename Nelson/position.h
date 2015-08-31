@@ -42,7 +42,7 @@ public:
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryStats *history, DblHistoryStats *dblHistoryStats, ExtendedMove * killerMove, Move counter, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE);
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryManager *history, CounterMoveHistoryManager *counterMoveHistory, ExtendedMove * killerMove, Move counter, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE);
 	Move NextMove();
 	const Value SEE(Square from, const Square to) const;
 	Value SEE_Sign(Move move) const;
@@ -125,8 +125,8 @@ private:
 	Move lastAppliedMove = MOVE_NONE;
 	Piece capturedInLastMove = BLANK;
 	ValuatedMove * firstNegative;
-	HistoryStats * history;
-	DblHistoryStats * dblHistory;
+	HistoryManager * history;
+	CounterMoveHistoryManager * cmHistory;
 	Move counterMove = MOVE_NONE;
 	Value minMoveValue = -VALUE_MATE;
 	bool canPromote = false;
@@ -839,7 +839,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryStats * historyStats, DblHistoryStats * dblHistoryStats, ExtendedMove* killerMove, Move counter, Move hashmove, Value limit) {
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryManager * historyStats, CounterMoveHistoryManager * dblHistoryStats, ExtendedMove* killerMove, Move counter, Move hashmove, Value limit) {
 	if (SMGT == REPETITION) {
 		moveIterationPointer = 0;
 		generationPhase = generationPhaseOffset[SMGT];
@@ -857,7 +857,7 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 	movepointer = 0;
 	phaseStartIndex = 0;
 	history = historyStats;
-	dblHistory = dblHistoryStats;
+	cmHistory = dblHistoryStats;
 	hashmove ? hashMove = hashmove : hashMove = MOVE_NONE;
 	if (IsCheck()) generationPhase = generationPhaseOffset[CHECK] + (hashMove == MOVE_NONE);
 	else generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);

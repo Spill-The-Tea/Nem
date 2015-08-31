@@ -94,7 +94,7 @@ inline std::string toString(Move move) {
 	if (type(move) == PROMOTION) {
 		char ch[] = { toChar(File(fromSquare & 7)), toChar(Rank(fromSquare >> 3)),
 			toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)),
-			"QRBN"[promotionType(move)], 0 };
+			"qrbn"[promotionType(move)], 0 };
 		return ch;
 	}
 	if (Chess960 && type(move) == CASTLING) {
