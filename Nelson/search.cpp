@@ -22,8 +22,8 @@ void baseSearch::Reset() {
 	cutoffAt1stMove = 0;
 	cutoffCount = 0;
 	cutoffMoveIndexSum = 0;
-	Stop = false;
-	PonderMode = false;
+	Stop.store(false);
+	PonderMode.store(false);
 	History.initialize();
 	cmHistory.initialize();
 	for (int i = 0; i < MAX_DEPTH; ++i){

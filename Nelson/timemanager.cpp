@@ -1,3 +1,4 @@
+#include <iostream>
 #include "timemanager.h"
 
 timemanager::timemanager() { }
@@ -10,11 +11,10 @@ timemanager::timemanager(const timemanager &tm) {
 	_movestogo = tm._movestogo;
 	_maxDepth = tm._maxDepth;
 	_maxNodes = tm._maxNodes;
-	_ponderStartTime = tm._ponderStartTime;
-	_ponder = tm._ponder;
+	_ponderStartTime.store(tm._ponderStartTime);
 
-	_hardStopTime = tm._hardStopTime;
-	_stopTime = tm._stopTime;
+	_hardStopTime.store(tm._hardStopTime);
+	_stopTime.store(tm._stopTime);
 }
 
 timemanager::~timemanager() { }
@@ -30,7 +30,6 @@ void timemanager::initialize(int time, int inc, int movestogo) {
     _hardStopTime = INT64_MAX;
 	_stopTime = INT64_MAX;
 	_ponderStartTime = INT64_MAX;
-	_ponder = false;
 	init();
 }
 
@@ -45,7 +44,6 @@ void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nod
 	_hardStopTime = INT64_MAX;
 	_stopTime = INT64_MAX;
 	_ponderStartTime = INT64_MAX;
-	_ponder = false;
 	if (mode == FIXED_TIME_PER_MOVE) {
 		_mode = mode;
 		_hardStopTime = _starttime + _time - EmergencyTime;
@@ -65,7 +63,7 @@ void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nod
 }
 
 void timemanager::PonderHit() {
-	_hardStopTime += now() - _starttime;
+	_hardStopTime.fetch_add(now() - _starttime);
 }
 
 void timemanager::init() {
@@ -97,10 +95,11 @@ void timemanager::init() {
 	}
 }
 
-bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_t nodecount, int64_t tnow) {
+bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_t nodecount, int64_t tnow, bool ponderMode) {
 	_bestMoves[currentDepth - 1] = bestMove;
 	_nodeCounts[currentDepth - 1] = nodecount;
 	//_iterationTimes[currentDepth - 1] = tnow - _starttime;
+	//if (ponderMode) return true;
 	if (ExitSearch(tnow)) return false;
 	switch (_mode)
 	{

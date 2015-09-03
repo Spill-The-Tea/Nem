@@ -20,9 +20,6 @@ std::thread * Mainthread = nullptr;
 int64_t ponderStartTime = 0;
 bool ponderActive = false;
 
-int ponderedMoves = 0;
-int ponderHits = 0;
-
 void dispatch(std::string line);
 
 // UCI command handlers
@@ -231,7 +228,7 @@ void setPosition(std::vector<std::string> &tokens) {
 }
 
 void deleteThread() {
-	Engine->PonderMode = false;
+	Engine->PonderMode.store(false);
 	Engine->StopThinking();
 	if (Mainthread != nullptr) {
 		if (Mainthread->joinable())  Mainthread->join();
@@ -281,9 +278,7 @@ void go(std::vector<std::string> &tokens) {
 	int64_t tnow = now();
 	if (!_position) _position = new position();
 	int moveTime = 0;
-	int pmoveTime = 0;
 	int increment = 0;
-	int pincrement = 0;
 	int movestogo = 30;
 	bool ponder = false;
 	bool searchmoves = false;
@@ -294,26 +289,15 @@ void go(std::vector<std::string> &tokens) {
 	TimeMode mode = UNDEF;
 	std::string time = _position->GetSideToMove() == WHITE ? "wtime" : "btime";
 	std::string inc = _position->GetSideToMove() == WHITE ? "winc" : "binc";
-	std::string ptime = _position->GetSideToMove() == BLACK ? "wtime" : "btime";
-	std::string pinc = _position->GetSideToMove() == BLACK ? "winc" : "binc";
 	while (idx < tokens.size()) {
 		if (!tokens[idx].compare(time)) {
 			++idx;
 			moveTime = stoi(tokens[idx]);
 			searchmoves = false;
-		} else if (!tokens[idx].compare(ptime)) {
-			++idx;
-			pmoveTime = stoi(tokens[idx]);
-			searchmoves = false;
-		}
+		} 
 		else if (!tokens[idx].compare(inc)) {
 			++idx;
 			increment = stoi(tokens[idx]);
-			searchmoves = false;
-		}
-		else if (!tokens[idx].compare(pinc)) {
-			++idx;
-			pincrement = stoi(tokens[idx]);
 			searchmoves = false;
 		}
 		else if (!tokens[idx].compare("depth")) {
@@ -342,9 +326,8 @@ void go(std::vector<std::string> &tokens) {
 		else if (!tokens[idx].compare("ponder")) {
 			ponderStartTime = tnow;
 			ponder = true;
-			ponderedMoves++;
 			searchmoves = false;
-			mode = INFINIT;
+			//mode = INFINIT;
 		}
 		else if (!tokens[idx].compare("infinite")) {
 			moveTime = INT_MAX;
@@ -361,22 +344,21 @@ void go(std::vector<std::string> &tokens) {
 		}
 		++idx;
 	}
-	if (ponder) {
-		moveTime = pmoveTime;
-		increment = pincrement;
-	}
+	//if (ponder) {
+	//	moveTime = pmoveTime;
+	//	increment = pincrement;
+	//}
 	if (mode == UNDEF && moveTime == 0 && increment == 0 && nodes < INT64_MAX) mode = NODES;
 	Engine->timeManager.initialize(mode, moveTime, depth, nodes, moveTime, increment, movestogo, tnow);
 
 	deleteThread();
-	Engine->PonderMode = ponder;
+	Engine->PonderMode.store(ponder);
 	Mainthread = new std::thread(thinkAsync);
 }
 
 void ponderhit() {
+	Engine->PonderMode.store(false);
 	Engine->timeManager.PonderHit();
-	Engine->PonderMode = false;
-	ponderHits++;
 }
 
 void setvalue(std::vector<std::string> &tokens) {

@@ -44,8 +44,8 @@ public:
 	inline double cutoffAverageMove() const { return 1 + 1.0 * cutoffMoveIndexSum / cutoffCount; }
 	inline Move PonderMove() const { return PVMoves[1]; }
 	inline void StopThinking(){ 
-		PonderMode = false;
-		Stop = true; 
+		PonderMode.store(false);
+		Stop.store(true); 
 	}
 	Move GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount);
 	virtual ThreadType GetType() = 0;
@@ -65,7 +65,7 @@ public:
 	int64_t _thinkTime;
 	Move counterMove[12 * 64];
 
-	inline bool Stopped() { return Stop && (!PonderMode); }
+	inline bool Stopped() { return Stop; }
 
 #ifdef STAT
 	uint64_t captureNodeCount[6][5]; 
@@ -152,8 +152,10 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 			BestMove = rootMoves[0];
 			int64_t tNow = now();
 			_thinkTime = std::max(tNow - timeManager.GetStartTime(), int64_t(1));
+			Stop.load();
+			//PonderMode.load();
 			if (!Stopped()) {
-				if (!PonderMode && !timeManager.ContinueSearch(_depth, BestMove, NodeCount, tNow)) Stop = true;
+				if (!timeManager.ContinueSearch(_depth, BestMove, NodeCount, tNow, PonderMode)) Stop.store(true);
 			}
 			if (UciOutput) {
 				if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
@@ -181,7 +183,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		delete[] slaves;
 	}
 
-END:	while (PonderMode) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+END:	while (PonderMode.load()) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
 	return BestMove;
 }
 
@@ -195,7 +197,7 @@ template<ThreadType T> void search<T>::initializeSlave(baseSearch * masterSearch
 		rootPosition.copy(masterSearch->rootPosition);
 		rootPosition.InitMaterialPointer();
 		//this->DblHistory = masterSearch->DblHistory;
-		Stop = false;
+		Stop.store(false);
 	}
 }
 
@@ -283,7 +285,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	int64_t nodeCount4Move = 0;
 #endif
 	if (T != SLAVE) {
-		if (!PonderMode && !Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop = true;
+		if (!Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop.store(true);
 	}
 	if (Stopped()) return VALUE_ZERO;
 	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
@@ -497,7 +499,7 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		MaxDepth = std::max(MaxDepth, pos.GetPliesFromRoot());
 		++NodeCount;
 		if (T == MASTER) {
-			if (!PonderMode && !Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop = true;
+			if (!Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop.store(true);
 		}
 		if (Stopped()) return VALUE_ZERO;
 		if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
