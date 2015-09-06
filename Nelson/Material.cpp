@@ -195,6 +195,21 @@ void InitializeMaterialTable() {
 		MaterialTable[key].EvaluationFunction = &evaluateDraw;
 		pieceCounts[GetPiece(pt, WHITE)] = pieceCounts[GetPiece(pt, BLACK)] = 0;
 	}
+	//KRKN and KRKB is also very drawish
+	//pieceCounts[WROOK] = pieceCounts[BBISHOP] = 1;
+	//key = calculateMaterialKey(&pieceCounts[0]);
+	//MaterialTable[key].Score /= 16;
+	//pieceCounts[BBISHOP] = 0; pieceCounts[BKNIGHT] = 1;
+	//key = calculateMaterialKey(&pieceCounts[0]);
+	//MaterialTable[key].Score /= 16;
+	//pieceCounts[BKNIGHT] = 0; pieceCounts[WROOK] = 0;
+	//pieceCounts[BROOK] = pieceCounts[WBISHOP] = 1;
+	//key = calculateMaterialKey(&pieceCounts[0]);
+	//MaterialTable[key].Score /= 16;
+	//pieceCounts[WBISHOP] = 0; pieceCounts[WKNIGHT] = 1;
+	//key = calculateMaterialKey(&pieceCounts[0]);
+	//MaterialTable[key].Score /= 16;
+	//pieceCounts[WKNIGHT] = 0; pieceCounts[BROOK] = 0;
 	//KBPK
 	pieceCounts[WBISHOP] = 1;
 	pieceCounts[WPAWN] = 1;

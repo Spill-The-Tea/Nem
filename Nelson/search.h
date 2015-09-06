@@ -145,7 +145,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		for (int pvIndx = 0; pvIndx < MultiPv; ++pvIndx) {
 			Value alpha = -VALUE_MATE;
 			Value beta = VALUE_MATE;
-			SearchRoot(alpha, beta, pos, _depth, &PVMoves[0], pvIndx);
+			SearchRoot(alpha, beta, pos, _depth, &PVMoves[0], pvIndx);			
 			//Best move is already in first place, this is assured by SearchRoot
 			//therefore we sort only the other moves
 			std::stable_sort(rootMoves + pvIndx + 1, &rootMoves[rootMoveCount], sortByScore);
@@ -157,7 +157,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 			if (!Stopped()) {
 				if (!timeManager.ContinueSearch(_depth, BestMove, NodeCount, tNow, PonderMode)) Stop.store(true);
 			}
-			if (UciOutput) {
+			if (T == MASTER || UciOutput) {
 				if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 					std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
@@ -231,8 +231,10 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	//	int repetitions = T == SINGLE ? 1 : 1;
 	//	for (int repetition = 0; repetition < repetitions; ++repetition){
 	for (int i = startWithMove; i < rootMoveCount; ++i) {
-		if (PrintCurrmove && depth > 5 && (now() - timeManager.GetStartTime()) > 3000) {
-			std::cout << "info depth " << depth << " currmove " << toString(rootMoves[i].move) << " currmovenumber " << i + 1 << std::endl;
+		if (T != SLAVE) {
+			if (PrintCurrmove && depth > 5 && (now() - timeManager.GetStartTime()) > 3000) {
+				std::cout << "info depth " << depth << " currmove " << toString(rootMoves[i].move) << " currmovenumber " << i + 1 << std::endl;
+			}
 		}
 		position next(pos);
 		next.ApplyMove(rootMoves[i].move);

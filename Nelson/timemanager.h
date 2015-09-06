@@ -17,7 +17,7 @@ enum TimeMode  { UNDEF, SUDDEN_DEATH, SUDDEN_DEATH_WITH_INC, CLASSICAL, CLASSICA
 		~timemanager();
 
 		void initialize(int time = 0, int inc = 0, int movestogo = 0);
-		void initialize(TimeMode mode, int movetime = 0, int depth = MAX_DEPTH, int64_t nodes = INT64_MAX, int time = 0, int inc = 0, int movestogo = 0, int64_t starttime = now());
+		void initialize(TimeMode mode, int movetime = 0, int depth = MAX_DEPTH, int64_t nodes = INT64_MAX, int time = 0, int inc = 0, int movestogo = 0, int64_t starttime = now(), bool ponder = false);
 		//Checks whether Search has to be exited even while in recursion
 		inline bool ExitSearch(int64_t nodes, int64_t tnow = now()) const { return tnow >= _hardStopTime || nodes >= _maxNodes; }
 		//Checks whether a new iteration shall be started
@@ -40,7 +40,9 @@ enum TimeMode  { UNDEF, SUDDEN_DEATH, SUDDEN_DEATH_WITH_INC, CLASSICAL, CLASSICA
 
 		std::atomic_llong _hardStopTime = INT64_MAX;
 		std::atomic_llong _stopTime = INT64_MAX;
-		std::atomic_llong _ponderStartTime = INT64_MAX;
+
+		int64_t _hardStopTimeSave = INT64_MAX;
+		int64_t _stopTimeSave = INT64_MAX;
 
 		int64_t _iterationTimes[MAX_DEPTH];
 		ValuatedMove _bestMoves[MAX_DEPTH];

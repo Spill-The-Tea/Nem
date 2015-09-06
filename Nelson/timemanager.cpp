@@ -11,7 +11,6 @@ timemanager::timemanager(const timemanager &tm) {
 	_movestogo = tm._movestogo;
 	_maxDepth = tm._maxDepth;
 	_maxNodes = tm._maxNodes;
-	_ponderStartTime.store(tm._ponderStartTime);
 
 	_hardStopTime.store(tm._hardStopTime);
 	_stopTime.store(tm._stopTime);
@@ -29,11 +28,10 @@ void timemanager::initialize(int time, int inc, int movestogo) {
 	_maxNodes = INT64_MAX;
     _hardStopTime = INT64_MAX;
 	_stopTime = INT64_MAX;
-	_ponderStartTime = INT64_MAX;
 	init();
 }
 
-void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nodes, int time, int inc, int movestogo, int64_t starttime) {
+void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nodes, int time, int inc, int movestogo, int64_t starttime, bool ponder) {
 	_starttime = starttime;
 	_time = time;
 	_inc = inc;
@@ -43,7 +41,6 @@ void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nod
 	_maxDepth = MAX_DEPTH;
 	_hardStopTime = INT64_MAX;
 	_stopTime = INT64_MAX;
-	_ponderStartTime = INT64_MAX;
 	if (mode == FIXED_TIME_PER_MOVE) {
 		_mode = mode;
 		_hardStopTime = _starttime + _time - EmergencyTime;
@@ -60,10 +57,19 @@ void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nod
 		_hardStopTime = _stopTime = INT64_MAX;
 	}
 	else init();
+	if (ponder) {
+		_hardStopTimeSave = _hardStopTime;
+		_stopTimeSave = _stopTime;
+		_hardStopTime.store(INT64_MAX);
+		_stopTime.store(INT64_MAX);
+	}
 }
 
 void timemanager::PonderHit() {
-	_hardStopTime.fetch_add(now() - _starttime);
+	int64_t pondertime = now() - _starttime;
+	_hardStopTime.fetch_add(pondertime);
+	_hardStopTime.store(_hardStopTimeSave + pondertime);
+	_stopTime.store(_stopTimeSave + pondertime);
 }
 
 void timemanager::init() {

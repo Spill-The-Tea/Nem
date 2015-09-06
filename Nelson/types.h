@@ -405,16 +405,7 @@ public:
 		}
 	}
 	inline Value const getValue(const Piece p, const Square s) { return Table[p][s]; }
-	inline void initialize() {
-		for (int p = 0; p < 12; ++p) {
-			for (int s = 0; s < 64; ++s) Table[p][s] = VALUE_ZERO;
-		}
-	}
-	inline void age() {
-		for (int p = 0; p < 12; ++p) {
-			for (int s = 0; s < 64; ++s) Table[p][s] = Table[p][s] / 2;
-		}
-	}
+	inline void initialize() { std::memset(Table, 0, sizeof(Table)); }
 private:
 	Value Table[12][64];
 };
