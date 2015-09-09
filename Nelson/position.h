@@ -86,6 +86,7 @@ public:
 	inline bool IsWinningCapture(const ValuatedMove& move) const;
 	inline Value GetStaticEval() { return StaticEval; }
 	inline PieceType GetMostValuablePieceType(Color col) const;
+	inline PieceType GetMostValuableAttackedPieceType() const;
 	inline bool PawnOn7thRank() { return (PieceBB(PAWN, SideToMove) & RANKS[6 - 5 * SideToMove]) != 0; } //Side to Move has pawn on 7th Rank
 	void copy(const position &pos);
 	inline bool CastlingAllowed(CastleFlag castling) { return (CastlingOptions & castling) != 0; }
@@ -198,8 +199,23 @@ inline bool position::IsWinningCapture(const ValuatedMove& move) const {
                                                                      || type(move.move) == ENPASSANT || type(move.move) == PROMOTION; }
 
 inline PieceType position::GetMostValuablePieceType(Color color) const {
-	for (PieceType pt = QUEEN; pt < KING; ++pt) {
-		if (PieceBB(pt, color)) return pt;
+	if (MaterialKey != MATERIAL_KEY_UNUSUAL) return material->GetMostExpensivePiece(color);
+	else {
+		for (PieceType pt = QUEEN; pt < KING; ++pt) {
+			if (PieceBB(pt, color)) {
+				assert(MaterialKey == MATERIAL_KEY_UNUSUAL || pt == material->GetMostExpensivePiece(color));
+				return pt;
+			}
+		}
+		return KING;
+	}
+}
+
+inline PieceType position::GetMostValuableAttackedPieceType() const {
+	Color col = Color(SideToMove ^ 1);
+	PieceType ptstart = MaterialKey != MATERIAL_KEY_UNUSUAL ? material->GetMostExpensivePiece(col) : QUEEN;
+	for (PieceType pt = ptstart; pt < KING; ++pt) {
+		if (PieceBB(pt, col) & attackedByUs) return pt;
 	}
 	return KING;
 }

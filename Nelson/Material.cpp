@@ -31,6 +31,7 @@ void InitializeMaterialTable() {
 	undetermined.Phase = 128;
 	undetermined.EvaluationFunction = nullptr;
 	undetermined.Flags = MSF_DEFAULT;
+	undetermined.MostValuedPiece = 0;
 	std::fill_n(MaterialTable, MATERIAL_KEY_MAX + 2, undetermined);
 	MaterialTable[MATERIAL_KEY_UNUSUAL].EvaluationFunction = &evaluateDefault;
 	int pieceCounts[10];
@@ -70,6 +71,22 @@ void InitializeMaterialTable() {
 											else if (nWP == 0 && nWN == 0 && nWB == 0 && nWR == 0 && nWQ == 0) MaterialTable[key].EvaluationFunction = &easyMate < BLACK >;
 											else if (nBP == 0 && nBN == 0 && nBB == 0 && nBR == 0 && nBQ == 0) MaterialTable[key].EvaluationFunction = &easyMate < WHITE > ;										
 											else MaterialTable[key].EvaluationFunction = &evaluateDefault;
+											if (nWQ > 0) MaterialTable[key].setMostValuedPiece(WHITE, QUEEN);
+											else if (nWR > 0) MaterialTable[key].setMostValuedPiece(WHITE, ROOK);
+											else if (nWB > 0) MaterialTable[key].setMostValuedPiece(WHITE, BISHOP);
+											else if (nWN > 0) MaterialTable[key].setMostValuedPiece(WHITE, KNIGHT);
+											else if (nWP > 0) MaterialTable[key].setMostValuedPiece(WHITE, PAWN);
+											else MaterialTable[key].setMostValuedPiece(WHITE, KING);
+											if (nBQ > 0) MaterialTable[key].setMostValuedPiece(BLACK, QUEEN);
+											else if (nBR > 0) MaterialTable[key].setMostValuedPiece(BLACK, ROOK);
+											else if (nBB > 0) MaterialTable[key].setMostValuedPiece(BLACK, BISHOP);
+											else if (nBN > 0) MaterialTable[key].setMostValuedPiece(BLACK, KNIGHT);
+											else if (nBP > 0) MaterialTable[key].setMostValuedPiece(BLACK, PAWN);
+											else MaterialTable[key].setMostValuedPiece(BLACK, KING);
+#ifdef _DEBUG
+											assert(nWQ == (MaterialTable[key].GetMostExpensivePiece(WHITE) == QUEEN));
+											assert(nBQ == (MaterialTable[key].GetMostExpensivePiece(BLACK) == QUEEN));
+#endif
 										}
 									}
 								}

@@ -38,7 +38,7 @@ void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nod
 	_movestogo = movestogo;
 	_maxNodes = nodes & (~MASK_TIME_CHECK);
 	_mode = UNDEF;
-	_maxDepth = MAX_DEPTH;
+	_maxDepth = std::min(MAX_DEPTH, depth);
 	_hardStopTime = INT64_MAX;
 	_stopTime = INT64_MAX;
 	if (mode == FIXED_TIME_PER_MOVE) {

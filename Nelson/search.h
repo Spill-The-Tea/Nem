@@ -5,6 +5,8 @@
 #include <thread>
 #include <vector>
 #include <atomic>
+#include <mutex>
+#include <condition_variable>
 #include "types.h"
 #include "book.h"
 #include "board.h"
@@ -24,6 +26,7 @@ public:
 	int64_t QNodeCount = 0;
 	int MaxDepth = 0;
 	std::atomic<bool> Stop = false;
+	std::atomic<bool> Exit = false;
 	//bool Stop = false;
 	double BranchingFactor = 0;
 	std::string BookFile = "";
@@ -43,9 +46,9 @@ public:
 	inline double cutoffAt1stMoveRate() const { return 100.0 * cutoffAt1stMove / cutoffCount; }
 	inline double cutoffAverageMove() const { return 1 + 1.0 * cutoffMoveIndexSum / cutoffCount; }
 	inline Move PonderMove() const { return PVMoves[1]; }
-	inline void StopThinking(){ 
+	inline void StopThinking() {
 		PonderMode.store(false);
-		Stop.store(true); 
+		Stop.store(true);
 	}
 	Move GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount);
 	virtual ThreadType GetType() = 0;
@@ -68,7 +71,7 @@ public:
 	inline bool Stopped() { return Stop; }
 
 #ifdef STAT
-	uint64_t captureNodeCount[6][5]; 
+	uint64_t captureNodeCount[6][5];
 	uint64_t captureCutoffCount[6][5];
 #endif
 
@@ -83,14 +86,22 @@ public:
 	inline ValuatedMove Think(position &pos);
 
 	void startHelper();
-	void initializeSlave(baseSearch * masterSearch);
+	void initializeSlave(baseSearch * masterSearch, int id);
 	ThreadType GetType() { return T; }
+	std::condition_variable cvStart;
+	std::mutex mtxStart;
+	search<SLAVE> * slaves = nullptr;
+	std::vector<std::thread> subThreads;
 
 private:
 	template<bool PVNode> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true, bool skipNullMove = false);
 	Value SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove = 0);
 	template<bool WithChecks> Value QSearch(Value alpha, Value beta, position &pos, int depth);
 	void updateCutoffStats(const Move cutoffMove, int depth, position &pos, int moveIndex);
+
+	int id = 0;
+
+
 
 };
 
@@ -99,15 +110,13 @@ private:
 void startThread(search<SLAVE> & slave);
 
 template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
-	std::vector<std::thread> subThreads;
-	search<SLAVE> * slaves = nullptr;
 	_thinkTime = 1;
 	rootPosition = pos;
 	pos.ResetPliesFromRoot();
 	tt::newSearch();
 	ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
 	rootMoveCount = pos.GeneratedMoveCount();
-	if (rootMoveCount == 1){
+	if (rootMoveCount == 1) {
 		BestMove = *generatedMoves; //if there is only one legal move save time and return move immediately (although there is no score assigned)
 		goto END;
 	}
@@ -134,10 +143,16 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	}
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
 	if (T == MASTER) {
-		slaves = new search<SLAVE>[HelperThreads];
+		if (slaves == nullptr) {
+			slaves = new search<SLAVE>[HelperThreads];
+			for (int i = 0; i < HelperThreads; ++i) subThreads.push_back(std::thread(&startThread, std::ref(slaves[i])));
+		}
 		for (int i = 0; i < HelperThreads; ++i) {
-			slaves[i].initializeSlave(this);
-			subThreads.push_back(std::thread(&startThread, std::ref(slaves[i])));
+			//slaves[i].initializeSlave(this);			
+			slaves[i].mtxStart.lock();
+			slaves[i].initializeSlave(this, i + 1);
+			slaves[i].mtxStart.unlock();
+			slaves[i].cvStart.notify_one();
 		}
 	}
 	//Iterativ Deepening Loop
@@ -145,7 +160,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		for (int pvIndx = 0; pvIndx < MultiPv; ++pvIndx) {
 			Value alpha = -VALUE_MATE;
 			Value beta = VALUE_MATE;
-			SearchRoot(alpha, beta, pos, _depth, &PVMoves[0], pvIndx);			
+			SearchRoot(alpha, beta, pos, _depth, &PVMoves[0], pvIndx);
 			//Best move is already in first place, this is assured by SearchRoot
 			//therefore we sort only the other moves
 			std::stable_sort(rootMoves + pvIndx + 1, &rootMoves[rootMoveCount], sortByScore);
@@ -178,18 +193,21 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	}
 
 	if (T == MASTER) {
-		for (int i = 0; i < HelperThreads; ++i) slaves[i].StopThinking();
-		for (int i = 0; i < HelperThreads; ++i) subThreads[i].join();
-		delete[] slaves;
+		if (_depth >= MIN_SMP_DEPTH) {
+			for (int i = 0; i < HelperThreads; ++i) slaves[i].StopThinking();
+			//for (int i = 0; i < HelperThreads; ++i) subThreads[i].join();
+		}
+		//delete[] slaves;
 	}
 
 END:	while (PonderMode.load()) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
 	return BestMove;
 }
 
-template<ThreadType T> void search<T>::initializeSlave(baseSearch * masterSearch) {
+template<ThreadType T> void search<T>::initializeSlave(baseSearch * masterSearch, int Id) {
 	if (T == SLAVE) {
 		master = masterSearch;
+		id = Id;
 		rootMoveCount = masterSearch->rootMoveCount;
 		rootMoves = new ValuatedMove[rootMoveCount];
 		memcpy(rootMoves, masterSearch->rootMoves, rootMoveCount * sizeof(ValuatedMove));
@@ -202,14 +220,19 @@ template<ThreadType T> void search<T>::initializeSlave(baseSearch * masterSearch
 }
 
 template<ThreadType T> void search<T>::startHelper() {
-	int depth = 1;
-	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
-	while (!Stop && depth <= MAX_DEPTH) {
-		Value alpha = -VALUE_MATE;
-		Value beta = VALUE_MATE;
-		SearchRoot(alpha, beta, rootPosition, depth, &PVMoves[0]);
-		std::stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
-		++depth;
+	while (!Exit.load()) {
+		std::unique_lock<std::mutex> lckStart(mtxStart);
+		while (master == nullptr) cvStart.wait(lckStart);
+		int depth = 1;
+		std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
+		while (!Stop && depth <= MAX_DEPTH) {
+			Value alpha = -VALUE_MATE;
+			Value beta = VALUE_MATE;
+			SearchRoot(alpha, beta, rootPosition, depth, &PVMoves[0]);
+			std::stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
+			++depth;
+		}
+		master = nullptr;
 	}
 	delete[] rootMoves;
 }
@@ -217,7 +240,16 @@ template<ThreadType T> void search<T>::startHelper() {
 template<ThreadType T> search<T>::search() {  }
 
 template<ThreadType T> search<T>::~search() {
-
+	if (T == MASTER && slaves != nullptr) {
+		for (int i = 0; i < HelperThreads; ++i) {
+			slaves[i].Exit.store(true);
+			slaves[i].master = this;
+			slaves[i].cvStart.notify_one();
+			slaves[i].StopThinking();
+			subThreads[i].join();
+		}
+		delete[] slaves;
+	}
 }
 
 template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove) {
@@ -321,7 +353,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		Value effectiveEvaluation = staticEvaluation;
 		if (ttFound &&
 			((ttValue > staticEvaluation && ttEntry.type() == tt::LOWER_BOUND)
-			|| (ttValue < staticEvaluation && ttEntry.type() == tt::UPPER_BOUND))) effectiveEvaluation = ttValue;
+				|| (ttValue < staticEvaluation && ttEntry.type() == tt::UPPER_BOUND))) effectiveEvaluation = ttValue;
 
 		//Razoring a la SF 
 		if (!checked && depth < 4
@@ -411,9 +443,9 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	while ((move = pos.NextMove())) {
 		bool critical = move == counter || pos.GetMoveGenerationType() < QUIETS_POSITIVE || moveIndex == 0;
 		if (!PVNode && !checked && !critical && depth <= 3 && moveIndex >= LMPMoveCount[depth]) {
-				moveIndex++;
-				continue;
-			}
+			moveIndex++;
+			continue;
+		}
 		//bool prunable = !PVNode && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
 		//	&& move != killer[2 * pos.GetPliesFromRoot()].move && move != killer[2 * pos.GetPliesFromRoot() + 1].move && pos.IsQuietAndNoCastles(move);
 		//if (prunable) {
@@ -467,7 +499,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 					PieceType captured = GetPieceType(pos.GetPieceOnSquare(to(move)));
 					captureCutoffCount[capturing][captured]++;
 					captureNodeCount[capturing][captured] += (nodeCount4Move - nodeCount4Node);
-					if (captureNodeCount[capturing][captured] > (1ull << 62)) 
+					if (captureNodeCount[capturing][captured] > (1ull << 62))
 						std::cout << "OVERFLOW!!" << std::endl;
 				}
 #endif
@@ -535,7 +567,7 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		}
 		//Delta Pruning
 		if (!pos.GetMaterialTableEntry()->IsLateEndgame()) {
-			Value delta = PieceValuesEG[pos.GetMostValuablePieceType(Color(pos.GetSideToMove() ^ 1))] + int(pos.PawnOn7thRank()) * (PieceValuesEG[QUEEN] - PieceValuesEG[PAWN]) + DELTA_PRUNING_SAFETY_MARGIN;
+			Value delta = PieceValuesEG[pos.GetMostValuableAttackedPieceType()] + int(pos.PawnOn7thRank()) * (PieceValuesEG[QUEEN] - PieceValuesEG[PAWN]) + DELTA_PRUNING_SAFETY_MARGIN;
 			if (standPat + delta < alpha) return alpha;
 		}
 		if (alpha < standPat) alpha = standPat;

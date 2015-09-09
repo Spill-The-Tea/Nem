@@ -19,11 +19,17 @@ struct MaterialTableEntry {
 	Phase_t Phase;
 	EvalFunction EvaluationFunction;
 	uint8_t Flags;
+	uint8_t MostValuedPiece; //high bits for black piece type
 
 	inline bool IsLateEndgame() { return EvaluationFunction != &evaluateDefault || Phase > 200; }
 	inline bool IsPawnEnding() { return Phase == 256; }
 	inline bool SkipPruning() { return (Flags & MSF_SKIP_PRUNING) != 0; }
 	inline bool IsTheoreticalDraw() { return (Flags & MSF_THEORETICAL_DRAW) != 0; }
+	inline PieceType GetMostExpensivePiece(Color color) { return PieceType((MostValuedPiece >> (4 * (int)color)) & 15); }
+	void setMostValuedPiece(Color color, PieceType pt) { 
+		MostValuedPiece &= color == BLACK ? 15 : 240;
+		MostValuedPiece |= color == BLACK ? pt << 4 : pt;
+	}
 };
 
 extern MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 2];
