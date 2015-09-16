@@ -689,6 +689,17 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				}
 			}
 		}
+		if (MGT == ALL && canPromote) {
+			int moveCount = movepointer;
+			for (int i = 0; i < moveCount; ++i) {
+				Move pmove = moves[i].move;
+				if (type(pmove) == PROMOTION) {
+					AddMove(createMove<PROMOTION>(from(pmove), to(pmove), KNIGHT));
+					AddMove(createMove<PROMOTION>(from(pmove), to(pmove), ROOK));
+					AddMove(createMove<PROMOTION>(from(pmove), to(pmove), BISHOP));
+				}
+			}
+		}
 	}
 	else { //Winning, Equal and loosing captures
 		Bitboard sliders;

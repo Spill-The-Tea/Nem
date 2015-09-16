@@ -319,4 +319,13 @@ void InitializeMaterialTable() {
 	MaterialTable[key].EvaluationFunction = &evaluateKQPKQ<BLACK>;
 	//MaterialTable[key].Flags |= MSF_SKIP_PRUNING;
 	pieceCounts[WQUEEN] = pieceCounts[BPAWN] = pieceCounts[BQUEEN] = 0;
+	//KQKRP
+	pieceCounts[WQUEEN] = pieceCounts[BROOK] = pieceCounts[BPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKQKRP<WHITE>;
+	pieceCounts[WQUEEN] = pieceCounts[BROOK] = pieceCounts[BPAWN] = 0;
+	pieceCounts[BQUEEN] = pieceCounts[WROOK] = pieceCounts[WPAWN] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateKQKRP<BLACK>;
+	pieceCounts[BQUEEN] = pieceCounts[WROOK] = pieceCounts[WPAWN] = 0;
 }
