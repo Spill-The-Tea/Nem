@@ -179,6 +179,7 @@ private:
 	bool validateMove(ExtendedMove move);
 	template<bool CHECKED> bool CheckValidMoveExists();
 	bool checkMaterialIsUnusual();
+	const Bitboard safeSquaresForPiece(Piece piece) const;
 };
 
 template<> inline ValuatedMove* position::GenerateMoves<QUIET_CHECKS>();
@@ -196,7 +197,8 @@ inline Bitboard position::PieceTypeBB(const PieceType pt) const { return Occupie
 
 inline bool position::IsWinningCapture(const ValuatedMove& move) const {
 	return (Board[to(move.move)] != BLANK && (PieceValuesMG[GetPieceType(Board[from(move.move)])] - PieceValuesMG[GetPieceType(Board[to(move.move)])]) < PieceValuesMG[PAWN])
-                                                                     || type(move.move) == ENPASSANT || type(move.move) == PROMOTION; }
+		|| type(move.move) == ENPASSANT || type(move.move) == PROMOTION;
+}
 
 inline PieceType position::GetMostValuablePieceType(Color color) const {
 	if (MaterialKey != MATERIAL_KEY_UNUSUAL) return material->GetMostExpensivePiece(color);
@@ -527,7 +529,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				checkBlocker = checker | InBetweenFields[kingSquare][lsb(checker)];
 			}
 			else doubleCheck = true;
-		} 
+		}
 		Bitboard empty = ~ColorBB(BLACK) & ~ColorBB(WHITE);
 		if (MGT == ALL) targets = ~ColorBB(SideToMove);
 		else if (MGT == TACTICAL) targets = ColorBB(SideToMove ^ 1);
@@ -727,7 +729,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 		else targets = 0;
 		while (sliders) {
 			Square from = lsb(sliders);
-			Bitboard sliderTargets = attacks[from] & targets; 
+			Bitboard sliderTargets = attacks[from] & targets;
 			while (sliderTargets) {
 				AddMove(createMove(from, lsb(sliderTargets)));
 				sliderTargets &= sliderTargets - 1;

@@ -401,6 +401,8 @@ void position::evaluateByHistory(int startIndex) {
 			Piece p = Board[from(moves[i].move)];
 			moves[i].score = history->getValue(p, toSquare);
 			if (lastAppliedMove && cmHistory) moves[i].score += 2 * cmHistory->getValue(Board[to(lastAppliedMove)], to(lastAppliedMove), p, toSquare);
+			if (ToBitboard(toSquare) & safeSquaresForPiece(p)) 
+				moves[i].score = Value(moves[i].score + 1000);
 		}
 	}
 }
@@ -1137,4 +1139,32 @@ Move position::parseSan(std::string move) {
 		if (move.find(toSan(legalMoves->move)) != std::string::npos) return legalMoves->move;
 	}
 	return MOVE_NONE;
+}
+
+const Bitboard position::safeSquaresForPiece(Piece piece) const {
+	Bitboard result, protectedBB;
+	if (GetColor(piece) == SideToMove) {
+		result = ~attackedByThem;
+		protectedBB = attackedByUs;
+	}
+	else {
+		result = ~attackedByUs;
+		protectedBB = attackedByThem;
+	}
+	switch (GetPieceType(piece)) {
+	case QUEEN:
+		result |= protectedBB & (AttacksByPieceType(GetColor(piece), QUEEN) | AttacksByPieceType(GetColor(piece), KING));
+		break;
+	case ROOK:
+		result |= protectedBB & (AttacksByPieceType(GetColor(piece), QUEEN) | AttacksByPieceType(GetColor(piece), KING) | AttacksByPieceType(GetColor(piece), ROOK));
+		break;
+	case BISHOP: case KNIGHT:
+		result |= protectedBB & (AttacksByPieceType(GetColor(piece), QUEEN) | AttacksByPieceType(GetColor(piece), KING) | AttacksByPieceType(GetColor(piece), ROOK)
+			| AttacksByPieceType(GetColor(piece), KNIGHT) | AttacksByPieceType(GetColor(piece), BISHOP));
+		break;
+	case PAWN:
+		result |= protectedBB;
+		break;
+	}
+	return result;
 }
