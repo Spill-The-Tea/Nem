@@ -34,6 +34,7 @@ template <Color SideWithoutPawns> Value evaluateKNKPx(const position& pos);
 template <Color SideWithoutPawns> Value evaluateKBKPx(const position& pos);
 template <Color StrongerSide> Value evaluateKQPKQ(const position& pos);
 template <Color StrongerSide> Value evaluateKQKRP(const position& pos);
+Value evaluateKBPxKBPx(const position& pos);
 eval evaluateMobility(const position& pos);
 eval evaluateMobility2(const position& pos);
 eval evaluateKingSafety(const position& pos);

@@ -110,6 +110,10 @@ inline bool oppositeColors(Square s1, Square s2) {
 	return ((s >> 3) ^ s) & 1;
 }
 
+inline bool sameColor(Square s1, Square s2) {
+	return ((9 * (s1 ^ s2)) & 8) == 0;
+}
+
 inline Bitboard squaresOfSameColor(Square s) {
 	return (DARKSQUARES & s) ? DARKSQUARES : ~DARKSQUARES;
 }

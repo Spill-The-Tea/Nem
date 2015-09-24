@@ -401,8 +401,11 @@ void position::evaluateByHistory(int startIndex) {
 			Piece p = Board[from(moves[i].move)];
 			moves[i].score = history->getValue(p, toSquare);
 			if (lastAppliedMove && cmHistory) moves[i].score += 2 * cmHistory->getValue(Board[to(lastAppliedMove)], to(lastAppliedMove), p, toSquare);
-			if (ToBitboard(toSquare) & safeSquaresForPiece(p)) 
-				moves[i].score = Value(moves[i].score + 1000);
+			Bitboard toBB = ToBitboard(toSquare);
+			if (toBB & safeSquaresForPiece(p))
+				moves[i].score = Value(moves[i].score + 500);
+			else if ((p<WPAWN) && (toBB & AttacksByPieceType(Color(SideToMove ^1), PAWN)) != 0)
+				moves[i].score = Value(moves[i].score - 500);
 		}
 	}
 }

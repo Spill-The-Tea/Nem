@@ -270,5 +270,19 @@ Value evaluatePawnEnding(const position& pos) {
 	return (pos.GetMaterialScore() + pos.GetPawnEntry()->Score + unstoppable) * (1 - 2 * pos.GetSideToMove());
 }
 
+Value evaluateKBPxKBPx(const position& pos) {
+	evaluation result;
+	result.Material = pos.GetMaterialScore();
+	result.Mobility = evaluateMobility(pos);
+	result.PawnStructure = pos.PawnStructureScore();
+	//result.Space = evaluateSpace<WHITE>(pos) -evaluateSpace<BLACK>(pos);
+	Bitboard darkSquareBishops = pos.PieceTypeBB(BISHOP) & DARKSQUARES;
+	if (darkSquareBishops != 0 && (darkSquareBishops & (darkSquareBishops - 1)) == 0) {
+		//oposite colored bishops
+		result.Material -= result.Material > 0 ? PieceValuesMG[PAWN] : -PieceValuesMG[PAWN];
+	}
+	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
+}
+
 
 
