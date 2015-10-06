@@ -155,6 +155,17 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 			slaves[i].cvStart.notify_one();
 		}
 	}
+	if (timeManager.GetMaxDepth() == 0) {
+		BestMove.move = MOVE_NONE;
+		BestMove.score = pos.evaluate();
+		if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD)) std::cout << "info score cp " << BestMove.score << std::endl;
+		else {
+			int pliesToMate;
+			if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
+			std::cout << "info score mate " << pliesToMate / 2 << std::endl;
+		}
+		return BestMove;
+	}
 	//Iterativ Deepening Loop
 	for (_depth = 1; _depth <= timeManager.GetMaxDepth(); ++_depth) {
 		for (int pvIndx = 0; pvIndx < MultiPv; ++pvIndx) {
@@ -403,7 +414,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			cpos.copy(pos);
 			Value limit = PieceValuesMG[GetPieceType(pos.getCapturedInLastMove())];
 			Move ttm = ttMove;
-			if (ttm != MOVE_NONE && cpos.SEE(from(ttMove), to(ttMove)) < limit) ttm = MOVE_NONE;
+			if (ttm != MOVE_NONE && cpos.SEE(ttMove) < limit) ttm = MOVE_NONE;
 			cpos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, nullptr, MOVE_NONE, ttm, limit);
 			Move move;
 			while ((move = cpos.NextMove())) {

@@ -45,12 +45,14 @@ public:
 	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryManager *history, CounterMoveHistoryManager *counterMoveHistory, ExtendedMove * killerMove, Move counter, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE);
 	Move NextMove();
 	const Value SEE(Square from, const Square to) const;
+	const Value SEE(Move move) const;
 	Value SEE_Sign(Move move) const;
 	inline bool IsCheck() const { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
 	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
 	friend evaluation evaluate(position& pos);
 	friend evaluation evaluateFromScratch(position &pos);
 	inline Value evaluate();
+	std::string printEvaluation();
 	inline Value evaluateFinalPosition();
 	inline int GeneratedMoveCount() const { return movepointer - 1; }
 	inline int GetPliesFromRoot() const { return pliesFromRoot; }
@@ -72,6 +74,7 @@ public:
 	inline void ResetPliesFromRoot() { pliesFromRoot = 0; }
 	inline Bitboard AttacksByPieceType(Color color, PieceType pieceType) const;
 	inline Bitboard AttacksByColor(Color color) const { return (SideToMove == color) * attackedByUs + (SideToMove != color) * attackedByThem; }
+	inline Bitboard AttackedByThem() const { return attackedByThem; }
 	bool checkRepetition();
 	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
 	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount; }
@@ -89,11 +92,13 @@ public:
 	inline PieceType GetMostValuableAttackedPieceType() const;
 	inline bool PawnOn7thRank() { return (PieceBB(PAWN, SideToMove) & RANKS[6 - 5 * SideToMove]) != 0; } //Side to Move has pawn on 7th Rank
 	void copy(const position &pos);
-	inline bool CastlingAllowed(CastleFlag castling) { return (CastlingOptions & castling) != 0; }
+	inline bool CastlingAllowed(CastleFlag castling) const { return (CastlingOptions & castling) != 0; }
+	inline CastleFlag GetCastlesForColor(Color color) const { return color == WHITE ? CastleFlag(CastlingOptions & (W0_0 | W0_0_0)) : CastleFlag(CastlingOptions & (B0_0 | B0_0_0)); }
 	std::string toSan(Move move);
 	Move parseSan(std::string move);
 	inline bool IsAdvancedPawnMove(Move move) const { Square toSquare = to(move); return GetPieceType(Board[toSquare]) == PAWN && ((toSquare >> 5) & GetSideToMove()) == 0; };
 	Move GetCounterMove(Move * counterMoves);
+	inline bool Improved() { return previous == nullptr || previous->previous == nullptr || StaticEval >= previous->previous->StaticEval; }
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];

@@ -36,6 +36,7 @@ void quit();
 void stop();
 void thinkAsync();
 void ponderhit();
+void eval();
 
 std::vector<std::string> split(std::string str) {
 	std::vector<std::string> tokens;
@@ -99,6 +100,9 @@ void dispatch(std::string line) {
 	else if (!command.compare("sbench")) {
 		int64_t nc = bench(11);
 		std::cout << "bench: " << nc << std::endl;
+	}
+	else if (!command.compare("eval")) {
+		std::cout << _position->printEvaluation() << std::endl;
 	}
 	//else if (!strcmp(token, "eval"))
 	//	cout << printEvaluation(pos);

@@ -12,6 +12,8 @@
 #include <climits>
 #include <cmath>
 #include <cstring>
+#include <sstream>
+#include <iomanip>
 
 #define CACHE_LINE 64
 #ifdef _MSC_VER
@@ -80,6 +82,7 @@ enum Rank {
 };
 
 inline Rank relativeRank(Color color, Rank rank) { return Rank(rank ^ (color * 7)); }
+inline Rank relativeRank(Color color, int rank) { return Rank(rank ^ (color * 7)); }
 
 enum File {
 	FileA, FileB, FileC, FileD, FileE, FileF, FileG, FileH
@@ -172,7 +175,10 @@ inline Square from(Move move) { return Square((move >> 6) & 0x3F); }
 
 inline Square to(Move move) { return Square(move & 0x3F); }
 
+inline Square flip(Square s) { return Square(s ^ 56); }
+
 inline MoveType type(Move move) { return MoveType(move & (3 << 14)); }
+
 
 inline PieceType promotionType(Move move) { return PieceType((move >> 12) & 3); }
 
@@ -223,6 +229,20 @@ inline int msb(int n) {
 	return result;
 }
 
+inline Square msb(Bitboard b) {
+	unsigned long result;
+#ifdef _WIN64
+	_BitScanReverse64(&result, b);
+#else
+	BitScanReverse(&result, b >> 32);
+	if (result) result += 32;
+		else BitScanReverse(&result, uint(b));
+#endif
+#pragma warning(suppress: 6102)
+	return Square(result);
+}
+
+
 #endif
 
 #ifdef __GNUC__
@@ -240,6 +260,12 @@ inline int popcount(Bitboard bb) { return __builtin_popcountll(bb); }
 inline Square lsb(Bitboard b) {  return Square(__builtin_ctzll(b)); }
 
 inline Square msb(int n) { return Square(31 - __builtin_clz(n)); }
+
+inline Square msb(Bitboard b) {
+	Bitboard idx;
+	__asm__("bsrq %1, %0": "=r"(idx) : "rm"(b));
+	return (Square)idx;
+}
 //#define offsetof(type, member)  __builtin_offsetof (type, member)
 #endif // __GNUC__
 
@@ -249,6 +275,9 @@ inline Bitboard isolateLSB(Bitboard bb) { return bb & (0 - bb); }
 
 inline Bitboard ToBitboard(Square square) { return 1ull << square; }
 inline Bitboard ToBitboard(int square) { return 1ull << square; }
+
+inline Square frontmostSquare(Color c, Bitboard b) { return c == WHITE ? msb(b) : lsb(b); }
+inline Square backmostSquare(Color c, Bitboard b) { return c == WHITE ? lsb(b) : msb(b); }
 
 struct eval {
 
@@ -281,6 +310,12 @@ struct eval {
 
 	inline Value getScore(Phase_t phase) {
 		return Value(((((int)mgScore) * (256 - phase)) + (phase * (int)egScore)) / 256);
+	}
+
+	std::string print() {
+		std::stringstream ss;
+		ss << std::setw(6) << mgScore << " : " << std::setw(6) << egScore;
+		return ss.str();
 	}
 };
 

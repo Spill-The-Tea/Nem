@@ -13,6 +13,7 @@
 #include "material.h"
 #include "settings.h"
 #include "hashtables.h"
+#include "evaluation.h"
 
 static const std::string PieceToChar("QqRrBbNnPpKk ");
 
@@ -351,16 +352,15 @@ void position::evaluateByCaptureScore(int startIndex) {
 
 void position::evaluateByMVVLVA(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
-		//moves[i].score = PieceValuesMG[GetPieceType(Board[to(moves[i].move)])];
 		moves[i].score = PieceValuesMG[GetPieceType(Board[to(moves[i].move)])] - 150 * relativeRank(GetSideToMove(), Rank(to(moves[i].move) >> 3));
 	}
 }
 
 void position::evaluateBySEE(int startIndex) {
-	if (movepointer - 2 == startIndex) 
+	if (movepointer - 2 == startIndex)
 		moves[startIndex].score = PieceValuesMG[QUEEN]; //No need for SEE if there is only one move to be evaluated
 	else
-	for (int i = startIndex; i < movepointer - 1; ++i) moves[i].score = SEE(from(moves[i].move), to(moves[i].move)) + int(type(moves[i].move) == PROMOTION) * (PieceValuesMG[QUEEN] - PieceValuesMG[PAWN]);
+		for (int i = startIndex; i < movepointer - 1; ++i) moves[i].score = SEE(moves[i].move);
 }
 
 void position::evaluateCheckEvasions(int startIndex) {
@@ -380,7 +380,7 @@ void position::evaluateCheckEvasions(int startIndex) {
 		}
 	}
 	if (quietsIndex > startIndex + 1) std::sort(moves + startIndex, moves + quietsIndex - 1, sortByScore);
-	if (movepointer-2 > quietsIndex) std::sort(moves + quietsIndex, &moves[movepointer - 1], sortByScore);
+	if (movepointer - 2 > quietsIndex) std::sort(moves + quietsIndex, &moves[movepointer - 1], sortByScore);
 }
 
 Move position::GetCounterMove(Move * counterMoves) {
@@ -404,7 +404,7 @@ void position::evaluateByHistory(int startIndex) {
 			Bitboard toBB = ToBitboard(toSquare);
 			if (toBB & safeSquaresForPiece(p))
 				moves[i].score = Value(moves[i].score + 500);
-			else if ((p<WPAWN) && (toBB & AttacksByPieceType(Color(SideToMove ^1), PAWN)) != 0)
+			else if ((p < WPAWN) && (toBB & AttacksByPieceType(Color(SideToMove ^ 1), PAWN)) != 0)
 				moves[i].score = Value(moves[i].score - 500);
 		}
 	}
@@ -436,7 +436,7 @@ template<bool SquareIsEmpty> void position::set(const Piece piece, const Square 
 	Hash ^= ZobristKeys[piece][square];
 }
 
-void position::remove(const Square square){
+void position::remove(const Square square) {
 	Bitboard NotSquareBB = ~(1ull << square);
 	Piece piece = Board[square];
 	Board[square] = BLANK;
@@ -617,7 +617,7 @@ const Bitboard position::getSquareOfLeastValuablePiece(const Bitboard attadef, c
 	subset = attadef & PieceBB(BISHOP, diff); if (subset) return subset & (0 - subset); // single bit
 	subset = attadef & PieceBB(ROOK, diff); if (subset) return subset & (0 - subset); // single bit
 	subset = attadef & PieceBB(QUEEN, diff); if (subset) return subset & (0 - subset); // single bit
-	subset = attadef & PieceBB(KING, diff); 
+	subset = attadef & PieceBB(KING, diff);
 	return subset & (0 - subset);
 }
 
@@ -625,31 +625,37 @@ const Bitboard position::getSquareOfLeastValuablePiece(const Bitboard attadef, c
 Value position::SEE_Sign(Move move) const {
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
-	if (PieceValuesMG[GetPieceType(Board[fromSquare])] <= PieceValuesMG[GetPieceType(Board[toSquare])]) return VALUE_KNOWN_WIN;
-	return SEE(fromSquare, toSquare);
+	if (PieceValuesMG[GetPieceType(Board[fromSquare])] <= PieceValuesMG[GetPieceType(Board[toSquare])] && type(move) != PROMOTION) return VALUE_KNOWN_WIN;
+	return SEE(move);
 }
-
 
 const Value position::SEE(Square from, const Square to) const
 {
+	return SEE(createMove(from, to));
+}
+
+const Value position::SEE(Move move) const
+{
 	Value gain[32];
 	int d = 0;
+	Square fromSquare = from(move);
+	Square toSquare= to(move);
 	Bitboard mayXray = OccupiedByPieceType[BISHOP] | OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN];
-	Bitboard fromSet = ToBitboard(from);
+	Bitboard fromSet = ToBitboard(fromSquare);
 	Bitboard occ = OccupiedBB();
-	Bitboard attadef = AttacksOfField(to);
-	gain[d] = PieceValuesMG[GetPieceType(Board[to])];
+	Bitboard attadef = AttacksOfField(toSquare);
+	gain[d] = PieceValuesMG[GetPieceType(Board[toSquare])];
 	do
 	{
 		d++; // next depth and side
-		gain[d] = PieceValuesMG[GetPieceType(Board[from])] - gain[d - 1]; // speculative store, if defended
+		gain[d] = PieceValuesMG[GetPieceType(Board[fromSquare])] - gain[d - 1]; // speculative store, if defended
 		if (std::max(-gain[d - 1], gain[d]) < 0) break; // pruning does not influence the result
 		attadef ^= fromSet; // reset bit in set to traverse
 		occ ^= fromSet; // reset bit in temporary occupancy (for x-Rays)
 		if ((fromSet & mayXray) != 0)
-			attadef |= considerXrays(occ, to, fromSet, from);
+			attadef |= considerXrays(occ, toSquare, fromSet, fromSquare);
 		fromSet = getSquareOfLeastValuablePiece(attadef, d & 1);
-		from = lsb(fromSet);
+		fromSquare = lsb(fromSet);
 	} while (fromSet != 0);
 	while (--d != 0)
 		gain[d - 1] = -std::max(-gain[d - 1], gain[d]);
@@ -1170,4 +1176,13 @@ const Bitboard position::safeSquaresForPiece(Piece piece) const {
 		break;
 	}
 	return result;
+}
+
+std::string position::printEvaluation() {
+	if (material->EvaluationFunction == &evaluateDefault) {
+		return printDefaultEvaluation(*this);
+	}
+	else {
+		return "Special Evaluation Function used!";
+	}
 }

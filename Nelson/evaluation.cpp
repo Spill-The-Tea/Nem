@@ -1,8 +1,9 @@
+#include <algorithm>
+#include <sstream>
+#include <iomanip>
 #include "evaluation.h"
 #include "position.h"
 #include "settings.h"
-#include <algorithm>
-
 
 Value evaluateDefault(const position& pos) {
 	evaluation result;
@@ -11,9 +12,29 @@ Value evaluateDefault(const position& pos) {
 	result.KingSafety = evaluateKingSafety(pos);
 	result.PawnStructure = pos.PawnStructureScore();
 	result.Threats = evaluateThreats<WHITE>(pos) - evaluateThreats<BLACK>(pos);
-	result.Pieces = evaluatePieces<WHITE>(pos) -evaluatePieces<BLACK>(pos);
+	result.Pieces = evaluatePieces<WHITE>(pos) - evaluatePieces<BLACK>(pos);
 	//result.Space = evaluateSpace<WHITE>(pos) -evaluateSpace<BLACK>(pos);
 	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
+}
+
+std::string printDefaultEvaluation(const position& pos) {
+	std::stringstream ss;
+	evaluation result;
+	result.Material = pos.GetMaterialScore();
+	result.Mobility = evaluateMobility(pos);
+	result.KingSafety = evaluateKingSafety(pos);
+	result.PawnStructure = pos.PawnStructureScore();
+	result.Threats = evaluateThreats<WHITE>(pos) - evaluateThreats<BLACK>(pos);
+	result.Pieces = evaluatePieces<WHITE>(pos) - evaluatePieces<BLACK>(pos);
+	ss << "       Material: " << std::setw(6) << result.Material << std::endl;
+	ss << "       Mobility: " << result.Mobility.print() << std::endl;
+	ss << "    King Safety: " << result.KingSafety.print() << std::endl;
+	ss << " Pawn Structure: " << std::setw(6) << result.PawnStructure << std::endl;
+	ss << "Threats (White): " << evaluateThreats<WHITE>(pos).print() << std::endl;
+	ss << "Threats (Black): " << evaluateThreats<BLACK>(pos).print() << std::endl;
+	ss << " Pieces (White): " << evaluatePieces<WHITE>(pos).print() << std::endl;
+	ss << " Pieces (Black): " << evaluatePieces<BLACK>(pos).print() << std::endl;
+	return ss.str();
 }
 
 Value evaluateDraw(const position& pos) {
@@ -40,7 +61,7 @@ eval evaluateKingSafety(const position& pos) {
 	}
 	pieceBB = pos.PieceBB(ROOK, WHITE);
 	while (pieceBB) {
-		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack)))  {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack))) {
 			attackUnits += 3 * attackCount;
 			++attackerCount;
 		}
@@ -82,7 +103,7 @@ eval evaluateKingSafety(const position& pos) {
 		pieceBB &= pieceBB - 1;
 	}
 	if (attackerCount > 2) result.mgScore -= KING_SAFETY[std::min(attackUnits, 99)];
-	//Pawn shelter
+	//Pawn shelter and storm
 	if (pos.PieceBB(KING, WHITE) & SaveSquaresForKing & HALF_OF_WHITE) { //Bonus only for castled king
 		result.mgScore += PAWN_SHELTER_2ND_RANK * popcount(pos.PieceBB(PAWN, WHITE) & kingRingWhite & ShelterPawns2ndRank);
 		result.mgScore += PAWN_SHELTER_3RD_RANK * popcount(pos.PieceBB(PAWN, WHITE) & kingZoneWhite & ShelterPawns3rdRank);
@@ -243,7 +264,7 @@ Value evaluateFromScratch(const position& pos) {
 }
 
 Value evaluatePawnEnding(const position& pos) {
-	 //try to find unstoppable pawns
+	//try to find unstoppable pawns
 	Value unstoppable = VALUE_ZERO;
 	if (pos.GetPawnEntry()->passedPawns) {
 		Bitboard wpassed = pos.GetPawnEntry()->passedPawns & pos.PieceBB(PAWN, WHITE);
@@ -252,7 +273,7 @@ Value evaluatePawnEnding(const position& pos) {
 			Square convSquare = ConversionSquare<WHITE>(passedPawnSquare);
 			int distToConv = std::min(7 - (passedPawnSquare >> 3), 5);
 			if (distToConv < (ChebishevDistance(lsb(pos.PieceBB(KING, BLACK)), convSquare) - (pos.GetSideToMove() == BLACK))) {
-				unstoppable += Value(PieceValuesEG[QUEEN] - ((distToConv+1 + (pos.GetSideToMove() == BLACK)) * PieceValuesEG[PAWN]));
+				unstoppable += Value(PieceValuesEG[QUEEN] - ((distToConv + 1 + (pos.GetSideToMove() == BLACK)) * PieceValuesEG[PAWN]));
 			}
 			wpassed &= wpassed - 1;
 		}

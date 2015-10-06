@@ -40,6 +40,7 @@ eval evaluateMobility2(const position& pos);
 eval evaluateKingSafety(const position& pos);
 Value evaluatePawnEnding(const position& pos);
 template <Color COL> eval evaluateThreats(const position& pos);
+std::string printDefaultEvaluation(const position& pos);
 
 const int PSQ_GoForMate[64] = {
 	100, 90, 80, 70, 70, 80, 90, 100,
@@ -367,7 +368,7 @@ template <Color StrongerSide> Value evaluateKQKRP(const position& pos) {
 		//Then we have a fortress
 		return VALUE_DRAW;
 	}
-    return evaluateDefault(pos);
+	return evaluateDefault(pos);
 }
 
 template <Color COL> eval evaluateThreats(const position& pos) {
@@ -459,13 +460,36 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	Bitboard seventhRank = COL == WHITE ? RANK7 : RANK2;
 	Bitboard rooks = pos.PieceBB(ROOK, COL);
 	eval bonusRook = popcount(rooks & seventhRank) * ROOK_ON_7TH;
+	Bitboard pawns = pos.PieceBB(ROOK, OTHER);
 	while (rooks) {
 		Square rookSquare = lsb(rooks);
 		Bitboard rookFile = FILES[rookSquare & 7];
-		if ((pos.PieceBB(PAWN, COL) & rookFile) == 0) bonusRook += ROOK_ON_SEMIOPENFILE;
-		//This seems to be wrong, as it also gives bonus to rooks behind own pawns
-		//but fixing it didn't improve performance
-		if ((pos.PieceBB(PAWN, OTHER) & rookFile) == 0) bonusRook += ROOK_ON_OPENFILE;
+		int rookRank = rookSquare >> 3;
+		Bitboard rookRankBB = RANKS[rookRank];
+		if ((pos.PieceBB(PAWN, COL) & rookFile) == 0) {
+			bonusRook += ROOK_ON_SEMIOPENFILE;
+			if ((pos.PieceBB(PAWN, OTHER) & rookFile) == 0) 
+				bonusRook += ROOK_ON_OPENFILE;
+		}
+		//else {
+		//	//Trapped Rook
+		//	bool onBaseRank = rookRank == (COL * 7);
+		//	if (onBaseRank && ((rookRankBB & pos.PieceBB(KING, COL)) != 0) && popcount(pos.GetAttacksFrom(rookSquare) & ~pos.ColorBB(COL)) <= 3) {
+		//		Bitboard ownPawns = pos.PieceBB(PAWN, COL);
+		//		ownPawns &= COL == WHITE ? HALF_OF_WHITE : HALF_OF_BLACK;
+		//		bool trapped = true;
+		//		for (int file = std::max((rookSquare & 7) - 2, 0); file <= std::min((rookSquare & 7) + 2, 7); ++file) {
+		//			trapped = trapped && ((ownPawns & FILES[file]) != 0);
+		//			if (!trapped) break;
+		//		}
+		//		if (trapped) 
+		//			bonusRook -= (1 + (pos.GetCastlesForColor(COL) == 0)) * ROOK_TRAPPED;
+		//	}
+		//}
+		////aligned pawns
+		//Bitboard alignedPawns = rookRankBB & pawns;
+		//bonusRook += popcount(alignedPawns) * ROOK_ALIGNED_WITH_PAWNS;
+
 		rooks &= rooks - 1;
 	}
 	return bonusRook + eval(bonusKnightOutpost, 0);
