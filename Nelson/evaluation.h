@@ -471,25 +471,6 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 			if ((pos.PieceBB(PAWN, OTHER) & rookFile) == 0) 
 				bonusRook += ROOK_ON_OPENFILE;
 		}
-		//else {
-		//	//Trapped Rook
-		//	bool onBaseRank = rookRank == (COL * 7);
-		//	if (onBaseRank && ((rookRankBB & pos.PieceBB(KING, COL)) != 0) && popcount(pos.GetAttacksFrom(rookSquare) & ~pos.ColorBB(COL)) <= 3) {
-		//		Bitboard ownPawns = pos.PieceBB(PAWN, COL);
-		//		ownPawns &= COL == WHITE ? HALF_OF_WHITE : HALF_OF_BLACK;
-		//		bool trapped = true;
-		//		for (int file = std::max((rookSquare & 7) - 2, 0); file <= std::min((rookSquare & 7) + 2, 7); ++file) {
-		//			trapped = trapped && ((ownPawns & FILES[file]) != 0);
-		//			if (!trapped) break;
-		//		}
-		//		if (trapped) 
-		//			bonusRook -= (1 + (pos.GetCastlesForColor(COL) == 0)) * ROOK_TRAPPED;
-		//	}
-		//}
-		////aligned pawns
-		//Bitboard alignedPawns = rookRankBB & pawns;
-		//bonusRook += popcount(alignedPawns) * ROOK_ALIGNED_WITH_PAWNS;
-
 		rooks &= rooks - 1;
 	}
 	return bonusRook + eval(bonusKnightOutpost, 0);

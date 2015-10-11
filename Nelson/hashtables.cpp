@@ -21,6 +21,8 @@ namespace pawn {
 		result->Score = VALUE_ZERO;
 		Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
 		Bitboard bbBlack = pos.PieceBB(PAWN, BLACK);
+		Bitboard bbFilesWhite = FileFill(bbWhite);
+		Bitboard bbFilesBlack = FileFill(bbBlack);
 		Bitboard attacksWhite = ((bbWhite << 9) & NOT_A_FILE) | ((bbWhite << 7) & NOT_H_FILE);
 		Bitboard attacksBlack = ((bbBlack >> 9) & NOT_H_FILE) | ((bbBlack >> 7) & NOT_A_FILE);
 		//frontspans
@@ -44,13 +46,21 @@ namespace pawn {
 		result->Score += (popcount(ppW & attacksWhite & HALF_OF_BLACK)
 			- popcount(ppB & attacksBlack & HALF_OF_WHITE)) * BONUS_PROTECTED_PASSED_PAWN;
 		//isolated pawns
-		Bitboard west = (bbWhite >> 1) & NOT_H_FILE;
-		Bitboard east = (bbWhite << 1) & NOT_A_FILE;
-		Bitboard  bbIsolatedWhite = bbWhite & ~(FrontFillNorth(west) | FrontFillSouth(west) | FrontFillNorth(east) | FrontFillSouth(east));
-		west = (bbBlack >> 1) & NOT_H_FILE;
-		east = (bbBlack << 1) & NOT_A_FILE;
-		Bitboard  bbIsolatedBlack = bbBlack & ~(FrontFillNorth(west) | FrontFillSouth(west) | FrontFillNorth(east) | FrontFillSouth(east));
-		result->Score -= (popcount(bbIsolatedWhite) - popcount(bbIsolatedBlack)) * MALUS_ISOLATED_PAWN;
+		result->Score -= (popcount(IsolatedFiles(bbFilesWhite)) - popcount(IsolatedFiles(bbFilesBlack))) * MALUS_ISOLATED_PAWN;
+		//pawn islands
+		result->Score += MALUS_ISLAND_COUNT*(popcount(IslandsEastFiles(bbBlack)) - popcount(IslandsEastFiles(bbWhite)));
+		//backward pawns
+		Bitboard bbWBackward = bbWhite & ~bbBFrontspan; //Backward pawns are open pawns
+		Bitboard frontspan = FrontFillNorth(bbWBackward << 8);
+		Bitboard stopSquares = frontspan & attacksBlack; //Where the advancement is stopped by an opposite pawn
+		stopSquares &= ~bbWAttackset; //and the stop square isn't part of the own pawn attack
+		bbWBackward &= FrontFillSouth(stopSquares); 
+		Bitboard bbBBackward = bbBlack & ~bbWFrontspan; //Backward pawns are open pawns
+		frontspan = FrontFillSouth(bbBBackward >> 8);
+		stopSquares = frontspan & attacksWhite; //Where the advancement is stopped by an opposite pawn
+		stopSquares &= ~bbBAttackset; //and the stop square isn't part of the own pawn attack
+		bbBBackward &= FrontFillNorth(stopSquares);
+		result->Score -= (popcount(bbWBackward) - popcount(bbBBackward)) * MALUS_BACKWARD_PAWN;
 		result->Key = pos.GetPawnKey();
 		return result;
 	}

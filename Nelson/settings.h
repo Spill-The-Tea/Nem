@@ -65,8 +65,6 @@ const eval KingOnMany(3, 63);
 const eval ROOK_ON_OPENFILE(10, 0);
 const eval ROOK_ON_SEMIOPENFILE(10, 0);
 const eval ROOK_ON_7TH(20, 0);
-const eval ROOK_ALIGNED_WITH_PAWNS(3, 13);
-const eval ROOK_TRAPPED(45, 0);
 
 const Value BONUS_KNIGHT_OUTPOST = Value(5);
 const Value BONUS_BISHOP_OUTPOST = Value(0);
@@ -75,6 +73,8 @@ const Value BONUS_BISHOP_OUTPOST = Value(0);
 const Value PASSED_PAWN_BONUS[4] = { Value(30), Value(37), Value(77), Value(162) };
 const Value BONUS_PROTECTED_PASSED_PAWN = Value(30);
 const Value MALUS_ISOLATED_PAWN = Value(25);
+const Value MALUS_BACKWARD_PAWN = Value(20);
+const Value MALUS_ISLAND_COUNT = Value(0);
 const Value BONUS_BISHOP_PAIR = Value(0);
 const Value BONUS_CASTLING = Value(0);
 

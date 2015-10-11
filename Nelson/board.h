@@ -164,6 +164,35 @@ inline Bitboard FrontFillSouth(Bitboard gen) {
 	return gen;
 }
 
+inline byte Fileset(Bitboard gen) {
+	return (byte)FrontFillSouth(gen);
+}
+
+inline Bitboard FileFill(byte fileset) {
+	return 0x0101010101010101ull * Bitboard(fileset);
+}
+
+inline Bitboard FileFill(Bitboard gen) {
+	return 0x0101010101010101ull * FrontFillSouth(gen);
+}
+
+inline byte IslandsEastFiles(byte f) { return f &  ~(f >> 1); }
+inline byte IslandsWestFiles(byte f) { return f &  ~(f << 1); }
+
+inline byte IslandsEastFiles(Bitboard bb) { byte f = Fileset(bb); return f &  ~(f >> 1); }
+inline byte IslandsWestFiles(Bitboard bb) { byte f = Fileset(bb); return f &  ~(f << 1); }
+
+inline byte IsolatedFiles(Bitboard gen) {
+	byte f = Fileset(gen);
+	return IslandsEastFiles(f) & IslandsWestFiles(f);
+}
+
+inline byte IsolatedFiles(byte fileset) {
+	return IslandsEastFiles(fileset) & IslandsWestFiles(fileset);
+}
+
+
+
 inline int ChebishevDistance(Square sq1, Square sq2) {
 	return (std::max)(abs((sq1>>3) - (sq2>>3)), abs((sq1 & 7) - (sq2 & 7)));
 }

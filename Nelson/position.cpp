@@ -158,7 +158,7 @@ bool position::ApplyMove(Move move) {
 	movepointer = 0;
 	attackedByUs = calculateAttacks(SideToMove);
 	//calculatePinned();
-	attackedByThem = 0ull;
+	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	assert((checkMaterialIsUnusual() && MaterialKey == MATERIAL_KEY_UNUSUAL) || MaterialKey == calculateMaterialKey());
 	assert(PawnKey == calculatePawnKey());
 	if (pawn->Key != PawnKey) pawn = pawn::probe(*this);
