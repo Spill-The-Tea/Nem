@@ -38,8 +38,8 @@ enum TimeMode  { UNDEF, SUDDEN_DEATH, SUDDEN_DEATH_WITH_INC, CLASSICAL, CLASSICA
 		int _maxDepth = MAX_DEPTH;
 		int64_t _maxNodes = INT64_MAX;
 
-		std::atomic_llong _hardStopTime = INT64_MAX;
-		std::atomic_llong _stopTime = INT64_MAX;
+		std::atomic<long long> _hardStopTime;
+		std::atomic<long long> _stopTime;
 
 		int64_t _hardStopTimeSave = INT64_MAX;
 		int64_t _stopTimeSave = INT64_MAX;

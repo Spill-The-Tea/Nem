@@ -164,11 +164,11 @@ inline Bitboard FrontFillSouth(Bitboard gen) {
 	return gen;
 }
 
-inline byte Fileset(Bitboard gen) {
-	return (byte)FrontFillSouth(gen);
+inline uint8_t Fileset(Bitboard gen) {
+	return (uint8_t)FrontFillSouth(gen);
 }
 
-inline Bitboard FileFill(byte fileset) {
+inline Bitboard FileFill(uint8_t fileset) {
 	return 0x0101010101010101ull * Bitboard(fileset);
 }
 
@@ -176,18 +176,18 @@ inline Bitboard FileFill(Bitboard gen) {
 	return 0x0101010101010101ull * FrontFillSouth(gen);
 }
 
-inline byte IslandsEastFiles(byte f) { return f &  ~(f >> 1); }
-inline byte IslandsWestFiles(byte f) { return f &  ~(f << 1); }
+inline uint8_t IslandsEastFiles(uint8_t f) { return f &  ~(f >> 1); }
+inline uint8_t IslandsWestFiles(uint8_t f) { return f &  ~(f << 1); }
 
-inline byte IslandsEastFiles(Bitboard bb) { byte f = Fileset(bb); return f &  ~(f >> 1); }
-inline byte IslandsWestFiles(Bitboard bb) { byte f = Fileset(bb); return f &  ~(f << 1); }
+inline uint8_t IslandsEastFiles(Bitboard bb) { uint8_t f = Fileset(bb); return f &  ~(f >> 1); }
+inline uint8_t IslandsWestFiles(Bitboard bb) { uint8_t f = Fileset(bb); return f &  ~(f << 1); }
 
-inline byte IsolatedFiles(Bitboard gen) {
-	byte f = Fileset(gen);
+inline uint8_t IsolatedFiles(Bitboard gen) {
+	uint8_t f = Fileset(gen);
 	return IslandsEastFiles(f) & IslandsWestFiles(f);
 }
 
-inline byte IsolatedFiles(byte fileset) {
+inline uint8_t IsolatedFiles(uint8_t fileset) {
 	return IslandsEastFiles(fileset) & IslandsWestFiles(fileset);
 }
 

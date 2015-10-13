@@ -287,7 +287,6 @@ void go(std::vector<std::string> &tokens) {
 	bool ponder = false;
 	bool searchmoves = false;
 	unsigned int idx = 1;
-	bool fixedTime = false;
 	int depth = MAX_DEPTH;
 	int64_t nodes = INT64_MAX;
 	TimeMode mode = UNDEF;
@@ -324,7 +323,6 @@ void go(std::vector<std::string> &tokens) {
 			moveTime = stoi(tokens[idx]);
 			movestogo = 1;
 			searchmoves = false;
-			fixedTime = true;
 			mode = FIXED_TIME_PER_MOVE;
 		}
 		else if (!tokens[idx].compare("ponder")) {

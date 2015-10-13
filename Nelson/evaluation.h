@@ -460,12 +460,9 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	Bitboard seventhRank = COL == WHITE ? RANK7 : RANK2;
 	Bitboard rooks = pos.PieceBB(ROOK, COL);
 	eval bonusRook = popcount(rooks & seventhRank) * ROOK_ON_7TH;
-	Bitboard pawns = pos.PieceBB(ROOK, OTHER);
 	while (rooks) {
 		Square rookSquare = lsb(rooks);
 		Bitboard rookFile = FILES[rookSquare & 7];
-		int rookRank = rookSquare >> 3;
-		Bitboard rookRankBB = RANKS[rookRank];
 		if ((pos.PieceBB(PAWN, COL) & rookFile) == 0) {
 			bonusRook += ROOK_ON_SEMIOPENFILE;
 			if ((pos.PieceBB(PAWN, OTHER) & rookFile) == 0) 

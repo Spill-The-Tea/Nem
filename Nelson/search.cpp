@@ -71,6 +71,9 @@ baseSearch::~baseSearch() {
 }
 
 baseSearch::baseSearch() {
+	PonderMode.store(false);
+	Stop.store(false);
+	Exit.store(false);
 	BestMove.move = MOVE_NONE;
 	BestMove.score = VALUE_NOTYETDETERMINED;
 	cmHistory.initialize();

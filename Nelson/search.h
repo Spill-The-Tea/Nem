@@ -20,13 +20,13 @@ struct baseSearch {
 public:
 	bool UciOutput = false;
 	bool PrintCurrmove = true;
-	std::atomic<bool> PonderMode = false;
+	std::atomic<bool> PonderMode;
 	ValuatedMove BestMove;
 	int64_t NodeCount = 0;
 	int64_t QNodeCount = 0;
 	int MaxDepth = 0;
-	std::atomic<bool> Stop = false;
-	std::atomic<bool> Exit = false;
+	std::atomic<bool> Stop;
+	std::atomic<bool> Exit;
 	//bool Stop = false;
 	double BranchingFactor = 0;
 	std::string BookFile = "";

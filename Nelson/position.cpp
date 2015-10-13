@@ -1174,6 +1174,8 @@ const Bitboard position::safeSquaresForPiece(Piece piece) const {
 	case PAWN:
 		result |= protectedBB;
 		break;
+	default:
+		break;
 	}
 	return result;
 }

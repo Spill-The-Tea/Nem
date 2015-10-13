@@ -76,7 +76,7 @@ int64_t bench(std::vector<std::string> fens, int depth) {
 	double avgBF = 0.0;
 	std::cout << std::setprecision(3) << std::left << std::setw(3) << "Nr" << std::setw(7) << "Time" << std::setw(10) << "Nodes" << std::setw(6) << "Speed" << std::setw(6) << "BF" << std::setw(6) << "TT[%]"
 		<< std::setw(6) << "C1st" << std::setw(6) << "CIndx" << std::setw(40) << "PV" << std::endl;
-	for (int i = 0; i < fens.size(); i++) {
+	for (int i = 0; i < int(fens.size()); i++) {
 		position* pos = new position(fens[i]);
 		baseSearch * srch;
 		if (HelperThreads) srch = new search < MASTER >; else srch = new search < SINGLE >;
