@@ -9,6 +9,7 @@
 #include "position.h"
 #include "test.h"
 #include "uci.h"
+#include "utils.h"
 
 
 static bool popcountSupport();
@@ -121,6 +122,9 @@ int main(int argc, const char* argv[]) {
 			}
 			std::getline(std::cin, input);
 			return 0;
+		}
+		else if (!func.compare("util")) {
+			return utils::dispatch(argc, argv);
 		}
 	}
 }

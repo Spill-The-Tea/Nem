@@ -16,6 +16,7 @@ int64_t bench(int depth); //Benchmark positions from SF
 int64_t bench2(int depth); //Random positions
 int64_t bench(std::string filename, int depth);
 
+
 uint64_t perft(position &pos, int depth);
 uint64_t perft3(position &pos, int depth);
 

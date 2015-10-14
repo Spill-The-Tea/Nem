@@ -75,6 +75,7 @@ const Value BONUS_PROTECTED_PASSED_PAWN = Value(30);
 const Value MALUS_ISOLATED_PAWN = Value(25);
 const Value MALUS_BACKWARD_PAWN = Value(20);
 const Value MALUS_ISLAND_COUNT = Value(5);
+const Value BONUS_CANDIDATE = Value(5);
 const Value BONUS_BISHOP_PAIR = Value(0);
 const Value BONUS_CASTLING = Value(0);
 

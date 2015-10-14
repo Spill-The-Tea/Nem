@@ -92,6 +92,7 @@ public:
 	std::mutex mtxStart;
 	search<SLAVE> * slaves = nullptr;
 	std::vector<std::thread> subThreads;
+	bool isQuiet(position &pos);
 
 private:
 	template<bool PVNode> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true, bool skipNullMove = false);
@@ -646,4 +647,9 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 			}
 		}
 	}
+}
+
+template<ThreadType T> bool search<T>::isQuiet(position &pos) {
+	Value evaluationDiff = pos.GetStaticEval() - QSearch<true>(-VALUE_MATE, VALUE_MATE, pos, 0);
+	return std::abs(evaluationDiff) <= 30;
 }

@@ -1635,3 +1635,4 @@ std::vector<std::string> readTextFile(std::string file) {
 	}
 	return lines;
 }
+

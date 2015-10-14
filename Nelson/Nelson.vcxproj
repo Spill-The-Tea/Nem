@@ -244,6 +244,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClCompile Include="board.cpp" />
     <ClCompile Include="book.cpp" />
     <ClCompile Include="evaluation.cpp" />
+    <ClCompile Include="utils.cpp" />
     <ClCompile Include="hashtables.cpp" />
     <ClCompile Include="bbEndings.cpp" />
     <ClCompile Include="Material.cpp" />
@@ -260,6 +261,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClInclude Include="board.h" />
     <ClInclude Include="book.h" />
     <ClInclude Include="evaluation.h" />
+    <ClInclude Include="utils.h" />
     <ClInclude Include="hashtables.h" />
     <ClInclude Include="bbEndings.h" />
     <ClInclude Include="material.h" />

@@ -45,6 +45,30 @@ namespace pawn {
 		//bonus for protected passed pawns (on 5th rank or further)
 		result->Score += (popcount(ppW & attacksWhite & HALF_OF_BLACK)
 			- popcount(ppB & attacksBlack & HALF_OF_WHITE)) * BONUS_PROTECTED_PASSED_PAWN;
+		//Candidate passed pawns
+		Bitboard candidates = EMPTY;
+		Bitboard potentialCandidates = bbWhite & ~bbBFrontspan & bbBAttackset; //open, but not passed pawns
+		while (potentialCandidates) {
+			Bitboard candidateBB = isolateLSB(potentialCandidates);
+			Bitboard sentries = FrontFillNorth(((candidateBB << 17) & NOT_A_FILE) | ((candidateBB << 15) & NOT_H_FILE)) & bbBlack;
+			Bitboard helper = FrontFillSouth(sentries >> 16) & bbWhite;
+			if (popcount(helper) >= popcount(sentries)) {
+				candidates |= candidateBB;
+				result->Score += BONUS_CANDIDATE * (lsb(candidateBB) >> 3);
+			}
+			potentialCandidates &= potentialCandidates - 1;
+		}
+		potentialCandidates = bbBlack & ~bbWFrontspan & bbWAttackset; //open, but not passed pawns
+		while (potentialCandidates) {
+			Bitboard candidateBB = isolateLSB(potentialCandidates);
+			Bitboard sentries = FrontFillSouth(((candidateBB >> 15) & NOT_A_FILE) | ((candidateBB >> 17) & NOT_H_FILE)) & bbWhite;
+			Bitboard helper = FrontFillNorth(sentries << 16) & bbBlack;
+			if (popcount(helper) >= popcount(sentries)) {
+				candidates |= candidateBB;
+				result->Score -= BONUS_CANDIDATE * (7 - (lsb(candidateBB) >> 3));
+			}
+			potentialCandidates &= potentialCandidates - 1;
+		}
 		//isolated pawns
 		result->Score -= (popcount(IsolatedFiles(bbFilesWhite)) - popcount(IsolatedFiles(bbFilesBlack))) * MALUS_ISOLATED_PAWN;
 		//pawn islands
