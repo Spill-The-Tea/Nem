@@ -66,7 +66,7 @@ public:
 	inline MaterialTableEntry * GetMaterialTableEntry() const { return material; }
 	inline pawn::Entry * GetPawnEntry() const { return pawn; }
 	inline void InitMaterialPointer() { material = &MaterialTable[MaterialKey]; }
-	inline Value PawnStructureScore() const { return pawn->Score; }
+	inline eval PawnStructureScore() const { return pawn->Score; }
 	Result GetResult();
 	inline Bitboard GetAttacksFrom(Square square) const { return attacks[square]; }
 	inline void SetPrevious(position &pos) { previous = &pos; }

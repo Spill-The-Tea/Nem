@@ -29,7 +29,7 @@ std::string printDefaultEvaluation(const position& pos) {
 	ss << "       Material: " << std::setw(6) << result.Material << std::endl;
 	ss << "       Mobility: " << result.Mobility.print() << std::endl;
 	ss << "    King Safety: " << result.KingSafety.print() << std::endl;
-	ss << " Pawn Structure: " << std::setw(6) << result.PawnStructure << std::endl;
+	ss << " Pawn Structure: " << result.PawnStructure.print() << std::endl;
 	ss << "Threats (White): " << evaluateThreats<WHITE>(pos).print() << std::endl;
 	ss << "Threats (Black): " << evaluateThreats<BLACK>(pos).print() << std::endl;
 	ss << " Pieces (White): " << evaluatePieces<WHITE>(pos).print() << std::endl;
@@ -288,7 +288,7 @@ Value evaluatePawnEnding(const position& pos) {
 			bpassed &= bpassed - 1;
 		}
 	}
-	return (pos.GetMaterialScore() + pos.GetPawnEntry()->Score + unstoppable) * (1 - 2 * pos.GetSideToMove());
+	return (pos.GetMaterialScore() + pos.GetPawnEntry()->Score.getScore(pos.GetMaterialTableEntry()->Phase) + unstoppable) * (1 - 2 * pos.GetSideToMove());
 }
 
 Value evaluateKBPxKBPx(const position& pos) {

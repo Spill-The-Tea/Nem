@@ -15,10 +15,10 @@ public:
 	eval KingSafety = EVAL_ZERO;
 	eval Pieces = EVAL_ZERO;
 	//eval Space = EVAL_ZERO;
-	Value PawnStructure = VALUE_ZERO;
+	eval PawnStructure = EVAL_ZERO;
 
 	inline Value GetScore(const Phase_t phase, const Color sideToMove) {
-		return (Material + PawnStructure + (Mobility + KingSafety + Threats + Pieces).getScore(phase)) * (1 - 2 * sideToMove);
+		return (Material + (Mobility + KingSafety + Threats + Pieces + PawnStructure).getScore(phase)) * (1 - 2 * sideToMove);
 	}
 };
 
@@ -188,7 +188,7 @@ template <Color WinningSide> Value evaluateKNBK(const position& pos) {
 
 //KQP vs KQ: Try to centralize Queens and weaker side should try to get his king to the "safe" areas
 template <Color StrongerSide> Value evaluateKQPKQ(const position& pos) {
-	Value result = pos.GetMaterialScore() + pos.PawnStructureScore() + evaluateMobility(pos).egScore
+	Value result = pos.GetMaterialScore() + pos.PawnStructureScore().getScore(pos.GetMaterialTableEntry()->Phase) + evaluateMobility(pos).egScore
 		+ evaluateThreats<WHITE>(pos).egScore - evaluateThreats<BLACK>(pos).egScore;
 	//result.Pieces = evaluatePieces<WHITE>(pos) -evaluatePieces<BLACK>(pos);
 	if (StrongerSide == BLACK) result = -result;
@@ -282,7 +282,7 @@ template <Color SideWithoutPawns> Value evaluateKNKPx(const position& pos) {
 	result += Value(popcount(frontspan & (pos.AttacksByPieceType(SideWithoutPawns, KNIGHT) | pos.PieceTypeBB(KNIGHT) | pos.AttacksByPieceType(SideWithoutPawns, KING) | pos.PieceBB(KING, SideWithoutPawns))));
 	result -= Value(2 * popcount(pos.PieceTypeBB(PAWN) & pos.AttacksByPieceType(Color(SideWithoutPawns ^ 1), KING)));
 	if (SideWithoutPawns == BLACK) result = -result; //now White's POV
-	result += pos.PawnStructureScore();
+	result += pos.PawnStructureScore().getScore(pos.GetMaterialTableEntry()->Phase);
 	return (1 - 2 * pos.GetSideToMove()) * result;
 }
 
@@ -305,7 +305,7 @@ template <Color SideWithoutPawns> Value evaluateKBKPx(const position& pos) {
 	result -= Value(2 * popcount(pos.PieceTypeBB(PAWN) & pos.AttacksByPieceType(Color(SideWithoutPawns ^ 1), KING)));
 	if (SideWithoutPawns == BLACK) result = -result; //now White's POV
 	//result += evaluateMobility(pos).egScore + pos.PawnStructureScore() + evaluateThreats<WHITE>(pos).egScore - evaluateThreats<BLACK>(pos).egScore;
-	result += pos.PawnStructureScore();
+	result += pos.PawnStructureScore().getScore(pos.GetMaterialTableEntry()->Phase);
 	return (1 - 2 * pos.GetSideToMove()) * result;
 }
 

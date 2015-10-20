@@ -70,12 +70,14 @@ const Value BONUS_KNIGHT_OUTPOST = Value(5);
 const Value BONUS_BISHOP_OUTPOST = Value(0);
 
 //extern Value PASSED_PAWN_BONUS[4];
-const Value PASSED_PAWN_BONUS[4] = { Value(30), Value(37), Value(77), Value(162) };
-const Value BONUS_PROTECTED_PASSED_PAWN = Value(30);
-const Value MALUS_ISOLATED_PAWN = Value(25);
-const Value MALUS_BACKWARD_PAWN = Value(20);
-const Value MALUS_ISLAND_COUNT = Value(5);
-const Value BONUS_CANDIDATE = Value(5);
+const eval PASSED_PAWN_BONUS[4] = { eval(30), eval(37), eval(77), eval(162) };
+const eval BONUS_PROTECTED_PASSED_PAWN = eval(30);
+const eval MALUS_ISOLATED_PAWN = eval(25);
+const eval MALUS_BACKWARD_PAWN = eval(20);
+const eval MALUS_ISLAND_COUNT = eval(5);
+const eval BONUS_CANDIDATE = eval(5);
+const eval BONUS_LEVER = eval(5);
+const eval MALUS_DOUBLED_PAWN = eval(10);
 const Value BONUS_BISHOP_PAIR = Value(0);
 const Value BONUS_CASTLING = Value(0);
 

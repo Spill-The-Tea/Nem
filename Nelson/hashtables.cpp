@@ -18,7 +18,7 @@ namespace pawn {
 	Entry * probe(const position &pos) {
 		Entry * result = &Table[pos.GetPawnKey() & (PAWN_TABLE_SIZE - 1)];
 		if (result->Key == pos.GetPawnKey()) return result;
-		result->Score = VALUE_ZERO;
+		result->Score = eval(0);
 		Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
 		Bitboard bbBlack = pos.PieceBB(PAWN, BLACK);
 		Bitboard bbFilesWhite = FileFill(bbWhite);
@@ -47,7 +47,7 @@ namespace pawn {
 			- popcount(ppB & attacksBlack & HALF_OF_WHITE)) * BONUS_PROTECTED_PASSED_PAWN;
 		//Candidate passed pawns
 		Bitboard candidates = EMPTY;
-		Bitboard potentialCandidates = bbWhite & ~bbBFrontspan & bbBAttackset; //open, but not passed pawns
+		Bitboard potentialCandidates = bbWhite & ~bbBFrontspan & bbBAttackset & ~attacksBlack; //open, but not passed pawns
 		while (potentialCandidates) {
 			Bitboard candidateBB = isolateLSB(potentialCandidates);
 			Bitboard sentries = FrontFillNorth(((candidateBB << 17) & NOT_A_FILE) | ((candidateBB << 15) & NOT_H_FILE)) & bbBlack;
@@ -58,7 +58,7 @@ namespace pawn {
 			}
 			potentialCandidates &= potentialCandidates - 1;
 		}
-		potentialCandidates = bbBlack & ~bbWFrontspan & bbWAttackset; //open, but not passed pawns
+		potentialCandidates = bbBlack & ~bbWFrontspan & bbWAttackset & ~attacksWhite; //open, but not passed pawns
 		while (potentialCandidates) {
 			Bitboard candidateBB = isolateLSB(potentialCandidates);
 			Bitboard sentries = FrontFillSouth(((candidateBB >> 15) & NOT_A_FILE) | ((candidateBB >> 17) & NOT_H_FILE)) & bbWhite;
@@ -68,6 +68,21 @@ namespace pawn {
 				result->Score -= BONUS_CANDIDATE * (7 - (lsb(candidateBB) >> 3));
 			}
 			potentialCandidates &= potentialCandidates - 1;
+		}
+		//Levers 
+		Bitboard levers = bbWhite & (RANK5 | RANK6) & attacksBlack;
+		while (levers) {
+			int leverRank = int(lsb(levers) >> 3) - 3;
+			assert(leverRank == 1 || leverRank == 2);
+			result->Score += leverRank * BONUS_LEVER;
+			levers &= levers - 1;
+		}
+		levers = bbBlack & (RANK4 | RANK3) & attacksWhite;
+		while (levers) {
+			int leverRank = 4 - int(lsb(levers) >> 3);
+			assert(leverRank == 1 || leverRank == 2);
+			result->Score -= leverRank * BONUS_LEVER;
+			levers &= levers - 1;
 		}
 		//isolated pawns
 		result->Score -= (popcount(IsolatedFiles(bbFilesWhite)) - popcount(IsolatedFiles(bbFilesBlack))) * MALUS_ISOLATED_PAWN;
@@ -85,6 +100,11 @@ namespace pawn {
 		stopSquares &= ~bbBAttackset; //and the stop square isn't part of the own pawn attack
 		bbBBackward &= FrontFillNorth(stopSquares);
 		result->Score -= (popcount(bbWBackward) - popcount(bbBBackward)) * MALUS_BACKWARD_PAWN;
+		//doubled pawns
+		Bitboard doubled = FrontFillNorth(bbWhite << 8) & bbWhite;
+		result->Score -= popcount(doubled) * MALUS_DOUBLED_PAWN;
+		doubled = FrontFillSouth(bbBlack >> 8) & bbBlack;
+		result->Score += popcount(doubled) * MALUS_DOUBLED_PAWN;
 		result->Key = pos.GetPawnKey();
 		return result;
 	}
