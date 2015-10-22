@@ -70,7 +70,7 @@ const Value BONUS_KNIGHT_OUTPOST = Value(5);
 const Value BONUS_BISHOP_OUTPOST = Value(0);
 
 //extern Value PASSED_PAWN_BONUS[4];
-const eval PASSED_PAWN_BONUS[4] = { eval(30), eval(37), eval(77), eval(162) };
+const eval PASSED_PAWN_BONUS[4] = { eval(30), eval(37), eval(77), eval(140) };
 const eval BONUS_PROTECTED_PASSED_PAWN = eval(30);
 const eval MALUS_ISOLATED_PAWN = eval(25);
 const eval MALUS_BACKWARD_PAWN = eval(20);
