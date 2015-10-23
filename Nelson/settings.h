@@ -77,7 +77,7 @@ const eval MALUS_BACKWARD_PAWN = eval(20);
 const eval MALUS_ISLAND_COUNT = eval(5);
 const eval BONUS_CANDIDATE = eval(5);
 const eval BONUS_LEVER = eval(5);
-const eval MALUS_DOUBLED_PAWN = eval(10);
+const eval MALUS_DOUBLED_PAWN = eval(0,20);
 const Value BONUS_BISHOP_PAIR = Value(0);
 const Value BONUS_CASTLING = Value(0);
 
