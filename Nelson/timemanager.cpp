@@ -90,7 +90,7 @@ void timemanager::init() {
 		//_hardStopTime = std::min(_starttime + _time - EmergencyTime, _starttime + _time - emergencySpareTime);
 		//Give at least 10 ms
 		_hardStopTime = std::max(_starttime + _time - EmergencyTime, _starttime + 10);
-		_stopTime = std::min(_starttime + remainingTime / remainingMoves, (_hardStopTime + _starttime)/2);
+		_stopTime = std::min(int64_t(_starttime + remainingTime / remainingMoves), int64_t((_hardStopTime + _starttime)/2));
 		//_hardStopTime is now avoiding time forfeits, nevertheless it's still possible that an instable search uses up all time, so that
 		//all further moves have to be played a tempo. To avoid this _hardStopTime is reduced so that for further move a reasonable amount of time
 		//is left

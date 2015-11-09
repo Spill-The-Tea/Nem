@@ -434,6 +434,10 @@ inline Bitboard pext(Bitboard val, Bitboard mask) {
 const Value MAX_HISTORY_VALUE = Value(2000);
 struct HistoryManager {
 public:
+	HistoryManager() {
+		initialize();
+	}
+
 	inline void update(Value v, Piece p, Square s) {
 		if (abs(int(Table[p][s])) < MAX_HISTORY_VALUE) {
 			Table[p][s] += v;
@@ -447,6 +451,8 @@ private:
 
 struct CounterMoveHistoryManager {
 public:
+	CounterMoveHistoryManager() { initialize(); }
+
 	inline void update(Value v, Piece p1, Square s1, Piece p2, Square s2) {
 		if (abs(int(Table[p1][s1][p2][s2])) < MAX_HISTORY_VALUE) {
 			Table[p1][s1][p2][s2] += v;

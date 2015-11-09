@@ -34,17 +34,18 @@ namespace pawn {
 		Bitboard ppW = bbWhite & (~(bbBAttackset | bbBFrontspan));
 		Bitboard ppB = bbBlack & (~(bbWAttackset | bbWFrontspan));
 		result->passedPawns = ppW | ppB;
-		result->Score += popcount(ppW & RANK4) * PASSED_PAWN_BONUS[0]
-			+ popcount(ppW & RANK5) * PASSED_PAWN_BONUS[1]
-			+ popcount(ppW & RANK6) * PASSED_PAWN_BONUS[2]
-			+ popcount(ppW & RANK7) * PASSED_PAWN_BONUS[3];
-		result->Score -= popcount(ppB & RANK5) * PASSED_PAWN_BONUS[0]
-			+ popcount(ppB & RANK4) * PASSED_PAWN_BONUS[1]
-			+ popcount(ppB & RANK3) * PASSED_PAWN_BONUS[2]
-			+ popcount(ppB & RANK2) * PASSED_PAWN_BONUS[3];
-		//bonus for protected passed pawns (on 5th rank or further)
-		result->Score += (popcount(ppW & attacksWhite & HALF_OF_BLACK)
-			- popcount(ppB & attacksBlack & HALF_OF_WHITE)) * BONUS_PROTECTED_PASSED_PAWN;
+		while (ppW) {
+			int rank = (lsb(ppW) >> 3) - 1;
+			result->Score += PASSED_PAWN_BONUS[rank];
+			if (rank > 0 && (isolateLSB(ppW) & attacksWhite) != 0) result->Score += BONUS_PROTECTED_PASSED_PAWN[rank];
+			ppW &= ppW - 1;
+		}
+		while (ppB) {
+			int rank = 6 - (lsb(ppB) >> 3);
+			result->Score -= PASSED_PAWN_BONUS[rank];
+			if (rank > 0 && (isolateLSB(ppB) & attacksBlack) != 0) result->Score -= BONUS_PROTECTED_PASSED_PAWN[rank];
+			ppB &= ppB - 1;
+		}
 		//Candidate passed pawns
 		Bitboard candidates = EMPTY;
 		Bitboard potentialCandidates = bbWhite & ~bbBFrontspan & bbBAttackset & ~attacksBlack; //open, but not passed pawns

@@ -369,7 +369,7 @@ void position::evaluateCheckEvasions(int startIndex) {
 	int quietsIndex = startIndex;
 	for (int i = startIndex; i < movepointer - 1; ++i) {
 		quiets = quiets || (moves[i].move == firstQuiet->move);
-		if (quiets) {
+		if (quiets && history) {
 			Square toSquare = to(moves[i].move);
 			Piece p = Board[from(moves[i].move)];
 			moves[i].score = history->getValue(p, toSquare);
@@ -396,7 +396,7 @@ void position::evaluateByHistory(int startIndex) {
 		if (moves[i].move == counterMove) {
 			moves[i].score = VALUE_MATE;
 		}
-		else {
+		else if (history) {
 			Square toSquare = to(moves[i].move);
 			Piece p = Board[from(moves[i].move)];
 			moves[i].score = history->getValue(p, toSquare);
@@ -407,6 +407,7 @@ void position::evaluateByHistory(int startIndex) {
 			else if ((p < WPAWN) && (toBB & AttacksByPieceType(Color(SideToMove ^ 1), PAWN)) != 0)
 				moves[i].score = Value(moves[i].score - 500);
 		}
+		else moves[i].score = VALUE_DRAW;
 	}
 }
 
@@ -747,9 +748,9 @@ void position::setFromFEN(const std::string& fen) {
 
 		}
 		else if (token == '-') continue;
-		else {
-			File kingFile = File(lsb(PieceBB(KING, SideToMove)) & 7);
+		else {			
 			if (token >= 'A' && token <= 'H') {
+				File kingFile = File(lsb(PieceBB(KING, WHITE)) & 7);
 				InitialKingSquareBB[WHITE] = PieceBB(KING, WHITE);
 				InitialKingSquare[WHITE] = lsb(InitialKingSquareBB[WHITE]);
 				File rookFile = File((int)token - (int)'A');
@@ -763,6 +764,7 @@ void position::setFromFEN(const std::string& fen) {
 				}
 			}
 			else if (token >= 'a' && token <= 'h') {
+				File kingFile = File(lsb(PieceBB(KING, BLACK)) & 7);
 				InitialKingSquareBB[BLACK] = PieceBB(KING, BLACK);
 				InitialKingSquare[BLACK] = lsb(InitialKingSquareBB[BLACK]);
 				File rookFile = File((int)token - (int)'a');

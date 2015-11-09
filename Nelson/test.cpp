@@ -304,18 +304,39 @@ uint64_t perft2(position &pos, int depth) {
 	return result;
 }
 
-HistoryManager history;
-CounterMoveHistoryManager cmHistory;
 uint64_t perft3(position &pos, int depth) {
 	nodeCount++;
 	if (depth == 0) return 1;
 	uint64_t result = 0;
-	pos.InitializeMoveIterator<MAIN_SEARCH>(&history, &cmHistory, nullptr, MOVE_NONE);
+	pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, MOVE_NONE);
 	Move move;
 	while ((move = pos.NextMove())) {
 		position next(pos);
 		if (next.ApplyMove(move)) {
 			result += perft3(next, depth - 1);
+		}
+	}
+	return result;
+}
+
+uint64_t perftcomb(position &pos, int depth) {
+	nodeCount++;
+	if (depth == 0) return 1;
+	uint64_t result = 0;
+	pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, MOVE_NONE);
+	Move move;
+	while ((move = pos.NextMove())) {
+		position next(pos);
+		if (next.ApplyMove(move)) {
+			uint64_t result3 = perftcomb(next, depth - 1);
+			uint64_t result1 = perft(next, depth - 1);
+			if (result1 != result3) {
+				std::cout << "Error at Depth " << depth - 1 << "  " << next.fen() << std::endl;
+				std::cout << "  R1: " << result1 << " R3: " << result3 << " Last Move " << toString(move) << std::endl;
+				std::cout << "  Pos before: " << pos.fen() << std::endl;
+				return result;
+			}
+			result += result3;
 		}
 	}
 	return result;
@@ -338,7 +359,7 @@ void divide(position &pos, int depth) {
 }
 
 void divide3(position &pos, int depth) {
-	pos.InitializeMoveIterator<MAIN_SEARCH>(&history, &cmHistory, nullptr, MOVE_NONE);
+	pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, MOVE_NONE);
 	Move move;
 	uint64_t total = 0;
 	while ((move = pos.NextMove())) {
@@ -352,8 +373,8 @@ void divide3(position &pos, int depth) {
 	std::cout << "Total: " << total << std::endl;
 }
 
-void testSearch(position &pos, int depth) {	
-	search<SINGLE> * engine = new search < SINGLE > ;
+void testSearch(position &pos, int depth) {
+	search<SINGLE> * engine = new search < SINGLE >;
 	engine->timeManager.initialize(FIXED_DEPTH, 0, depth);
 	ValuatedMove vm = engine->Think(pos);
 	std::cout << "Best Move: " << toString(vm.move) << " " << vm.score << std::endl;
@@ -362,7 +383,7 @@ void testSearch(position &pos, int depth) {
 
 void testRepetition() {
 	position pos("5r1k/R7/5p2/4p3/1p1pP3/1npP1P2/rqn1b1R1/7K w - - 0 1");
-	search<SINGLE> * engine = new search < SINGLE > ;
+	search<SINGLE> * engine = new search < SINGLE >;
 	engine->timeManager.initialize(FIXED_DEPTH, 0, 5);
 	ValuatedMove vm = engine->Think(pos);
 	std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << vm.score << std::endl;
@@ -397,7 +418,7 @@ void testFindMate() {
 	//Mate in 5
 	puzzles["5@6r1/p3p1rk/1p1pPp1p/q3n2R/4P3/3BR2P/PPP2QP1/7K w - -"] = createMove(H5, H6);
 	puzzles["5@2q1nk1r/4Rp2/1ppp1P2/6Pp/3p1B2/3P3P/PPP1Q3/6K1 w - - 0 1"] = createMove(E7, E8);
-	search<SINGLE> * engine = new search < SINGLE > ;
+	search<SINGLE> * engine = new search < SINGLE >;
 	std::map<std::string, Move>::iterator iter;
 	int count = 0;
 	for (iter = puzzles.begin(); iter != puzzles.end(); ++iter) {
@@ -716,7 +737,7 @@ void testParsePGN() {
 void testMateInDos() {
 	std::string filename = "C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/MateenDos.pgn";
 	std::map<std::string, Move> exercises = pgn::parsePGNExerciseFile(filename);
-	search<SINGLE> * engine = new search < SINGLE > ;
+	search<SINGLE> * engine = new search < SINGLE >;
 	int count = 0;
 	int failed = 0;
 	for (std::map<std::string, Move>::iterator it = exercises.begin(); it != exercises.end(); ++it) {
@@ -766,6 +787,7 @@ bool checkPerft(std::string fen, int depth, uint64_t expectedResult, PerftType p
 		return true;
 	}
 	else {
+		perftcomb(pos, depth);
 		std::cout << testCount << "\t" << "Error\t" << depth << "\t" << perftResult << "\texpected\t" << expectedResult << "\t" << fen << std::endl;
 		return false;
 	}
@@ -777,6 +799,24 @@ bool testPerft(PerftType perftType) {
 	testCount = 0;
 	perftNodes = 0;
 	perftRuntime = 0;
+	//if (!perftType) {
+	Chess960 = true;
+	std::cout << "Chess 960 Positions" << std::endl;
+	result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 1, 33, perftType);
+	result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 2, 1072, perftType);
+	result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 3, 35141, perftType);
+	result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 4, 1111449, perftType);
+	result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 5, 37095094, perftType);
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 1, 19, perftType);
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 2, 361, perftType);
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 3, 7735, perftType);
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 4, 164966, perftType);
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 5, 3962549, perftType);
+	result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 6, 94328606, perftType);
+	result = result && checkPerft("2rkr3/5PP1/8/5Q2/5q2/8/5pp1/2RKR3 w KQkq - 0 1", 5, 94370149, perftType);
+	result = result && checkPerft("rqkrbnnb/pppppppp/8/8/8/8/PPPPPPPP/RQKRBNNB w KQkq - 0 1", 6, 111825069, perftType);
+	//}
+	Chess960 = false;
 	std::cout << "Initial Position" << std::endl;
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 1, 20, perftType);
 	result = result && checkPerft("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1", 2, 400, perftType);
@@ -790,22 +830,6 @@ bool testPerft(PerftType perftType) {
 	result = result && checkPerft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 3, 97862, perftType);
 	result = result && checkPerft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 4, 4085603, perftType);
 	result = result && checkPerft("r3k2r/p1ppqpb1/bn2pnp1/3PN3/1p2P3/2N2Q1p/PPPBBPPP/R3K2R w KQkq - 0 1", 5, 193690690, perftType);
-	if (!perftType) {
-		std::cout << "Chess 960 Positions" << std::endl;
-		result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 1, 19, perftType);
-		result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 2, 361, perftType);
-		result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 3, 7735, perftType);
-		result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 4, 164966, perftType);
-		result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 5, 3962549, perftType);
-		result = result && checkPerft("nrbkqbnr/pppppppp/8/8/8/8/PPPPPPPP/NRBKQBNR w KQkq - 0 1", 6, 94328606, perftType);
-		result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 1, 33, perftType);
-		result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 2, 1072, perftType);
-		result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 3, 35141, perftType);
-		result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 4, 1111449, perftType);
-		result = result && checkPerft("rn2k1r1/ppp1pp1p/3p2p1/5bn1/P7/2N2B2/1PPPPP2/2BNK1RR w Gkq - 4 11", 5, 37095094, perftType);
-		result = result && checkPerft("2rkr3/5PP1/8/5Q2/5q2/8/5pp1/2RKR3 w KQkq - 0 1", 5, 94370149, perftType);
-		result = result && checkPerft("rqkrbnnb/pppppppp/8/8/8/8/PPPPPPPP/RQKRBNNB w KQkq - 0 1", 6, 111825069, perftType);
-	}
 	std::cout << "Standard Chess positions" << std::endl;
 	result = result && checkPerft("4k3/8/8/8/8/8/8/4K2R w K - 0 1", 1, 15, perftType);
 	result = result && checkPerft("4k3/8/8/8/8/8/8/4K2R w K - 0 1", 2, 66, perftType);

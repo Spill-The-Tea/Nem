@@ -119,6 +119,9 @@ int main(int argc, const char* argv[]) {
 						HelperThreads = atoi(input.substr(8).c_str()) - 1;
 					}
 				}
+				else if (!input.compare("setoption name UCI_Chess960 value true")) {
+					Chess960 = true;
+				}
 			}
 			std::getline(std::cin, input);
 			return 0;

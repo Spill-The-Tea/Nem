@@ -19,6 +19,7 @@ int64_t bench(std::string filename, int depth);
 
 uint64_t perft(position &pos, int depth);
 uint64_t perft3(position &pos, int depth);
+uint64_t perftcomb(position &pos, int depth);
 
 void divide(position &pos, int depth);
 void divide3(position &pos, int depth);
