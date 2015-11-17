@@ -198,6 +198,7 @@
     <PostBuildEvent>
       <Command>copy /Y  "$(SolutionDir)\Nelson\*.cpp"  "$(USERPROFILE)\workspace\Nelson\*.*"
 copy /Y  "$(SolutionDir)\Nelson\*.h"  "$(USERPROFILE)\workspace\Nelson\*.*"
+"C:\Program Files\7-Zip\7z" a C:\Users\chrgu_000\Dropbox\aws\nemorino.zip *.h *.cpp
 copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\
 copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nemorino2.exe</Command>
     </PostBuildEvent>
@@ -229,6 +230,7 @@ copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\B
     <PostBuildEvent>
       <Command>copy /Y  "$(SolutionDir)\Nelson\*.cpp"  "$(USERPROFILE)\workspace\Nelson\*.*"
 copy /Y  "$(SolutionDir)\Nelson\*.h"  "$(USERPROFILE)\workspace\Nelson\*.*"
+"C:\Program Files\7-Zip\7z" a C:\Users\chrgu_000\Dropbox\aws *.h *.cpp
 copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\
 copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nelson2.exe</Command>
     </PostBuildEvent>
@@ -244,6 +246,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClCompile Include="board.cpp" />
     <ClCompile Include="book.cpp" />
     <ClCompile Include="evaluation.cpp" />
+    <ClCompile Include="stat.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="hashtables.cpp" />
     <ClCompile Include="bbEndings.cpp" />
@@ -261,6 +264,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClInclude Include="board.h" />
     <ClInclude Include="book.h" />
     <ClInclude Include="evaluation.h" />
+    <ClInclude Include="stat.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="hashtables.h" />
     <ClInclude Include="bbEndings.h" />

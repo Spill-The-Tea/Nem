@@ -62,10 +62,6 @@ int64_t bench(int depth) {
 }
 
 int64_t bench(std::vector<std::string> fens, int depth) {
-#ifdef STAT
-	uint64_t captureNodeCount[6][5] = { 0 };
-	uint64_t captureCutoffCount[6][5] = { 0 };
-#endif
 	std::cout << "Benchmark" << std::endl;
 	std::cout << "------------------------------------------------------------------------" << std::endl;
 	int64_t totalTime = 0;
@@ -99,14 +95,6 @@ int64_t bench(std::vector<std::string> fens, int depth) {
 			<< srch->NodeCount / rt << std::setw(6) << srch->timeManager.GetEBF(depth) << std::setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
 			<< std::setw(6) << srch->cutoffAt1stMoveRate() << std::setw(6) << srch->cutoffAverageMove()
 			<< std::setw(40) << srch->PrincipalVariation(depth) << std::endl;
-#ifdef STAT
-		for (int capturing = 0; capturing < 6; ++capturing) {
-			for (int captured = 0; captured < 5; ++captured) {
-				captureNodeCount[capturing][captured] += srch->captureNodeCount[capturing][captured];
-				captureCutoffCount[capturing][captured] += srch->captureCutoffCount[capturing][captured];
-			}
-		}
-#endif
 		delete(pos);
 		delete(srch);
 	}
@@ -116,15 +104,6 @@ int64_t bench(std::vector<std::string> fens, int depth) {
 	std::cout << "------------------------------------------------------------------------" << std::endl;
 	std::cout << std::setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "
 		"BF: " << std::setprecision(3) << avgBF << "  C1st: " << avgC1st << "  CIndx: " << avgCIndx << std::endl;
-#ifdef STAT
-	for (int capturing = 0; capturing < 6; ++capturing) {
-		for (int captured = 0; captured < 5; ++captured) {
-			std::cout << "      " << "QRBNPK"[capturing] << "x" << "QRBNP"[captured] << ": " << std::setw(10) << captureCutoffCount[capturing][captured]
-				<< std::setw(20) << captureNodeCount[capturing][captured]
-				<< std::setw(10) << CAPTURE_SCORES[capturing][captured] << std::endl;
-		}
-	}
-#endif
 	return totalNodes;
 }
 

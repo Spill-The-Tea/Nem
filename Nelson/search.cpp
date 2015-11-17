@@ -31,14 +31,6 @@ void baseSearch::Reset() {
 		killer[2 * i + 1] = EXTENDED_MOVE_NONE;
 		//excludedMoves[i] = MOVE_NONE;
 	}
-#ifdef STAT
-	for (int i = 0; i < 6; ++i) {
-		for (int j = 0; j < 5; ++j) {
-			captureNodeCount[i][j] = 0;
-			captureCutoffCount[i][j] = 0;
-		}
-	}
-#endif
 }
 
 void baseSearch::NewGame() {
