@@ -114,6 +114,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	_thinkTime = 1;
 	rootPosition = pos;
 	pos.ResetPliesFromRoot();
+	EngineSide = pos.GetSideToMove();
 	tt::newSearch();
 	ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
 	rootMoveCount = pos.GeneratedMoveCount();
@@ -459,11 +460,11 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		if (prunable) {
 			//if (depth <= 3 && pos.GetPreviousMovingPiece() != BLANK && History.getValue(pos.GetPieceOnSquare(from(move)), to(move)) < VALUE_ZERO
 			//	&& cmHistory.getValue(pos.GetPreviousMovingPiece(), to(pos.GetLastAppliedMove()), pos.GetPieceOnSquare(from(move)), to(move)) < VALUE_ZERO) continue;
-			//	// late-move pruning
-			//	if (depth <= 3 && moveIndex >= depth * 4) {
-			//		moveIndex++;
-			//		continue;
-			//	}
+			// late-move pruning
+			if (depth <= 3 && moveIndex >= depth * 4) {
+				moveIndex++;
+				continue;
+			}
 			//SEE pruning
 			if (depth <= 3 && pos.SEE_Sign(move) < 0) {
 				moveIndex++;

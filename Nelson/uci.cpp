@@ -121,6 +121,7 @@ void uci() {
 	printf("option name MultiPV type spin default %i min 1 max 216\n", Engine->MultiPv);
 	printf("option name Threads type spin default %i min 1 max 128\n", HelperThreads + 1);
 	printf("option name Ponder type check\n");
+	printf("option name Contempt type spin default 0 min -1000 max 1000\n");
 	//printf("option name Draw Value type spin default %d min -100 max 100\n", DrawValue);
 	//printf("option name GaviotaTablebasePaths type string\n");
 	//printf("option name GaviotaTablebaseCache type spin default %lu min 1 max 16384\n", GTB_CACHE);
@@ -176,6 +177,9 @@ void setoption(std::vector<std::string> &tokens) {
 	}
 	else if (!tokens[2].compare("MultiPV")) {
 		Engine->MultiPv = stoi(tokens[4]);
+	}
+	else if (!tokens[2].compare("Contempt")) {
+		Contempt = Value(stoi(tokens[4]));
 	}
 }
 

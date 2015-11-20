@@ -6,6 +6,8 @@ extern int HashSizeMB;
 extern std::string BOOK_FILE;
 extern bool USE_BOOK;
 extern int HelperThreads;
+extern Value Contempt;
+extern Color EngineSide;
 
 const int EmergencyTime = 100; //50 ms Emergency time
 const int PV_MAX_LENGTH = 32; //Maximum Length of displayed Principal Variation

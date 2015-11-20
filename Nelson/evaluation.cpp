@@ -38,7 +38,7 @@ std::string printDefaultEvaluation(const position& pos) {
 }
 
 Value evaluateDraw(const position& pos) {
-	return VALUE_DRAW;
+	return pos.GetSideToMove() == EngineSide ? -Contempt : Contempt;
 }
 
 eval evaluateKingSafety(const position& pos) {

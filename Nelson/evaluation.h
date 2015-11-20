@@ -114,7 +114,7 @@ template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 			}
 			bool isWin = pawnSq == A2 ? kqkp::probeA2(wKingSquare, wQueenSquare, bKingSquare, stm) : kqkp::probeC2(wKingSquare, wQueenSquare, bKingSquare, stm);
 			if (isWin) result = VALUE_KNOWN_WIN + PieceValuesEG[QUEEN] - PieceValuesEG[PAWN] - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
-			else result = VALUE_DRAW;
+			else return evaluateDraw(pos);
 		}
 	}
 
@@ -131,7 +131,7 @@ template<Color WinningSide> Value evaluateKBPK(const position& pos) {
 		if (oppositeColors(conversionSquare, lsb(pos.PieceBB(BISHOP, WinningSide)))) { //Bishop doesn't match conversion's squares color
 			//Now check if weak king control the conversion square
 			Bitboard conversionSquareControl = KingAttacks[conversionSquare] | (ToBitboard(conversionSquare));
-			if (pos.PieceBB(KING, Color(WinningSide ^ 1)) & conversionSquareControl) return VALUE_DRAW;
+			if (pos.PieceBB(KING, Color(WinningSide ^ 1)) & conversionSquareControl) return evaluateDraw(pos);
 			if ((pos.PieceBB(KING, WinningSide) & conversionSquareControl) == 0) { //Strong king doesn't control conversion square
 				Square weakKing = lsb(pos.PieceBB(KING, Color(WinningSide ^ 1)));
 				Square strongKing = lsb(pos.PieceBB(KING, WinningSide));
@@ -252,7 +252,7 @@ template <Color StrongerSide> Value evaluateKBKP(const position& pos) {
 	Square conversionSquare = StrongerSide == WHITE ? Square(pawnSquare & 7) : Square((pawnSquare & 7) + 56);
 	Bitboard pawnPath = InBetweenFields[pawnSquare][conversionSquare] | ToBitboard(conversionSquare);
 	if ((pawnPath & pos.PieceBB(KING, StrongerSide)) != 0 || (pawnPath & pos.GetAttacksFrom(bishopSquare)) != 0) {
-		result = VALUE_DRAW - 1;
+		return evaluateDraw(pos);
 	}
 	else {
 		int dtc = ChebishevDistance(pawnSquare, conversionSquare);
@@ -361,12 +361,12 @@ template <Color StrongerSide> Value evaluateKQKRP(const position& pos) {
 		&& (pos.PieceTypeBB(PAWN) & pos.AttacksByPieceType(weak, KING))) //king is protecting own pawn
 	{
 		//check if strong king is on other side of rook as weak king
-		if ((rook & C_FILE) && (pos.PieceBB(KING, weak) & (A_FILE | B_FILE)) && (pos.PieceBB(KING, StrongerSide))& (bbKINGSIDE | E_FILE | D_FILE)) return VALUE_DRAW;
-		if ((rook & F_FILE) && (pos.PieceBB(KING, weak) & (G_FILE | H_FILE)) && (pos.PieceBB(KING, StrongerSide))& (bbQUEENSIDE | E_FILE | D_FILE)) return VALUE_DRAW;
-		if ((rook & RANK3) && (pos.PieceBB(KING, weak) & (RANK1 | RANK2)) && (pos.PieceBB(KING, StrongerSide))& (HALF_OF_BLACK | RANK4)) return VALUE_DRAW;
-		if ((rook & RANK6) && (pos.PieceBB(KING, weak) & (RANK7 | RANK8)) && (pos.PieceBB(KING, StrongerSide))& (HALF_OF_WHITE | RANK5)) return VALUE_DRAW;
+		if ((rook & C_FILE) && (pos.PieceBB(KING, weak) & (A_FILE | B_FILE)) && (pos.PieceBB(KING, StrongerSide))& (bbKINGSIDE | E_FILE | D_FILE)) return evaluateDraw(pos);
+		if ((rook & F_FILE) && (pos.PieceBB(KING, weak) & (G_FILE | H_FILE)) && (pos.PieceBB(KING, StrongerSide))& (bbQUEENSIDE | E_FILE | D_FILE)) return evaluateDraw(pos);
+		if ((rook & RANK3) && (pos.PieceBB(KING, weak) & (RANK1 | RANK2)) && (pos.PieceBB(KING, StrongerSide))& (HALF_OF_BLACK | RANK4)) return evaluateDraw(pos);
+		if ((rook & RANK6) && (pos.PieceBB(KING, weak) & (RANK7 | RANK8)) && (pos.PieceBB(KING, StrongerSide))& (HALF_OF_WHITE | RANK5)) return evaluateDraw(pos);
 		//Then we have a fortress
-		return VALUE_DRAW;
+		return evaluateDraw(pos);
 	}
 	return evaluateDefault(pos);
 }

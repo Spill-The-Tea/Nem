@@ -232,12 +232,12 @@ inline Value position::evaluate() {
 	if (GetResult() == OPEN) {
 		return StaticEval = material->EvaluationFunction(*this);
 	}
-	else if (result == DRAW) return StaticEval = VALUE_DRAW;
+	else if (result == DRAW) return StaticEval = SideToMove == EngineSide ? -Contempt : Contempt;
 	else return StaticEval = Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 
 inline Value position::evaluateFinalPosition() {
-	if (result == DRAW) return VALUE_DRAW;
+	if (result == DRAW) return SideToMove == EngineSide ? -Contempt : Contempt;
 	else return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 
