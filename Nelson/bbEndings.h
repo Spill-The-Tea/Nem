@@ -37,7 +37,7 @@ namespace kpk
 			result = VALUE_KNOWN_WIN + PieceValuesEG[PAWN] + Value(pawnSquare >> 3);						
 		}
 		else {
-			return evaluateDraw(pos); //To force taking of the pawn (if possible)
+			return pos.GetSideToMove() == EngineSide ? -Contempt : Contempt;  //To force taking of the pawn (if possible)
 		}
 		//if (StrongerSide == BLACK) result = -result;
 		//return result * (1 - 2 * pos.GetSideToMove());

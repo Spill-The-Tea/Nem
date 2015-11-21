@@ -107,6 +107,16 @@ inline std::string toString(Move move) {
 	return ch;
 }
 
+//Converts a Chess960 move (KxR) to a king move (e.g. e1h1 => e1g1 for classical 0-0)
+inline Move FixCastlingMove(Move move) {
+	if (!Chess960 || type(move) != CASTLING) return move;
+	Square fromSquare = from(move);
+	Square toSquare = to(move);
+	int offset = fromSquare > H4 ? 56 : 0;
+	Square targetSquare = toSquare > fromSquare ? Square(G1 + offset) : Square(C1 + offset);
+	return createMove<CASTLING>(fromSquare, targetSquare);
+}
+
 inline bool oppositeColors(Square s1, Square s2) {
 	int s = int(s1) ^ int(s2);
 	return ((s >> 3) ^ s) & 1;

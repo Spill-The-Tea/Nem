@@ -397,10 +397,12 @@ void position::evaluateByHistory(int startIndex) {
 			moves[i].score = VALUE_MATE;
 		}
 		else if (history) {
-			Square toSquare = to(moves[i].move);
-			Piece p = Board[from(moves[i].move)];
+			Move fixedMove = FixCastlingMove(moves[i].move);
+			Square toSquare = to(fixedMove);
+			Piece p = Board[from(fixedMove)];
 			moves[i].score = history->getValue(p, toSquare);
-			if (lastAppliedMove && cmHistory) moves[i].score += 2 * cmHistory->getValue(Board[to(lastAppliedMove)], to(lastAppliedMove), p, toSquare);
+			Move fixedLastApplied = FixCastlingMove(lastAppliedMove);
+			if (lastAppliedMove && cmHistory) moves[i].score += 2 * cmHistory->getValue(Board[to(fixedLastApplied)], to(fixedLastApplied), p, toSquare);
 			Bitboard toBB = ToBitboard(toSquare);
 			if (toBB & safeSquaresForPiece(p))
 				moves[i].score = Value(moves[i].score + 500);

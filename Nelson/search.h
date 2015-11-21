@@ -615,8 +615,9 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 		History.update(v, movingPiece, toSquare);
 		Piece prevPiece = BLANK;
 		Square prevTo = OUTSIDE;
-		if (pos.GetLastAppliedMove()) {
-			prevTo = to(pos.GetLastAppliedMove());
+		Move lastApplied;
+		if ((lastApplied = FixCastlingMove(pos.GetLastAppliedMove()))) {
+			prevTo = to(lastApplied);
 			prevPiece = pos.GetPieceOnSquare(prevTo);
 			counterMove[(pos.GetPieceOnSquare(prevTo) << 6) + prevTo] = cutoffMove;
 			cmHistory.update(v, prevPiece, prevTo, movingPiece, toSquare);
@@ -624,8 +625,9 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 		if (moveIndex > 0) {
 			ValuatedMove * alreadyProcessedQuiets = pos.GetMovesOfCurrentPhase();
 			for (int i = 0; i < pos.GetMoveNumberInPhase() - 1; ++i) {
-				movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedQuiets->move));
-				toSquare = to(alreadyProcessedQuiets->move);
+				Move alreadyProcessedMove = FixCastlingMove(alreadyProcessedQuiets->move);
+				movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedMove));
+				toSquare = to(alreadyProcessedMove);
 				History.update(-v, movingPiece, toSquare);
 				if (pos.GetLastAppliedMove())
 					cmHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
