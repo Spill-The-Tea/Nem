@@ -271,6 +271,12 @@ inline Square msb(Bitboard b) {
 
 inline Bitboard isolateLSB(Bitboard bb) { return bb & (0 - bb); }
 
+inline Square pop_lsb(Bitboard* bb) {
+	const Square s = lsb(*bb);
+	*bb &= *bb - 1;
+	return s;
+}
+
 //inline Square lsb(Bitboard bb) { return Square(popcount((bb & (0 - bb)) - 1)); }
 
 inline Bitboard ToBitboard(Square square) { return 1ull << square; }

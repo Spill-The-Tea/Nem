@@ -14,6 +14,10 @@
 #include "settings.h"
 #include "timemanager.h"
 
+#ifdef TB
+#include "syzygy/tbprobe.h"
+#endif
+
 #ifdef STAT
 #include "stat.h"
 #endif
@@ -64,7 +68,7 @@ public:
 	uint64_t cutoffAt1stMove = 0;
 	uint64_t cutoffCount = 0;
 	uint64_t cutoffMoveIndexSum = 0;
-	HistoryManager History;
+    HistoryManager History;
 	ExtendedMove killer[2 * MAX_DEPTH];
 	//Move excludedMoves[MAX_DEPTH];
 	timemanager timeManager;
@@ -72,6 +76,10 @@ public:
 	int _depth = 0;
 	int64_t _thinkTime;
 	Move counterMove[12 * 64];
+#ifdef TB
+	uint64_t tbHits = 0;
+	bool probeTB = true;
+#endif
 
 	inline bool Stopped() { return Stop; }
 
@@ -143,6 +151,28 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		rootMoves = new ValuatedMove[rootMoveCount];
 		memcpy(rootMoves, generatedMoves, rootMoveCount * sizeof(ValuatedMove));
 	}
+#ifdef TB
+	tbHits = 0;
+	probeTB = true;
+	if (pos.GetMaterialTableEntry()->IsTablebaseEntry()) {
+		std::vector<ValuatedMove> tbMoves(rootMoves, rootMoves + rootMoveCount);
+		Value score;
+		bool tbHit = Tablebases::root_probe(pos, tbMoves, score);
+		if (!tbHit) tbHit = Tablebases::root_probe_wdl(pos, tbMoves, score);
+		if (tbHit) {
+			tbHits++;
+			delete[] rootMoves;
+			rootMoveCount = (int)tbMoves.size();
+			rootMoves = new ValuatedMove[rootMoveCount];
+			std::copy(tbMoves.begin(), tbMoves.end(), rootMoves);
+			if (rootMoveCount == 1) {
+				BestMove = rootMoves[0]; //if tablebase probe only returns one move play => play it and done!
+				goto END;
+			}
+			probeTB = false;
+		}
+	}
+#endif
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
 	if (T == MASTER) {
 		if (slaves == nullptr) {
@@ -189,6 +219,9 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 				if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 					std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
+#ifdef TB
+					<< " tbhits " << tbHits
+#endif
 					<< " time " << _thinkTime
 					<< " pv " << PrincipalVariation(_depth) << std::endl;
 				else {
@@ -196,6 +229,9 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 					if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
 					std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 						<< " hashfull " << tt::GetHashFull()
+#ifdef TB
+						<< " tbhits " << tbHits
+#endif
 						<< " time " << _thinkTime
 						<< " pv " << PrincipalVariation(_depth) << std::endl;
 				}
@@ -214,6 +250,8 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	}
 
 END:	while (PonderMode.load()) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+	if (rootMoves) delete[] rootMoves;
+	rootMoves = nullptr;
 	return BestMove;
 }
 
@@ -352,6 +390,23 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		if (ttMove && pos.IsQuiet(ttMove)) updateCutoffStats(ttMove, depth, pos, -1);
 		return ttValue;
 	}
+#ifdef TB
+	// Step 4a. Tablebase probe
+	if (probeTB && depth >= SYZYGY_PROBE_DEPTH && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry())
+	{
+		int found, v = Tablebases::probe_wdl(pos, &found);
+		if (found)
+		{
+			tbHits++;
+			Value value = v < -1 ? -VALUE_MATE + MAX_DEPTH + pos.GetPliesFromRoot()
+				: v >  1 ? VALUE_MATE - MAX_DEPTH - pos.GetPliesFromRoot()
+				: VALUE_DRAW + 2 * v;
+			if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(value, pos.GetPliesFromRoot()), tt::EXACT, MAX_DEPTH - 1, MOVE_NONE, VALUE_NOTYETDETERMINED);
+			else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(value, pos.GetPliesFromRoot()), tt::EXACT, MAX_DEPTH - 1, MOVE_NONE, VALUE_NOTYETDETERMINED);
+			return value;
+		}
+	}
+#endif
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	bool checked = pos.Checked();

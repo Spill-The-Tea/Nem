@@ -35,3 +35,7 @@ void testResult();
 void testMateInDos();
 void testRepetition();
 void testKPK();
+
+#ifdef TB
+void testTB();
+#endif

@@ -11,6 +11,10 @@
 #include "uci.h"
 #include "utils.h"
 
+#ifdef TB
+#include "syzygy/tbprobe.h"
+#endif
+
 
 static bool popcountSupport();
 
@@ -122,6 +126,13 @@ int main(int argc, const char* argv[]) {
 				else if (!input.compare("setoption name UCI_Chess960 value true")) {
 					Chess960 = true;
 				}
+#ifdef TB
+				else if (!input.compare(0, 6, "tbtest")) {
+					SYZYGY_PATH = "C:/TB/syzygy";
+					Tablebases::init(SYZYGY_PATH);
+					testTB();
+				}
+#endif
 			}
 			std::getline(std::cin, input);
 			return 0;

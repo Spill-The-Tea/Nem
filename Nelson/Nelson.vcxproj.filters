@@ -67,6 +67,9 @@
     <ClCompile Include="stat.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="syzygy\tbprobe.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="types.h">
@@ -118,6 +121,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="stat.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="syzygy\tbprobe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

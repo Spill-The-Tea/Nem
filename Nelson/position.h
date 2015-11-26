@@ -99,6 +99,9 @@ public:
 	inline bool IsAdvancedPawnMove(Move move) const { Square toSquare = to(move); return GetPieceType(Board[toSquare]) == PAWN && ((toSquare >> 5) & GetSideToMove()) == 0; };
 	Move GetCounterMove(Move * counterMoves);
 	inline bool Improved() { return previous == nullptr || previous->previous == nullptr || StaticEval >= previous->previous->StaticEval; }
+	void AddUnderPromotions();
+	inline ValuatedMove * GetMoves(int & moveCount) { moveCount = movepointer - 1; return moves; }
+	inline void ResetMoveGeneration() { movepointer = 0; moves[0].move = MOVE_NONE; moves[0].score = VALUE_NOTYETDETERMINED; }
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -520,7 +523,7 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 }
 
 template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
-	movepointer -= (movepointer != 0);
+	if (MGT == ALL || MGT == CHECK_EVASION) movepointer = 0; else movepointer -= (movepointer != 0);
 	ValuatedMove * result = &moves[movepointer];
 	//Rooksliders
 	Bitboard targets;
@@ -536,7 +539,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 			else doubleCheck = true;
 		}
 		Bitboard empty = ~ColorBB(BLACK) & ~ColorBB(WHITE);
-		if (MGT == ALL) targets = ~ColorBB(SideToMove);
+		if (MGT == ALL) targets = ~ColorBB(SideToMove); 
 		else if (MGT == TACTICAL) targets = ColorBB(SideToMove ^ 1);
 		else if (MGT == QUIETS) targets = empty;
 		else if (MGT == CHECK_EVASION && !doubleCheck) targets = ~ColorBB(SideToMove) & checkBlocker;

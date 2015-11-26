@@ -4,6 +4,10 @@
 #include "bbEndings.h"
 #include "position.h"
 
+#ifdef TB
+#include "syzygy/tbprobe.h"
+#endif
+
 
 MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 2];
 
@@ -83,6 +87,13 @@ void InitializeMaterialTable() {
 											else if (nBN > 0) MaterialTable[key].setMostValuedPiece(BLACK, KNIGHT);
 											else if (nBP > 0) MaterialTable[key].setMostValuedPiece(BLACK, PAWN);
 											else MaterialTable[key].setMostValuedPiece(BLACK, KING);
+#ifdef TB
+											if (Tablebases::MaxCardinality > 0) {
+												int totalPieceCount = 0;
+												for (int i = 0; i < 10; ++i) totalPieceCount += pieceCounts[i];
+												if (totalPieceCount <= Tablebases::MaxCardinality) MaterialTable[key].Flags |= MSF_TABLEBASE_ENTRY;
+											}
+#endif
 #ifdef _DEBUG
 											assert(nWQ == (MaterialTable[key].GetMostExpensivePiece(WHITE) == QUEEN));
 											assert(nBQ == (MaterialTable[key].GetMostExpensivePiece(BLACK) == QUEEN));

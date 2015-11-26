@@ -170,6 +170,22 @@ bool position::ApplyMove(Move move) {
 	//return true;
 }
 
+void position::AddUnderPromotions() {
+	if (canPromote) {
+		movepointer--;
+		int moveCount = movepointer;
+		for (int i = 0; i < moveCount; ++i) {
+			Move pmove = moves[i].move;
+			if (type(pmove) == PROMOTION) {
+				AddMove(createMove<PROMOTION>(from(pmove), to(pmove), KNIGHT));
+				AddMove(createMove<PROMOTION>(from(pmove), to(pmove), ROOK));
+				AddMove(createMove<PROMOTION>(from(pmove), to(pmove), BISHOP));
+			}
+		}
+		AddNullMove();
+	}
+}
+
 Move position::NextMove() {
 	if (generationPhases[generationPhase] == NONE) return MOVE_NONE;
 	Move move;

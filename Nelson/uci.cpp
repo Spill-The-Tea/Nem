@@ -13,6 +13,9 @@
 #include "settings.h"
 #include "timemanager.h"
 
+#ifdef TB
+#include "syzygy/tbprobe.h"
+#endif
 
 baseSearch * Engine = new search < SINGLE > ;
 position * _position = nullptr;
@@ -129,6 +132,10 @@ void uci() {
 	printf("option name BookFile type string default %s\n", BOOK_FILE.c_str());
 	printf("option name OwnBook type check default %s\n", USE_BOOK ? "true" : "false");
 	//printf("option name bpf type spin default %lu\n", BETA_PRUNING_FACTOR);
+#ifdef TB
+	printf("option name SyzygyPath type string default %s\n", SYZYGY_PATH.c_str());
+	printf("option name SyzygyProbeDepth type spin default %i min 0 max 10\n", SYZYGY_PROBE_DEPTH);
+#endif
 	puts("uciok");
 }
 
@@ -181,6 +188,32 @@ void setoption(std::vector<std::string> &tokens) {
 	else if (!tokens[2].compare("Contempt")) {
 		Contempt = Value(stoi(tokens[4]));
 	}
+#ifdef TB
+	else if (!tokens[2].compare("SyzygyPath")) {
+		std::stringstream ssTBPath;
+		if (tokens.size() < 5) {
+			SYZYGY_PATH = "";
+		}
+		else {
+			unsigned int idx = 4;
+			while (idx < tokens.size()) {
+				ssTBPath << ' ' << tokens[idx];
+				++idx;
+
+			}
+			SYZYGY_PATH = ssTBPath.str().substr(1);
+			Tablebases::init(SYZYGY_PATH);
+			if (Tablebases::MaxCardinality < 3) {
+				std::cerr << "Couldn't find any Tablebase files!!" << std::endl;
+				exit(1);
+			}
+			InitializeMaterialTable();
+		}
+	}
+	else if (!tokens[2].compare("SyzygyProbeDepth")) {
+		SYZYGY_PROBE_DEPTH = Value(stoi(tokens[4]));
+	}
+#endif
 }
 
 bool initialized = false;

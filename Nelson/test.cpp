@@ -12,6 +12,29 @@
 #include "bbEndings.h"
 #include "timemanager.h"
 
+#ifdef TB
+#include "syzygy/tbprobe.h"
+void testTB() {
+	std::map<std::string, Move> tests;
+	tests["8/RK5p/8/8/6k1/8/8/8 w - - 0 1"] = createMove(B7, C6);
+	std::map<std::string, Move>::iterator iter;
+	int count = 0;
+	for (iter = tests.begin(); iter != tests.end(); ++iter) {
+		std::string fen = iter->first;
+		Move move = iter->second;
+		position pos(fen);
+		ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
+		int moveCount = pos.GeneratedMoveCount();
+		std::vector<ValuatedMove> tbMoves(generatedMoves, generatedMoves + moveCount);
+		Value score;
+		bool tbHit = Tablebases::root_probe(pos, tbMoves, score);
+		if (tbMoves.size() == 0 || tbMoves[0].move != move) {
+			std::cout << "Error: expected " << toString(move) << " in position " << fen << std::endl;
+		}
+	}
+}
+#endif
+
 int64_t bench(std::string filename, int depth) {
 	std::string line;
 	std::ifstream text(filename);

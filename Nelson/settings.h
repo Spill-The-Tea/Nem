@@ -9,6 +9,12 @@ extern int HelperThreads;
 extern Value Contempt;
 extern Color EngineSide;
 
+#ifdef TB
+extern std::string SYZYGY_PATH;
+extern int SYZYGY_PROBE_DEPTH;
+const int TB_PROBE_TIME = 250;  //Only probe TB if at least TB_PROBE_TIME is left
+#endif
+
 const int EmergencyTime = 100; //50 ms Emergency time
 const int PV_MAX_LENGTH = 32; //Maximum Length of displayed Principal Variation
 const int MASK_TIME_CHECK = (1 << 14) - 1;
