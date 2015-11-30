@@ -200,14 +200,37 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	}
 	//Iterativ Deepening Loop
 	for (_depth = 1; _depth <= timeManager.GetMaxDepth(); ++_depth) {
+		Value alpha, beta, score, delta = Value(20);
 		for (int pvIndx = 0; pvIndx < MultiPv; ++pvIndx) {
-			Value alpha = -VALUE_MATE;
-			Value beta = VALUE_MATE;
-			SearchRoot(alpha, beta, pos, _depth, &PVMoves[0], pvIndx);
-			//Best move is already in first place, this is assured by SearchRoot
-			//therefore we sort only the other moves
-			std::stable_sort(rootMoves + pvIndx + 1, &rootMoves[rootMoveCount], sortByScore);
-			BestMove = rootMoves[0];
+			if (_depth >= 5 && MultiPv == 1) {
+				alpha = std::max(score - delta, -VALUE_INFINITE);
+				beta = std::min(score + delta, VALUE_INFINITE);
+			}
+			else {
+				alpha = -VALUE_MATE;
+				beta = VALUE_MATE;
+			}
+			while (true) {
+				score = SearchRoot(alpha, beta, pos, _depth, &PVMoves[0], pvIndx);
+				//Best move is already in first place, this is assured by SearchRoot
+				//therefore we sort only the other moves
+				std::stable_sort(rootMoves + pvIndx + 1, &rootMoves[rootMoveCount], sortByScore);
+				if (Stopped()) break;
+				else if (score <= alpha) {
+					beta = (alpha + beta) / 2;
+					alpha = std::max(score - delta, -VALUE_INFINITE);
+				}
+				else if (score >= beta) {
+					alpha = (alpha + beta) / 2;
+					beta = std::min(score + delta, VALUE_INFINITE);
+				}
+				else {
+					BestMove = rootMoves[0];
+					score = BestMove.score;
+					break; 
+				}
+				delta += delta / 4 + 5;
+			}
 			int64_t tNow = now();
 			_thinkTime = std::max(tNow - timeManager.GetStartTime(), int64_t(1));
 			Stop.load();
@@ -250,6 +273,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	}
 
 END:	while (PonderMode.load()) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+	if (BestMove.move == MOVE_NONE) BestMove = rootMoves[0];
 	if (rootMoves) delete[] rootMoves;
 	rootMoves = nullptr;
 	return BestMove;
@@ -354,7 +378,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 			if (score >= beta) return score;
 			else if (score > alpha)
 			{
-				ZWS = depth > 2;
+				ZWS = true;
 				alpha = score;
 			}
 		}
