@@ -29,6 +29,8 @@ enum TimeMode  { UNDEF, SUDDEN_DEATH, SUDDEN_DEATH_WITH_INC, CLASSICAL, CLASSICA
 		inline int64_t GetStartTime() const { return _starttime; }
 		inline int GetMaxDepth() const { return _maxDepth; }
 
+		inline void reportFailLow() { _failLow = true; }
+
 	private:
 		TimeMode _mode = UNDEF;
 		int _time;
@@ -43,6 +45,7 @@ enum TimeMode  { UNDEF, SUDDEN_DEATH, SUDDEN_DEATH_WITH_INC, CLASSICAL, CLASSICA
 
 		int64_t _hardStopTimeSave = INT64_MAX;
 		int64_t _stopTimeSave = INT64_MAX;
+		bool _failLow = false;
 
 		int64_t _iterationTimes[MAX_DEPTH];
 		ValuatedMove _bestMoves[MAX_DEPTH];

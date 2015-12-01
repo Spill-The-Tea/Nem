@@ -219,6 +219,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 				else if (score <= alpha) {
 					beta = (alpha + beta) / 2;
 					alpha = std::max(score - delta, -VALUE_INFINITE);
+					if (!PonderMode.load()) timeManager.reportFailLow();
 				}
 				else if (score >= beta) {
 					alpha = (alpha + beta) / 2;
