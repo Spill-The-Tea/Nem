@@ -48,7 +48,7 @@ public:
 	baseSearch();
 	virtual ~baseSearch();
 	void Reset();
-	std::string PrincipalVariation(int depth = PV_MAX_LENGTH);
+	std::string PrincipalVariation(position & pos, int depth = PV_MAX_LENGTH);
 	void NewGame();
 	inline int Depth() const { return _depth; }
 	inline int64_t ThinkTime() const { return _thinkTime; }
@@ -240,6 +240,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 				if (!timeManager.ContinueSearch(_depth, BestMove, NodeCount, tNow, PonderMode)) Stop.store(true);
 			}
 			if (T == MASTER || UciOutput) {
+				position npos(pos);
 				if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 					std::cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
@@ -247,7 +248,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 					<< " tbhits " << tbHits
 #endif
 					<< " time " << _thinkTime
-					<< " pv " << PrincipalVariation(_depth) << std::endl;
+					<< " pv " << PrincipalVariation(npos, _depth) << std::endl;
 				else {
 					int pliesToMate;
 					if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
@@ -257,7 +258,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 						<< " tbhits " << tbHits
 #endif
 						<< " time " << _thinkTime
-						<< " pv " << PrincipalVariation(_depth) << std::endl;
+						<< " pv " << PrincipalVariation(npos, _depth) << std::endl;
 				}
 			}
 			if (Stopped()) break;
@@ -528,8 +529,10 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	Move move;
 	int moveIndex = 0;
 	bool ZWS = false;
+	//bool checkForSingularExtension = depth > 7 && ttMove &&  abs(ttValue) < VALUE_KNOWN_WIN && excludedMove == MOVE_NONE && ttEntry.type() != tt::UPPER_BOUND && ttEntry.depth() >= depth - 3;
 	Square recaptureSquare = pos.GetLastAppliedMove() && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	while ((move = pos.NextMove())) {
+		//if (move == excludedMove) continue;
 		bool critical = move == counter || pos.GetMoveGenerationType() < QUIETS_POSITIVE || moveIndex == 0;
 		if (!PVNode && !checked && !critical && depth <= 3 && moveIndex >= LMPMoveCount[depth]) {
 			moveIndex++;

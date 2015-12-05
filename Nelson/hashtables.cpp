@@ -15,6 +15,10 @@ namespace pawn {
 
 	}
 
+	void clear() {
+		std::memset(Table, 0, PAWN_TABLE_SIZE * sizeof(Entry));
+	}
+
 	Entry * probe(const position &pos) {
 		Entry * result = &Table[pos.GetPawnKey() & (PAWN_TABLE_SIZE - 1)];
 		if (result->Key == pos.GetPawnKey()) return result;
@@ -128,15 +132,26 @@ namespace tt {
 	Cluster * Table = nullptr;
 	uint64_t MASK;
 
-	void InitializeTranspositionTable(int sizeInMB) {
-		FreeTranspositionTable();
-		int clusterCount = sizeInMB * 1024 * 1024 / sizeof(Cluster);
+	//Calculates the number of clusters in the transposition table if the table size should use
+	//sizeMB Megabytes (which is treated as upper limit)
+	int CalculateClusterCount(int SizeMB) {
+		int clusterCount = SizeMB * 1024 * 1024 / sizeof(Cluster);
 		clusterCount = 1ul << msb(clusterCount);
 		if (clusterCount < 1024) clusterCount = 1024;
+		return clusterCount;
+	}
+
+	void InitializeTranspositionTable(int sizeInMB) {
+		FreeTranspositionTable();
+		int clusterCount = CalculateClusterCount(sizeInMB);
 		Table = (Cluster *)calloc(clusterCount, sizeof(Cluster));
 		MASK = clusterCount - 1;
 		std::cout << "infostd::string Hash Size: " << ((clusterCount * sizeof(Cluster)) >> 20) << " MByte" << std::endl;
 		ResetCounter();
+	}
+
+	void clear() {
+		std::memset(Table, 0, (MASK+1) * sizeof(Cluster));
 	}
 
 	void FreeTranspositionTable() {
@@ -144,6 +159,10 @@ namespace tt {
 			delete[](Table);
 			Table = nullptr;
 		}
+	}
+
+	void Clear() {
+
 	}
 
 	uint64_t NMASK;

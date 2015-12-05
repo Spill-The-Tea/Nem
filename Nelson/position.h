@@ -102,6 +102,7 @@ public:
 	void AddUnderPromotions();
 	inline ValuatedMove * GetMoves(int & moveCount) { moveCount = movepointer - 1; return moves; }
 	inline void ResetMoveGeneration() { movepointer = 0; moves[0].move = MOVE_NONE; moves[0].score = VALUE_NOTYETDETERMINED; }
+	bool validateMove(Move move);
 private:
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
@@ -183,7 +184,6 @@ private:
 	const Bitboard AttacksOfField(const Square targetField, const Color attackingSide) const;
 	const Bitboard getSquareOfLeastValuablePiece(const Bitboard attadef, const int side) const;
 	inline bool isValid(Move move) { position next(*this); return next.ApplyMove(move); }
-	bool validateMove(Move move);
 	bool validateMove(ExtendedMove move);
 	template<bool CHECKED> bool CheckValidMoveExists();
 	bool checkMaterialIsUnusual();

@@ -19,6 +19,7 @@ namespace pawn {
 	extern Entry Table[PAWN_TABLE_SIZE];
 
 	void initialize();
+	void clear();
 
 	Entry * probe(const position &pos);
 
@@ -44,6 +45,7 @@ namespace tt {
 	uint64_t GetHashFull();
 
 	inline void ResetCounter() { ProbeCounter = HitCounter = FillCounter = 0; }
+	void clear();
 
 	struct nodeData {
 		Move move;
@@ -98,6 +100,21 @@ namespace tt {
 	void FreeTranspositionTable();
 
 	Entry* firstEntry(const uint64_t hash);
+
+	template <ProbeType PT> inline Move hashmove(const uint64_t hash) {
+		Entry* const tte = firstEntry(hash);
+		if (PT == THREAD_SAFE) {
+			for (unsigned i = 0; i < CLUSTER_SIZE; ++i) {
+				if (tte[i].GetKey() == hash) return tte[i].move();
+			}
+		}
+		else {
+			for (unsigned i = 0; i < CLUSTER_SIZE; ++i) {
+				if (tte[i].key == hash) return tte[i].move();
+			}
+		}
+		return MOVE_NONE;
+	}
 
 	template <ProbeType PT> inline Entry* probe(const uint64_t hash, bool& found, Entry& entry) {
 		ProbeCounter++;

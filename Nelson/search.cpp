@@ -6,6 +6,7 @@
 #include <cstring>
 #include <thread>
 #include <chrono>
+#include <unordered_set>
 #include "search.h"
 #include "hashtables.h"
 
@@ -40,12 +41,25 @@ void baseSearch::NewGame() {
 	}
 }
 
-std::string baseSearch::PrincipalVariation(int depth) {
+std::string baseSearch::PrincipalVariation(position & pos, int depth) {
 	std::stringstream ss;
-	for (int i = 0; i < depth; ++i) {
-		if (PVMoves[i] == MOVE_NONE) break;
+	int i = 0;
+	for (; i < depth && i < PV_MAX_LENGTH; ++i) {
+		if (PVMoves[i] == MOVE_NONE || !pos.validateMove(PVMoves[i])) break;
+		position next(pos);
+		if (!next.ApplyMove(PVMoves[i])) break;
+		pos = next;
 		if (i>0) ss << " ";
 		ss << toString(PVMoves[i]);
+	}
+	for (; i < depth; ++i) {
+		Move hashmove = HelperThreads == 0 ? tt::hashmove<tt::UNSAFE>(pos.GetHash()) : tt::hashmove<tt::THREAD_SAFE>(pos.GetHash());
+		if (hashmove == MOVE_NONE || !pos.validateMove(hashmove)) break;
+		position next(pos);
+		if (!next.ApplyMove(hashmove)) break;
+		pos = next;
+		if (i>0) ss << " ";
+		ss << toString(hashmove);
 	}
 	return ss.str();
 }

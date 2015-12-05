@@ -117,35 +117,30 @@ void dispatch(std::string line) {
 
 void uci() {
 	Engine->UciOutput = true;
-	puts("id name Nemorino");
-	puts("id author Christian Günther");
-	printf("option name UCI_Chess960 type check default %s\n", Chess960 ? "true" : "false");
-	printf("option name Hash type spin default %i min 1 max 16384\n", HashSizeMB);
-	printf("option name MultiPV type spin default %i min 1 max 216\n", Engine->MultiPv);
-	printf("option name Threads type spin default %i min 1 max 128\n", HelperThreads + 1);
-	printf("option name Ponder type check\n");
-	printf("option name Contempt type spin default 0 min -1000 max 1000\n");
-	//printf("option name Draw Value type spin default %d min -100 max 100\n", DrawValue);
-	//printf("option name GaviotaTablebasePaths type string\n");
-	//printf("option name GaviotaTablebaseCache type spin default %lu min 1 max 16384\n", GTB_CACHE);
-	//printf("option name GaviotaTablebaseCompressionScheme type spin default %lu min 0 max 4\n", GTB_COMPRESSION_SCHEME);
-	printf("option name BookFile type string default %s\n", BOOK_FILE.c_str());
-	printf("option name OwnBook type check default %s\n", USE_BOOK ? "true" : "false");
-	//printf("option name bpf type spin default %lu\n", BETA_PRUNING_FACTOR);
+	std::cout << "id name Nemorino" << std::endl;
+	std::cout << "id author Christian Günther" << std::endl;
+	std::cout << "option name UCI_Chess960 type check default " << (Chess960 ? "true" : "false") << std::endl;
+	std::cout << "option name Hash type spin default " << HashSizeMB << " min 1 max 16384" << std::endl;
+	std::cout << "option name Clear Hash type button" << std::endl;
+	std::cout << "option name MultiPV type spin default " << Engine->MultiPv << " min 1 max 216" << std::endl;
+	std::cout << "option name Threads type spin default " << HelperThreads + 1 << " min 1 max 128" << std::endl;
+	std::cout << "option name Ponder type check" << std::endl;
+	std::cout << "option name Contempt type spin default 0 min -1000 max 1000" << std::endl;
+	std::cout << "option name BookFile type string default " << BOOK_FILE.c_str() << std::endl;
+	std::cout << "option name OwnBook type check default " << (USE_BOOK ? "true" : "false") << std::endl;
 #ifdef TB
-	printf("option name SyzygyPath type string default %s\n", SYZYGY_PATH.c_str());
-	printf("option name SyzygyProbeDepth type spin default %i min 0 max 10\n", SYZYGY_PROBE_DEPTH);
+	std::cout << "option name SyzygyPath type string default " << SYZYGY_PATH.c_str() << std::endl;
+	std::cout << "option name SyzygyProbeDepth type spin default " << SYZYGY_PROBE_DEPTH << " min 0 max 10" << std::endl;
 #endif
-	puts("uciok");
+	std::cout << "uciok" << std::endl;
 }
 
 void isready() {
-	//tt_alloc(HashSizeMB << 20);
 	std::cout << "readyok" << std::endl;
 }
 
 void setoption(std::vector<std::string> &tokens) {
-	if (tokens.size() < 5 || tokens[1].compare("name") || tokens[3].compare("value")) return;
+	if (tokens.size() < 4 || tokens[1].compare("name")) return;
 	if (!tokens[2].compare("UCI_Chess960")) Chess960 = !tokens[4].compare("true");
 	else if (!tokens[2].compare("Hash")) {
 		int hashSize = stoi(tokens[4]);
@@ -187,6 +182,11 @@ void setoption(std::vector<std::string> &tokens) {
 	}
 	else if (!tokens[2].compare("Contempt")) {
 		Contempt = Value(stoi(tokens[4]));
+	}
+	else if (!tokens[2].compare("Clear") && !tokens[3].compare("Hash")) {
+		tt::clear();
+		pawn::clear();
+		Engine->Reset();
 	}
 #ifdef TB
 	else if (!tokens[2].compare("SyzygyPath")) {
