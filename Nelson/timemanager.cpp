@@ -1,5 +1,7 @@
 #include <iostream>
+#include <sstream>
 #include "timemanager.h"
+#include "utils.h"
 
 timemanager::timemanager() { }
 
@@ -54,6 +56,7 @@ void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nod
 		_maxNodes = nodes;
 	}
 	else if (mode == INFINIT) {
+		_mode = mode;
 		_hardStopTime = _stopTime = INT64_MAX;
 	}
 	else init();
@@ -66,10 +69,10 @@ void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nod
 }
 
 void timemanager::PonderHit() {
-	int64_t pondertime = now() - _starttime;
-	_hardStopTime.fetch_add(pondertime);
-	_hardStopTime.store(_hardStopTimeSave + pondertime);
-	_stopTime.store(_stopTimeSave + pondertime);
+	int64_t tnow = now();
+	int64_t pondertime = tnow - _starttime;
+	_hardStopTime.store(std::min(int64_t(_hardStopTimeSave + pondertime - EmergencyTime), int64_t(_hardStopTime.load())));
+	_stopTime.store(_stopTimeSave);
 }
 
 void timemanager::init() {
@@ -117,7 +120,7 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 	case FIXED_TIME_PER_MOVE:
 		return _hardStopTime > tnow;
 	default:
-		//double bf = 2; 
+		//double bf = 2;
 		bool stable = currentDepth > 3 && _bestMoves[currentDepth - 1].move == _bestMoves[currentDepth - 2].move && _bestMoves[currentDepth - 1].move == _bestMoves[currentDepth - 3].move
 			&& std::abs(_bestMoves[currentDepth - 1].score - _bestMoves[currentDepth - 2].score) < 0.1;
 		//if stable only start iteration if there is 3 times more time available than already spent - if unstable start next iteration even if only 2 times the spent time is left
@@ -127,6 +130,16 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 		return tnow < _stopTime && (_starttime + int64_t(factor * (tnow - _starttime))) <= _stopTime;
 	}
 
+}
+
+void timemanager::switchToInfinite() {
+	_mode = INFINIT;
+}
+
+void timemanager::updateTime(int64_t time) {
+	int64_t tnow = now();
+	_hardStopTime.store(std::min(int64_t(_hardStopTime.load()), tnow + int64_t(time - EmergencyTime)));
+	//std::cout << "Hardstop time updated: " << _hardStopTime - _starttime;
 }
 
 double timemanager::GetEBF(int depth) const {
@@ -139,4 +152,11 @@ double timemanager::GetEBF(int depth) const {
 		n += _nodeCounts[d - 1];
 	}
 	return wbf / n;
+}
+
+std::string timemanager::print() {
+	std::ostringstream s;
+	s << "Start: " << _starttime << "  Time: " << _time << "  MTG: " << _movestogo << "  INC: " << _inc << std::endl;
+	s << "Stop:  " << _stopTime - _starttime << "  Hardstop: " << _hardStopTime - _starttime << "  SavedStop:  " << _stopTimeSave - _starttime << "  SavedHardstop: " << _hardStopTimeSave -_starttime;
+	return s.str();
 }

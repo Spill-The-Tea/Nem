@@ -55,7 +55,7 @@ std::vector<std::string> split(std::string str) {
 
 
 void loop() {
-	//setvbuf(stdout, NULL, _IOLBF, 2048);
+	uci();
 	std::string line;
 	while (std::getline(std::cin, line)) {
 		dispatch(line);
@@ -117,26 +117,26 @@ void dispatch(std::string line) {
 
 void uci() {
 	Engine->UciOutput = true;
-	std::cout << "id name Nemorino" << std::endl;
-	std::cout << "id author Christian Günther" << std::endl;
-	std::cout << "option name UCI_Chess960 type check default " << (Chess960 ? "true" : "false") << std::endl;
-	std::cout << "option name Hash type spin default " << HashSizeMB << " min 1 max 16384" << std::endl;
-	std::cout << "option name Clear Hash type button" << std::endl;
-	std::cout << "option name MultiPV type spin default " << Engine->MultiPv << " min 1 max 216" << std::endl;
-	std::cout << "option name Threads type spin default " << HelperThreads + 1 << " min 1 max 128" << std::endl;
-	std::cout << "option name Ponder type check" << std::endl;
-	std::cout << "option name Contempt type spin default 0 min -1000 max 1000" << std::endl;
-	std::cout << "option name BookFile type string default " << BOOK_FILE.c_str() << std::endl;
-	std::cout << "option name OwnBook type check default " << (USE_BOOK ? "true" : "false") << std::endl;
+	sync_cout << "id name Nemorino" << sync_endl;
+	sync_cout << "id author Christian Günther" << sync_endl;
+	sync_cout << "option name UCI_Chess960 type check default " << (Chess960 ? "true" : "false") << sync_endl;
+	sync_cout << "option name Hash type spin default " << HashSizeMB << " min 1 max 16384" << sync_endl;
+	sync_cout << "option name Clear Hash type button" << sync_endl;
+	sync_cout << "option name MultiPV type spin default " << Engine->MultiPv << " min 1 max 216" << sync_endl;
+	sync_cout << "option name Threads type spin default " << HelperThreads + 1 << " min 1 max 128" << sync_endl;
+	sync_cout << "option name Ponder type check" << sync_endl;
+	sync_cout << "option name Contempt type spin default 0 min -1000 max 1000" << sync_endl;
+	sync_cout << "option name BookFile type string default " << BOOK_FILE.c_str() << sync_endl;
+	sync_cout << "option name OwnBook type check default " << (USE_BOOK ? "true" : "false") << sync_endl;
 #ifdef TB
-	std::cout << "option name SyzygyPath type string default " << SYZYGY_PATH.c_str() << std::endl;
-	std::cout << "option name SyzygyProbeDepth type spin default " << SYZYGY_PROBE_DEPTH << " min 0 max 10" << std::endl;
+	sync_cout << "option name SyzygyPath type string default " << SYZYGY_PATH.c_str() << sync_endl;
+	sync_cout << "option name SyzygyProbeDepth type spin default " << SYZYGY_PROBE_DEPTH << " min 0 max 10" << sync_endl;
 #endif
-	std::cout << "uciok" << std::endl;
+	sync_cout << "uciok" << sync_endl;
 }
 
 void isready() {
-	std::cout << "readyok" << std::endl;
+	sync_cout << "readyok" << sync_endl;
 }
 
 void setoption(std::vector<std::string> &tokens) {
@@ -204,7 +204,7 @@ void setoption(std::vector<std::string> &tokens) {
 			SYZYGY_PATH = ssTBPath.str().substr(1);
 			Tablebases::init(SYZYGY_PATH);
 			if (Tablebases::MaxCardinality < 3) {
-				std::cerr << "Couldn't find any Tablebase files!!" << std::endl;
+				sync_cout << "Couldn't find any Tablebase files!!" << sync_endl;
 				exit(1);
 			}
 			InitializeMaterialTable();
@@ -220,10 +220,7 @@ bool initialized = false;
 void ucinewgame(){
 	initialized = true;
 	Engine->NewGame();
-	//tt::InitializeTranspositionTable(HashSizeMB);
 	if (USE_BOOK) Engine->BookFile = BOOK_FILE; else Engine->BookFile = "";
-	//tablebase::initialize();
-	//if (tablebase::AvailableTableBaseLevel > 0)std::cout << "infostd::string Using Tablebases up to " << tablebase::AvailableTableBaseLevel << " pieces" << std::endl;
 }
 
 #define MAX_FEN 0x80
@@ -273,7 +270,7 @@ void deleteThread() {
 	Engine->StopThinking();
 	if (Mainthread != nullptr) {
 		if (Mainthread->joinable())  Mainthread->join();
-		else std::cout << "info string Can't stop Engine Thread!" << std::endl;
+		else sync_cout << "info string Can't stop Engine Thread!" << sync_endl;
 		free(Mainthread);
 		Mainthread = nullptr;
 	}
@@ -285,7 +282,7 @@ void thinkAsync() {
 	if (Engine == NULL) return;
 	if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*_position);
 	else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*_position);
-	if (!ponderActive) std::cout << "bestmove " << toString(BestMove.move) << std::endl;
+	if (!ponderActive) sync_cout << "bestmove " << toString(BestMove.move) << sync_endl;
 	else {
 		//First try move from principal variation
 		Move ponderMove = Engine->PonderMove();
@@ -298,20 +295,9 @@ void thinkAsync() {
 			ponderMove = Engine->GetBestBookMove(next, moves, movecount);
 			if (ponderMove == MOVE_NONE && movecount > 0) ponderMove = moves->move;
 		}
-		if (ponderMove == MOVE_NONE || !ponderActive) std::cout << "bestmove " << toString(BestMove.move) << std::endl;
-		else std::cout << "bestmove " << toString(BestMove.move) << " ponder " << toString(ponderMove) << std::endl;
+		if (ponderMove == MOVE_NONE || !ponderActive) sync_cout << "bestmove " << toString(BestMove.move) << sync_endl;
+		else sync_cout << "bestmove " << toString(BestMove.move) << " ponder " << toString(ponderMove) << sync_endl;
 	}
-	//if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
-	//	cout << "info depth " << Engine.Depth() << " nodes " << Engine.NodeCount << " score cp " << BestMove.score << " nps " << Engine.NodeCount * 1000 / Engine.ThinkTime()
-	//	//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
-	//	<< " pv " << Engine.PrincipalVariation(Engine.Depth()) << std::endl;
-	//else {
-	//	int pliesToMate;
-	//	if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
-	//	cout << "info depth " << Engine.Depth() << " nodes " << Engine.NodeCount << " score mate " << pliesToMate / 2 << " nps " << Engine.NodeCount * 1000 / Engine.ThinkTime()
-	//		//<< " hashfull " << tt::Hashfull() << " tbhits " << tablebase::GetTotalHits()
-	//		<< " pv " << Engine.PrincipalVariation(Engine.Depth()) << std::endl;
-	//}
 	Engine->Reset();
 }
 
@@ -442,5 +428,6 @@ void divide(std::vector<std::string> &tokens) {
 
 void quit(){
 	deleteThread();
+	//utils::logger::instance()->flush();
 	exit(EXIT_SUCCESS);
 }

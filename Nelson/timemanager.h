@@ -30,6 +30,12 @@ enum TimeMode  { UNDEF, SUDDEN_DEATH, SUDDEN_DEATH_WITH_INC, CLASSICAL, CLASSICA
 		inline int GetMaxDepth() const { return _maxDepth; }
 
 		inline void reportFailLow() { _failLow = true; }
+		std::string print();
+		//Updating available time when pondering
+		void updateTime(int64_t time);
+
+		void switchToInfinite();
+		inline TimeMode Mode() { return _mode; }
 
 	private:
 		TimeMode _mode = UNDEF;

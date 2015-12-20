@@ -102,7 +102,12 @@ enum StagedMoveGenerationType {
 	MAIN_SEARCH, QSEARCH, CHECK, QSEARCH_WITH_CHECKS, REPETITION, ALL_MOVES
 };
 
+//Result as used in Search
 enum Result { RESULT_UNKNOWN, OPEN, DRAW, MATE };
+
+//Result according to rules 
+enum DetailedResult { NO_RESULT, WHITE_MATES, BLACK_MATES, DRAW_50_MOVES, DRAW_STALEMATE, DRAW_REPETITION, DRAW_MATERIAL };
+
 
 enum Value : int16_t {
 	VALUE_NOTYETDETERMINED = 0 - 32767,

@@ -10,6 +10,7 @@
 #include "test.h"
 #include "uci.h"
 #include "utils.h"
+#include "xboard.h"
 
 #ifdef TB
 #include "syzygy/tbprobe.h"
@@ -33,11 +34,22 @@ int main(int argc, const char* argv[]) {
 	Initialize();
 	//bench2(7);
 	//return 0;
-	if (argc <= 1) loop();
+	std::string input = "";
+	if (argc <= 1) {
+		std::getline(std::cin, input);
+		if (!input.compare(0, 3, "uci")) {
+			loop();
+			return 0;
+		}
+		else if (!input.compare(0, 6, "xboard")) {
+			cecp::xboard xb;
+			xb.loop();
+			return 0;
+		}
+	}
 	else {
 		std::string func(argv[1]);
-		if (!func.compare("test")) {
-			std::string input = "";
+		if (!func.compare("test")) {			
 			//std::getline(cin, input);
 			//testPerft();
 			//return 0;
@@ -136,9 +148,6 @@ int main(int argc, const char* argv[]) {
 			}
 			std::getline(std::cin, input);
 			return 0;
-		}
-		else if (!func.compare("util")) {
-			return utils::dispatch(argc, argv);
 		}
 	}
 }

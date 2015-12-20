@@ -68,6 +68,7 @@ public:
 	inline void InitMaterialPointer() { material = &MaterialTable[MaterialKey]; }
 	inline eval PawnStructureScore() const { return pawn->Score; }
 	Result GetResult();
+	DetailedResult GetDetailedResult();
 	inline Bitboard GetAttacksFrom(Square square) const { return attacks[square]; }
 	inline void SetPrevious(position &pos) { previous = &pos; }
 	inline void SetPrevious(position *pos) { previous = pos; }

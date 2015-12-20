@@ -158,12 +158,10 @@ void InitializeMaterialTable() {
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].Score = VALUE_DRAW;
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
-	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
 	pieceCounts[WKNIGHT] = 0; pieceCounts[BKNIGHT] = 2;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].Score = VALUE_DRAW;
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
-	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
 	pieceCounts[BKNIGHT] = 0;
 	for (int i = 0; i < 10; ++i) pieceCounts[i] = 0;
 	//KPK

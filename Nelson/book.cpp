@@ -46,7 +46,7 @@ namespace polyglot {
 		size_t low = 0;
 		size_t high = count - 1;
 		Entry entry;
-		size_t searchPoint;
+		size_t searchPoint = 0;
 		while (low < high && good()) {
 			searchPoint = low + (high - low) / 2;
 			seekg(searchPoint * sizeof(Entry), ios_base::beg);
@@ -54,6 +54,7 @@ namespace polyglot {
 			if (pos.GetHash() == entry.key) break;
 			else if (pos.GetHash() < entry.key) high = searchPoint; else low = searchPoint + 1;
 		}
+#pragma warning(suppress: 6001)
 		if (entry.key != pos.GetHash()) return MOVE_NONE;
 		std::vector<Entry> entries;
 		entries.push_back(entry);

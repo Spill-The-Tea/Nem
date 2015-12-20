@@ -658,7 +658,7 @@ const Value position::SEE(Move move) const
 	Value gain[32];
 	int d = 0;
 	Square fromSquare = from(move);
-	Square toSquare= to(move);
+	Square toSquare = to(move);
 	Bitboard mayXray = OccupiedByPieceType[BISHOP] | OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN];
 	Bitboard fromSet = ToBitboard(fromSquare);
 	Bitboard occ = OccupiedBB();
@@ -766,7 +766,7 @@ void position::setFromFEN(const std::string& fen) {
 
 		}
 		else if (token == '-') continue;
-		else {			
+		else {
 			if (token >= 'A' && token <= 'H') {
 				File kingFile = File(lsb(PieceBB(KING, WHITE)) & 7);
 				InitialKingSquareBB[WHITE] = PieceBB(KING, WHITE);
@@ -989,6 +989,33 @@ Result position::GetResult() {
 	return result;
 }
 
+DetailedResult position::GetDetailedResult() {
+	Result result = GetResult();
+	if (result == OPEN) return NO_RESULT;
+	else if (result == MATE) {
+		return GetSideToMove() == WHITE ? BLACK_MATES : WHITE_MATES;
+	}
+	else {
+		if (DrawPlyCount > 100) return DRAW_50_MOVES;
+		else if (GetMaterialTableEntry()->IsTheoreticalDraw()) return DRAW_MATERIAL;
+		else if (!Checked() && !CheckValidMoveExists<false>()) return DRAW_STALEMATE;
+		else {
+			//Check for 3 fold repetition
+			int repCounter = 0;
+			position * prev = Previous();
+			for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, int(DrawPlyCount)) >> 1); ++i) {
+				prev = prev->Previous();
+				if (prev->GetHash() == GetHash()) {
+					repCounter++;
+					if (repCounter > 1) return DRAW_REPETITION;
+					prev = prev->Previous();
+				}
+			}
+		}
+	}
+	return NO_RESULT;
+}
+
 bool position::checkRepetition() {
 	position * prev = Previous();
 	for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, int(DrawPlyCount)) >> 1); ++i) {
@@ -1024,7 +1051,7 @@ bool position::validateMove(Move move) {
 				result = toSquare == EPSquare;
 				break;
 			default:
-				assert(false);
+				return false;
 			}
 		}
 		else if (pt == KING && type(move) == CASTLING) {
@@ -1061,7 +1088,7 @@ bool position::validateMove(Move move) {
 	//		__debugbreak();
 #endif
 	return result;
-}
+	}
 
 bool position::validateMove(ExtendedMove move) {
 	Square fromSquare = from(move.move);

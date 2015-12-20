@@ -6,7 +6,6 @@
 #include <cstring>
 #include <thread>
 #include <chrono>
-#include <unordered_set>
 #include "search.h"
 #include "hashtables.h"
 
@@ -26,12 +25,14 @@ void baseSearch::Reset() {
 	Stop.store(false);
 	PonderMode.store(false);
 	History.initialize();
+	searchMoves.clear();
 	cmHistory.initialize();
 	for (int i = 0; i < MAX_DEPTH; ++i){
 		killer[2*i] = EXTENDED_MOVE_NONE;
 		killer[2 * i + 1] = EXTENDED_MOVE_NONE;
 		//excludedMoves[i] = MOVE_NONE;
 	}
+	for (int i = 0; i < PV_MAX_LENGTH; ++i) PVMoves[i] = MOVE_NONE;
 }
 
 void baseSearch::NewGame() {
@@ -44,6 +45,7 @@ void baseSearch::NewGame() {
 std::string baseSearch::PrincipalVariation(position & pos, int depth) {
 	std::stringstream ss;
 	int i = 0;
+	ponderMove = MOVE_NONE;
 	for (; i < depth && i < PV_MAX_LENGTH; ++i) {
 		if (PVMoves[i] == MOVE_NONE || !pos.validateMove(PVMoves[i])) break;
 		position next(pos);
@@ -51,6 +53,7 @@ std::string baseSearch::PrincipalVariation(position & pos, int depth) {
 		pos = next;
 		if (i>0) ss << " ";
 		ss << toString(PVMoves[i]);
+		if (i == 1) ponderMove = PVMoves[i];
 	}
 	for (; i < depth; ++i) {
 		Move hashmove = HelperThreads == 0 ? tt::hashmove<tt::UNSAFE>(pos.GetHash()) : tt::hashmove<tt::THREAD_SAFE>(pos.GetHash());
@@ -60,8 +63,56 @@ std::string baseSearch::PrincipalVariation(position & pos, int depth) {
 		pos = next;
 		if (i>0) ss << " ";
 		ss << toString(hashmove);
+		if (i == 1) ponderMove = hashmove;
 	}
 	return ss.str();
+}
+
+void baseSearch::info(position &pos, int pvIndx, SearchResultType srt) {
+	if ((UciOutput || XBoardOutput)) {
+		position npos(pos);
+		npos.copy(pos);
+		if (UciOutput) {
+			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
+				sync_cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+				<< " hashfull " << tt::GetHashFull()
+#ifdef TB
+				<< " tbhits " << tbHits
+#endif
+				<< " time " << _thinkTime
+				<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
+			else {
+				int pliesToMate;
+				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
+				sync_cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+					<< " hashfull " << tt::GetHashFull()
+#ifdef TB
+					<< " tbhits " << tbHits
+#endif
+					<< " time " << _thinkTime
+					<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
+			}
+		}
+		else if (XBoardOutput) {
+			const char srtChar[3] = { ' ', '?', '!' };
+			int xscore = BestMove.score;
+			if (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD)) {
+				if (int(BestMove.score) > 0) {
+					int pliesToMate = VALUE_MATE - BestMove.score;
+					xscore = 100000 + pliesToMate;
+				}
+				else {
+					int pliesToMate = -BestMove.score - VALUE_MATE;
+					xscore = -100000 - pliesToMate;
+				}
+			}
+			sync_cout << _depth << " " << xscore << " " << _thinkTime << " " << NodeCount << " " << MaxDepth << " " << (NodeCount / _thinkTime) * 1000
+#ifdef TB
+				<< " " << tbHits
+#endif
+				<< "\t" << PrincipalVariation(npos, _depth)  << srtChar[srt] << sync_endl;
+		}
+	}
 }
 
 Move baseSearch::GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount) {
@@ -70,6 +121,11 @@ Move baseSearch::GetBestBookMove(position& pos, ValuatedMove * moves, int moveCo
 		book->probe(pos, true, moves, moveCount);
 	}
 	return MOVE_NONE;
+}
+
+std::string baseSearch::GetXAnalysisOutput() {
+	std::lock_guard<std::mutex> lck(mtxXAnalysisOutput);
+	return XAnalysisOutput;
 }
 
 baseSearch::~baseSearch() {
@@ -85,5 +141,6 @@ baseSearch::baseSearch() {
 	cmHistory.initialize();
 	History.initialize();
 	_thinkTime = 0;
+	for (int i = 0; i < PV_MAX_LENGTH; ++i) PVMoves[i] = MOVE_NONE;
 }
 

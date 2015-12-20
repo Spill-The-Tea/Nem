@@ -70,6 +70,9 @@
     <ClCompile Include="syzygy\tbprobe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="xboard.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="types.h">
@@ -124,6 +127,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="syzygy\tbprobe.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="xboard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

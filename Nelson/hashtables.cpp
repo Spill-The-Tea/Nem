@@ -146,7 +146,6 @@ namespace tt {
 		int clusterCount = CalculateClusterCount(sizeInMB);
 		Table = (Cluster *)calloc(clusterCount, sizeof(Cluster));
 		MASK = clusterCount - 1;
-		std::cout << "infostd::string Hash Size: " << ((clusterCount * sizeof(Cluster)) >> 20) << " MByte" << std::endl;
 		ResetCounter();
 	}
 

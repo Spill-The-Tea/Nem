@@ -264,6 +264,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClCompile Include="test.cpp" />
     <ClCompile Include="timemanager.cpp" />
     <ClCompile Include="uci.cpp" />
+    <ClCompile Include="xboard.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="board.h" />
@@ -284,6 +285,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClInclude Include="timemanager.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="uci.h" />
+    <ClInclude Include="xboard.h" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="Nelson.rc" />

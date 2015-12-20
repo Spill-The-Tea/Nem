@@ -451,8 +451,7 @@ int Tablebases::probe_wdl(position& pos, int *success)
 		if (v1 >= v) v = v1;
 		else if (v == 0) {
 			pos.GenerateMoves<ALL>();
-			int moveCount;
-			ValuatedMove * moves = pos.GetMoves(moveCount);
+			moves = pos.GetMoves(moveCount);
 			// Check whether there is at least one legal non-ep move.
 			for (int i = 0; i < moveCount; ++i) {
 				Move capture = moves->move;
@@ -645,8 +644,7 @@ int Tablebases::probe_dtz(position& pos, int *success)
 			v = v1;
 		}
 		else {
-			int moveCount;
-			ValuatedMove * moves = pos.GetMoves(moveCount);
+			moves = pos.GetMoves(moveCount);
 			for (int i = 0; i < moveCount; ++i) {
 				Move move = moves->move;
 				moves++;
@@ -654,11 +652,10 @@ int Tablebases::probe_dtz(position& pos, int *success)
 				position next(pos);
 				if (next.ApplyMove(move)) break;
 			}
-			if (moves == MOVE_NONE && !pos.IsCheck()) {
+			if (moves->move == MOVE_NONE && !pos.IsCheck()) {
 				pos.ResetMoveGeneration();
 				pos.GenerateMoves<QUIETS>();
-				int moveCount;
-				ValuatedMove * moves = pos.GetMoves(moveCount);
+				moves = pos.GetMoves(moveCount);
 				for (int i = 0; i < moveCount; ++i) {
 					Move move = moves->move;
 					moves++;
