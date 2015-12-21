@@ -10,7 +10,7 @@ Nemorino is a UCI chess engine.
 * Multi Core support (Very Lazy SMP)
 * Multi PV analysis mode
 * CECP support (not yet 100% stable)
-#### UCI parameters: ####
+##### UCI parameters: #####
 - UCI_Chess960:     If set to true engine will play according to Chess960 rules (default false)
 - Hash:             Size in MBytes used for the transposition table (default is 32. Nemorino will use additional memory for other fixed-size hash tables)
 - Clear Hash:       Will clear the transposition table
@@ -22,7 +22,6 @@ Nemorino is a UCI chess engine.
 - OwnBook:          Use Polyglot book, specified by book file (default false)
 - SyzygyPath:       Path(es) to directories Syzygy tablebase files can be found. Seperate multiple directories by ';' on windows and by ':' on linux
 - SyzygyProbeDepth: Limits the depth where Syzygy tables are probed during the search (default 0).
-
 
 
 ### How do I get set up? ###
