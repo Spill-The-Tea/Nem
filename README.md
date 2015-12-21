@@ -43,4 +43,4 @@ It has been developed and tested on windows. The linux compile has only been smo
 ### Remarks ###
 
 I wrote this engine because I wanted to understand, how a chess engine is working. And the best way to learn is to write an engine from scratch by yourself. I first started with C#, but after some time I got the ambition to learn C++.
-Therefore don't expect a lot of new ideas within my code, neither expect clean and well-structured code.
+Therefore don't expect a lot of new ideas within my code, and neither expect clean and well-structured code. Instead you will find a unique combination all those ideas explained in the [Chess Programming Wiki](https://chessprogramming.wikispaces.com)
