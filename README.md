@@ -8,6 +8,9 @@ Nemorino is a UCI chess engine.
 * Pondering
 * Standard Chess and Chess960
 * Multi Core support (Very Lazy SMP)
+* CECP support (not yet 100% stable)
+* UCI parameters:
+
 
 ### How do I get set up? ###
 
