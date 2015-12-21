@@ -25,8 +25,8 @@ Nemorino is a UCI chess engine.
 
 
 ### How do I get set up? ###
-Nemorino doesn't bring it's own UI. So for running it, you need a GUI supporting UCI (like [Arena](http://www.playwitharena.com/)).
-Nemorino requires either 64-bit windows or linux.   
+Nemorino doesn't bring it's own UI. So for running it, you need a GUI supporting UCI (like [Arena](http://www.playwitharena.com/)).  
+Nemorino requires either 64-bit windows or linux.
 It has been developed and tested on windows. The linux compile has only been smoke-tested.
 
 ### Contribution guidelines ###
