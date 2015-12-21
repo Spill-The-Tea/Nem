@@ -29,11 +29,11 @@ Nemorino doesn't bring it's own UI. So for running it, you need a GUI supporting
 Nemorino requires either 64-bit windows or linux.
 It has been developed and tested on windows. The linux compile has only been smoke-tested.
 
-### Contribution guidelines ###
+### Internals ###
 
-* Writing tests
-* Code review
-* Other guidelines
+* Bitboard based (using magic bitboards for sliding move generation)
+* Principal Variation Search (with Aspiration Windows, Null-Move Pruning, Killermoves, Futility Pruning, Razoring, ...)
+* 
 
 ### Who do I talk to? ###
 
