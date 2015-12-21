@@ -15,6 +15,9 @@ Nemorino is a UCI chess engine.
 - Hash:         Size in MBytes used for the transposition table (default is 32. Nemorino will use additional memory for other fixed-size hash tables)
 - Clear Hash:   Will clear the transposition table
 - MultiPV:      Number of principal variations shown (default 1)
+- Threads:      Maximum number of threads (cores) used (default 1)
+- Ponder:       When set to true, engine will continue analysis while waiting for opponent's move
+
 
 
 ### How do I get set up? ###
