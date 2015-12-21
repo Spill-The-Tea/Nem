@@ -24,7 +24,7 @@ Nemorino is a UCI chess engine.
 - SyzygyProbeDepth: Limits the depth where Syzygy tables are probed during the search (default 0).
 
 
-### How do I get set up? ###
+### Installation ###
 
 Nemorino doesn't bring it's own UI. So for running it, you need a GUI supporting UCI (like [Arena](http://www.playwitharena.com/)).  
 Nemorino requires either 64-bit windows or linux.
@@ -36,9 +36,11 @@ It has been developed and tested on windows. The linux compile has only been smo
 * Principal Variation Search (with Aspiration Windows, Null-Move Pruning, Killermoves, Futility Pruning, Razoring, ...)
 * Tapered Eval based on Material, Mobility, Threats, King Safety, and Pawn Structure
 * Special evaluation functions for some endgames
+* Copy/Make
 * No Piece-Square Tables
 * So far completely untuned
 
 ### Remarks ###
 
-I wrote this engine because I wanted to understand, how a chess engine is working. And the best way to learn is to do it yourself. I first started with C#, but after some time I got the ambition to learn C++.
+I wrote this engine because I wanted to understand, how a chess engine is working. And the best way to learn is to write an engine from scratch by yourself. I first started with C#, but after some time I got the ambition to learn C++.
+Therefore don't expect a lot of new ideas within my code, neither expect clean and well-structured code.
