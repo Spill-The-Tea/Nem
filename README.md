@@ -25,9 +25,9 @@ Nemorino is a UCI chess engine.
 
 
 ### Installation ###
-
+Executables can be downloaded in the [Download section](https://bitbucket.org/christian_g_nther/nemorino/downloads)  
 Nemorino doesn't bring it's own UI. So for running it, you need a GUI supporting UCI (like [Arena](http://www.playwitharena.com/)).  
-Nemorino requires a CPU with POPCNT support and either 64-bit windows or linux.
+The engine requires a CPU with POPCNT support and either 64-bit windows or linux.
 It has been developed and tested on windows. The linux compile has only been smoke-tested.
 
 ### Internals ###
@@ -43,4 +43,4 @@ It has been developed and tested on windows. The linux compile has only been smo
 ### Remarks ###
 
 I wrote this engine because I wanted to understand, how a chess engine is working. And the best way to learn is to write an engine from scratch by yourself. I first started with C#, but after some time I got the ambition to learn C++.
-Therefore don't expect a lot of new ideas within my code, and neither expect clean and well-structured code. Instead you will find a unique combination all those ideas explained in the [Chess Programming Wiki](https://chessprogramming.wikispaces.com). 
+Therefore don't expect a lot of new ideas within my code, and neither expect clean and well-structured code. Instead you will find a unique combination all those ideas explained in the [Chess Programming Wiki](https://chessprogramming.wikispaces.com).
