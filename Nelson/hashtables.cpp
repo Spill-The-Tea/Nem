@@ -134,16 +134,16 @@ namespace tt {
 
 	//Calculates the number of clusters in the transposition table if the table size should use
 	//sizeMB Megabytes (which is treated as upper limit)
-	int CalculateClusterCount(int SizeMB) {
-		int clusterCount = SizeMB * 1024 * 1024 / sizeof(Cluster);
-		clusterCount = 1ul << msb(clusterCount);
+	uint64_t CalculateClusterCount(int SizeMB) {
+		uint64_t clusterCount = SizeMB * 1024ull * 1024 / sizeof(Cluster);
+		clusterCount = 1ull << msb(clusterCount);
 		if (clusterCount < 1024) clusterCount = 1024;
 		return clusterCount;
 	}
 
 	void InitializeTranspositionTable(int sizeInMB) {
 		FreeTranspositionTable();
-		int clusterCount = CalculateClusterCount(sizeInMB);
+		uint64_t clusterCount = CalculateClusterCount(sizeInMB);
 		Table = (Cluster *)calloc(clusterCount, sizeof(Cluster));
 		MASK = clusterCount - 1;
 		ResetCounter();

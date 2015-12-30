@@ -9,7 +9,7 @@
 
 
 namespace pawn {
-
+	//pawn hash table is currently very simple - it only contains the pawn structure score and a bitboard indicating the passed pawns
 	struct Entry {
 		PawnKey_t Key;
 		eval Score;
@@ -21,12 +21,15 @@ namespace pawn {
 	void initialize();
 	void clear();
 
+	//If there is no matching entry the entry is created and the pawn structure evaluation executed
 	Entry * probe(const position &pos);
 
 }
 
 namespace tt {
 	enum NodeType { UNDEFINED = 0, UPPER_BOUND = 1, LOWER_BOUND = 2, EXACT = 3 };
+	//If engine is running in multi-thread mode, lockless hashing (see https://chessprogramming.wikispaces.com/Shared+Hash+Table#Lockless) is used
+	//In single-thread mode, this isn't done
 	enum ProbeType { UNSAFE, THREAD_SAFE };
 
 	const int CLUSTER_SIZE = 4;
@@ -47,12 +50,13 @@ namespace tt {
 	inline void ResetCounter() { ProbeCounter = HitCounter = FillCounter = 0; }
 	void clear();
 
+	//data stored in the transpodition table
 	struct nodeData {
-		Move move;
-		Value value;
-		Value evalValue;
+		Move move;       //hashmove
+		Value value;     //search value
+		Value evalValue; //static evaluation value
 		uint8_t gentype; //2 bits type 6 bits generation
-		int8_t depth;
+		int8_t depth;    //depth at which entry has been created
 	};
 
 	union dataUnion {
@@ -72,6 +76,7 @@ namespace tt {
 		int8_t depth() { return data.details.depth; }
 		uint64_t GetKey() { return key ^ data.dataAsInt; }
 
+		//Stores a changed 
 		template <ProbeType PT> inline void update(uint64_t hash, Value v, NodeType nt, int d, Move m, Value ev) {
 			FillCounter += (key == 0); //Initial entry get's overwritten
 			if (PT == THREAD_SAFE) {

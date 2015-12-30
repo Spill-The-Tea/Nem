@@ -443,6 +443,7 @@ inline Bitboard pext(Bitboard val, Bitboard mask) {
 #endif
 
 const Value MAX_HISTORY_VALUE = Value(2000);
+//Inspired by (=more or less copied from) Stockfish 
 struct HistoryManager {
 public:
 	HistoryManager() {

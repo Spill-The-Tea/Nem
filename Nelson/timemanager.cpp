@@ -105,6 +105,7 @@ void timemanager::init() {
 	}
 }
 
+// This method is called from search after the completion of each iteration. It returns true when a new iteration shall be started and false if not
 bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_t nodecount, int64_t tnow, bool ponderMode) {
 	_bestMoves[currentDepth - 1] = bestMove;
 	_nodeCounts[currentDepth - 1] = nodecount;
@@ -120,13 +121,13 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 	case FIXED_TIME_PER_MOVE:
 		return _hardStopTime > tnow;
 	default:
-		//double bf = 2;
+
 		bool stable = currentDepth > 3 && _bestMoves[currentDepth - 1].move == _bestMoves[currentDepth - 2].move && _bestMoves[currentDepth - 1].move == _bestMoves[currentDepth - 3].move
 			&& std::abs(_bestMoves[currentDepth - 1].score - _bestMoves[currentDepth - 2].score) < 0.1;
 		//if stable only start iteration if there is 3 times more time available than already spent - if unstable start next iteration even if only 2 times the spent time is left
 		double factor = stable ? 3 : 2;
+		//If a fail low has occurred assign even more time
 		if (_failLow) factor = factor / 2;
-		//if (currentDepth > 3 && _iterationTimes[currentDepth - 3] > 0) bf = sqrt(1.0 * _iterationTimes[currentDepth - 1] / _iterationTimes[currentDepth - 3]);
 		return tnow < _stopTime && (_starttime + int64_t(factor * (tnow - _starttime))) <= _stopTime;
 	}
 

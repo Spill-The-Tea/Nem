@@ -9,7 +9,8 @@ namespace cecp {
 		ponder.store(false);
 		drawOffered.store(false);
 		engineState.store(Waiting);
-		Mainthread = new std::thread(&xboard::run, this);
+		sync_cout << "# Waiting (constructor)" << sync_endl;
+		Enginethread = new std::thread(&xboard::run, this);
 	}
 
 
@@ -24,35 +25,57 @@ namespace cecp {
 			pos = prev;
 		} while (prev != nullptr);
 	}
-
+	/* This is the engine thread and the crucial part of the xboard protocol driver
+		Basically the engine can have 3 states: Waiting, Thinking and Pondering.
+		When pondering is off the situation is easy, there is no pondering state and we will have only transitions between Waiting and Thinking
+		Waiting -> Thinking: When the game starts, or when the opponent moved
+		Thinking -> Waiting: When the search is done
+		In ponder mode the situation is more complicated. Mainly we have transisitions between pondering and thinking:
+		In the beginning of the game the engine starts thinking.
+		Then after search is finished it starts to ponder.
+		Some time later the opponent will move, we will either have a ponderhit, then we will switch the engine to thinking without stopping the search
+		If we have a pondermiss the search is stopped and the engine will set to thinking on the new position
+	*/
 	void xboard::run() {
 		while (engineState.load() != Exiting) {
+			//Check if engine shall sleep
 			std::unique_lock<std::mutex> lckStart(mtxStart);
 			while (engineState.load() == Waiting) cvStart.wait(lckStart);
 			if (engineState.load() == Thinking) {
-				//sync_cout << "Start Thinking" << sync_endl;
-				//EngineSide = pos->GetSideToMove();
+				//Start Thinking
 				Engine->PonderMode.store(false);
 				prepareTimeManager(false);
-				//sync_cout << Engine->timeManager.print() << sync_endl;
 				Engine->Stop.store(false);
 				if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*pos);
 				else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*pos);
+				//Search is done => check for draw offer
 				if (drawOffered.load() && BestMove.score < -Contempt) {
+					//Accept it if we are worse than Contempt
 					sync_cout << "offer draw" << sync_endl;
 					drawOffered.store(false);
 				}
+				//Now send move to GUI...
 				sync_cout << "move " << toXboardString(BestMove.move) << sync_endl;
+				//...and apply it tour internal board
 				position * next = new position(*pos);
 				next->ApplyMove(BestMove.move);
 				moves.push_back(BestMove.move);
 				next->AppliedMovesBeforeRoot++;
 				pos = next;
+				//Process result and check if engine should ponder
 				if (processResult(BestMove.score) && ponder.load() && engineState.load() == Thinking && (ponderMove = Engine->PonderMove())) {
+					//Start pondering
 					engineState.store(Pondering);
-				} else engineState.store(Waiting);
-			} else if (engineState.load() == Pondering) {
-				//sync_cout << "Start Pondering" << sync_endl;
+					sync_cout << "# Pondering (run1)" << sync_endl;
+				}
+				else {
+					//No pondering => send engine to sleep
+					engineState.store(Waiting);
+					sync_cout << "# Waiting (run2)" << sync_endl;
+				}
+			}
+			else if (engineState.load() == Pondering) {
+				//start pondering: prepare ponder position
 				if (ponderpos) {
 					delete ponderpos;
 					ponderpos = nullptr;
@@ -62,35 +85,49 @@ namespace cecp {
 				ponderpos->AppliedMovesBeforeRoot++;
 				Engine->PonderMode.store(true);
 				prepareTimeManager(true);
-				//sync_cout << Engine->timeManager.print() << sync_endl;
 				Engine->Stop.store(false);
-				//sync_cout << "Starting to ponder on " << toXboardString(ponderMove) << sync_endl;
+				//start engine to search ponder position
 				if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*ponderpos);
 				else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*ponderpos);
-				//On ponder hit engine state is switched to Thinking
+				//Search has finished. There are 2 possible states:
+				//Engine is Thinking, this means we had a ponder hit and the engine state was switched to thinking
 				if (engineState.load() == Thinking) {
 					//We had a ponder hit => the search result is our next move
-					//sync_cout << "Ponderhit detected " << toXboardString(BestMove.move) << sync_endl;
+					//check for draw offer
+					if (drawOffered.load() && BestMove.score < -Contempt) {
+						//Accept it if we are worse than Contempt
+						sync_cout << "offer draw" << sync_endl;
+						drawOffered.store(false);
+					}
+					//Now send move to GUI...
 					sync_cout << "move " << toXboardString(BestMove.move) << sync_endl;
+					//...and apply it tour internal board
 					position * next = new position(*pos);
 					next->ApplyMove(BestMove.move);
 					moves.push_back(BestMove.move);
 					next->AppliedMovesBeforeRoot++;
 					pos = next;
 					//Check if game is over
-					if (!processResult(BestMove.score)) engineState.store(Waiting);
+					if (!processResult(BestMove.score)) {
+						//Game is over => send engine to sleep
+						engineState.store(Waiting);
+						sync_cout << "# Waiting (run3)" << sync_endl;
+					}
 					else if (ponder.load() && (ponderMove = Engine->PonderMove())) {
+						//Send engine to ponder mode
 						engineState.store(Pondering);
+						sync_cout << "# Pondering (run4)" << sync_endl;
 					}
 					else {
 						//ponder is switched off, or we have no ponder move => let the engine sleep
 						engineState.store(Waiting);
+						sync_cout << "# Waiting (run5)" << sync_endl;
 					}
 				}
 				else {
 					//we had a ponder miss => we have to start thinking again
-					//sync_cout << "Pondermiss " << sync_endl;
 					engineState.store(Thinking);
+					sync_cout << "# Thinking (run6)" << sync_endl;
 				}
 			}
 			Engine->Reset();
@@ -127,11 +164,11 @@ namespace cecp {
 		cvStart.notify_one();
 		Engine->PonderMode.store(false);
 		Engine->StopThinking();
-		if (Mainthread != nullptr) {
-			if (Mainthread->joinable())  Mainthread->join();
+		if (Enginethread != nullptr) {
+			if (Enginethread->joinable())  Enginethread->join();
 			else sync_cout << "info string Can't stop Engine Thread!" << sync_endl;
-			free(Mainthread);
-			Mainthread = nullptr;
+			free(Enginethread);
+			Enginethread = nullptr;
 		}
 		Engine->Reset();
 	}
@@ -147,7 +184,11 @@ namespace cecp {
 		std::string line;
 		Engine->XBoardOutput = true;
 		while (std::getline(std::cin, line)) {
-			if (!dispatch(line)) break;
+			if (!line.compare(0, 4, "ping")) {
+				line[1] = 'o';
+				sync_cout << line << sync_endl;
+			}
+			else if (!dispatch(line)) break;
 		}
 	}
 
@@ -155,12 +196,7 @@ namespace cecp {
 		std::vector<std::string> tokens = split(line);
 		if (tokens.size() == 0) return true;
 		std::string command = tokens[0];
-		if (!command.compare("quit")) {
-			deleteThread();
-			//utils::logger::instance()->flush();
-			exit(EXIT_SUCCESS);
-		}
-		else if (!command.compare("usermove")) {
+		if (!command.compare("usermove")) {
 			usermove(tokens);
 		}
 		else if (!command.compare("draw")) {
@@ -193,9 +229,6 @@ namespace cecp {
 		}
 		else if (!command.compare("go")) {
 			go();
-		}
-		else if (!command.compare("ping")) {
-			sync_cout << "pong " << tokens[1] << sync_endl;
 		}
 		else if (!command.compare("option")) {
 			option(tokens);
@@ -252,19 +285,27 @@ namespace cecp {
 			includeMoves(tokens);
 		}
 		else if (!command.compare("playother")) {
-			EngineSide = Color(EngineSide^1);
+			EngineSide = Color(EngineSide ^ 1);
 		}
 		else if (!command.compare("analyze")) {
 			analyze();
 		}
+		else if (!command.compare("rating")) {
+			rating(tokens);
+		}
 		else if (line[0] == '.') {
-			sync_cout << Engine->XAnalysisOutput << sync_endl;
+			sync_cout << Engine->GetXAnalysisOutput() << sync_endl;
 		}
 #ifdef TB
 		else if (!command.compare("egtpath")) {
 			egtpath(tokens);
 		}
 #endif
+		else if (!command.compare("quit")) {
+			deleteThread();
+			//utils::logger::instance()->flush();
+			exit(EXIT_SUCCESS);
+		}
 		return true;
 	}
 
@@ -272,6 +313,7 @@ namespace cecp {
 		if (xstate == FORCE) xstate = STANDARD;
 		EngineSide = pos->GetSideToMove();
 		engineState.store(Thinking);
+		sync_cout << "# Thinking (go)" << sync_endl;
 		cvStart.notify_one();
 	}
 
@@ -314,23 +356,24 @@ namespace cecp {
 	void xboard::protover(std::vector<std::string> tokens) {
 		protocolVersion = stoi(tokens[1]);
 		sync_cout << "feature ping=1 setboard=1 usermove=1 time=1 draw=1 sigint=0 sigterm=0 reuse=0 myname=\"Nemorino\""
-		          << " variants=\"normal,fischerrandom\" colors=0 ics=1 name=1 include=1"
-		          << " memory=1 smp=1 ics=1 name=1"
+			<< " variants=\"normal,fischerrandom\" colors=0 ics=1 name=1 include=1"
+			<< " memory=1 smp=1 ics=1 name=1"
 #ifdef TB
-		          << " egt = \"syzygy\""
+			<< " egt = \"syzygy\""
 #endif
-		          << sync_endl;
-				  sync_cout << "feature option=\"Clear Hash -button\"" << sync_endl;
-				  sync_cout << "feature option=\"MultiPV -spin " << Engine->MultiPv << " 1 216\"" << sync_endl;
-				  sync_cout << "feature option=\"Contempt -spin 0 -1000 1000\"" << sync_endl;
-				  sync_cout << "feature option=\"BookFile -file " << BOOK_FILE.c_str() << "\"" << sync_endl;
-				  sync_cout << "feature option=\"OwnBook -check " << (USE_BOOK ? "1\"" : "0\"") << sync_endl;
-				  sync_cout << "feature done=1" << sync_endl;
+			<< sync_endl;
+		sync_cout << "feature option=\"Clear Hash -button\"" << sync_endl;
+		sync_cout << "feature option=\"MultiPV -spin " << Engine->MultiPv << " 1 216\"" << sync_endl;
+		sync_cout << "feature option=\"Contempt -spin 0 -1000 1000\"" << sync_endl;
+		sync_cout << "feature option=\"BookFile -file " << BOOK_FILE.c_str() << "\"" << sync_endl;
+		sync_cout << "feature option=\"OwnBook -check " << (USE_BOOK ? "1\"" : "0\"") << sync_endl;
+		sync_cout << "feature done=1" << sync_endl;
 	}
 
 	void xboard::newGame() {
 		Engine->StopThinking();
 		engineState.store(Waiting);
+		sync_cout << "# Waiting (newGame)" << sync_endl;
 		clearPos();
 		pos = new position();
 		EngineSide = BLACK;
@@ -386,9 +429,9 @@ namespace cecp {
 		}
 	}
 
-
+	//Opponent has played a move
 	void xboard::usermove(std::vector<std::string> tokens) {
-		//sync_cout << "Usermove received " << tokens[1] << sync_endl;
+		//Apply move to internal board
 		Move move = parseMoveInXBoardNotation(tokens[1], *pos);
 		position * next = new position(*pos);
 		if (next->ApplyMove(move)) {
@@ -398,22 +441,27 @@ namespace cecp {
 		}
 		else sync_cout << "Illegal move: " << tokens[1] << sync_endl;
 		if (xstate != FORCE) {
+			//If engine is pondering the move is either a ponderhit or miss
 			if (engineState.load() == Pondering) {
 				if (move == ponderMove) {
-					//Ponderhit
+					//Ponderhit: We switch the engine state to thinking..
 					Engine->PonderMode.store(false);
 					engineState.store(Thinking);
+					sync_cout << "# Thinking (usermove)" << sync_endl;
+					//..and inform the timemanager
 					Engine->timeManager.PonderHit();
 				}
 				else {
-					//Ponder miss
+					//Ponder miss: stop the engine, anything else will be handled by the engine thread
 					Engine->StopThinking();
 				}
 			}
 			else if (engineState.load() == Waiting) {
+				//Engine is in waiting state => wake it up and let it think
 				go();
 			}
 		}
+		//After a move is played clean the move filter
 		Engine->searchMoves.clear();
 	}
 
@@ -424,6 +472,16 @@ namespace cecp {
 				Engine->searchMoves.push_back(parseMoveInXBoardNotation(tokens[1], *pos));
 			}
 		}
+	}
+
+	//When playing on FICS, the server informs about opponent's rating via the rating command
+	//Contempt is adjusted based on rating difference
+	void xboard::rating(std::vector<std::string> tokens) {
+		int ratingOpponent = stoi(tokens[2]);
+		int ownRating = stoi(tokens[1]);
+		if (ownRating == 0) ownRating = 2700;
+		if (ratingOpponent == 0) ratingOpponent = 2000;
+		Contempt = Value((ownRating - ratingOpponent) / 10);
 	}
 
 #ifdef TB
@@ -480,7 +538,7 @@ namespace cecp {
 	void xboard::prepareTimeManager(bool startPonder) {
 		int64_t tnow = now();
 		TimeMode mode = xstate == ANALYZE ? INFINIT :
-			                                tc_movetime > 0 ? FIXED_TIME_PER_MOVE : UNDEF;
+			tc_movetime > 0 ? FIXED_TIME_PER_MOVE : UNDEF;
 		int movestogo = 30;
 		if (tc_moves > 0) movestogo = tc_moves - (moves.size() % tc_moves);
 

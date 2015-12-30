@@ -2,31 +2,30 @@
 
 #include "types.h"
 
-extern int HashSizeMB;
-extern std::string BOOK_FILE;
-extern bool USE_BOOK;
-extern int HelperThreads;
-extern Value Contempt;
-extern Color EngineSide;
+extern int HashSizeMB;        //Transposition Table Size in Megabytes (upper limit)
+extern std::string BOOK_FILE; //Polyglot opening book file
+extern bool USE_BOOK;         //Use opening book
+extern int HelperThreads;     //Number of slave threads
+extern Value Contempt;        //Only accept draws, when evaluation is less then -Contempt
+extern Color EngineSide;      //Side played by the engine
 
 #ifdef TB
 extern std::string SYZYGY_PATH;
 extern int SYZYGY_PROBE_DEPTH;
-const int TB_PROBE_TIME = 250;  //Only probe TB if at least TB_PROBE_TIME is left
 #endif
 
-const int EmergencyTime = 100; //50 ms Emergency time
+const int EmergencyTime = 100; //100 ms Emergency time
 const int PV_MAX_LENGTH = 32; //Maximum Length of displayed Principal Variation
-const int MASK_TIME_CHECK = (1 << 14) - 1;
+const int MASK_TIME_CHECK = (1 << 14) - 1; //Time is only checked each MASK_TIME_CHECK nodes
 
-const int MIN_SMP_DEPTH = 2; //Depth where SMP starts
-
-//King piece value is set to a large number, to ensure that any capture sequence where the king is "captured" is << 0
+//Material Values
+//King piece value is set to a very large number, to ensure that any capture sequence where the king is "captured" is << 0
 const Value PieceValuesMG[]{ Value(950), Value(520), Value(325), Value(325), Value(80), VALUE_KNOWN_WIN, VALUE_ZERO };
 const Value PieceValuesEG[]{ Value(950), Value(520), Value(325), Value(325), Value(100), VALUE_KNOWN_WIN, VALUE_ZERO };
 
 const int PAWN_TABLE_SIZE = 1 << 14; //has to be power of 2
 
+//Mobility bonus values
 const eval MOBILITY_BONUS_KNIGHT[] = { eval(-21, -17), eval(-14, -10), eval(-3, -3), eval(1, 0), eval(5, 3), eval(9, 7), eval(12, 9), eval(14, 10), eval(15, 11) };
 const eval MOBILITY_BONUS_BISHOP[] = { eval(-17, -16), eval(-9, -8), eval(2, 0), eval(7, 5), eval(11, 10), eval(16, 14), eval(20, 18), eval(23, 21), eval(24, 23),
 eval(26, 24), eval(27, 25), eval(27, 26), eval(28, 26), eval(29, 27) };
@@ -36,6 +35,7 @@ const eval MOBILITY_BONUS_QUEEN[] = { eval(-14, -13), eval(-9, -8), eval(-2, -2)
 eval(7, 14), eval(7, 14), eval(7, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14),
 eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14) };
 
+//King safety parameters
 const int KING_SAFETY_MAXVAL = 500;
 const int KING_SAFETY_MAXINDEX = 61;
 const double KING_SAFETY_LINEAR = 0.5;
@@ -77,7 +77,7 @@ const eval ROOK_ON_7TH(20, 0);
 const Value BONUS_KNIGHT_OUTPOST = Value(5);
 const Value BONUS_BISHOP_OUTPOST = Value(0);
 
-//extern Value PASSED_PAWN_BONUS[4];
+//Parameters for Pawn Structure Evaluation
 const eval PASSED_PAWN_BONUS[6] = { eval(0), eval(0), eval(30), eval(37), eval(77), eval(140) };
 const eval BONUS_PROTECTED_PASSED_PAWN[6] = { eval(0), eval(0), eval(0), eval(30), eval(30), eval(30) };
 const eval MALUS_ISOLATED_PAWN = eval(25);

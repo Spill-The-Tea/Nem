@@ -7,6 +7,10 @@
   this code to other chess engines.
 */
 
+/*
+The probing code version here is copied from Stockfish and then adapted
+*/
+
 #define NOMINMAX
 
 #include <algorithm>

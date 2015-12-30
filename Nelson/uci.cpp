@@ -39,7 +39,13 @@ void quit();
 void stop();
 void thinkAsync();
 void ponderhit();
-void eval();
+
+static void copySettings(baseSearch * source, baseSearch * destination) {
+	destination->UciOutput = source->UciOutput;
+	destination->BookFile = source->BookFile;
+	destination->PonderMode.store(source->PonderMode.load());
+	destination->PrintCurrmove = source->PrintCurrmove;
+}
 
 std::vector<std::string> split(std::string str) {
 	std::vector<std::string> tokens;
@@ -169,12 +175,16 @@ void setoption(std::vector<std::string> &tokens) {
 	else if (!tokens[2].compare("Threads")) {
 		HelperThreads = stoi(tokens[4]) - 1;
 		if (HelperThreads && Engine->GetType() == SINGLE) {
+			baseSearch * newEngine = new search < MASTER >;
+			copySettings(Engine, newEngine);
 			delete Engine;
-			Engine = new search < MASTER >;
+			Engine = newEngine;
 		}
 		else if (!HelperThreads && Engine->GetType() == MASTER) {
+			baseSearch * newEngine = new search < SINGLE >;
+			copySettings(Engine, newEngine);
 			delete Engine;
-			Engine = new search < SINGLE >;
+			Engine = newEngine;
 		}
 	}
 	else if (!tokens[2].compare("MultiPV")) {

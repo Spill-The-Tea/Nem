@@ -348,7 +348,7 @@ end:
 	return move;
 }
 
-//Insertion Sort
+//Insertion Sort (copied from SF)
 void position::insertionSort(ValuatedMove* first, ValuatedMove* last)
 {
 	ValuatedMove tmp, *p, *q;
@@ -438,7 +438,7 @@ Move position::getBestMove(int startIndex) {
 			bestmove = moves[startIndex];
 		}
 	}
-	return moves[startIndex].score > minMoveValue ? moves[startIndex].move : MOVE_NONE;
+	return moves[startIndex].score > -VALUE_MATE ? moves[startIndex].move : MOVE_NONE;
 }
 
 template<bool SquareIsEmpty> void position::set(const Piece piece, const Square square) {
@@ -543,23 +543,6 @@ Bitboard position::checkBlocker(Color colorOfBlocker, Color kingColor) {
 	return result;
 }
 
-//Calculates the pinned Pieces as needed for move generation
-//void position::calculatePinned() {
-//	pinned = pinner = EMPTY;
-//	Square kingSquare = lsb(PieceBB(KING, SideToMove));
-//	Bitboard potentialPinner = (PieceBB(ROOK, Color(SideToMove ^ 1)) | PieceBB(QUEEN, Color(SideToMove ^ 1))) & SlidingAttacksRookTo[kingSquare];
-//	potentialPinner |= (PieceBB(BISHOP, Color(SideToMove ^ 1)) | PieceBB(QUEEN, Color(SideToMove ^ 1))) & SlidingAttacksBishopTo[kingSquare];
-//	while (potentialPinner) {
-//		Square pinnersSquare = lsb(potentialPinner);
-//		Bitboard potentiallyPinned = InBetweenFields[pinnersSquare][kingSquare];
-//		if ((potentiallyPinned & ColorBB(SideToMove)) && popcount(potentiallyPinned) == 1) {
-//			pinned |= potentiallyPinned;
-//			pinner |= ToBitboard(pinnersSquare);
-//		}
-//		potentialPinner &= potentialPinner - 1;
-//	}
-//}
-
 const Bitboard position::considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from) const
 {
 	if ((fromSet & (SlidingAttacksRookTo[to] | SlidingAttacksBishopTo[to])) == 0) return 0;
@@ -640,7 +623,7 @@ const Bitboard position::getSquareOfLeastValuablePiece(const Bitboard attadef, c
 	return subset & (0 - subset);
 }
 
-//SEE with early return if SEE value can't be negative
+//SEE method, which returns without exact value, when it's sure that value is positive (then VALUE_KNOWN_WIN is returned)
 Value position::SEE_Sign(Move move) const {
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
@@ -1027,7 +1010,7 @@ bool position::checkRepetition() {
 	return false;
 }
 
-//Hashmove isn't really reliable => therefore check is hashmove is a valid move
+//Hashmoves, countermoves, ... aren't really reliable => therefore check if it is a valid move
 bool position::validateMove(Move move) {
 	Square fromSquare = from(move);
 	Piece movingPiece = Board[fromSquare];
@@ -1065,30 +1048,7 @@ bool position::validateMove(Move move) {
 		else result = false;
 	}
 	return result;
-#ifdef _DEBUG
-	//	position checkPos(*this);
-	//	checkPos.movepointer = 0;
-	//	checkPos.attackedByThem = attackedByThem;
-	//	checkPos.attackedByUs = attackedByUs;
-	//	memcpy(checkPos.attacks, attacks, 64 * sizeof(Bitboard));
-	//	ValuatedMove * moves = checkPos.GenerateMoves<ALL>();
-	//	Move cmove = MOVE_NONE;
-	//	bool found = false;
-	//	while (cmove = moves->move) {
-	//		if (cmove == move) {
-	//			if (!result) __debugbreak();
-	//			found = true;
-	//			break;
-	//		}
-	//
-	//		moves++;
-	//	}
-	//
-	//	if (result && !found)
-	//		__debugbreak();
-#endif
-	return result;
-	}
+}
 
 bool position::validateMove(ExtendedMove move) {
 	Square fromSquare = from(move.move);

@@ -13,137 +13,222 @@ HASHMOVE, CHECK_EVASION, UNDERPROMOTION, NONE, //Check Evasion
 HASHMOVE, NON_LOOSING_CAPTURES, LOOSING_CAPTURES, QUIET_CHECKS, UNDERPROMOTION, NONE, //QSearch with Checks
 REPEAT_ALL, NONE,
 ALL, NONE };
-const int generationPhaseOffset[] = { 0, 8, 12, 16, 22, 24 };
 
+//Indexed by StagedMoveGenerationType
+const int generationPhaseOffset[] = { 0, //Main Search
+                                      8, //QSearch
+	                                 12, //Check Evasion
+	                                 16, //QSearch with Checks
+	                                 22, //Repeat
+	                                 24  //All moves
+                                   };
+/* Represents a chess position and provides information about lots of characteristics of this position
+   The position is represented by 8 Bitboards (2 for squares occupied by color, and 6 for each piece type)
+   Further there is a redundant 64 byte array for fast lookup which piece is on a given square
+   Each position contains a pointer to the previous position, which is created when copying the position
+   Applying a move is done by first copying the position and then calling ApplyMove
+*/
 struct position
 {
 public:
+	//Creates the starting position 
 	position();
+	//Creates a position based on the given FEN string
 	explicit position(std::string fen);
+	/*Creates a copy of a position.
+	  ATTENTION: Only parts of the position are copied. To have a full copy a further call to copy() method is needed
+	*/
 	position(position &pos);
 	~position();
 
+	//Moves already played within a game before searched position is reached
 	static int AppliedMovesBeforeRoot;
-
+	//Access methods to the positions bitboards
 	Bitboard PieceBB(const PieceType pt, const Color c) const;
 	Bitboard ColorBB(const Color c) const;
 	Bitboard ColorBB(const int c) const;
 	Bitboard PieceTypeBB(const PieceType pt) const;
 	Bitboard OccupiedBB() const;
+	//returns a bitboard of all non-pawn and non-King pieces of given Color
 	Bitboard NonPawnMaterial(const Color c) const;
+	//debug helpers
 	std::string print();
 	std::string printGeneratedMoves();
+	//returns current position as FEN string
 	std::string fen() const;
+	//initializes the position from given FEN string
 	void setFromFEN(const std::string& fen);
-	bool ApplyMove(Move move); //Applies a pseudo-legal move and returns true if move is legal
-	static inline position UndoMove(position &pos) { return *pos.previous; }
+	//Applies a pseudo-legal move and returns true if move is legal
+	bool ApplyMove(Move move); 
+	//"Undo move" by returning pointer to previous position
 	inline position * Previous() { return previous; }
+	//Generate moves and store it in moves array
 	template<MoveGenerationType MGT> ValuatedMove * GenerateMoves();
+	//returns Zobrist Hash key of position
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
+	/* The position struct provides staged move generation. To make use of it the staged move generation has to be initialized first by calling InitializeMoveIterator.
+	   Then every call to NextMove() will return the next move until MOVE_NONE is returned */
+	//Initialize staged move generation, by providing the necessary information for move ordering
 	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryManager *history, CounterMoveHistoryManager *counterMoveHistory, ExtendedMove * killerMove, Move counter, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE);
+	//Get next move. If MOVE_NONE is returned end of move list is reached
 	Move NextMove();
+	//SEE (Static Exchange Evaluation): The implementation is copied from Chess Programming Wiki (https://chessprogramming.wikispaces.com/SEE+-+The+Swap+Algorithm)
 	const Value SEE(Square from, const Square to) const;
 	const Value SEE(Move move) const;
+	//SEE method, which returns without exact value, when it's sure that value is positive (then VALUE_KNOWN_WIN is returned)
 	Value SEE_Sign(Move move) const;
+	//returns true if SideTo Move is in check. Must not be called when it's unclear whether opponent's attack map is already determined
 	inline bool IsCheck() const { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
+	//returns true if SideTo Move is in check. This method can safely called anytime
 	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
-	friend evaluation evaluate(position& pos);
+	//Static evaluation function for unusual material (no pre-calculated material values available in Material Table)
 	friend evaluation evaluateFromScratch(position &pos);
+	//Calls the static evaluation function (it will call the evaluation even, if the StaticEval value is already different from VALUE_NOTYETEVALUATED)
 	inline Value evaluate();
+	//Just for debugging
 	std::string printEvaluation();
+	//Evaluates final positions
 	inline Value evaluateFinalPosition();
 	inline int GeneratedMoveCount() const { return movepointer - 1; }
+	//Returns the number of plies applied from the root position of the search
 	inline int GetPliesFromRoot() const { return pliesFromRoot; }
 	inline Color GetSideToMove() const { return SideToMove; }
 	inline Piece GetPieceOnSquare(Square square) const { return Board[square]; }
 	inline Square GetEPSquare() const { return EPSquare; }
-	inline MoveGenerationType GetMoveGenerationType() const { return generationPhases[generationPhase]; }
+	//gives access to the moves of the currently processed stage
 	inline ValuatedMove * GetMovesOfCurrentPhase() { return &moves[phaseStartIndex]; }
+	//Within staged move generation this method returns the index of the current move within the current stage. This is needed for
+	//updating the history table
 	inline int GetMoveNumberInPhase() const { return moveIterationPointer; }
 	inline Value GetMaterialScore() const { return material->Score; }
 	inline MaterialTableEntry * GetMaterialTableEntry() const { return material; }
 	inline pawn::Entry * GetPawnEntry() const { return pawn; }
 	inline void InitMaterialPointer() { material = &MaterialTable[MaterialKey]; }
 	inline eval PawnStructureScore() const { return pawn->Score; }
+	//checks if the position is final and returns the result
 	Result GetResult();
+	//for xboard protocol support it's helpful, to not only know that a position is a DRAW but also why it's a draw. Therefore this additional
+	//method will return a more detailed result value
 	DetailedResult GetDetailedResult();
+	//returns a bitboard indicating the squares attacked by the piece on the given square 
 	inline Bitboard GetAttacksFrom(Square square) const { return attacks[square]; }
 	inline void SetPrevious(position &pos) { previous = &pos; }
 	inline void SetPrevious(position *pos) { previous = pos; }
+	//Should be called before search starts
 	inline void ResetPliesFromRoot() { pliesFromRoot = 0; }
 	inline Bitboard AttacksByPieceType(Color color, PieceType pieceType) const;
 	inline Bitboard AttacksByColor(Color color) const { return (SideToMove == color) * attackedByUs + (SideToMove != color) * attackedByThem; }
 	inline Bitboard AttackedByThem() const { return attackedByThem; }
+	//checks if the position is already repeated (if one of the ancestors has the same zobrist hash). This is no check for 3-fold repetition!
 	bool checkRepetition();
 	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
 	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount; }
+	//applies a null move to the given position (there is no copy/make for null move), the EPSquare is the only information which has to be restored afterwards
 	void NullMove(Square epsquare = OUTSIDE);
+	//delete all ancestors of the current positions and frees the assigned memory
 	void deleteParents();
+	//returns the last move applied, which lead to this position
 	inline Move GetLastAppliedMove() { return lastAppliedMove; }
+	//get's the piece, which moved in the last applied move
 	inline Piece GetPreviousMovingPiece() { if (previous) return previous->GetPieceOnSquare(to(lastAppliedMove)); else return BLANK; }
+	//returns the piece, which has been captured by the last applied move
 	inline Piece getCapturedInLastMove() { return capturedInLastMove; }
+	//checks if a move is quiet (move is neither capture, nor promotion)
 	inline bool IsQuiet(const Move move) const { return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING); }
+	//checks if a move is quiet and not a castling move (used in search for pruning decisions)
 	inline bool IsQuietAndNoCastles(const Move move) const { return type(move) == NORMAL && Board[to(move)] == BLANK; }
+	//checks if a move is a tactical (cpture or promotion) move
 	inline bool IsTactical(const ValuatedMove& move) const { return Board[to(move.move)] != BLANK || type(move.move) == ENPASSANT || type(move.move) == PROMOTION; }
+	//checks if a move is a winning capture (winning here includes equal captures and promotions, NxB and BxN are included as well) - Currently not used!
 	inline bool IsWinningCapture(const ValuatedMove& move) const;
+	//returns the current value of StaticEval - doesn't check if evaluate has been executed
 	inline Value GetStaticEval() { return StaticEval; }
 	inline PieceType GetMostValuablePieceType(Color col) const;
 	inline PieceType GetMostValuableAttackedPieceType() const;
 	inline bool PawnOn7thRank() { return (PieceBB(PAWN, SideToMove) & RANKS[6 - 5 * SideToMove]) != 0; } //Side to Move has pawn on 7th Rank
+	/*Make a full copy of the current position. To get a full copy first the copy constructor has to be called and then method copy has to be called:
+		position copiedPosition(pos);
+		copiedPosition.copy(pos);
+	  This method should always be used when a copy is neede without applying a move */
 	void copy(const position &pos);
 	inline bool CastlingAllowed(CastleFlag castling) const { return (CastlingOptions & castling) != 0; }
 	inline CastleFlag GetCastlesForColor(Color color) const { return color == WHITE ? CastleFlag(CastlingOptions & (W0_0 | W0_0_0)) : CastleFlag(CastlingOptions & (B0_0 | B0_0_0)); }
+	//creates the SAN (standard algebraic notation) representation of a move
 	std::string toSan(Move move);
+	//parses a move in SAN notation
 	Move parseSan(std::string move);
-	inline bool IsAdvancedPawnMove(Move move) const { Square toSquare = to(move); return GetPieceType(Board[toSquare]) == PAWN && ((toSquare >> 5) & GetSideToMove()) == 0; };
 	Move GetCounterMove(Move * counterMoves);
 	inline bool Improved() { return previous == nullptr || previous->previous == nullptr || StaticEval >= previous->previous->StaticEval; }
+	//During staged move generation first only queen promotions are generated. When all other moves are generated and processed under promotions will be added
 	void AddUnderPromotions();
 	inline ValuatedMove * GetMoves(int & moveCount) { moveCount = movepointer - 1; return moves; }
 	inline void ResetMoveGeneration() { movepointer = 0; moves[0].move = MOVE_NONE; moves[0].score = VALUE_NOTYETDETERMINED; }
+	//Some moves (like moves from transposition tables) have to be validated (checked for legality) before being applied
 	bool validateMove(Move move);
+	//For pruning decisions it's necessary to identify whether or not all special movee (like killer,..) are already returned
+	inline bool QuietMoveGenerationPhaseStarted() const { return generationPhases[generationPhase] >= QUIETS_POSITIVE; }
 private:
+	//These are the members, which are copied by the copied constructor and contain the full information
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
+	//Zobrist hash hey
 	uint64_t Hash = ZobristMoveColor;
+	//Material table key
 	MaterialKey_t MaterialKey;
+	//Pawn hash key
 	PawnKey_t PawnKey;
 	Square EPSquare;
+	//Castling Options (see enum in types.h)
 	unsigned char CastlingOptions;
 	unsigned char DrawPlyCount;
 	Color SideToMove;
 	int pliesFromRoot;
 	Piece Board[64];
 
+	//Pointer to the previous position
 	position * previous = nullptr;
+
+	//These members are only calculated when needed
+	//Pointer to the relevant entry in the Material table
 	MaterialTableEntry * material;
+	//Pointer to the relevant entry in the pawn hash table
 	pawn::Entry * pawn;
+	//array to store the generated moves
 	ValuatedMove moves[MAX_MOVE_COUNT];
+	//number of generated moves in moves array
 	int movepointer = 0;
+	//Attack array - index is Square number, value is a bitboard indicating all squares attacked by a piece on that square
 	Bitboard attacks[64];
+	//Attack bitboard containing all squares attacked by the side not to move
 	Bitboard attackedByThem;
+	//Attack bitboard containing all squares attacked by the side to move
 	Bitboard attackedByUs;
+	//Attack bitboard containing all attacks by a certain Piece Type
 	Bitboard attacksByPt[12];
+	//indices needed to manage staged move generation
 	int moveIterationPointer;
 	int phaseStartIndex;
 	int generationPhase;
-	Move hashMove = MOVE_NONE;
+	//Result of position (value will be OPEN unless position is final)
 	Result result = RESULT_UNKNOWN;
+	//Static evaluation of position
 	Value StaticEval = VALUE_NOTYETDETERMINED;
+	//Information needed for move ordering during staged move generation
+	Move hashMove = MOVE_NONE;
 	ExtendedMove *killer;
 	Move lastAppliedMove = MOVE_NONE;
 	Piece capturedInLastMove = BLANK;
-	ValuatedMove * firstNegative;
 	HistoryManager * history;
 	CounterMoveHistoryManager * cmHistory;
 	Move counterMove = MOVE_NONE;
-	Value minMoveValue = -VALUE_MATE;
+	ValuatedMove * firstNegative;
 	bool canPromote = false;
-
+	//Place a piece on Squarre square and update bitboards and Hash key
 	template<bool SquareIsEmpty> void set(const Piece piece, const Square square);
 	void remove(const Square square);
+
 	inline void AddCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions]; CastlingOptions |= castleFlag; Hash ^= ZobristCastles[CastlingOptions]; }
 	inline void RemoveCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions]; CastlingOptions &= ~castleFlag; Hash ^= ZobristCastles[CastlingOptions]; }
 	inline void SetEPSquare(const Square square) {
@@ -161,33 +246,48 @@ private:
 		}
 	}
 	inline int PawnStep() const { return 8 - 16 * SideToMove; }
+	//Add a move to the move list and increment movepointer
 	inline void AddMove(Move move) {
 		moves[movepointer].move = move;
 		moves[movepointer].score = VALUE_NOTYETDETERMINED;
 		++movepointer;
 	}
+	//Adds MOVE_NONE at the end of the move list
 	inline void AddNullMove() { moves[movepointer].move = MOVE_NONE; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
-	//inline void AddMove(Move move, Value score) { moves[movepointer].move = move; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
+	//Updates Castle Flags after a move from fromSquare to toSquare has been applied
 	void updateCastleFlags(Square fromSquare, Square toSquare);
+	//Calculates the attack bitboards for all pieces of one side
 	Bitboard calculateAttacks(Color color);
+	//Calculates Bitboards of pieces blocking a check. If colorOfBlocker = kingColor, these are the pinned pieces, else these are candidates for discovered checks
 	Bitboard checkBlocker(Color colorOfBlocker, Color kingColor);
+	//Calculates the material key of this position
 	MaterialKey_t calculateMaterialKey();
+	//Calculates the Pawn Key of this position
 	PawnKey_t calculatePawnKey();
+	//different move evaluation methods (used for move ordering):
 	void evaluateByCaptureScore(int startIndex = 0);
 	void evaluateByMVVLVA(int startIndex = 0);
 	void evaluateBySEE(int startIndex);
 	void evaluateCheckEvasions(int startIndex);
 	void evaluateByHistory(int startIndex);
+	//Get's the best evaluated move from the move list starting at start Index
 	Move getBestMove(int startIndex);
 	void insertionSort(ValuatedMove* begin, ValuatedMove* end);
+	//SEE helper methods copied from Chess Programming Wiki
 	const Bitboard considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from) const;
+	const Bitboard getSquareOfLeastValuablePiece(const Bitboard attadef, const int side) const;
+	//return a bitboard of squares with pieces attacking the targetField
 	const Bitboard AttacksOfField(const Square targetField) const;
 	const Bitboard AttacksOfField(const Square targetField, const Color attackingSide) const;
-	const Bitboard getSquareOfLeastValuablePiece(const Bitboard attadef, const int side) const;
+	//Checks is a oseudo-legal move is valid
 	inline bool isValid(Move move) { position next(*this); return next.ApplyMove(move); }
+	//Checks if a move (e.g. from killer move list) is a valid move
 	bool validateMove(ExtendedMove move);
+	//Checks if at least one valid move exists - ATTENTION must not be called on a newly initialized position where attackedByThem isn't calculated yet!!
 	template<bool CHECKED> bool CheckValidMoveExists();
+	//Checks for unusual Material (this means one side has more than one Queen or more than 2 rooks, knights or bishop)
 	bool checkMaterialIsUnusual();
+	//Returns a bitboard indicating all squares where a piece can move to, because it's either not attacked by the opponent or protected and not attacked by less valued pieces
 	const Bitboard safeSquaresForPiece(Piece piece) const;
 };
 
@@ -249,11 +349,11 @@ inline Value position::evaluateFinalPosition() {
 template<bool CHECKED> bool position::CheckValidMoveExists() {
 	assert(attackedByThem); //should have been already calculated
 	//Start with king (Castling need not be considered - as there is always another legal move available with castling
-	//In Chess960 this might be different
+	//In Chess960 this might be different)
 	Square kingSquare = lsb(PieceBB(KING, SideToMove));
 	Bitboard kingTargets = KingAttacks[kingSquare] & ~OccupiedByColor[SideToMove] & ~attackedByThem;
 	if (CHECKED && kingTargets) {
-		if (popcount(kingTargets) > 2) return true; //unfortunately 8/5p2/5kp1/8/4p3/R4n2/1r3K2/4q3 w - - shows that king can even block 2 sliders
+		if (popcount(kingTargets) > 2) return true; //unfortunately 8/5p2/5kp1/8/4p3/R4n2/1r3K2/4q3 w - - shows that king itself can even block 2 sliders
 		else {
 			//unfortunately king could be "blocker" e.g. in 8/8/1R2k3/K7/8/8/8/8 w square f6 is not attacked by white
 			//however if king moves to f6 it's still check
@@ -589,17 +689,6 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				}
 				sliders &= sliders - 1;
 			}
-			////Bishopsliders
-			//Bitboard bishopSliders = PieceBB(QUEEN, SideToMove) | PieceBB(BISHOP, SideToMove);
-			//while (bishopSliders) {
-			//	Square from = lsb(bishopSliders);
-			//	Bitboard bishopTargets = attacks[from] & targets;
-			//	while (bishopTargets) {
-			//		AddMove(createMove(from, lsb(bishopTargets)));
-			//		bishopTargets &= bishopTargets - 1;
-			//	}
-			//	bishopSliders &= bishopSliders - 1;
-			//}
 			//Knights
 			Bitboard knights = PieceBB(KNIGHT, SideToMove);
 			while (knights) {
@@ -629,9 +718,6 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 					while (pawnTargets) {
 						Square to = lsb(pawnTargets);
 						AddMove(createMove<PROMOTION>(from, to, QUEEN));
-						//AddMove(createMove<PROMOTION>(from, to, ROOK));
-						//AddMove(createMove<PROMOTION>(from, to, BISHOP));
-						//AddMove(createMove<PROMOTION>(from, to, KNIGHT));
 						canPromote = true;
 						pawnTargets &= pawnTargets - 1;
 					}
@@ -685,9 +771,6 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 					Square to = lsb(promotionTarget);
 					Square from = Square(to - PawnStep());
 					AddMove(createMove<PROMOTION>(from, to, QUEEN));
-					//AddMove(createMove<PROMOTION>(from, to, ROOK));
-					//AddMove(createMove<PROMOTION>(from, to, BISHOP));
-					//AddMove(createMove<PROMOTION>(from, to, KNIGHT));
 					canPromote = true;
 					promotionTarget &= promotionTarget - 1;
 				}
@@ -792,9 +875,6 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				while (pawnTargets) {
 					Square to = lsb(pawnTargets);
 					AddMove(createMove<PROMOTION>(from, to, QUEEN));
-					//AddMove(createMove<PROMOTION>(from, to, ROOK));
-					//AddMove(createMove<PROMOTION>(from, to, BISHOP));
-					//AddMove(createMove<PROMOTION>(from, to, KNIGHT));
 					canPromote = true;
 					pawnTargets &= pawnTargets - 1;
 				}
@@ -834,9 +914,6 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				while (pawnTargets) {
 					Square to = lsb(pawnTargets);
 					AddMove(createMove<PROMOTION>(from, to, QUEEN));
-					//AddMove(createMove<PROMOTION>(from, to, ROOK));
-					//AddMove(createMove<PROMOTION>(from, to, BISHOP));
-					//AddMove(createMove<PROMOTION>(from, to, KNIGHT));
 					canPromote = true;
 					pawnTargets &= pawnTargets - 1;
 				}
@@ -857,9 +934,6 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				Square to = lsb(promotionTarget);
 				Square from = Square(to - PawnStep());
 				AddMove(createMove<PROMOTION>(from, to, QUEEN));
-				//AddMove(createMove<PROMOTION>(from, to, ROOK));
-				//AddMove(createMove<PROMOTION>(from, to, BISHOP));
-				//AddMove(createMove<PROMOTION>(from, to, KNIGHT));
 				canPromote = true;
 				promotionTarget &= promotionTarget - 1;
 			}

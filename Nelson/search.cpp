@@ -46,6 +46,7 @@ std::string baseSearch::PrincipalVariation(position & pos, int depth) {
 	std::stringstream ss;
 	int i = 0;
 	ponderMove = MOVE_NONE;
+	//First get PV from PV array...
 	for (; i < depth && i < PV_MAX_LENGTH; ++i) {
 		if (PVMoves[i] == MOVE_NONE || !pos.validateMove(PVMoves[i])) break;
 		position next(pos);
@@ -55,6 +56,7 @@ std::string baseSearch::PrincipalVariation(position & pos, int depth) {
 		ss << toString(PVMoves[i]);
 		if (i == 1) ponderMove = PVMoves[i];
 	}
+	//...then continue with moves from transposition table
 	for (; i < depth; ++i) {
 		Move hashmove = HelperThreads == 0 ? tt::hashmove<tt::UNSAFE>(pos.GetHash()) : tt::hashmove<tt::THREAD_SAFE>(pos.GetHash());
 		if (hashmove == MOVE_NONE || !pos.validateMove(hashmove)) break;
@@ -68,6 +70,7 @@ std::string baseSearch::PrincipalVariation(position & pos, int depth) {
 	return ss.str();
 }
 
+//Creates the "thinking output" while running in UCI or XBoard mode
 void baseSearch::info(position &pos, int pvIndx, SearchResultType srt) {
 	if ((UciOutput || XBoardOutput)) {
 		position npos(pos);
@@ -94,6 +97,7 @@ void baseSearch::info(position &pos, int pvIndx, SearchResultType srt) {
 			}
 		}
 		else if (XBoardOutput) {
+			if (_depth < 5) return;
 			const char srtChar[3] = { ' ', '?', '!' };
 			int xscore = BestMove.score;
 			if (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD)) {
@@ -106,11 +110,11 @@ void baseSearch::info(position &pos, int pvIndx, SearchResultType srt) {
 					xscore = -100000 - pliesToMate;
 				}
 			}
-			sync_cout << _depth << " " << xscore << " " << _thinkTime << " " << NodeCount << " " << MaxDepth << " " << (NodeCount / _thinkTime) * 1000
+			sync_cout << _depth << " " << xscore << " " << _thinkTime / 10 << " " << NodeCount << " " /*<< MaxDepth << " " << (NodeCount / _thinkTime) * 1000
 #ifdef TB
 				<< " " << tbHits
 #endif
-				<< "\t" << PrincipalVariation(npos, _depth)  << srtChar[srt] << sync_endl;
+				<< "\t"*/ << PrincipalVariation(npos, _depth)  << srtChar[srt] << sync_endl;
 		}
 	}
 }
