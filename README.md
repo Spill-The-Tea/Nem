@@ -44,3 +44,16 @@ It has been developed and tested on windows. The linux compile has only been smo
 
 I wrote this engine because I wanted to understand, how a chess engine is working. And the best way to learn is to write an engine from scratch by yourself. I first started with C#, but after some time I got the ambition to learn C++.
 Therefore don't expect a lot of new ideas within my code, and neither expect clean and well-structured code. Instead you will find a unique combination all those ideas explained in the [Chess Programming Wiki](https://chessprogramming.wikispaces.com).
+
+### Acknowledgements ###
+
+These are my sources of information I used for my engine:
+
+* My main source of information: [Chess Programming Wiki](https://chessprogramming.wikispaces.com)
+* [Computer Chess Club Forums](http://talkchess.com/forum/index.php)
+* The code of several Open Source Chess Engines:
+    * Mainly [Stockfish](http://stockfishchess.org/) I copied board and move representation and some lines of code from Stockfish (marked with comments)
+    * [Hakkapeliitta](https://github.com/mAarnos/Hakkapeliitta) 
+    * [Lozza](http://op12no2.me/toys/lozza/)
+    * [Senpai](http://www.chessprogramming.net/senpai/)
+* The blogs of [Steve Maughan](http://www.chessprogramming.net/)
