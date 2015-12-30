@@ -51,9 +51,9 @@ These are my sources of information I used for my engine:
 
 * My main source of information: [Chess Programming Wiki](https://chessprogramming.wikispaces.com)
 * [Computer Chess Club Forums](http://talkchess.com/forum/index.php)
-* The code of several Open Source Chess Engines:
-    * Mainly [Stockfish](http://stockfishchess.org/) I copied board and move representation and some lines of code from Stockfish (marked with comments)
+* The code of several Open Source Chess Engines, mainly:
+    * [Stockfish](http://stockfishchess.org/) - I copied board and move representation and some lines of code from Stockfish (marked by source code comments)
     * [Hakkapeliitta](https://github.com/mAarnos/Hakkapeliitta) 
     * [Lozza](http://op12no2.me/toys/lozza/)
     * [Senpai](http://www.chessprogramming.net/senpai/)
-* The blogs of [Steve Maughan](http://www.chessprogramming.net/)
+* The blogs of [Steve Maughan](http://www.chessprogramming.net/), [Thomas Petzke](http://macechess.blogspot.de/) and [Jonatan Pettersson](http://mediocrechess.blogspot.de/)
