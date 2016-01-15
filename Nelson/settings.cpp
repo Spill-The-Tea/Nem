@@ -7,6 +7,7 @@ bool USE_BOOK = false;
 int HelperThreads = 0;
 Value Contempt = VALUE_ZERO;
 Color EngineSide = WHITE;
+Protocol protocol = NO_PROTOCOL;
 
 #ifdef TB
   std::string SYZYGY_PATH = "";

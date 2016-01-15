@@ -44,6 +44,8 @@ void baseSearch::NewGame() {
 
 std::string baseSearch::PrincipalVariation(position & pos, int depth) {
 	std::stringstream ss;
+	//When pondering start PV with ponder move 
+	if (PonderMode.load() && pos.GetLastAppliedMove() != MOVE_NONE) ss << toString(pos.GetLastAppliedMove()) << " ";
 	int i = 0;
 	ponderMove = MOVE_NONE;
 	//First get PV from PV array...
@@ -116,6 +118,19 @@ void baseSearch::info(position &pos, int pvIndx, SearchResultType srt) {
 #endif
 				<< "\t"*/ << PrincipalVariation(npos, _depth)  << srtChar[srt] << sync_endl;
 		}
+	}
+}
+
+void baseSearch::debugInfo(std::string info)
+{
+	if (UciOutput) {
+		sync_cout << "info string " << info << sync_endl;
+	}
+	else if (XBoardOutput) {
+		sync_cout << "# " << info << sync_endl;
+	} else
+	{
+		sync_cout << info << sync_endl;
 	}
 }
 

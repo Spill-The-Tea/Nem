@@ -169,6 +169,8 @@ public:
 	bool validateMove(Move move);
 	//For pruning decisions it's necessary to identify whether or not all special movee (like killer,..) are already returned
 	inline bool QuietMoveGenerationPhaseStarted() const { return generationPhases[generationPhase] >= QUIETS_POSITIVE; }
+	//Validate a move and return it if validated, else return another valid move
+	Move validMove(Move proposedMove);
 private:
 	//These are the members, which are copied by the copied constructor and contain the full information
 	Bitboard OccupiedByColor[2];

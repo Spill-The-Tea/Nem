@@ -1050,6 +1050,16 @@ bool position::validateMove(Move move) {
 	return result;
 }
 
+Move position::validMove(Move proposedMove)
+{
+	ValuatedMove * moves = GenerateMoves<LEGAL>();
+	int movecount = GeneratedMoveCount();
+	for (int i = 0; i < movecount; ++i) {
+		if (moves[i].move == proposedMove) return proposedMove;
+	}
+	return movecount > 0 ? moves[0].move : MOVE_NONE;
+}
+
 bool position::validateMove(ExtendedMove move) {
 	Square fromSquare = from(move.move);
 	return Board[fromSquare] == move.piece && validateMove(move.move);

@@ -8,6 +8,7 @@ extern bool USE_BOOK;         //Use opening book
 extern int HelperThreads;     //Number of slave threads
 extern Value Contempt;        //Only accept draws, when evaluation is less then -Contempt
 extern Color EngineSide;      //Side played by the engine
+extern Protocol protocol;
 
 #ifdef TB
 extern std::string SYZYGY_PATH;

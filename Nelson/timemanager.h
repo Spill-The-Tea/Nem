@@ -35,25 +35,25 @@ enum TimeMode  { UNDEF,                   //Not yet defined
 		/* Timemanager initialization with full information
 		Initialization is done before every move
 		*/
-		void initialize(TimeMode mode, int movetime = 0, int depth = MAX_DEPTH, int64_t nodes = INT64_MAX, int time = 0, int inc = 0, int movestogo = 0, int64_t starttime = now(), bool ponder = false);
+		void initialize(TimeMode mode, int movetime = 0, int depth = MAX_DEPTH, int64_t nodes = INT64_MAX, int time = 0, int inc = 0, int movestogo = 0, time_t starttime = now(), bool ponder = false);
 		//Checks whether Search has to be exited even within an iteration
-		inline bool ExitSearch(int64_t nodes = 0, int64_t tnow = now()) const { return tnow >= _hardStopTime || nodes >= _maxNodes; }
+		inline bool ExitSearch(int64_t nodes = 0, time_t tnow = now()) const { return tnow >= _hardStopTime || nodes >= _maxNodes; }
 		//Checks whether a new iteration at next higher depth shall be started
-		bool ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_t nodecount, int64_t tnow = now(), bool ponderMode = false);
+		bool ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_t nodecount, time_t tnow = now(), bool ponderMode = false);
 		//returns the effective branching factor, which is based on the node counts needed for the different depths
 		double GetEBF(int depth = MAX_DEPTH) const;
 		//Informs the timemanager that a ponderhit has occured. The timemanager will then adjust the assigned time for the move
 		void PonderHit();
 		//returns the time when the current search started
-		inline int64_t GetStartTime() const { return _starttime; }
+		inline time_t GetStartTime() const { return _starttime; }
 		//Returns the depth at which search will be stopped
 		inline int GetMaxDepth() const { return _maxDepth; }
 		//Informs the timemanager that a fail low at root has happened - timemanager will assign more time
-		inline void reportFailLow() { _failLow = true; }
+		inline void reportFailLow() { _failLowDepth = _completedDepth + 1; }
 		//Utility method: returns a string, with the current time values to store it in a log
 		std::string print();
 		//Updating available time when pondering (only relevant for xboard mode when pondering, where the GUI sends a time update when the opponent moves)
-		void updateTime(int64_t time);
+		void updateTime(time_t time);
 		//In xboard pprotocol it's possible, that engine can be switched to analysis mode while thinking. When this method is called timemanager switches to 
 		//mode=INFINIT
 		void switchToInfinite();
@@ -65,24 +65,26 @@ enum TimeMode  { UNDEF,                   //Not yet defined
 		int _time;
 		int _inc;
 		int _movestogo;
-		int64_t _starttime = 0;
+		time_t _starttime = 0;
 		int _maxDepth = MAX_DEPTH;
-		int64_t _maxNodes = INT64_MAX;
+		time_t _maxNodes = INT64_MAX;
+		int _completedDepth = 0;
+		time_t _completionTimeOfLastIteration = 0;
 
 		//The time when search has to be aborted to avoid time loss
 		std::atomic<long long> _hardStopTime;
 		//The time where the assigned time for the move is expired
 		std::atomic<long long> _stopTime;
 
-		int64_t _hardStopTimeSave = INT64_MAX;
-		int64_t _stopTimeSave = INT64_MAX;
-		bool _failLow = false;
+		time_t _hardStopTimeSave = INT64_MAX;
+		time_t _stopTimeSave = INT64_MAX;
+		int _failLowDepth = 0;
 
 		/*To decide whether or not a new iteration shall be started, the timemanager tries stores the best moves from already finished iterations to check if
 		  the search is stable or not. Further it collects the times and nodecounts allowing to predict the time needed for next iteration (currently these 
 		  information isn't used). 
 		*/
-		int64_t _iterationTimes[MAX_DEPTH];
+		time_t _iterationTimes[MAX_DEPTH];
 		ValuatedMove _bestMoves[MAX_DEPTH];
 		int64_t _nodeCounts[MAX_DEPTH];
 

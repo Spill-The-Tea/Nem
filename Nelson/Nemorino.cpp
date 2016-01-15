@@ -38,10 +38,12 @@ int main(int argc, const char* argv[]) {
 	if (argc <= 1) {
 		std::getline(std::cin, input);
 		if (!input.compare(0, 3, "uci")) {
+			protocol = UCI;
 			loop();
 			return 0;
 		}
 		else if (!input.compare(0, 6, "xboard")) {
+			protocol = XBOARD;
 			cecp::xboard xb;
 			xb.loop();
 			return 0;

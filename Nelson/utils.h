@@ -11,6 +11,9 @@ std::ostream& operator<<(std::ostream&, SyncCout);
 
 namespace utils {
 
+	void debugInfo(std::string info);
+	void debugInfo(std::string info1, std::string info2);
+
 	class logger {
 	public:
 		logger();

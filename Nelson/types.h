@@ -15,7 +15,6 @@
 #include <sstream>
 #include <iomanip>
 
-#define CACHE_LINE 64
 #ifdef _MSC_VER
 #ifdef _WIN64
 #pragma intrinsic(_BitScanForward64)
@@ -24,10 +23,10 @@
 #pragma intrinsic(_BitScanForward)
 #pragma intrinsic(_BitScanReverse)
 #endif
-#define CACHE_ALIGN __declspec(align(CACHE_LINE))
 #endif
 
 typedef uint64_t Bitboard;
+typedef int64_t time_t;
 
 /* Move Encoding as unsigned short (copied from Stockfish)
 * from                  = bits 0-5
@@ -241,7 +240,7 @@ inline Square msb(Bitboard b) {
 #else
 	BitScanReverse(&result, b >> 32);
 	if (result) result += 32;
-		else BitScanReverse(&result, uint(b));
+		else BitScanReverse(&result, unsigned int(b));
 #endif
 #pragma warning(suppress: 6102)
 	return Square(result);
@@ -393,16 +392,6 @@ inline bool sortByScore(const ValuatedMove& m1, const ValuatedMove& m2) { return
 
 const int MAX_DEPTH = 128;
 
-struct SearchStopCriteria {
-	int64_t MaxNumberOfNodes = INT64_MAX;
-	int MaxDepth = MAX_DEPTH;
-	int64_t StartTime = 0;
-	int64_t HardStopTime = INT64_MAX;
-	int64_t SoftStopTime = INT64_MAX;
-	int64_t MinStopTime = INT64_MIN;
-};
-
-
 struct position;
 
 typedef Value(*EvalFunction)(const position&);
@@ -410,8 +399,10 @@ typedef Value(*EvalFunction)(const position&);
 Value evaluateDefault(const position& pos);
 Value evaluatePawnEnding(const position& pos);
 
+enum Protocol { NO_PROTOCOL, UCI, XBOARD };
+
 #ifdef _MSC_VER
-inline int64_t now() {
+inline time_t now() {
 	LARGE_INTEGER s_frequency;
 	QueryPerformanceFrequency(&s_frequency);
 	LARGE_INTEGER now;
@@ -419,7 +410,7 @@ inline int64_t now() {
 	return (1000LL * now.QuadPart) / s_frequency.QuadPart;
 }
 #else
-inline int64_t now() {
+inline time_t now() {
 	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 	//return GetTickCount64();
 }

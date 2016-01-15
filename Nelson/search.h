@@ -78,7 +78,7 @@ public:
 	//Returns the current nominal search depth
 	inline int Depth() const { return _depth; }
 	//Returns the thinkTime needed so far (is updated after every iteration)
-	inline int64_t ThinkTime() const { return _thinkTime; }
+inline time_t ThinkTime() const { return _thinkTime; }
 	//Statistic data no needed for playing
 	inline double cutoffAt1stMoveRate() const { return 100.0 * cutoffAt1stMove / cutoffCount; }
 	inline double cutoffAverageMove() const { return 1 + 1.0 * cutoffMoveIndexSum / cutoffCount; }
@@ -97,6 +97,8 @@ public:
 	std::string GetXAnalysisOutput();
 	//handling of the thinking output for uci and xboard
 	void info(position &pos, int pvIndx, SearchResultType srt = EXACT_RESULT);
+
+	void debugInfo(std::string info);
 
 protected:
 	//Mutex to synchronize access to analysis output
@@ -119,9 +121,10 @@ protected:
 
 	//Array where moves from Principal Variation are stored
 	Move PVMoves[PV_MAX_LENGTH];
+	//Move which engine expects opponent will reply to it's next move
 	Move ponderMove = MOVE_NONE;
 	int _depth = 0;
-	int64_t _thinkTime;
+	time_t _thinkTime;
 	Move counterMove[12 * 64];
 #ifdef TB
 	uint64_t tbHits = 0;
@@ -188,6 +191,11 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	//Get all root moves
 	ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
 	rootMoveCount = pos.GeneratedMoveCount();
+	if (rootMoveCount == 0) {
+		BestMove.move = MOVE_NONE;
+		BestMove.score = VALUE_ZERO;
+		return BestMove;
+	}
 	if (rootMoveCount == 1) {
 		BestMove = *generatedMoves; //if there is only one legal move save time and return move immediately (although there is no score assigned)
 		goto END;
@@ -273,10 +281,10 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	for (_depth = 1; _depth <= timeManager.GetMaxDepth(); ++_depth) {
 		Value alpha, beta, delta = Value(20);
 		for (int pvIndx = 0; pvIndx < MultiPv; ++pvIndx) {
-			if (_depth >= 5 && MultiPv == 1) {
+			if (_depth >= 5 && MultiPv == 1 && std::abs(score) < VALUE_KNOWN_WIN) {
 				//set aspiration window
 				alpha = std::max(score - delta, -VALUE_INFINITE);
-				beta = std::min(score + delta, VALUE_INFINITE);
+				beta = std::min(score + delta, VALUE_INFINITE); 
 			}
 			else {
 				alpha = -VALUE_MATE;
@@ -290,10 +298,11 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 				if (Stopped()) {
 					break;
 				}
-				if (score <= alpha) {
+			    if (score <= alpha) {
 					//fail-low
 					beta = (alpha + beta) / 2;
 					alpha = std::max(score - delta, -VALUE_INFINITE);
+					debugInfo("Fail-Low");
 					//inform timemanager to assigne more time
 					if (!PonderMode.load()) timeManager.reportFailLow();
 				}
@@ -301,22 +310,29 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 					//fail-high
 					alpha = (alpha + beta) / 2;
 					beta = std::min(score + delta, VALUE_INFINITE);
+					debugInfo("Fail-High");
 				}
 				else {
+					//Iteration completed
 					BestMove = rootMoves[0];
 					score = BestMove.score;
 					break;
 				}
-				//widening formula is from SF - very small widening of the aspiration window size, more might be better => let's tune it some day
-				delta += delta / 4 + 5;
+				if (std::abs(score) >= VALUE_KNOWN_WIN) {
+					alpha = -VALUE_MATE;
+					beta = VALUE_MATE;
+				}
+				else delta += delta / 4 + 5; //widening formula is from SF - very small widening of the aspiration window size, more might be better => let's tune it some day
 			}
-			int64_t tNow = now();
+			time_t tNow = now();
 			_thinkTime = std::max(tNow - timeManager.GetStartTime(), int64_t(1));
 			Stop.load();
 			if (!Stopped()) {
 				//check if new deeper iteration shall be started
-				if (!timeManager.ContinueSearch(_depth, BestMove, NodeCount, tNow, PonderMode)) Stop.store(true);
-			}
+				if (!timeManager.ContinueSearch(_depth, BestMove, NodeCount, tNow, PonderMode)) {
+					Stop.store(true);
+				}
+			} else debugInfo("Iteration cancelled!");
 			//send information to GUI
 			info(pos, pvIndx);
 			if (Stopped()) break;
@@ -325,12 +341,23 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	}
 
 	if (T == MASTER) {
-			//search is done, send helper threads to sleep
-			for (int i = 0; i < HelperThreads; ++i) slaves[i].StopThinking();
+		//search is done, send helper threads to sleep
+		for (int i = 0; i < HelperThreads; ++i) slaves[i].StopThinking();
 	}
 
 END://when pondering engine must not return a best move before opponent moved => therefore let main thread wait	
-	while (PonderMode.load()) { std::this_thread::sleep_for(std::chrono::milliseconds(1)); }
+	bool infoSent = false;
+	while (PonderMode.load()) {
+		if (!infoSent) utils::debugInfo("Waiting for opponent..");
+		infoSent = true;
+		std::this_thread::sleep_for(std::chrono::milliseconds(10));
+	}
+	if (PVMoves[0] != MOVE_NONE && PVMoves[0] != BestMove.move) {
+		std::stringstream ss;
+		ss << "PV Move: " << toString(PVMoves[0]) << " Bestmove: " << toString(BestMove.move);
+		utils::debugInfo(ss.str());
+		BestMove.move = PVMoves[0];
+	}
 	//If for some reason search did not find a best move return the  first one (to avoid loss and it's anyway the best guess then)
 	if (BestMove.move == MOVE_NONE) BestMove = rootMoves[0];
 	if (rootMoves) delete[] rootMoves;
@@ -395,7 +422,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	Value bestScore = -VALUE_MATE;
 	Value bonus;
 	Move subpv[PV_MAX_LENGTH];
-	pv[0] = MOVE_NONE;	
+	pv[0] = MOVE_NONE;
 	pv[1] = MOVE_NONE; //pv[1] will be the ponder move, so we should make sure, that it is initialized as well
 	bool ZWS = false;  //ZWS: Zero Window Search
 	bool lmr = !pos.Checked() && depth >= 3;
@@ -426,17 +453,16 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 		if (type(rootMoves[i].move) == CASTLING) bonus = BONUS_CASTLING; else bonus = VALUE_ZERO;
 		if (ZWS) {
 			score = bonus - Search<false>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, subpv, !next.GetMaterialTableEntry()->SkipPruning());
-			if (score > alpha && score < beta) 
+			if (score > alpha && score < beta)
 				//Research without reduction and with full alpha-beta window
 				score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1, subpv, !next.GetMaterialTableEntry()->SkipPruning());
 		}
 		else {
-			score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1 - reduction, subpv, !next.GetMaterialTableEntry()->SkipPruning());			
-			if (reduction > 0 && score > alpha && score < beta) 
+			score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1 - reduction, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+			if (reduction > 0 && score > alpha && score < beta)
 				//Research without reduction
 				score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1, subpv, !next.GetMaterialTableEntry()->SkipPruning());
 		}
-
 		if (Stopped()) break;
 		rootMoves[i].score = score;
 		if (score > bestScore) {
@@ -612,10 +638,10 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	while ((move = pos.NextMove())) {
 		bool critical = move == counter || !pos.QuietMoveGenerationPhaseStarted() || moveIndex == 0;
 		//Late move Pruning I
-		if (!PVNode && !checked && !critical && depth <= 3 && moveIndex >= LMPMoveCount[depth]) {
-			moveIndex++;
-			continue;
-		}
+		//if (!PVNode && !checked && !critical && depth <= 3 && moveIndex >= LMPMoveCount[depth]) {
+		//	moveIndex++;
+		//	continue;
+		//}
 		bool prunable = !PVNode && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
 			&& move != killer[2 * pos.GetPliesFromRoot()].move && move != killer[2 * pos.GetPliesFromRoot() + 1].move && pos.IsQuietAndNoCastles(move);
 		if (prunable) {
@@ -689,7 +715,7 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		MaxDepth = std::max(MaxDepth, pos.GetPliesFromRoot());
 		//Ugly!! to avoid counting nodes twice the total node count is only incremented when WithChecks is false. This is based on the fact, that only at depth = 0
 		//QSearch<true> is called. When this changes this will break!
-		++NodeCount; 
+		++NodeCount;
 		if (T == MASTER) {
 			if (!Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop.store(true);
 		}

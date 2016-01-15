@@ -321,6 +321,20 @@ uint64_t perft3(position &pos, int depth) {
 	return result;
 }
 
+uint64_t perft4(position &pos, int depth) {
+	nodeCount++;
+	uint64_t result = 0;
+	ValuatedMove * moves = pos.GenerateMoves<LEGAL>();
+	int movecount = pos.GeneratedMoveCount();
+	if (depth == 1) return movecount;
+	for (int i = 0; i < movecount; ++i) {
+		position next(pos);
+		next.ApplyMove(moves[i].move);
+		result += perft(next, depth - 1);
+	}
+	return result;
+}
+
 uint64_t perftcomb(position &pos, int depth) {
 	nodeCount++;
 	if (depth == 0) return 1;
@@ -774,6 +788,8 @@ bool checkPerft(std::string fen, int depth, uint64_t expectedResult, PerftType p
 		perftResult = perft2(pos, depth); break;
 	case P3:
 		perftResult = perft3(pos, depth); break;
+	case P4:
+		perftResult = perft4(pos, depth); break;
 	}
 	int64_t end = now();
 	int64_t runtime = end - begin;

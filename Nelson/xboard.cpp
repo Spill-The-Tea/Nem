@@ -81,6 +81,13 @@ namespace cecp {
 					ponderpos = nullptr;
 				}
 				ponderpos = new position(*pos);
+				ponderMove = ponderpos->validMove(ponderMove);
+				if (ponderMove == MOVE_NONE) {
+					//No pondering => send engine to sleep
+					engineState.store(Waiting);
+					sync_cout << "# Waiting (run3)" << sync_endl;
+					continue;
+				}
 				ponderpos->ApplyMove(ponderMove);
 				ponderpos->AppliedMovesBeforeRoot++;
 				Engine->PonderMode.store(true);

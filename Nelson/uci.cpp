@@ -39,6 +39,7 @@ void quit();
 void stop();
 void thinkAsync();
 void ponderhit();
+//bool validatePonderMove(Move bestmove, Move pondermove);
 
 static void copySettings(baseSearch * source, baseSearch * destination) {
 	destination->UciOutput = source->UciOutput;
@@ -134,6 +135,7 @@ void uci() {
 	sync_cout << "option name Contempt type spin default 0 min -1000 max 1000" << sync_endl;
 	sync_cout << "option name BookFile type string default " << BOOK_FILE.c_str() << sync_endl;
 	sync_cout << "option name OwnBook type check default " << (USE_BOOK ? "true" : "false") << sync_endl;
+	sync_cout << "option name UCI_Opponent type string" << sync_endl;
 #ifdef TB
 	sync_cout << "option name SyzygyPath type string default " << SYZYGY_PATH.c_str() << sync_endl;
 	sync_cout << "option name SyzygyProbeDepth type spin default " << SYZYGY_PROBE_DEPTH << " min 0 max 10" << sync_endl;
@@ -192,6 +194,17 @@ void setoption(std::vector<std::string> &tokens) {
 	}
 	else if (!tokens[2].compare("Contempt")) {
 		Contempt = Value(stoi(tokens[4]));
+	}
+	else if (!tokens[2].compare("UCI_Opponent")) {
+		try {
+			int rating = stoi(tokens[5]);
+			int ownRating = 2700;
+			Contempt = Value((ownRating - rating) / 10);
+			sync_cout << "info string Contempt set to " << Contempt << sync_endl;
+		}
+		catch (...){
+
+		}
 	}
 	else if (!tokens[2].compare("Clear") && !tokens[3].compare("Hash")) {
 		tt::clear();
@@ -279,13 +292,22 @@ void deleteThread() {
 	Engine->PonderMode.store(false);
 	Engine->StopThinking();
 	if (Mainthread != nullptr) {
-		if (Mainthread->joinable())  Mainthread->join();
-		else sync_cout << "info string Can't stop Engine Thread!" << sync_endl;
+		if (Mainthread->joinable()) Mainthread->join();
+		else utils::debugInfo("Can't stop Engine Thread!");
 		free(Mainthread);
 		Mainthread = nullptr;
 	}
 	Engine->Reset();
 }
+
+//bool validatePonderMove(Move bestmove, Move pondermove) {
+//	position next(*_position);
+//	if (next.ApplyMove(bestmove)) {
+//		position next2(next);
+//		return next2.validateMove(pondermove);
+//	}
+//	return false;
+//}
 
 void thinkAsync() {
 	ValuatedMove BestMove;
@@ -296,17 +318,14 @@ void thinkAsync() {
 	else {
 		//First try move from principal variation
 		Move ponderMove = Engine->PonderMove();
-		if (ponderMove == MOVE_NONE) {
-			//Then try to find any move to ponder on (as Arena seems to have problems when no ponder move is provided)
-			position next(*_position);
-			next.ApplyMove(BestMove.move);
-			ValuatedMove * moves = next.GenerateMoves<LEGAL>();
-			int movecount = next.GeneratedMoveCount();
-			ponderMove = Engine->GetBestBookMove(next, moves, movecount);
-			if (ponderMove == MOVE_NONE && movecount > 0) ponderMove = moves->move;
+		//Validate ponder move
+		position next(*_position);
+		next.ApplyMove(BestMove.move);
+		ponderMove = next.validMove(ponderMove);
+		if (ponderMove == MOVE_NONE) sync_cout << "bestmove " << toString(BestMove.move) << sync_endl;
+		else {
+			sync_cout << "bestmove " << toString(BestMove.move) << " ponder " << toString(ponderMove) << sync_endl;
 		}
-		if (ponderMove == MOVE_NONE || !ponderActive) sync_cout << "bestmove " << toString(BestMove.move) << sync_endl;
-		else sync_cout << "bestmove " << toString(BestMove.move) << " ponder " << toString(ponderMove) << sync_endl;
 	}
 	Engine->Reset();
 }
@@ -401,6 +420,7 @@ void setvalue(std::vector<std::string> &tokens) {
 }
 
 void stop() {
+	utils::debugInfo("Trying to stop...");
 	deleteThread();
 }
 
