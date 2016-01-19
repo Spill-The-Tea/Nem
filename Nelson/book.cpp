@@ -65,7 +65,7 @@ namespace polyglot {
 			entry = read();
 			if (pos.GetHash() != entry.key) break; else entries.push_back(entry);
 		}
-		searchPoint += searchPointStore;
+		searchPoint = searchPointStore;
 		while (searchPoint < (count - 1) && good()) {
 			searchPoint++;
 			seekg(searchPoint * sizeof(Entry), ios_base::beg);

@@ -39,7 +39,7 @@ public:
 	//of protocols will stay at 2, it's easier, than creating an generic info class/struct, which then can be handled by the different protocol drivers
 	bool UciOutput = false;
 	bool XBoardOutput = false;
-	bool PrintCurrmove = false;
+	bool PrintCurrmove = true;
 	//Flag indicating the engine is currently pondering
 	std::atomic<bool> PonderMode;
 	//The search's result (will be updated while searching)
@@ -194,10 +194,12 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	if (rootMoveCount == 0) {
 		BestMove.move = MOVE_NONE;
 		BestMove.score = VALUE_ZERO;
+		utils::debugInfo("No valid move!");
 		return BestMove;
 	}
 	if (rootMoveCount == 1) {
 		BestMove = *generatedMoves; //if there is only one legal move save time and return move immediately (although there is no score assigned)
+		utils::debugInfo("Only one valid move!");
 		goto END;
 	}
 	//check if book is available
@@ -209,7 +211,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		if (bookMove != MOVE_NONE) {
 			BestMove.move = bookMove;
 			BestMove.score = VALUE_ZERO;
-			if (UciOutput) sync_cout << "info string book move" << sync_endl;
+			utils::debugInfo("Book move");
 			goto END;
 		}
 	}
@@ -242,6 +244,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 			std::copy(tbMoves.begin(), tbMoves.end(), rootMoves);
 			if (rootMoveCount == 1) {
 				BestMove = rootMoves[0]; //if tablebase probe only returns one move play => play it and done!
+				utils::debugInfo("Only one tablebase move preserving the result!");
 				goto END;
 			}
 			probeTB = false;

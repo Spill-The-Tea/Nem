@@ -87,6 +87,11 @@ const eval MALUS_ISLAND_COUNT = eval(5);
 const eval BONUS_CANDIDATE = eval(5);
 const eval BONUS_LEVER = eval(5);
 const eval MALUS_DOUBLED_PAWN = eval(0,20);
+
+////Bonus for Passed Pawns (dynamic evaluations)
+//const eval BONUS_PASSED_PAWN_BACKED = eval(0, 15); //Passed pawn with own rook behind
+//const eval MALUS_PASSED_PAWN_BLOCKED[6] = { eval(0, 3), eval(0,10), eval(0,10), eval(0,30), EVAL_ZERO, eval(0,30) }; //Passed pawn with own rook behind
+
 const Value BONUS_BISHOP_PAIR = Value(0);
 const Value BONUS_CASTLING = Value(0);
 
