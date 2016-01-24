@@ -76,4 +76,16 @@ namespace utils {
 		}
 	}
 
+	std::vector<std::string> split(std::string str) {
+		std::vector<std::string> tokens;
+		std::stringstream ss(str); // Turn the string into a stream.
+		std::string tok;
+
+		while (std::getline(ss, tok, ' ')) {
+			tokens.push_back(tok);
+		}
+
+		return tokens;
+	}
+
 }

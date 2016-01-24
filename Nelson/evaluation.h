@@ -465,7 +465,7 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 		Bitboard rookFile = FILES[rookSquare & 7];
 		if ((pos.PieceBB(PAWN, COL) & rookFile) == 0) {
 			bonusRook += ROOK_ON_SEMIOPENFILE;
-			if ((pos.PieceBB(PAWN, OTHER) & rookFile) == 0) 
+			if ((pos.PieceBB(PAWN, OTHER) & rookFile) == 0)
 				bonusRook += ROOK_ON_OPENFILE;
 		}
 		rooks &= rooks - 1;
@@ -480,16 +480,16 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 		Square pawnSquare = lsb(passedPawns);
 		Square nextSquare = COL == WHITE ? Square(pawnSquare + 8) : Square(pawnSquare - 8);
 		uint8_t dtc = MovesToConversion<COL>(pawnSquare);
-		bonusPassedPawns.egScore += Value(2*(6 - dtc) * (6 - dtc) * ChebishevDistance(opponentKingSquare, nextSquare));
+		bonusPassedPawns.egScore += Value(2 * (6 - dtc) * (6 - dtc) * ChebishevDistance(opponentKingSquare, nextSquare));
 		bonusPassedPawns.egScore -= Value((6 - dtc) * (6 - dtc) * ChebishevDistance(ownKingSquare, nextSquare));
-	//	Bitboard rearspan = COL == WHITE ? FrontFillSouth(passedPawns) : FrontFillNorth(passedPawns);
-	//	bonusPassedPawns = BONUS_PASSED_PAWN_BACKED * popcount(rearspan & pos.PieceBB(ROOK, COL));
-	//	Bitboard passedPawnBlocker = COL == WHITE ? (passedPawns << 8) & pos.ColorBB(OTHER) : (passedPawns >> 8) & pos.ColorBB(OTHER);
-	//	while (passedPawnBlocker) {
-	//		Square blockSquare = lsb(passedPawnBlocker);
-	//		bonusPassedPawns -= MALUS_PASSED_PAWN_BLOCKED[GetPieceType(pos.GetPieceOnSquare(blockSquare))];
-	//		passedPawnBlocker &= passedPawnBlocker - 1;
-	//	}
+		//	Bitboard rearspan = COL == WHITE ? FrontFillSouth(passedPawns) : FrontFillNorth(passedPawns);
+		//	bonusPassedPawns = BONUS_PASSED_PAWN_BACKED * popcount(rearspan & pos.PieceBB(ROOK, COL));
+		//	Bitboard passedPawnBlocker = COL == WHITE ? (passedPawns << 8) & pos.ColorBB(OTHER) : (passedPawns >> 8) & pos.ColorBB(OTHER);
+		//	while (passedPawnBlocker) {
+		//		Square blockSquare = lsb(passedPawnBlocker);
+		//		bonusPassedPawns -= MALUS_PASSED_PAWN_BLOCKED[GetPieceType(pos.GetPieceOnSquare(blockSquare))];
+		//		passedPawnBlocker &= passedPawnBlocker - 1;
+		//	}
 		passedPawns &= passedPawns - 1;
 	}
 	return bonusPassedPawns + bonusRook + eval(bonusKnightOutpost, 0);

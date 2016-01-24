@@ -33,7 +33,7 @@ void timemanager::initialize(int time, int inc, int movestogo) {
 	init();
 }
 
-void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nodes, int time, int inc, int movestogo, time_t starttime, bool ponder) {
+void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nodes, int time, int inc, int movestogo, Time_t starttime, bool ponder) {
 	_starttime = starttime;
 	_time = time;
 	_inc = inc;
@@ -66,7 +66,7 @@ void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nod
 		_hardStopTime.store(INT64_MAX);
 		_stopTime.store(INT64_MAX);
 	}
-	utils::debugInfo(print());
+	//utils::debugInfo(print());
 }
 
 void timemanager::init() {
@@ -88,7 +88,7 @@ void timemanager::init() {
 		//_hardStopTime = std::min(_starttime + _time - EmergencyTime, _starttime + _time - emergencySpareTime);
 		//Give at least 10 ms
 		_hardStopTime = std::max(_starttime + _time - EmergencyTime, _starttime + 10);
-		_stopTime = std::min(int64_t(_starttime + remainingTime / remainingMoves), time_t((_hardStopTime + _starttime)/2));
+		_stopTime = std::min(int64_t(_starttime + remainingTime / remainingMoves), Time_t((_hardStopTime + _starttime)/2));
 		//_hardStopTime is now avoiding time forfeits, nevertheless it's still possible that an instable search uses up all time, so that
 		//all further moves have to be played a tempo. To avoid this _hardStopTime is reduced so that for further move a reasonable amount of time
 		//is left
@@ -102,12 +102,12 @@ void timemanager::init() {
 void timemanager::PonderHit() {
 	int64_t tnow = now();
 	int64_t pondertime = tnow - _starttime;
-	_hardStopTime.store(std::min(time_t(_hardStopTimeSave + pondertime - EmergencyTime), time_t(_hardStopTime.load())));
+	_hardStopTime.store(std::min(Time_t(_hardStopTimeSave + pondertime - EmergencyTime), Time_t(_hardStopTime.load())));
 	_stopTime.store(_stopTimeSave);
 	//check if current iteration will be finished 
 	if (_mode != FIXED_TIME_PER_MOVE) {
-		time_t usedForCompletedIteration = _completionTimeOfLastIteration - _starttime;
-		time_t usedInLastIteration = tnow - _completionTimeOfLastIteration;
+		Time_t usedForCompletedIteration = _completionTimeOfLastIteration - _starttime;
+		Time_t usedInLastIteration = tnow - _completionTimeOfLastIteration;
 		if (usedInLastIteration < 2 * usedForCompletedIteration) { //If current iteration is not about to be finished, let's check if it's better to return immediately
 			bool stable = _completedDepth > 3 && _bestMoves[_completedDepth - 1].move == _bestMoves[_completedDepth - 2].move && _bestMoves[_completedDepth - 1].move == _bestMoves[_completedDepth - 3].move
 				&& std::abs(_bestMoves[_completedDepth - 1].score - _bestMoves[_completedDepth - 2].score) < 0.1;
@@ -115,16 +115,16 @@ void timemanager::PonderHit() {
 			double factor = stable ? 3 : 2;
 			//If a fail low has occurred assign even more time
 			if (_failLowDepth > 0) factor = factor / 2;
-			if (_starttime + time_t(factor * usedForCompletedIteration) >= _stopTime) {
+			if (_starttime + Time_t(factor * usedForCompletedIteration) >= _stopTime) {
 				_hardStopTime.store(tnow); //stop search by adjusting hardStopTime
 			}
 		}
 	}
-	utils::debugInfo(print());
+	//utils::debugInfo(print());
 }
 
 // This method is called from search after the completion of each iteration. It returns true when a new iteration shall be started and false if not
-bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_t nodecount, time_t tnow, bool ponderMode) {
+bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_t nodecount, Time_t tnow, bool ponderMode) {
 	_completedDepth = currentDepth;
 	_completionTimeOfLastIteration = tnow;
 	_bestMoves[currentDepth - 1] = bestMove;
@@ -148,7 +148,7 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 		double factor = stable ? 3 : 2;
 		//If a fail low has occurred assign even more time
 		if (_failLowDepth > 0) factor = factor / 2;
-		return tnow < _stopTime && (_starttime + time_t(factor * (tnow - _starttime))) <= _stopTime;
+		return tnow < _stopTime && (_starttime + Time_t(factor * (tnow - _starttime))) <= _stopTime;
 	}
 
 }
@@ -158,8 +158,8 @@ void timemanager::switchToInfinite() {
 }
 
 void timemanager::updateTime(int64_t time) {
-	time_t tnow = now();
-	_hardStopTime.store(std::min(int64_t(_hardStopTime.load()), tnow + time_t(time - EmergencyTime)));
+	Time_t tnow = now();
+	_hardStopTime.store(std::min(int64_t(_hardStopTime.load()), tnow + Time_t(time - EmergencyTime)));
 	//std::cout << "Hardstop time updated: " << _hardStopTime - _starttime;
 }
 

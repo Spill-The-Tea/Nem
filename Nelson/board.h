@@ -215,10 +215,6 @@ template<Color COLOR_OF_PAWN> inline uint8_t MovesToConversion(Square pawnSquare
 	if (COLOR_OF_PAWN == BLACK) return (uint8_t)std::min(pawnSquare >> 3, 5); else return (uint8_t)std::min((pawnSquare >> 3) ^ 7, 5);
 }
 
-template<Color COLOR_OF_PAWN> inline bool IsInPawnSquare(Square kingSquare, Square pawnSquare, Color sideToMove) {
-	return ChebishevDistance(ConversionSquare<COLOR_OF_PAWN>(pawnSquare), kingSquare) <= (MovesToConversion + (sideToMove != COLOR_OF_PAWN));
-}
-
 #define ZKBPawn { 0x9D39247E33776D41, 0x2AF7398005AAA5C7,            \
 		0x44DB015024623547, 0x9C15F73E62A76AE2, 0x75834465489C0C89, \
 		0x3290AC3A203001BF, 0x0FBBAD1F61042279, 0xE83A908FF2FB60CA, \

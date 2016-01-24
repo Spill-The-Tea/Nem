@@ -26,7 +26,7 @@
 #endif
 
 typedef uint64_t Bitboard;
-typedef int64_t time_t;
+typedef int64_t Time_t;
 
 /* Move Encoding as unsigned short (copied from Stockfish)
 * from                  = bits 0-5
@@ -402,7 +402,7 @@ Value evaluatePawnEnding(const position& pos);
 enum Protocol { NO_PROTOCOL, UCI, XBOARD };
 
 #ifdef _MSC_VER
-inline time_t now() {
+inline Time_t now() {
 	LARGE_INTEGER s_frequency;
 	QueryPerformanceFrequency(&s_frequency);
 	LARGE_INTEGER now;
@@ -410,7 +410,7 @@ inline time_t now() {
 	return (1000LL * now.QuadPart) / s_frequency.QuadPart;
 }
 #else
-inline time_t now() {
+inline Time_t now() {
 	return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 	//return GetTickCount64();
 }

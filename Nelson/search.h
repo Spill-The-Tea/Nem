@@ -78,7 +78,7 @@ public:
 	//Returns the current nominal search depth
 	inline int Depth() const { return _depth; }
 	//Returns the thinkTime needed so far (is updated after every iteration)
-inline time_t ThinkTime() const { return _thinkTime; }
+    inline Time_t ThinkTime() const { return _thinkTime; }
 	//Statistic data no needed for playing
 	inline double cutoffAt1stMoveRate() const { return 100.0 * cutoffAt1stMove / cutoffCount; }
 	inline double cutoffAverageMove() const { return 1 + 1.0 * cutoffMoveIndexSum / cutoffCount; }
@@ -124,7 +124,7 @@ protected:
 	//Move which engine expects opponent will reply to it's next move
 	Move ponderMove = MOVE_NONE;
 	int _depth = 0;
-	time_t _thinkTime;
+	Time_t _thinkTime;
 	Move counterMove[12 * 64];
 #ifdef TB
 	uint64_t tbHits = 0;
@@ -327,7 +327,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 				}
 				else delta += delta / 4 + 5; //widening formula is from SF - very small widening of the aspiration window size, more might be better => let's tune it some day
 			}
-			time_t tNow = now();
+			Time_t tNow = now();
 			_thinkTime = std::max(tNow - timeManager.GetStartTime(), int64_t(1));
 			Stop.load();
 			if (!Stopped()) {
@@ -639,7 +639,6 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	bool ZWS = false;
 	Square recaptureSquare = pos.GetLastAppliedMove() && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	while ((move = pos.NextMove())) {
-		bool critical = move == counter || !pos.QuietMoveGenerationPhaseStarted() || moveIndex == 0;
 		//Late move Pruning I
 		//if (!PVNode && !checked && !critical && depth <= 3 && moveIndex >= LMPMoveCount[depth]) {
 		//	moveIndex++;
@@ -661,6 +660,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
+			bool critical = move == counter || !pos.QuietMoveGenerationPhaseStarted() || moveIndex == 0;
 			//Check extension
 			int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
 			if (!extension && to(move) == recaptureSquare) {

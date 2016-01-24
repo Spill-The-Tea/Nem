@@ -128,10 +128,11 @@ void baseSearch::debugInfo(std::string info)
 	}
 	else if (XBoardOutput) {
 		sync_cout << "# " << info << sync_endl;
-	} else
-	{
-		sync_cout << info << sync_endl;
 	}
+	//else
+	//{
+	//	sync_cout << info << sync_endl;
+	//}
 }
 
 Move baseSearch::GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount) {

@@ -75,7 +75,7 @@ eval evaluateKingSafety(const position& pos) {
 		}
 		pieceBB &= pieceBB - 1;
 	}
-	if (attackerCount > 2) result.mgScore = KING_SAFETY[std::min(attackUnits, 99)];
+	if (attackerCount > 1) result.mgScore = KING_SAFETY[std::min(attackUnits, 99)];
 	attackUnits = 0;
 	attackerCount = 0;
 	pieceBB = pos.PieceBB(BISHOP, BLACK) | pos.PieceBB(KNIGHT, BLACK);
@@ -102,15 +102,17 @@ eval evaluateKingSafety(const position& pos) {
 		}
 		pieceBB &= pieceBB - 1;
 	}
-	if (attackerCount > 2) result.mgScore -= KING_SAFETY[std::min(attackUnits, 99)];
-	//Pawn shelter and storm
+	if (attackerCount > 1) result.mgScore -= KING_SAFETY[std::min(attackUnits, 99)];
+	Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
+	Bitboard bbBlack = pos.PieceBB(PAWN, BLACK);
+	//Pawn shelter
 	if (pos.PieceBB(KING, WHITE) & SaveSquaresForKing & HALF_OF_WHITE) { //Bonus only for castled king
-		result.mgScore += PAWN_SHELTER_2ND_RANK * popcount(pos.PieceBB(PAWN, WHITE) & kingRingWhite & ShelterPawns2ndRank);
-		result.mgScore += PAWN_SHELTER_3RD_RANK * popcount(pos.PieceBB(PAWN, WHITE) & kingZoneWhite & ShelterPawns3rdRank);
+		result.mgScore += PAWN_SHELTER_2ND_RANK * popcount(bbWhite & kingRingWhite & ShelterPawns2ndRank);
+		result.mgScore += PAWN_SHELTER_3RD_RANK * popcount(bbWhite & kingZoneWhite & ShelterPawns3rdRank);
 	}
 	if (pos.PieceBB(KING, BLACK) & SaveSquaresForKing & HALF_OF_BLACK) {
-		result.mgScore -= PAWN_SHELTER_2ND_RANK * popcount(pos.PieceBB(PAWN, BLACK) & kingRingBlack & ShelterPawns2ndRank);
-		result.mgScore -= PAWN_SHELTER_3RD_RANK * popcount(pos.PieceBB(PAWN, BLACK) & kingZoneBlack & ShelterPawns3rdRank);
+		result.mgScore -= PAWN_SHELTER_2ND_RANK * popcount(bbBlack & kingRingBlack & ShelterPawns2ndRank);
+		result.mgScore -= PAWN_SHELTER_3RD_RANK * popcount(bbBlack & kingZoneBlack & ShelterPawns3rdRank);
 	}
 	return result;
 }

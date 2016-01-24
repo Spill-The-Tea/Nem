@@ -30,7 +30,8 @@ int main(int argc, const char* argv[]) {
 		std::cout << "No Popcount support - Engine does't work on this hardware!" << std::endl;
 		return 0;
 	}
-	std::cout << "Compiled on: " << __DATE__ << " " << __TIME__ << std::endl;
+	std::cout << "Nemorino 0.44" << std::endl;
+	//std::cout << "Compiled on: " << __DATE__ << " " << __TIME__ << std::endl;
 	Initialize();
 	//bench2(7);
 	//return 0;
@@ -39,7 +40,8 @@ int main(int argc, const char* argv[]) {
 		std::getline(std::cin, input);
 		if (!input.compare(0, 3, "uci")) {
 			protocol = UCI;
-			loop();
+			UCIInterface uciInterface;
+			uciInterface.loop();
 			return 0;
 		}
 		else if (!input.compare(0, 6, "xboard")) {
@@ -69,68 +71,68 @@ int main(int argc, const char* argv[]) {
 				}
 				else if (!input.compare(0, 7, "divide ")) {
 					int depth = atoi(input.substr(7).c_str());
-					divide(pos, depth);
+					test::divide(pos, depth);
 				}
 				else if (!input.compare(0, 8, "divide3 ")) {
 					int depth = atoi(input.substr(8).c_str());
-					divide3(pos, depth);
+					test::divide3(pos, depth);
 				}
 				else if (!input.compare(0, 10, "perftSuite")) {
-					PerftType pt = BASIC;
+					test::PerftType pt = test::BASIC;
 					if (input.length() > 11) {
 						int pti = atoi(input.substr(11).c_str());
-						pt = PerftType(pti);
+						pt = test::PerftType(pti);
 					}
-					testPerft(pt);
+					test::testPerft(pt);
 				}
 				else if (!input.compare(0, 6, "perft ")) {
 					int depth = atoi(input.substr(6).c_str());
-					std::cout << "Perft:\t" << perft(pos, depth) << "\t" << pos.fen() << std::endl;
+					std::cout << "Perft:\t" << test::perft(pos, depth) << "\t" << pos.fen() << std::endl;
 				}
 				else if (!input.compare(0, 7, "perft3 ")) {
 					int depth = atoi(input.substr(7).c_str());
-					std::cout << "Perft:\t" << perft3(pos, depth) << "\t" << pos.fen() << std::endl;
+					std::cout << "Perft:\t" << test::perft3(pos, depth) << "\t" << pos.fen() << std::endl;
 				}
 				else if (!input.compare(0, 6, "bench2")) {
 					int depth = 11;
 					if (input.length() > 7) depth = atoi(input.substr(7).c_str());
-					bench2(depth);
+					test::bench2(depth);
 				}
 				else if (!input.compare(0, 5, "bench")) {
 					int depth = 11;
 					if (input.length() > 6) depth = atoi(input.substr(6).c_str());
-					bench(depth);
+					test::bench(depth);
 				}
 				else if (!input.compare(0, 3, "SEE")) {
-					testSEE();
+					test::testSEE();
 				}
 				else if (!input.compare(0, 5, "print")) {
 					std::cout << pos.print() << std::endl;
 				}
 				else if (!input.compare(0, 3, "qcg")) {
-					testCheckQuietCheckMoveGeneration();
+					test::testCheckQuietCheckMoveGeneration();
 				}
 				else if (!input.compare(0, 3, "tmg")) {
-					testTacticalMoveGeneration();
+					test::testTacticalMoveGeneration();
 				}
 				else if (!input.compare(0, 7, "search ")) {
 					int depth = atoi(input.substr(7).c_str());
-					testSearch(pos, depth);
+					test::testSearch(pos, depth);
 				}
 				else if (!input.compare(0, 6, "result")) {
-					testResult();
+					test::testResult();
 				}
 				else if (!input.compare(0, 8, "findmate")) {
-					testFindMate();
+					test::testFindMate();
 				}
 				else if (!input.compare(0, 7, "mattin2")) {
-					testMateInDos();
+					test::testMateInDos();
 				}
 				else if (!input.compare(0, 10, "repetition")) {
-					testRepetition();
+					test::testRepetition();
 				}
 				else if (!input.compare(0, 3, "kpk")) {
-					testKPK();
+					test::testKPK();
 				}
 				else if (!input.compare(0, 7, "threads")) {
 					if (input.length() > 8) {
@@ -144,7 +146,7 @@ int main(int argc, const char* argv[]) {
 				else if (!input.compare(0, 6, "tbtest")) {
 					SYZYGY_PATH = "C:/TB/syzygy";
 					Tablebases::init(SYZYGY_PATH);
-					testTB();
+					test::testTB();
 				}
 #endif
 			}

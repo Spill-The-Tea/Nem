@@ -6,6 +6,7 @@
 #include <cstdlib>
 #include <vector>
 #include "uci.h"
+#include "utils.h"
 #include "position.h"
 #include "board.h"
 #include "search.h"
@@ -17,51 +18,14 @@
 #include "syzygy/tbprobe.h"
 #endif
 
-baseSearch * Engine = new search < SINGLE > ;
-position * _position = nullptr;
-std::thread * Mainthread = nullptr;
-int64_t ponderStartTime = 0;
-bool ponderActive = false;
-
-void dispatch(std::string line);
-
-// UCI command handlers
-void uci();
-void isready();
-void setoption(std::vector<std::string> &tokens);
-void ucinewgame();
-void setPosition(std::vector<std::string> &tokens);
-void go(std::vector<std::string> &tokens);
-void perft(std::vector<std::string> &tokens);
-void divide(std::vector<std::string> &tokens);
-void setvalue(std::vector<std::string> &tokens);
-void quit();
-void stop();
-void thinkAsync();
-void ponderhit();
-//bool validatePonderMove(Move bestmove, Move pondermove);
-
-static void copySettings(baseSearch * source, baseSearch * destination) {
+void UCIInterface::copySettings(baseSearch * source, baseSearch * destination) {
 	destination->UciOutput = source->UciOutput;
 	destination->BookFile = source->BookFile;
 	destination->PonderMode.store(source->PonderMode.load());
 	destination->PrintCurrmove = source->PrintCurrmove;
 }
 
-std::vector<std::string> split(std::string str) {
-	std::vector<std::string> tokens;
-	std::stringstream ss(str); // Turn the string into a stream.
-	std::string tok;
-
-	while (std::getline(ss, tok, ' ')) {
-		tokens.push_back(tok);
-	}
-
-	return tokens;
-}
-
-
-void loop() {
+void UCIInterface::loop() {
 	uci();
 	std::string line;
 	while (std::getline(std::cin, line)) {
@@ -69,8 +33,8 @@ void loop() {
 	}
 }
 
-void dispatch(std::string line) {
-	std::vector<std::string> tokens = split(line);
+void UCIInterface::dispatch(std::string line) {
+	std::vector<std::string> tokens = utils::split(line);
 	if (tokens.size() == 0) return;
 	std::string command = tokens[0];
 	if (!command.compare("stop"))
@@ -99,16 +63,16 @@ void dispatch(std::string line) {
 		setvalue(tokens);
 	else if (!command.compare("bench")) {
 		if (tokens.size() == 1) {
-			bench(11);
-			bench2(11);
+			test::bench(11);
+			test::bench2(11);
 		}
 		else {
 			std::string filename = line.substr(6, std::string::npos);
-			bench(filename, 11);
+			test::bench(filename, 11);
 		}
 	}
 	else if (!command.compare("sbench")) {
-		int64_t nc = bench(11);
+		int64_t nc = test::bench(11);
 		std::cout << "bench: " << nc << std::endl;
 	}
 	else if (!command.compare("eval")) {
@@ -122,7 +86,7 @@ void dispatch(std::string line) {
 		quit();
 }
 
-void uci() {
+void UCIInterface::uci() {
 	Engine->UciOutput = true;
 	sync_cout << "id name Nemorino" << sync_endl;
 	sync_cout << "id author Christian Günther" << sync_endl;
@@ -143,11 +107,11 @@ void uci() {
 	sync_cout << "uciok" << sync_endl;
 }
 
-void isready() {
+void UCIInterface::isready() {
 	sync_cout << "readyok" << sync_endl;
 }
 
-void setoption(std::vector<std::string> &tokens) {
+void UCIInterface::setoption(std::vector<std::string> &tokens) {
 	if (tokens.size() < 4 || tokens[1].compare("name")) return;
 	if (!tokens[2].compare("UCI_Chess960")) Chess960 = !tokens[4].compare("true");
 	else if (!tokens[2].compare("Hash")) {
@@ -239,8 +203,7 @@ void setoption(std::vector<std::string> &tokens) {
 #endif
 }
 
-bool initialized = false;
-void ucinewgame(){
+void UCIInterface::ucinewgame(){
 	initialized = true;
 	Engine->NewGame();
 	if (USE_BOOK) Engine->BookFile = BOOK_FILE; else Engine->BookFile = "";
@@ -248,7 +211,7 @@ void ucinewgame(){
 
 #define MAX_FEN 0x80
 
-void setPosition(std::vector<std::string> &tokens) {
+void UCIInterface::setPosition(std::vector<std::string> &tokens) {
 	if (!initialized) ucinewgame();
 	if (_position) {
 		_position->deleteParents();
@@ -288,7 +251,7 @@ void setPosition(std::vector<std::string> &tokens) {
 	}
 }
 
-void deleteThread() {
+void UCIInterface::deleteThread() {
 	Engine->PonderMode.store(false);
 	Engine->StopThinking();
 	if (Mainthread != nullptr) {
@@ -309,7 +272,7 @@ void deleteThread() {
 //	return false;
 //}
 
-void thinkAsync() {
+void UCIInterface::thinkAsync() {
 	ValuatedMove BestMove;
 	if (Engine == NULL) return;
 	if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*_position);
@@ -330,7 +293,7 @@ void thinkAsync() {
 	Engine->Reset();
 }
 
-void go(std::vector<std::string> &tokens) {
+void UCIInterface::go(std::vector<std::string> &tokens) {
 	int64_t tnow = now();
 	if (!_position) _position = new position();
 	int moveTime = 0;
@@ -407,24 +370,24 @@ void go(std::vector<std::string> &tokens) {
 
 	deleteThread();
 	Engine->PonderMode.store(ponder);
-	Mainthread = new std::thread(thinkAsync);
+	Mainthread = new std::thread(&UCIInterface::thinkAsync, this);
 }
 
-void ponderhit() {
+void UCIInterface::ponderhit() {
 	Engine->PonderMode.store(false);
 	Engine->timeManager.PonderHit();
 }
 
-void setvalue(std::vector<std::string> &tokens) {
+void UCIInterface::setvalue(std::vector<std::string> &tokens) {
 	//Only for CLOP to be implemented per experiment
 }
 
-void stop() {
+void UCIInterface::stop() {
 	utils::debugInfo("Trying to stop...");
 	deleteThread();
 }
 
-void perft(std::vector<std::string> &tokens) {
+void UCIInterface::perft(std::vector<std::string> &tokens) {
 	if (tokens.size() < 2) {
 		std::cout << "No depth specified!" << std::endl;
 		return;
@@ -435,12 +398,12 @@ void perft(std::vector<std::string> &tokens) {
 		return;
 	}
 	int64_t start = now();
-	uint64_t result = perft(*_position, depth);
+	uint64_t result = test::perft(*_position, depth);
 	int64_t runtime = now() - start;
 	std::cout << "Result: " << result << "\t" << runtime << " ms\t" << _position->fen() << std::endl;
 }
 
-void divide(std::vector<std::string> &tokens) {
+void UCIInterface::divide(std::vector<std::string> &tokens) {
 	if (tokens.size() < 2) {
 		std::cout << "No depth specified!" << std::endl;
 		return;
@@ -451,12 +414,12 @@ void divide(std::vector<std::string> &tokens) {
 		return;
 	}
 	int64_t start = now();
-	divide(*_position, depth);
+	test::divide(*_position, depth);
 	int64_t runtime = now() - start;
 	std::cout << "Runtime: " << runtime << " ms\t" << std::endl;
 }
 
-void quit(){
+void UCIInterface::quit(){
 	deleteThread();
 	//utils::logger::instance()->flush();
 	exit(EXIT_SUCCESS);

@@ -200,7 +200,7 @@ namespace cecp {
 	}
 
 	bool xboard::dispatch(std::string line) {
-		std::vector<std::string> tokens = split(line);
+		std::vector<std::string> tokens = utils::split(line);
 		if (tokens.size() == 0) return true;
 		std::string command = tokens[0];
 		if (!command.compare("usermove")) {
@@ -550,18 +550,6 @@ namespace cecp {
 		if (tc_moves > 0) movestogo = tc_moves - (moves.size() % tc_moves);
 
 		Engine->timeManager.initialize(mode, tc_movetime, tc_maxDepth, INT64_MAX, int(time[EngineSide]), tc_increment, movestogo, tnow, startPonder);
-	}
-
-	std::vector<std::string> xboard::split(std::string str) {
-		std::vector<std::string> tokens;
-		std::stringstream ss(str); // Turn the string into a stream.
-		std::string tok;
-
-		while (std::getline(ss, tok, ' ')) {
-			tokens.push_back(tok);
-		}
-
-		return tokens;
 	}
 
 	std::string xboard::toXboardString(Move move) {

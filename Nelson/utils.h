@@ -13,6 +13,9 @@ namespace utils {
 
 	void debugInfo(std::string info);
 	void debugInfo(std::string info1, std::string info2);
+	std::vector<std::string> split(std::string str);
+
+	template <class T> T clamp(T value, T lowerBound, T upperBound) { return std::max(lowerBound, std::min(value, upperBound)); }
 
 	class logger {
 	public:
