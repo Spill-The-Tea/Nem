@@ -18,7 +18,7 @@ Nemorino is a UCI chess engine.
 - Threads:          Maximum number of threads (cores) used (default 1)
 - Ponder:           When set to true, engine will continue analysis while waiting for opponent's move (default false)
 - Contempt:         Score (in centipawns) for accepting draws. If Contempt > 0 then the engine will avoid draws (default 0)
-- BookFile:         Polyglot book file the engine shall use (default "book.bin"). Nemorino doesn't has an own book so far
+- BookFile:         Polyglot book file the engine shall use (default "book.bin"). Nemorino doesn't have an own book so far
 - OwnBook:          Use Polyglot book, specified by book file (default false)
 - SyzygyPath:       Path(es) to directories Syzygy tablebase files can be found. Seperate multiple directories by ';' on windows and by ':' on linux
 - SyzygyProbeDepth: Limits the depth where Syzygy tables are probed during the search (default 0).
@@ -43,7 +43,7 @@ It has been developed and tested on windows. The linux compile has only been smo
 ### Remarks ###
 
 I wrote this engine because I wanted to understand, how a chess engine is working. And the best way to learn is to write an engine from scratch by yourself. I first started with C#, but after some time I got the ambition to learn C++.
-Therefore don't expect a lot of new ideas within my code, and neither expect clean and well-structured code. Instead you will find a unique combination all those ideas explained in the [Chess Programming Wiki](https://chessprogramming.wikispaces.com).
+Therefore don't expect a lot of new ideas within my code, and neither expect clean and well-structured code. Instead you will find a unique combination of all those ideas explained in the [Chess Programming Wiki](https://chessprogramming.wikispaces.com).
 
 ### Acknowledgements ###
 
