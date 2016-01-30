@@ -38,6 +38,9 @@ namespace pawn {
 		Bitboard ppW = bbWhite & (~(bbBAttackset | bbBFrontspan));
 		Bitboard ppB = bbBlack & (~(bbWAttackset | bbWFrontspan));
 		result->passedPawns = ppW | ppB;
+		result->openFiles = Fileset(~bbFilesWhite & ~bbFilesBlack);
+		result->halfOpenFilesWhite = Fileset(~bbFilesWhite & bbFilesBlack);
+		result->halfOpenFilesBlack = Fileset(bbFilesWhite & ~bbFilesBlack);
 		while (ppW) {
 			int rank = (lsb(ppW) >> 3) - 1;
 			result->Score += PASSED_PAWN_BONUS[rank];

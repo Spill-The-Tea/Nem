@@ -12,8 +12,11 @@ namespace pawn {
 	//pawn hash table is currently very simple - it only contains the pawn structure score and a bitboard indicating the passed pawns
 	struct Entry {
 		PawnKey_t Key;
-		eval Score;
 		Bitboard passedPawns;
+		eval Score;
+		uint8_t openFiles;
+		uint8_t halfOpenFilesWhite;
+		uint8_t halfOpenFilesBlack;
 	};
 
 	extern Entry Table[PAWN_TABLE_SIZE];

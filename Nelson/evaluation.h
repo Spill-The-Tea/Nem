@@ -459,17 +459,23 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	//Rooks
 	Bitboard seventhRank = COL == WHITE ? RANK7 : RANK2;
 	Bitboard rooks = pos.PieceBB(ROOK, COL);
-	eval bonusRook = popcount(rooks & seventhRank) * ROOK_ON_7TH;
-	while (rooks) {
-		Square rookSquare = lsb(rooks);
-		Bitboard rookFile = FILES[rookSquare & 7];
-		if ((pos.PieceBB(PAWN, COL) & rookFile) == 0) {
-			bonusRook += ROOK_ON_SEMIOPENFILE;
-			if ((pos.PieceBB(PAWN, OTHER) & rookFile) == 0)
-				bonusRook += ROOK_ON_OPENFILE;
-		}
-		rooks &= rooks - 1;
+	eval bonusRook = EVAL_ZERO;
+	if (rooks) {
+		bonusRook = popcount(rooks & seventhRank) * ROOK_ON_7TH;
+		Bitboard bbHalfOpen = COL == WHITE ? FileFill(pos.GetPawnEntry()->halfOpenFilesWhite) : FileFill(pos.GetPawnEntry()->halfOpenFilesBlack);
+		bonusRook += popcount(bbHalfOpen & rooks) * ROOK_ON_SEMIOPENFILE;
+		bonusRook += 2 * popcount(FileFill(pos.GetPawnEntry()->openFiles) & rooks) * ROOK_ON_OPENFILE;
 	}
+	//while (rooks) {
+	//	Square rookSquare = lsb(rooks);
+	//	Bitboard rookFile = FILES[rookSquare & 7];
+	//	if ((pos.PieceBB(PAWN, COL) & rookFile) == 0) {
+	//		bonusRook += ROOK_ON_SEMIOPENFILE;
+	//		if ((pos.PieceBB(PAWN, OTHER) & rookFile) == 0)
+	//			bonusRook += ROOK_ON_OPENFILE;
+	//	}
+	//	rooks &= rooks - 1;
+	//}
 	//Passed Pawns (passed pawn bonus is already assigned statically in pawn::probe. Nevertheless all aspects related to position of other pieces have to be 
 	//evaluated here) dynamically 
 	Square ownKingSquare = lsb(pos.PieceBB(KING, COL));

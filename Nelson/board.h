@@ -181,7 +181,7 @@ inline Bitboard FileFill(uint8_t fileset) {
 }
 
 inline Bitboard FileFill(Bitboard gen) {
-	return 0x0101010101010101ull * FrontFillSouth(gen);
+	return 0x0101010101010101ull * (uint8_t)FrontFillSouth(gen);
 }
 
 inline uint8_t IslandsEastFiles(uint8_t f) { return f &  ~(f >> 1); }
