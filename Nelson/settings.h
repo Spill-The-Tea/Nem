@@ -73,6 +73,7 @@ const eval KingOnOne(1, 29);
 const eval KingOnMany(3, 63);
 const eval ROOK_ON_OPENFILE(10, 0);
 const eval ROOK_ON_SEMIOPENFILE(10, 0);
+const eval ROOK_ON_SEMIOPENFILE_WITH_KQ(5, 0);
 const eval ROOK_ON_7TH(20, 0);
 
 const Value BONUS_KNIGHT_OUTPOST = Value(5);
@@ -99,8 +100,8 @@ const Value BONUS_TEMPO = Value(5);
 
 const Value DELTA_PRUNING_SAFETY_MARGIN = Value(PieceValuesEG[PAWN] >> 1);
 
-const Value PAWN_SHELTER_2ND_RANK = Value(10);
-const Value PAWN_SHELTER_3RD_RANK = Value(5);
+const Value PAWN_SHELTER_2ND_RANK = Value(20);
+const Value PAWN_SHELTER_3RD_RANK = Value(10);
 
 const Value BETA_PRUNING_MARGIN[8] = { Value(0), Value(200), Value(400), Value(600), Value(800), Value(1000), Value(1200), Value(1400) };
 const Value BETA_PRUNING_FACTOR = Value(100);
