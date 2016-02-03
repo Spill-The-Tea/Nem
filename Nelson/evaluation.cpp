@@ -123,11 +123,11 @@ eval evaluateMobility(const position& pos) {
 	Bitboard abbWPawn = pos.AttacksByPieceType(WHITE, PAWN);
 	Bitboard abbBPawn = pos.AttacksByPieceType(BLACK, PAWN);
 	//Leichtfiguren (N+B)
-	Bitboard abbWLeicht = abbWPawn | pos.AttacksByPieceType(WHITE, KNIGHT) | pos.AttacksByPieceType(WHITE, BISHOP);
-	Bitboard abbBLeicht = abbBPawn | pos.AttacksByPieceType(BLACK, KNIGHT) | pos.AttacksByPieceType(BLACK, BISHOP);
+	Bitboard abbWMinor = abbWPawn | pos.AttacksByPieceType(WHITE, KNIGHT) | pos.AttacksByPieceType(WHITE, BISHOP);
+	Bitboard abbBMinor = abbBPawn | pos.AttacksByPieceType(BLACK, KNIGHT) | pos.AttacksByPieceType(BLACK, BISHOP);
 	//Rooks
-	Bitboard abbWRook = abbWLeicht | pos.AttacksByPieceType(WHITE, ROOK);
-	Bitboard abbBRook = abbBLeicht | pos.AttacksByPieceType(BLACK, ROOK);
+	Bitboard abbWRook = abbWMinor | pos.AttacksByPieceType(WHITE, ROOK);
+	Bitboard abbBRook = abbBMinor | pos.AttacksByPieceType(BLACK, ROOK);
 	//Total Attacks
 	Bitboard abbWhite = pos.AttacksByColor(WHITE);
 	Bitboard abbBlack = pos.AttacksByColor(BLACK);
@@ -154,12 +154,12 @@ eval evaluateMobility(const position& pos) {
 		result -= MOBILITY_BONUS_QUEEN[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
-	//Rooks can move to all unattacked squares and if protected to all squares attacked  attacked by rooks or less important pieces
+	//Rooks can move to all unattacked squares and if protected to all squares attacked by rooks or less important pieces
 	pieceBB = pos.PieceBB(ROOK, WHITE);
 	while (pieceBB) {
 		Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
-		targets &= ~abbBlack | (abbWhite & ~abbBLeicht);
+		targets &= ~abbBlack | (abbWhite & ~abbBMinor);
 		result += MOBILITY_BONUS_ROOK[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
@@ -167,7 +167,7 @@ eval evaluateMobility(const position& pos) {
 	while (pieceBB) {
 		Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
-		targets &= ~abbWhite | (abbBlack & ~abbWLeicht);
+		targets &= ~abbWhite | (abbBlack & ~abbWMinor);
 		result -= MOBILITY_BONUS_ROOK[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}

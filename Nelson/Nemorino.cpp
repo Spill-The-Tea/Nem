@@ -30,7 +30,7 @@ int main(int argc, const char* argv[]) {
 		std::cout << "No Popcount support - Engine does't work on this hardware!" << std::endl;
 		return 0;
 	}
-	std::cout << "Nemorino 0.46" << std::endl;
+	std::cout << "Nemorino 0.47" << std::endl;
 	//std::cout << "Compiled on: " << __DATE__ << " " << __TIME__ << std::endl;
 	Initialize();
 	//bench2(7);

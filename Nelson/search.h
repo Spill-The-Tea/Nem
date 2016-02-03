@@ -212,6 +212,13 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 			BestMove.move = bookMove;
 			BestMove.score = VALUE_ZERO;
 			utils::debugInfo("Book move");
+			//Try to find a suitable move for pondering
+			position next(pos);
+			if (next.ApplyMove(bookMove)) {
+				ValuatedMove* replies = next.GenerateMoves<LEGAL>();
+				ponderMove = book->probe(next, true, replies, next.GeneratedMoveCount());
+				if (ponderMove == MOVE_NONE && next.GeneratedMoveCount() > 0) ponderMove = replies->move;
+			}
 			goto END;
 		}
 	}

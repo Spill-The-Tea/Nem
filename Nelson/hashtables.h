@@ -17,6 +17,8 @@ namespace pawn {
 		uint8_t openFiles;
 		uint8_t halfOpenFilesWhite;
 		uint8_t halfOpenFilesBlack;
+
+		inline int assymetry() { return popcount(halfOpenFilesWhite ^ halfOpenFilesBlack); }
 	};
 
 	extern Entry Table[PAWN_TABLE_SIZE];
