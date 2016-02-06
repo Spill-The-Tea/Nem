@@ -236,7 +236,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 #ifdef TB
 	//Root probing of tablebases. This is done as suggested by SF: Keep only the winning, resp. drawing, moves in the move list
 	//and then search normally. This way the engine will play "better" than by simply choosing the "best" tablebase move (which is
-	//the move which minimizes the number until drawPlayCount is reset without changing the result
+	//the move which minimizes the number until drawPlyCount is reset without changing the result
 	tbHits = 0;
 	probeTB = true;
 	if (pos.GetMaterialTableEntry()->IsTablebaseEntry()) {
@@ -245,6 +245,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		if (!tbHit) tbHit = Tablebases::root_probe_wdl(pos, tbMoves, score);
 		if (tbHit) {
 			tbHits++;
+			probeTB = false;
 			delete[] rootMoves;
 			rootMoveCount = (int)tbMoves.size();
 			rootMoves = new ValuatedMove[rootMoveCount];
@@ -254,7 +255,6 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 				utils::debugInfo("Only one tablebase move preserving the result!");
 				goto END;
 			}
-			probeTB = false;
 		}
 	}
 #endif
@@ -312,7 +312,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 					//fail-low
 					beta = (alpha + beta) / 2;
 					alpha = std::max(score - delta, -VALUE_INFINITE);
-					debugInfo("Fail-Low");
+					info(pos, pvIndx, SearchResultType::FAIL_LOW);
 					//inform timemanager to assigne more time
 					if (!PonderMode.load()) timeManager.reportFailLow();
 				}
@@ -320,7 +320,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 					//fail-high
 					alpha = (alpha + beta) / 2;
 					beta = std::min(score + delta, VALUE_INFINITE);
-					debugInfo("Fail-High");
+					info(pos, pvIndx, SearchResultType::FAIL_HIGH);
 				}
 				else {
 					//Iteration completed

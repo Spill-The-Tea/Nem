@@ -78,8 +78,10 @@ void baseSearch::info(position &pos, int pvIndx, SearchResultType srt) {
 		position npos(pos);
 		npos.copy(pos);
 		if (UciOutput) {
+			std::string srtString;
+			if (srt == SearchResultType::FAIL_LOW) srtString = " upperbound"; else if (srt == SearchResultType::FAIL_HIGH) srtString = " lowerbound";
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
-				sync_cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+				sync_cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 				<< " hashfull " << tt::GetHashFull()
 #ifdef TB
 				<< " tbhits " << tbHits
@@ -89,7 +91,7 @@ void baseSearch::info(position &pos, int pvIndx, SearchResultType srt) {
 			else {
 				int pliesToMate;
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
-				sync_cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+				sync_cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
 #ifdef TB
 					<< " tbhits " << tbHits
