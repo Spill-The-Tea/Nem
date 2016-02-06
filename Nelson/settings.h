@@ -27,14 +27,18 @@ const Value PieceValuesEG[]{ Value(950), Value(520), Value(325), Value(325), Val
 const int PAWN_TABLE_SIZE = 1 << 14; //has to be power of 2
 
 //Mobility bonus values
-const eval MOBILITY_BONUS_KNIGHT[] = { eval(-21, -17), eval(-14, -10), eval(-3, -3), eval(1, 0), eval(5, 3), eval(9, 7), eval(12, 9), eval(14, 10), eval(15, 11) };
-const eval MOBILITY_BONUS_BISHOP[] = { eval(-17, -16), eval(-9, -8), eval(2, 0), eval(7, 5), eval(11, 10), eval(16, 14), eval(20, 18), eval(23, 21), eval(24, 23),
-eval(26, 24), eval(27, 25), eval(27, 26), eval(28, 26), eval(29, 27) };
-const eval MOBILITY_BONUS_ROOK[] = { eval(-16, -18), eval(-10, -9), eval(-2, 0), eval(0, 5), eval(2, 11), eval(4, 16), eval(6, 21), eval(7, 27), eval(9, 32),
-eval(10, 36), eval(10, 38), eval(11, 40), eval(12, 41), eval(12, 41), eval(12, 42) };
-const eval MOBILITY_BONUS_QUEEN[] = { eval(-14, -13), eval(-9, -8), eval(-2, -2), eval(0, 0), eval(2, 3), eval(4, 6), eval(4, 10), eval(6, 13), eval(7, 13), eval(7, 14),
-eval(7, 14), eval(7, 14), eval(7, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14),
-eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14), eval(8, 14) };
+#define MBV(MGV, EGV) eval(9*MGV/8, 9*EGV/8)
+
+const eval MOBILITY_BONUS_KNIGHT[] = { MBV(-21, -17), MBV(-14, -10), MBV(-3, -3), MBV(1, 0), MBV(5, 3), MBV(9, 7), MBV(12, 9), MBV(14, 10), MBV(15, 11) };
+const eval MOBILITY_BONUS_BISHOP[] = { MBV(-17, -16), MBV(-9, -8), MBV(2, 0), MBV(7, 5), MBV(11, 10), MBV(16, 14), MBV(20, 18), MBV(23, 21), MBV(24, 23),
+                                       MBV(26, 24), MBV(27, 25), MBV(27, 26), MBV(28, 26), MBV(29, 27) };
+const eval MOBILITY_BONUS_ROOK[] = {   MBV(-16, -18), MBV(-10, -9), MBV(-2, 0), MBV(0, 5), MBV(2, 11), MBV(4, 16), MBV(6, 21), MBV(7, 27), MBV(9, 32),
+                                       MBV(10, 36), MBV(10, 38), MBV(11, 40), MBV(12, 41), MBV(12, 41), MBV(12, 42) };
+const eval MOBILITY_BONUS_QUEEN[] = {  MBV(-14, -13), MBV(-9, -8), MBV(-2, -2), MBV(0, 0), MBV(2, 3), MBV(4, 6), MBV(4, 10), MBV(6, 13), MBV(7, 13), MBV(7, 14),
+                                       MBV(7, 14), MBV(7, 14), MBV(7, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14),
+                                       MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14) };
+
+#undef MBV
 
 //King safety parameters
 const int KING_SAFETY_MAXVAL = 500;

@@ -204,6 +204,8 @@ eval evaluateMobility(const position& pos) {
 		result -= MOBILITY_BONUS_KNIGHT[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
+	result.egScore = (10 * result.egScore) / 8;
+	result.mgScore = (10 * result.mgScore) / 8;
 	return result;
 }
 
