@@ -290,7 +290,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	//Iterativ Deepening Loop
 	for (_depth = 1; _depth <= timeManager.GetMaxDepth(); ++_depth) {
 		Value alpha, beta, delta = Value(20);
-		for (int pvIndx = 0; pvIndx < MultiPv; ++pvIndx) {
+		for (int pvIndx = 0; pvIndx < MultiPv && pvIndx < rootMoveCount; ++pvIndx) {
 			if (_depth >= 5 && MultiPv == 1 && std::abs(score) < VALUE_KNOWN_WIN) {
 				//set aspiration window
 				alpha = std::max(score - delta, -VALUE_INFINITE);
@@ -324,7 +324,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 				}
 				else {
 					//Iteration completed
-					BestMove = rootMoves[0];
+					BestMove = rootMoves[pvIndx];
 					score = BestMove.score;
 					break;
 				}
@@ -482,8 +482,8 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 			if (i > 0) {
 				//make sure that best move is always in first place 
 				ValuatedMove bm = rootMoves[i];
-				for (int j = i; j > 0; --j) rootMoves[j] = rootMoves[j - 1];
-				rootMoves[0] = bm;
+				for (int j = i; j > startWithMove; --j) rootMoves[j] = rootMoves[j - 1];
+				rootMoves[startWithMove] = bm;
 			}
 			if (score >= beta) return score;
 			else if (score > alpha)
@@ -528,7 +528,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	}
 #ifdef TB
 	// Tablebase probe
-	// Probing is only done if root position was no tablebase position (probeTB is true) and if drawPlayCount = 0 (in that case we get the necessary WDL information) to return
+	// Probing is only done if root position was no tablebase position (probeTB is true) and if drawPlyCount = 0 (in that case we get the necessary WDL information) to return
 	// immediately
 	if (probeTB && depth >= SYZYGY_PROBE_DEPTH && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry())
 	{
