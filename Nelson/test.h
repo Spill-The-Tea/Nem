@@ -40,6 +40,14 @@ namespace test {
 	void testMateInDos();
 	void testRepetition();
 	void testKPK();
+	bool testBBOperations();
+	bool testPopcount();
+	bool testLSB();
+	bool testMSB();
+#ifdef NBF
+	bool testNBF();
+#endif
+
 
 #ifdef TB
 	void testTB();

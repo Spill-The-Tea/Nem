@@ -614,6 +614,134 @@ namespace test {
 		std::cout << "KPK Tests succesful!" << std::endl;
 	}
 
+	bool testBBOperations()
+	{
+		return testPopcount() && testLSB() && testMSB();
+	}
+
+	bool testPopcount()
+	{
+		std::cout << "Testing Popcount..." << std::endl;
+		for (int i = 0; i < 8; ++i) {
+			int pc = popcount(RANKS[i]);
+			if (pc != 8) {
+				std::cout << "Error: popcount(" << RANKS[i] << ") = " << pc << "   should be 8" << std::endl;
+				return false;
+			}
+		}
+		for (int i = 0; i < 8; ++i) {
+			int pc = popcount(FILES[i]);
+			if (pc != 8) {
+				std::cout << "Error: popcount(" << FILES[i] << ") = " << pc << "   should be 8" << std::endl;
+				break;
+			}
+		}
+		const Bitboard TESTS[] = { EMPTY, ALL_SQUARES, HALF_OF_BLACK, HALF_OF_WHITE };
+		const int RESULTS[] = { 0, 64, 32, 32 };
+		for (int i = 0; i < 4; ++i) {
+			int pc = popcount(TESTS[i]);
+			if (pc != RESULTS[i]) {
+				std::cout << "Error: popcount(" << TESTS[i] << ") = " << pc << "   should be " << RESULTS[i] << std::endl;
+				return false;
+			}
+		}
+		Bitboard bb = ALL_SQUARES;
+		int count = 64;
+		do {
+			Bitboard isolated = isolateLSB(bb);
+			int pc = popcount(isolated);
+			if (pc != 1) {
+				std::cout << "Error: popcount(" << isolated << ") = " << pc << "   should be 1" << std::endl;
+				return false;
+			}
+			bb &= bb - 1;
+			--count;
+			pc = popcount(bb);
+			if (pc != count) {
+				std::cout << "Error: popcount(" << bb << ") = " << pc << "   should be " << count << std::endl;
+				return false;
+			}
+		} while (bb);
+		std::cout << "Popcount ok!" << std::endl;
+		return true;
+	}
+
+	bool testLSB()
+	{
+		std::cout << "Testing LSB..." << std::endl;
+		for (int i = 0; i < 8; ++i) {
+			Square pc = lsb(RANKS[i]);
+			if (pc != Square(A1 + 8*i)) {
+				std::cout << "Error: LSB(" << RANKS[i] << ") = " << pc << "   should be " << Square(A1 + 8 * i) << std::endl;
+				return false;
+			}
+		}
+		for (int i = 0; i < 8; ++i) {
+			Square pc = lsb(FILES[i]);
+			if (pc != Square(A1 + i)) {
+				std::cout << "Error: LSB(" << FILES[i] << ") = " << pc << "   should be " << Square(A1 + i) << std::endl;
+				return false;
+			}
+		}
+		Bitboard bb = ALL_SQUARES;
+		int count = 0;
+		while (bb != EMPTY) {
+			Square sq = pop_lsb(&bb);
+			if (sq != Square(count)) {
+				std::cout << "Error: pop_lsb(" << bb << ") = " << sq << "   should be " << Square(count) << std::endl;
+				return false;
+			}
+			++count;
+		}
+		std::cout << "LSB ok!" << std::endl;
+		return true;
+	}
+
+	bool testMSB()
+	{
+		std::cout << "Testing MSB..." << std::endl;
+		for (int i = 0; i < 8; ++i) {
+			Square pc = msb(RANKS[i]);
+			if (pc != Square(H1 + 8 * i)) {
+				std::cout << "Error: MSB(" << RANKS[i] << ") = " << pc << "   should be " << Square(A1 + 8 * i) << std::endl;
+				return false;
+			}
+		}
+		for (int i = 0; i < 8; ++i) {
+			Square pc = msb(FILES[i]);
+			if (pc != Square(A8 + i)) {
+				std::cout << "Error: MSB(" << FILES[i] << ") = " << pc << "   should be " << Square(A1 + i) << std::endl;
+				return false;
+			}
+		}
+		std::cout << "MSB ok!" << std::endl;
+		return true;
+	}
+
+#ifdef NBF
+	bool testNBF()
+	{
+		std::ofstream epdFile("test.epd");
+		if (!epdFile.is_open()) return false;
+		epdFile << "1B1b1k2/1B3npp/1p6/p1p5/8/1P4P1/P6P/7K b - - bm Ke7; ce 12; acd 30;" << std::endl;
+		epdFile << "1B1b1k2/1B3npp/1p6/p1p5/8/1P6/P5PP/7K w - - bm g3; ce -59; acd 32;" << std::endl;
+		epdFile << "1B1b1k2/1B3npp/1pp5/p7/8/1P6/P5PP/7K b - - bm c5; ce 0; acd 26;" << std::endl;
+		epdFile.close();
+		positionbook::createBookFile("test.epd");
+		positionbook::book book("test.nbf");
+		position pos("1B1b1k2/1B3npp/1p6/p1p5/8/1P4P1/P6P/7K b - -");
+		ValuatedMove * moves = pos.GenerateMoves<LEGAL>();
+		int moveCount = pos.GeneratedMoveCount();
+		Move m = createMove(F8, E7);
+		ValuatedMove vm = book.probe(pos, moves, moveCount, 30);
+		if (!vm.move == m || std::abs((int)vm.score - 12) > 4)
+			return false;
+		std::remove("test.epd");
+		std::remove("test.nbf");
+		return false;
+	}
+#endif
+
 	void testResult() {
 		int64_t begin = now();
 		testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/stalemate.epd", DRAW);

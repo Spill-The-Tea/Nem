@@ -30,7 +30,7 @@ struct MaterialTableEntry {
 #ifdef TB
 	inline bool IsTablebaseEntry() { return (Flags & MSF_TABLEBASE_ENTRY) != 0; }
 #endif
-	inline PieceType GetMostExpensivePiece(Color color) { return PieceType((MostValuedPiece >> (4 * (int)color)) & 15); }
+	inline PieceType GetMostExpensivePiece(Color color) const { return PieceType((MostValuedPiece >> (4 * (int)color)) & 15); }
 	void setMostValuedPiece(Color color, PieceType pt) { 
 		MostValuedPiece &= color == BLACK ? 15 : 240;
 		MostValuedPiece |= color == BLACK ? pt << 4 : pt;

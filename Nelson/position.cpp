@@ -399,10 +399,10 @@ void position::evaluateCheckEvasions(int startIndex) {
 	if (movepointer - 2 > quietsIndex) std::sort(moves + quietsIndex, &moves[movepointer - 1], sortByScore);
 }
 
-Move position::GetCounterMove(Move * counterMoves) {
-	if (counterMoves && previous) {
+Move position::GetCounterMove(Move(&counterMoves)[12][64]) {
+	if (previous) {
 		Square lastTo = to(previous->lastAppliedMove);
-		return counterMoves[(Board[lastTo] << 6) + lastTo];
+		return counterMoves[int(Board[lastTo])][lastTo];
 	}
 	return MOVE_NONE;
 }
@@ -412,20 +412,22 @@ void position::evaluateByHistory(int startIndex) {
 		if (moves[i].move == counterMove) {
 			moves[i].score = VALUE_MATE;
 		}
-		else if (history) {
-			Move fixedMove = FixCastlingMove(moves[i].move);
-			Square toSquare = to(fixedMove);
-			Piece p = Board[from(fixedMove)];
-			moves[i].score = history->getValue(p, toSquare);
-			Move fixedLastApplied = FixCastlingMove(lastAppliedMove);
-			if (lastAppliedMove && cmHistory) moves[i].score += 2 * cmHistory->getValue(Board[to(fixedLastApplied)], to(fixedLastApplied), p, toSquare);
-			Bitboard toBB = ToBitboard(toSquare);
-			if (toBB & safeSquaresForPiece(p))
-				moves[i].score = Value(moves[i].score + 500);
-			else if ((p < WPAWN) && (toBB & AttacksByPieceType(Color(SideToMove ^ 1), PAWN)) != 0)
-				moves[i].score = Value(moves[i].score - 500);
-		}
-		else moves[i].score = VALUE_DRAW;
+		else
+			if (history) {
+				Move fixedMove = FixCastlingMove(moves[i].move);
+				Square toSquare = to(fixedMove);
+				Piece p = Board[from(fixedMove)];
+				moves[i].score = history->getValue(p, toSquare);
+				Move fixedLastApplied = FixCastlingMove(lastAppliedMove);
+				if (lastAppliedMove && cmHistory) moves[i].score += 2 * cmHistory->getValue(Board[to(fixedLastApplied)], to(fixedLastApplied), p, toSquare);
+				Bitboard toBB = ToBitboard(toSquare);
+				if (toBB & safeSquaresForPiece(p))
+					moves[i].score = Value(moves[i].score + 500);
+				else if ((p < WPAWN) && (toBB & AttacksByPieceType(Color(SideToMove ^ 1), PAWN)) != 0)
+					moves[i].score = Value(moves[i].score - 500);
+				assert(moves[i].score < VALUE_MATE);
+			}
+			else moves[i].score = VALUE_DRAW;
 	}
 }
 
@@ -647,7 +649,7 @@ const Value position::SEE(Move move) const
 	Bitboard occ = OccupiedBB();
 	Bitboard attadef = AttacksOfField(toSquare);
 	gain[d] = PieceValuesMG[GetPieceType(Board[toSquare])];
-	do
+	while (true)
 	{
 		d++; // next depth and side
 		gain[d] = PieceValuesMG[GetPieceType(Board[fromSquare])] - gain[d - 1]; // speculative store, if defended
@@ -657,8 +659,9 @@ const Value position::SEE(Move move) const
 		if ((fromSet & mayXray) != 0)
 			attadef |= considerXrays(occ, toSquare, fromSet, fromSquare);
 		fromSet = getSquareOfLeastValuablePiece(attadef, d & 1);
+		if (fromSet == EMPTY) break;
 		fromSquare = lsb(fromSet);
-	} while (fromSet != 0);
+	}
 	while (--d != 0)
 		gain[d - 1] = -std::max(-gain[d - 1], gain[d]);
 	return gain[0];
@@ -1059,6 +1062,29 @@ Move position::validMove(Move proposedMove)
 	}
 	return movecount > 0 ? moves[0].move : MOVE_NONE;
 }
+#ifdef TRACE
+std::string position::printPath() const
+{
+	std::vector<Move> move_list;
+	const position * actPos = this;
+	position * prevPos = previous;
+	if (actPos->nullMovePosition)
+		move_list.push_back(MOVE_NONE);
+	while (prevPos) {
+		move_list.push_back(actPos->lastAppliedMove);
+		if (prevPos->nullMovePosition)
+			move_list.push_back(MOVE_NONE);
+		actPos = prevPos;
+		prevPos = actPos->previous;
+	}
+	std::stringstream ss;
+	for (std::vector<Move>::reverse_iterator rit = move_list.rbegin(); rit != move_list.rend(); ++rit)
+	{
+		ss << toString(*rit) << " ";
+	}
+	return ss.str();
+}
+#endif
 
 bool position::validateMove(ExtendedMove move) {
 	Square fromSquare = from(move.move);
@@ -1067,6 +1093,9 @@ bool position::validateMove(ExtendedMove move) {
 
 
 void position::NullMove(Square epsquare) {
+#ifdef TRACE
+	nullMovePosition = !nullMovePosition;
+#endif
 	SwitchSideToMove();
 	SetEPSquare(epsquare);
 	Bitboard tmp = attackedByThem;

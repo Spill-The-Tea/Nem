@@ -37,8 +37,8 @@ void baseSearch::Reset() {
 
 void baseSearch::NewGame() {
 	Reset();
-	for (int i = 0; i < 12 * 64; ++i) {
-		counterMove[i] = MOVE_NONE;
+	for (int i = 0; i < 12; ++i) {
+		for (int j = 0; j < 64; ++j)counterMove[i][j] = MOVE_NONE;
 	}
 }
 
@@ -152,6 +152,9 @@ std::string baseSearch::GetXAnalysisOutput() {
 
 baseSearch::~baseSearch() {
 	if (book != nullptr) delete book;
+#ifdef NBF
+	if (nbfBook != nullptr) delete nbfBook;
+#endif
 }
 
 baseSearch::baseSearch() {

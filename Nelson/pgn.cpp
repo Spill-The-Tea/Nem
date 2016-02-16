@@ -3,27 +3,9 @@
 #include <fstream>
 #include <iostream>
 #include "pgn.h"
+#include "utils.h"
 
 namespace pgn {
-
-	const std::string WHITESPACE = " \n\r\t";
-
-	std::string TrimLeft(const std::string& s)
-	{
-		size_t startpos = s.find_first_not_of(WHITESPACE);
-		return (startpos ==std::string::npos) ? "" : s.substr(startpos);
-	}
-
-	std::string TrimRight(const std::string& s)
-	{
-		size_t endpos = s.find_last_not_of(WHITESPACE);
-		return (endpos ==std::string::npos) ? "" : s.substr(0, endpos + 1);
-	}
-
-	std::string Trim(const std::string& s)
-	{
-		return TrimRight(TrimLeft(s));
-	}
 
 	PieceType getPieceType(char c) {
 		switch (c) {
@@ -55,12 +37,10 @@ namespace pgn {
 	//Parses a single move (assuming that only move data is part of the std::string - no annotations,
 	//no check symbol, ...
 	Move parseSANMove(std::string move, position & pos) {
-		size_t indx = move.find("+");
+		size_t indx = move.find_first_not_of("abcdefgh12345678QRBNKDLSTO0-x=");
 		if (indx != std::string::npos) move = move.substr(0, indx);
-		indx = move.find("#");
-		if (indx != std::string::npos) move = move.substr(0, indx);
-		move = Trim(move);
-		ValuatedMove * moves = pos.GenerateMoves<ALL>();
+		move = utils::Trim(move);
+		ValuatedMove * moves = pos.GenerateMoves<LEGAL>();
 		Move m;
 		if (!move.compare("0-0") || !move.compare("O-O") || !move.compare("0-0-0") || !move.compare("O-O-O")) {
 			m = moves->move;
@@ -129,7 +109,7 @@ namespace pgn {
 		position * pos = new position();
 		fen = INITIAL_FEN;
 		for (std::vector<std::string>::iterator it = lines.begin(); it != lines.end(); ++it) {
-			std::string line = Trim(*it);
+			std::string line = utils::Trim(*it);
 			if (line.length() == 0) continue;
 			if (line[0] == '[') {
 				if (!line.substr(0, 4).compare("[FEN")) {
@@ -176,7 +156,7 @@ namespace pgn {
 			while (s)
 			{
 				std::getline(s, l);
-				std::string line = Trim(l);
+				std::string line = utils::Trim(l);
 				gameLines->push_back(line);
 				if (line.length() > 0) {
 					if (inTag && line[0] != '[') {
@@ -213,7 +193,7 @@ namespace pgn {
 			while (s)
 			{
 				std::getline(s, l);
-				std::string line = Trim(l);
+				std::string line = utils::Trim(l);
 				gameLines->push_back(line);
 				if (line.length() > 0) {
 					if (inTag && line[0] != '[') {

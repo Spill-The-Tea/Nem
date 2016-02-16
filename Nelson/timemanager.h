@@ -57,6 +57,8 @@ enum TimeMode  { UNDEF,                   //Not yet defined
 		//In xboard pprotocol it's possible, that engine can be switched to analysis mode while thinking. When this method is called timemanager switches to 
 		//mode=INFINIT
 		void switchToInfinite();
+		//calculates the depth, which will probably be reached with current time
+		int estimatedDepth();
 
 		inline TimeMode Mode() { return _mode; }
 

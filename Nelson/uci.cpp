@@ -84,6 +84,9 @@ void UCIInterface::dispatch(std::string line) {
 	//	cout << "QEval: " << Engine.QEval(pos) << std::endl;
 	else if (!command.compare("quit"))
 		quit();
+#ifdef TRACE
+	else if (!command.compare("dumpTree")) utils::dumpSearchTreeToFile();
+#endif
 }
 
 void UCIInterface::uci() {
@@ -103,6 +106,9 @@ void UCIInterface::uci() {
 #ifdef TB
 	sync_cout << "option name SyzygyPath type string default " << SYZYGY_PATH.c_str() << sync_endl;
 	sync_cout << "option name SyzygyProbeDepth type spin default " << SYZYGY_PROBE_DEPTH << " min 0 max 10" << sync_endl;
+#endif
+#ifdef NBF
+	sync_cout << "option name NBFBook type string default " << NBF_BOOK.c_str() << sync_endl;
 #endif
 	sync_cout << "uciok" << sync_endl;
 }
@@ -175,6 +181,23 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 		pawn::clear();
 		Engine->Reset();
 	}
+#ifdef NBF
+	else if (!tokens[2].compare("NBFBook")) {
+		std::stringstream ssNBFPath;
+		if (tokens.size() < 5) {
+			NBF_BOOK = "";
+		}
+		else {
+			unsigned int idx = 4;
+			while (idx < tokens.size()) {
+				ssNBFPath << ' ' << tokens[idx];
+				++idx;
+
+			}
+			NBF_BOOK = ssNBFPath.str().substr(1);
+		}
+	}
+#endif
 #ifdef TB
 	else if (!tokens[2].compare("SyzygyPath")) {
 		std::stringstream ssTBPath;

@@ -199,8 +199,6 @@ inline uint8_t IsolatedFiles(uint8_t fileset) {
 	return IslandsEastFiles(fileset) & IslandsWestFiles(fileset);
 }
 
-
-
 inline int ChebishevDistance(Square sq1, Square sq2) {
 	return (std::max)(abs((sq1>>3) - (sq2>>3)), abs((sq1 & 7) - (sq2 & 7)));
 }

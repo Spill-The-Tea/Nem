@@ -16,26 +16,18 @@
 #include "syzygy/tbprobe.h"
 #endif
 
-const int MAJOR_VERSION = 1;
-const int MINOR_VERSION = 0;
+const int MAJOR_VERSION = 0;
+const int MINOR_VERSION = 52;
 
 
 static bool popcountSupport();
 
 int main(int argc, const char* argv[]) {
-#ifdef __GNUC__
-//#ifndef __x86_64__
-//	cout << "Only 64 bit operating systems are supported!" << std::endl;
-//	return 0;
-//#endif
-#endif // __GNUC__
 	if (!popcountSupport()) {
 		std::cout << "No Popcount support - Engine does't work on this hardware!" << std::endl;
 		return 0;
 	}
 	Initialize();
-	//bench2(7);
-	//return 0;
 	std::string input = "";
 	if (argc <= 1) {
 		position pos;
@@ -84,7 +76,7 @@ int main(int argc, const char* argv[]) {
 				std::cout << "Nemorino is a chess engine supporting both UCI and XBoard protocol. To play" << std::endl;
 				std::cout << "chess with it you need a GUI (like arena or winboard)" << std::endl;
 				std::cout << "License: GNU GENERAL PUBLIC LICENSE v3 (https://www.gnu.org/licenses/gpl.html)" << std::endl << std::endl;
-				std::cout << std::left << std::setw(width) << "uci"  << "Starts engine in UCI mode" << std::endl;
+				std::cout << std::left << std::setw(width) << "uci" << "Starts engine in UCI mode" << std::endl;
 				std::cout << std::left << std::setw(width) << "xboard" << "Starts engine in XBoard mode" << std::endl;
 				std::cout << std::left << std::setw(width) << "version" << "Outputs the current version of the engine" << std::endl;
 				std::cout << std::left << std::setw(width) << "position <fen>" << "Sets the engine's position using the FEN-String <fen>" << std::endl;
@@ -94,6 +86,13 @@ int main(int argc, const char* argv[]) {
 				std::cout << std::left << std::setw(width) << "print" << "Outputs the internal board with some information like evaluation and hash keys" << std::endl;
 				std::cout << std::left << std::setw(width) << "help" << "Prints out this help lines" << std::endl;
 				std::cout << std::left << std::setw(width) << "quit" << "Exits the program" << std::endl;
+#ifdef NBF
+				std::cout << std::left << std::setw(width) << "makepbo <epdfile>" << "Creates an PBO Book from an EPD file " << std::endl;
+			}
+			else if (!input.compare(0, 7, "makepbo")) {
+				positionbook::createBookFile(input.substr(8));
+
+#endif
 			}
 			else if (!input.compare(0, 4, "quit")) break;
 		}

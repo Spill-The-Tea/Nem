@@ -594,12 +594,15 @@ void generateOccupancyVariations(bool isRook)
 			occupancyVariation[square].push_back(subset);
 			//Now calculate attack set: subset without shadowed fields
 			Bitboard attackset = 0;
-			Bitboard temp = subset;
-			do {
-				Square to = lsb(temp);
-				if ((InBetweenFields[square][to] & subset) == 0) attackset |= ToBitboard(to);
-				temp &= temp - 1;
-			} while (temp);
+			if (subset) {
+				Bitboard temp = subset;
+				do {
+					Square to = lsb(temp);
+					if ((InBetweenFields[square][to] & subset) == 0) attackset |= ToBitboard(to);
+					temp &= temp - 1;
+				} while (temp);
+			}
+			else attackset = occupancy;
 			occupancyAttackSet[square].push_back(attackset);
 			subset = (subset - occupancy) & occupancy;
 		} while (subset);

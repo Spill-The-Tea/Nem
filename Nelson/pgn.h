@@ -8,7 +8,7 @@ namespace pgn {
 
 	std::vector<std::vector<Move>> parsePGNFile(std::string filename);
 	std::map<std::string, Move> parsePGNExerciseFile(std::string filename);
-	Move parseSANMove(std::string mi, position &pos);
+	Move parseSANMove(std::string move, position &pos);
 	std::vector<Move> parsePGNGame(std::vector<std::string> lines);
 	std::vector<Move> parsePGNGame(std::vector<std::string> lines, std::string &fen);
 

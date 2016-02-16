@@ -15,6 +15,10 @@ extern std::string SYZYGY_PATH;
 extern int SYZYGY_PROBE_DEPTH;
 #endif
 
+#ifdef NBF
+extern std::string NBF_BOOK;
+#endif
+
 const int EmergencyTime = 100; //100 ms Emergency time
 const int PV_MAX_LENGTH = 32; //Maximum Length of displayed Principal Variation
 const int MASK_TIME_CHECK = (1 << 14) - 1; //Time is only checked each MASK_TIME_CHECK nodes

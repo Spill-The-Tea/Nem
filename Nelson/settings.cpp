@@ -14,5 +14,9 @@ Protocol protocol = NO_PROTOCOL;
   int SYZYGY_PROBE_DEPTH = 1;
 #endif
 
+#ifdef NBF
+  std::string NBF_BOOK = "";
+#endif
+
 //Value PASSED_PAWN_BONUS[4] = { Value(10), Value(30), Value(60), Value(100) };
 //Value BETA_PRUNING_FACTOR = Value(200);

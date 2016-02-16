@@ -6,6 +6,10 @@ namespace cecp {
 
 	xboard::xboard()
 	{
+		BestMove.move = MOVE_NONE;
+		BestMove.score = VALUE_ZERO;
+		time[0] = 0;
+		time[1] = 0;
 		ponder.store(false);
 		drawOffered.store(false);
 		engineState.store(Waiting);
@@ -149,16 +153,28 @@ namespace cecp {
 			return true;
 		case WHITE_MATES:
 			sync_cout << "1-0 {White mates}" << sync_endl;
+			return false;
 		case BLACK_MATES:
 			sync_cout << "0-1 {Black mates}" << sync_endl;
+			return false;
 		case DRAW_50_MOVES:
-			if (score < -Contempt) sync_cout << "1/2-1/2 {50-move rule}" << sync_endl; else return true;
+			if (score < -Contempt) {
+				sync_cout << "1/2-1/2 {50-move rule}" << sync_endl;
+				return false;
+			}
+			else return true;
 		case DRAW_STALEMATE:
 			sync_cout << "1/2-1/2 {Stalemate}" << sync_endl;
+			return false;
 		case DRAW_REPETITION:
-			if (score < -Contempt) sync_cout << "1/2-1/2 {3-fold Repetition}" << sync_endl; else return true;
+			if (score < -Contempt) {
+				sync_cout << "1/2-1/2 {3-fold Repetition}" << sync_endl;
+				return false;
+			}
+			else return true;
 		case DRAW_MATERIAL:
 			sync_cout << "1/2-1/2 {No mating material}" << sync_endl;
+			return false;
 		default:
 			return true;
 		}

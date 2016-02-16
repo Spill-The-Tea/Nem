@@ -12,7 +12,7 @@ namespace pawn {
 	Entry Table[PAWN_TABLE_SIZE];
 
 	void initialize() {
-
+		clear();
 	}
 
 	void clear() {
@@ -54,14 +54,12 @@ namespace pawn {
 			ppB &= ppB - 1;
 		}
 		//Candidate passed pawns
-		Bitboard candidates = EMPTY;
 		Bitboard potentialCandidates = bbWhite & ~bbBFrontspan & bbBAttackset & ~attacksBlack; //open, but not passed pawns
 		while (potentialCandidates) {
 			Bitboard candidateBB = isolateLSB(potentialCandidates);
 			Bitboard sentries = FrontFillNorth(((candidateBB << 17) & NOT_A_FILE) | ((candidateBB << 15) & NOT_H_FILE)) & bbBlack;
 			Bitboard helper = FrontFillSouth(sentries >> 16) & bbWhite;
 			if (popcount(helper) >= popcount(sentries)) {
-				candidates |= candidateBB;
 				result->Score += BONUS_CANDIDATE * (lsb(candidateBB) >> 3);
 			}
 			potentialCandidates &= potentialCandidates - 1;
@@ -72,7 +70,6 @@ namespace pawn {
 			Bitboard sentries = FrontFillSouth(((candidateBB >> 15) & NOT_A_FILE) | ((candidateBB >> 17) & NOT_H_FILE)) & bbWhite;
 			Bitboard helper = FrontFillNorth(sentries << 16) & bbBlack;
 			if (popcount(helper) >= popcount(sentries)) {
-				candidates |= candidateBB;
 				result->Score -= BONUS_CANDIDATE * (7 - (lsb(candidateBB) >> 3));
 			}
 			potentialCandidates &= potentialCandidates - 1;
@@ -147,7 +144,7 @@ namespace tt {
 	void InitializeTranspositionTable(int sizeInMB) {
 		FreeTranspositionTable();
 		uint64_t clusterCount = CalculateClusterCount(sizeInMB);
-		Table = (Cluster *)calloc(clusterCount, sizeof(Cluster));
+		Table = static_cast<Cluster *>(calloc(clusterCount, sizeof(Cluster)));
 		MASK = clusterCount - 1;
 		ResetCounter();
 	}

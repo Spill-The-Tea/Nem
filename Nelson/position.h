@@ -1,9 +1,11 @@
 #pragma once
+#include <string>
+#include <vector>
 #include "types.h"
 #include "board.h"
 #include "material.h"
 #include "hashtables.h"
-#include <string>
+
 
 struct evaluation;
 
@@ -159,7 +161,7 @@ public:
 	std::string toSan(Move move);
 	//parses a move in SAN notation
 	Move parseSan(std::string move);
-	Move GetCounterMove(Move * counterMoves);
+	Move GetCounterMove(Move(&counterMoves)[12][64]);
 	inline bool Improved() { return previous == nullptr || previous->previous == nullptr || StaticEval >= previous->previous->StaticEval; }
 	//During staged move generation first only queen promotions are generated. When all other moves are generated and processed under promotions will be added
 	void AddUnderPromotions();
@@ -171,6 +173,10 @@ public:
 	inline bool QuietMoveGenerationPhaseStarted() const { return generationPhases[generationPhase] >= QUIETS_POSITIVE; }
 	//Validate a move and return it if validated, else return another valid move
 	Move validMove(Move proposedMove);
+#ifdef TRACE
+	std::string printPath() const;
+#endif
+
 private:
 	//These are the members, which are copied by the copied constructor and contain the full information
 	Bitboard OccupiedByColor[2];
@@ -291,6 +297,10 @@ private:
 	bool checkMaterialIsUnusual();
 	//Returns a bitboard indicating all squares where a piece can move to, because it's either not attacked by the opponent or protected and not attacked by less valued pieces
 	const Bitboard safeSquaresForPiece(Piece piece) const;
+
+#ifdef TRACE
+	bool nullMovePosition = false;
+#endif
 };
 
 template<> inline ValuatedMove* position::GenerateMoves<QUIET_CHECKS>();

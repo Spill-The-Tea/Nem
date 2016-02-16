@@ -39,6 +39,7 @@ eval evaluateMobility(const position& pos);
 eval evaluateKingSafety(const position& pos);
 Value evaluatePawnEnding(const position& pos);
 template <Color COL> eval evaluateThreats(const position& pos);
+template <Color COL> eval evaluatePieces(const position& pos);
 std::string printDefaultEvaluation(const position& pos);
 
 const int PSQ_GoForMate[64] = {
@@ -360,10 +361,10 @@ template <Color StrongerSide> Value evaluateKQKRP(const position& pos) {
 		&& (pos.PieceTypeBB(PAWN) & pos.AttacksByPieceType(weak, KING))) //king is protecting own pawn
 	{
 		//check if strong king is on other side of rook as weak king
-		if ((rook & C_FILE) && (pos.PieceBB(KING, weak) & (A_FILE | B_FILE)) && (pos.PieceBB(KING, StrongerSide))& (bbKINGSIDE | E_FILE | D_FILE)) return evaluateDraw(pos);
-		if ((rook & F_FILE) && (pos.PieceBB(KING, weak) & (G_FILE | H_FILE)) && (pos.PieceBB(KING, StrongerSide))& (bbQUEENSIDE | E_FILE | D_FILE)) return evaluateDraw(pos);
-		if ((rook & RANK3) && (pos.PieceBB(KING, weak) & (RANK1 | RANK2)) && (pos.PieceBB(KING, StrongerSide))& (HALF_OF_BLACK | RANK4)) return evaluateDraw(pos);
-		if ((rook & RANK6) && (pos.PieceBB(KING, weak) & (RANK7 | RANK8)) && (pos.PieceBB(KING, StrongerSide))& (HALF_OF_WHITE | RANK5)) return evaluateDraw(pos);
+		if ((rook & C_FILE) && (pos.PieceBB(KING, weak) & (A_FILE | B_FILE)) && (pos.PieceBB(KING, StrongerSide) & (bbKINGSIDE | E_FILE | D_FILE))) return evaluateDraw(pos);
+		if ((rook & F_FILE) && (pos.PieceBB(KING, weak) & (G_FILE | H_FILE)) && (pos.PieceBB(KING, StrongerSide) & (bbQUEENSIDE | E_FILE | D_FILE))) return evaluateDraw(pos);
+		if ((rook & RANK3) && (pos.PieceBB(KING, weak) & (RANK1 | RANK2)) && (pos.PieceBB(KING, StrongerSide)& (HALF_OF_BLACK | RANK4))) return evaluateDraw(pos);
+		if ((rook & RANK6) && (pos.PieceBB(KING, weak) & (RANK7 | RANK8)) && (pos.PieceBB(KING, StrongerSide)& (HALF_OF_WHITE | RANK5))) return evaluateDraw(pos);
 		//Then we have a fortress
 		return evaluateDraw(pos);
 	}
@@ -464,7 +465,6 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 		Bitboard bbHalfOpen = COL == WHITE ? FileFill(pos.GetPawnEntry()->halfOpenFilesWhite) : FileFill(pos.GetPawnEntry()->halfOpenFilesBlack);
 		Bitboard rooksOnSemiOpen = bbHalfOpen & rooks;
 		bonusRook += popcount(rooksOnSemiOpen) * ROOK_ON_SEMIOPENFILE;
-		Bitboard rooksOnOpen = FileFill(pos.GetPawnEntry()->openFiles) & rooks;
 		bonusRook += 2 * popcount(FileFill(pos.GetPawnEntry()->openFiles) & rooks) * ROOK_ON_OPENFILE;
 		//bonusRook += popcount((rooksOnSemiOpen | rooksOnOpen)  & (pos.PieceBB(QUEEN, OTHER) | pos.PieceBB(KING, OTHER))) * ROOK_ON_SEMIOPENFILE_WITH_KQ;
 	}

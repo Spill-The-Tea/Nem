@@ -29,8 +29,8 @@ typedef uint64_t Bitboard;
 typedef int64_t Time_t;
 
 /* Move Encoding as unsigned short (copied from Stockfish)
-* from                  = bits 0-5
-* to                    = bits 6-11
+* to                  = bits 0-5
+* from                    = bits 6-11
 * conversion piece type = bits 12-13
 * type                  = bits 14-15
 */

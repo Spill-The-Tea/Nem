@@ -3,7 +3,20 @@
 #include "timemanager.h"
 #include "utils.h"
 
-timemanager::timemanager() { }
+timemanager::timemanager() {
+	_starttime = now();
+	_time = INT_MAX;
+	_inc = 0;
+	_movestogo = 0;
+	_mode = UNDEF;
+	_maxDepth = MAX_DEPTH;
+	_maxNodes = INT64_MAX;
+	_hardStopTime = INT64_MAX;
+	_stopTime = INT64_MAX;
+	std::memset(_iterationTimes, 0, MAX_DEPTH * sizeof(Time_t));
+	std::memset(_bestMoves, 0, MAX_DEPTH * sizeof(ValuatedMove));
+	std::memset(_nodeCounts, 0, MAX_DEPTH * sizeof(int64_t));
+}
 
 timemanager::timemanager(const timemanager &tm) {
 	_starttime = tm._starttime;
@@ -16,6 +29,9 @@ timemanager::timemanager(const timemanager &tm) {
 
 	_hardStopTime.store(tm._hardStopTime);
 	_stopTime.store(tm._stopTime);
+	std::memcpy(_iterationTimes, tm._iterationTimes, MAX_DEPTH * sizeof(Time_t));
+	std::memcpy(_bestMoves, tm._bestMoves, MAX_DEPTH * sizeof(ValuatedMove));
+	std::memcpy(_nodeCounts, tm._nodeCounts, MAX_DEPTH * sizeof(int64_t));
 }
 
 timemanager::~timemanager() { }
@@ -110,7 +126,7 @@ void timemanager::PonderHit() {
 		Time_t usedInLastIteration = tnow - _completionTimeOfLastIteration;
 		if (usedInLastIteration < 2 * usedForCompletedIteration) { //If current iteration is not about to be finished, let's check if it's better to return immediately
 			bool stable = _completedDepth > 3 && _bestMoves[_completedDepth - 1].move == _bestMoves[_completedDepth - 2].move && _bestMoves[_completedDepth - 1].move == _bestMoves[_completedDepth - 3].move
-				&& std::abs(_bestMoves[_completedDepth - 1].score - _bestMoves[_completedDepth - 2].score) < 0.1;
+				&& std::abs(int16_t(_bestMoves[_completedDepth - 1].score - _bestMoves[_completedDepth - 2].score)) < 0.1;
 			//if stable continue iteration if there is 3 times more time available than already spent - if unstable continue next iteration even if only 2 times the spent time is left
 			double factor = stable ? 3 : 2;
 			//If a fail low has occurred assign even more time
@@ -129,7 +145,7 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 	_completionTimeOfLastIteration = tnow;
 	_bestMoves[currentDepth - 1] = bestMove;
 	_nodeCounts[currentDepth - 1] = nodecount;
-	//_iterationTimes[currentDepth - 1] = tnow - _starttime;
+	_iterationTimes[currentDepth - 1] = tnow - _starttime;
 	//if (ponderMode) return true;
 	if (ExitSearch(tnow)) return false;
 	switch (_mode)
@@ -143,7 +159,7 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 	default:
 
 		bool stable = currentDepth > 3 && _bestMoves[currentDepth - 1].move == _bestMoves[currentDepth - 2].move && _bestMoves[currentDepth - 1].move == _bestMoves[currentDepth - 3].move
-			&& std::abs(_bestMoves[currentDepth - 1].score - _bestMoves[currentDepth - 2].score) < 0.1;
+			&& std::abs(int16_t(_bestMoves[currentDepth - 1].score - _bestMoves[currentDepth - 2].score)) < 0.1;
 		//if stable only start iteration if there is 3 times more time available than already spent - if unstable start next iteration even if only 2 times the spent time is left
 		double factor = stable ? 3 : 2;
 		//If a fail low has occurred assign even more time
@@ -155,6 +171,16 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 
 void timemanager::switchToInfinite() {
 	_mode = INFINIT;
+}
+
+int timemanager::estimatedDepth()
+{
+	Time_t stime = _stopTime;
+	if (stime == INT64_MAX) stime = _stopTimeSave;
+	for (int i = 1; i < MAX_DEPTH; ++i) {
+		if (_iterationTimes[i] > stime) return i;
+	}
+	return 0;
 }
 
 void timemanager::updateTime(int64_t time) {
