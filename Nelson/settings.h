@@ -25,8 +25,8 @@ const int MASK_TIME_CHECK = (1 << 14) - 1; //Time is only checked each MASK_TIME
 
 //Material Values
 //King piece value is set to a very large number, to ensure that any capture sequence where the king is "captured" is << 0
-const Value PieceValuesMG[]{ Value(950), Value(520), Value(325), Value(325), Value(80), VALUE_KNOWN_WIN, VALUE_ZERO };
-const Value PieceValuesEG[]{ Value(950), Value(520), Value(325), Value(325), Value(100), VALUE_KNOWN_WIN, VALUE_ZERO };
+const Value PieceValuesMG[]{ Value(950), Value(490), Value(325), Value(325), Value(80), VALUE_KNOWN_WIN, VALUE_ZERO };
+const Value PieceValuesEG[]{ Value(950), Value(550), Value(325), Value(325), Value(100), VALUE_KNOWN_WIN, VALUE_ZERO };
 
 const int PAWN_TABLE_SIZE = 1 << 14; //has to be power of 2
 
