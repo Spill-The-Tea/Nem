@@ -82,9 +82,7 @@ public:
 	//SEE method, which returns without exact value, when it's sure that value is positive (then VALUE_KNOWN_WIN is returned)
 	Value SEE_Sign(Move move) const;
 	//returns true if SideTo Move is in check. Must not be called when it's unclear whether opponent's attack map is already determined
-	inline bool IsCheck() const { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
-	//returns true if SideTo Move is in check. This method can safely called anytime
-	inline bool Checked() { return (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1)))) && IsCheck(); }
+	inline bool Checked() const { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
 	//Static evaluation function for unusual material (no pre-calculated material values available in Material Table)
 	friend evaluation evaluateFromScratch(position &pos);
 	//Calls the static evaluation function (it will call the evaluation even, if the StaticEval value is already different from VALUE_NOTYETEVALUATED)
@@ -983,7 +981,7 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 	history = historyStats;
 	cmHistory = dblHistoryStats;
 	hashmove ? hashMove = hashmove : hashMove = MOVE_NONE;
-	if (IsCheck()) generationPhase = generationPhaseOffset[CHECK] + (hashMove == MOVE_NONE);
+	if (Checked()) generationPhase = generationPhaseOffset[CHECK] + (hashMove == MOVE_NONE);
 	else generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);
 }
 

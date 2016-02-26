@@ -1,23 +1,15 @@
 #pragma once
 
+#include <map>
+#include <memory>
 #include "types.h"
+#include "board.h"
+#include "utils.h"
 
-extern int HashSizeMB;        //Transposition Table Size in Megabytes (upper limit)
-extern std::string BOOK_FILE; //Polyglot opening book file
-extern bool USE_BOOK;         //Use opening book
 extern int HelperThreads;     //Number of slave threads
 extern Value Contempt;        //Only accept draws, when evaluation is less then -Contempt
 extern Color EngineSide;      //Side played by the engine
 extern Protocol protocol;
-
-#ifdef TB
-extern std::string SYZYGY_PATH;
-extern int SYZYGY_PROBE_DEPTH;
-#endif
-
-#ifdef NBF
-extern std::string NBF_BOOK;
-#endif
 
 const int EmergencyTime = 100; //100 ms Emergency time
 const int PV_MAX_LENGTH = 32; //Maximum Length of displayed Principal Variation
@@ -131,3 +123,130 @@ const Value CAPTURE_SCORES[6][6] = {
 };
 
 const int LMPMoveCount[4] = { 0, 7, 9, 13 };
+
+namespace settings {
+	enum OptionType { SPIN, CHECK, BUTTON, STRING };
+
+	const std::string OPTION_HASH = "Hash";
+	const std::string OPTION_CHESS960 = "UCI_Chess960";
+	const std::string OPTION_CLEAR_HASH = "Clear Hash";
+	const std::string OPTION_CONTEMPT = "Contempt";
+	const std::string OPTION_MULTIPV = "MultiPV";
+	const std::string OPTION_THREADS = "Threads";
+	const std::string OPTION_PONDER = "Ponder";
+	const std::string OPTION_BOOK_FILE = "BookFile";
+	const std::string OPTION_OWN_BOOK = "OwnBook";
+	const std::string OPTION_OPPONENT = "UCI_Opponent";
+#ifdef TB
+	const std::string OPTION_SYZYGY_PATH = "SyzygyPath";
+	const std::string OPTION_SYZYGY_PROBE_DEPTH = "SyzygyProbeDepth";
+#endif
+#ifdef NBF
+	const std::string OPTION_NBF_BOOK = "NBFBook";
+#endif
+
+	class Option {
+	public:
+		Option() { };
+		Option(std::string Name, OptionType Type = OptionType::BUTTON, std::string DefaultValue = "", std::string MinValue = "", std::string MaxValue = "");
+		void virtual set(std::string value) = 0;
+		void virtual read(std::vector<std::string> &tokens) = 0;
+		std::string printUCI();
+		inline std::string getName() { return name; }
+	protected:
+		std::string name;
+		OptionType otype;
+		std::string defaultValue;
+		std::string minValue;
+		std::string maxValue;
+	};
+
+
+
+	class OptionSpin: public Option {
+	public:
+		OptionSpin(std::string Name, int Value, int Min, int Max) : Option(Name, OptionType::SPIN, std::to_string(Value), std::to_string(Min), std::to_string(Max)) { };
+		inline void set(std::string value) { _value = stoi(value); }
+		inline void set(int value) { _value = value; }
+		inline int getValue() { 
+			if (_value == INT_MIN) set(defaultValue); 
+			return _value; 
+		}
+		inline void read(std::vector<std::string> &tokens) { set(tokens[4]); }
+	protected:
+		int _value = INT_MIN;
+	};
+
+	class OptionCheck : public Option {
+	public:
+		OptionCheck(std::string Name, bool value);
+		void set(std::string value);
+		inline bool getValue() { return _value; }
+		inline void read(std::vector<std::string> &tokens) { set(tokens[4]); }
+		inline void set(bool value) { _value = value; };
+	protected:
+		bool _value = true;
+	};
+
+	class OptionString : public Option {
+	public:
+		OptionString(std::string Name, std::string defaultValue = "") : Option(Name, OptionType::STRING, defaultValue) { };
+		void set(std::string value) { _value = value; }
+		inline std::string getValue() { return _value; }
+		void read(std::vector<std::string> &tokens);
+	protected:
+		std::string _value;
+	};
+
+	class OptionButton : public Option {
+	public:
+		OptionButton(std::string Name) : Option(Name, OptionType::BUTTON) { };
+		void set(std::string value) { }
+		inline void read(std::vector<std::string> &tokens) { }
+	};
+
+	class OptionThread : public OptionSpin {
+	public:
+		OptionThread() : OptionSpin(OPTION_THREADS, HelperThreads + 1, 1, 128) { };
+		void set(std::string value);
+	};
+	
+	class Option960 : public OptionCheck {
+	public:
+		Option960() : OptionCheck(OPTION_CHESS960, Chess960) { };
+		void set(std::string value);
+		inline void set(bool value) { Chess960 = value; };
+	};
+
+	class OptionContempt : public OptionSpin {
+	public:
+		OptionContempt() : OptionSpin(OPTION_CONTEMPT, Contempt, -1000, 1000) { };
+		void set(std::string value);
+		void set(int value);
+	};
+
+	class OptionHash : public OptionSpin {
+	public:
+		OptionHash() : OptionSpin(OPTION_HASH, 32, 1, 16384) { };
+		void set(std::string value);
+		void set(int value);
+	};
+
+	class Options : public std::map<std::string, Option *> {
+	public:
+		Options();
+		void printUCI();
+		void read(std::vector<std::string> &tokens);
+		int getInt(std::string key);
+		bool getBool(std::string key);
+		std::string getString(std::string key);
+		void set(std::string key, std::string value);
+		void set(std::string key, int value);
+		void set(std::string key, bool value);
+	private:
+		void initialize();
+	};
+
+	extern Options options;
+
+}

@@ -19,6 +19,8 @@ namespace utils {
 	std::string TrimRight(const std::string& s);
 	std::string Trim(const std::string& s);
 
+	inline std::string bool2String(bool val) { if (val) return "true"; else return "false"; }
+
 	template <class T> T clamp(T value, T lowerBound, T upperBound) { return std::max(lowerBound, std::min(value, upperBound)); }
 
 	class logger {

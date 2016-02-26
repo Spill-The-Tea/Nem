@@ -91,25 +91,7 @@ void UCIInterface::dispatch(std::string line) {
 
 void UCIInterface::uci() {
 	Engine->UciOutput = true;
-	sync_cout << "id name Nemorino" << sync_endl;
-	sync_cout << "id author Christian Günther" << sync_endl;
-	sync_cout << "option name UCI_Chess960 type check default " << (Chess960 ? "true" : "false") << sync_endl;
-	sync_cout << "option name Hash type spin default " << HashSizeMB << " min 1 max 16384" << sync_endl;
-	sync_cout << "option name Clear Hash type button" << sync_endl;
-	sync_cout << "option name MultiPV type spin default " << Engine->MultiPv << " min 1 max 216" << sync_endl;
-	sync_cout << "option name Threads type spin default " << HelperThreads + 1 << " min 1 max 128" << sync_endl;
-	sync_cout << "option name Ponder type check" << sync_endl;
-	sync_cout << "option name Contempt type spin default 0 min -1000 max 1000" << sync_endl;
-	sync_cout << "option name BookFile type string default " << BOOK_FILE.c_str() << sync_endl;
-	sync_cout << "option name OwnBook type check default " << (USE_BOOK ? "true" : "false") << sync_endl;
-	sync_cout << "option name UCI_Opponent type string" << sync_endl;
-#ifdef TB
-	sync_cout << "option name SyzygyPath type string default " << SYZYGY_PATH.c_str() << sync_endl;
-	sync_cout << "option name SyzygyProbeDepth type spin default " << SYZYGY_PROBE_DEPTH << " min 0 max 10" << sync_endl;
-#endif
-#ifdef NBF
-	sync_cout << "option name NBFBook type string default " << NBF_BOOK.c_str() << sync_endl;
-#endif
+	settings::options.printUCI();
 	sync_cout << "uciok" << sync_endl;
 }
 
@@ -119,33 +101,15 @@ void UCIInterface::isready() {
 
 void UCIInterface::setoption(std::vector<std::string> &tokens) {
 	if (tokens.size() < 4 || tokens[1].compare("name")) return;
-	if (!tokens[2].compare("UCI_Chess960")) Chess960 = !tokens[4].compare("true");
-	else if (!tokens[2].compare("Hash")) {
-		int hashSize = stoi(tokens[4]);
-		if (hashSize != HashSizeMB) {
-			HashSizeMB = hashSize;
-			tt::InitializeTranspositionTable(HashSizeMB);
-		}
-	}
-	else if (!tokens[2].compare("BookFile")) {
-		std::stringstream ssBookfile;
+	settings::options.read(tokens);
+    if (!tokens[2].compare(settings::OPTION_BOOK_FILE)) {
 		if (tokens.size() < 5) {
-			USE_BOOK = false;
-		}
-		else {		
-			unsigned int idx = 4;
-			while (idx < tokens.size()) {
-				ssBookfile << ' ' << tokens[idx];
-				++idx;
-
-			}
-			BOOK_FILE = ssBookfile.str().substr(1);
+			settings::options.set(settings::OPTION_OWN_BOOK, false);
 		}
 	}
-	else if (!tokens[2].compare("OwnBook")) USE_BOOK = !tokens[4].compare("true");
-	else if (!tokens[2].compare("Ponder")) ponderActive = !tokens[4].compare("true");
-	else if (!tokens[2].compare("Threads")) {
-		HelperThreads = stoi(tokens[4]) - 1;
+	else if (!tokens[2].compare(settings::OPTION_PONDER)) 
+		ponderActive = settings::options.getBool(settings::OPTION_PONDER);
+	else if (!tokens[2].compare(settings::OPTION_THREADS)) {
 		if (HelperThreads && Engine->GetType() == SINGLE) {
 			baseSearch * newEngine = new search < MASTER >;
 			copySettings(Engine, newEngine);
@@ -159,60 +123,29 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 			Engine = newEngine;
 		}
 	}
-	else if (!tokens[2].compare("MultiPV")) {
-		Engine->MultiPv = stoi(tokens[4]);
+	else if (!tokens[2].compare(settings::OPTION_MULTIPV)) {
+		Engine->MultiPv = settings::options.getInt(settings::OPTION_MULTIPV);
 	}
-	else if (!tokens[2].compare("Contempt")) {
-		Contempt = Value(stoi(tokens[4]));
-	}
-	else if (!tokens[2].compare("UCI_Opponent")) {
+	else if (!tokens[2].compare(settings::OPTION_OPPONENT)) {
 		try {
 			int rating = stoi(tokens[5]);
-			int ownRating = 2700;
-			Contempt = Value((ownRating - rating) / 10);
+			int ownRating = 2800;
+			settings::options.set(settings::OPTION_CONTEMPT, (ownRating - rating) / 10);
 			sync_cout << "info string Contempt set to " << Contempt << sync_endl;
 		}
-		catch (...){
+		catch (...) {
 
 		}
 	}
-	else if (!tokens[2].compare("Clear") && !tokens[3].compare("Hash")) {
+	else if (!tokens[2].compare("Clear") && !tokens[3].compare(settings::OPTION_HASH)) {
 		tt::clear();
 		pawn::clear();
 		Engine->Reset();
 	}
-#ifdef NBF
-	else if (!tokens[2].compare("NBFBook")) {
-		std::stringstream ssNBFPath;
-		if (tokens.size() < 5) {
-			NBF_BOOK = "";
-		}
-		else {
-			unsigned int idx = 4;
-			while (idx < tokens.size()) {
-				ssNBFPath << ' ' << tokens[idx];
-				++idx;
-
-			}
-			NBF_BOOK = ssNBFPath.str().substr(1);
-		}
-	}
-#endif
 #ifdef TB
-	else if (!tokens[2].compare("SyzygyPath")) {
-		std::stringstream ssTBPath;
-		if (tokens.size() < 5) {
-			SYZYGY_PATH = "";
-		}
-		else {
-			unsigned int idx = 4;
-			while (idx < tokens.size()) {
-				ssTBPath << ' ' << tokens[idx];
-				++idx;
-
-			}
-			SYZYGY_PATH = ssTBPath.str().substr(1);
-			Tablebases::init(SYZYGY_PATH);
+	else if (!tokens[2].compare(settings::OPTION_SYZYGY_PATH)) {
+		if (settings::options.getString(settings::OPTION_SYZYGY_PATH).size() > 1) {
+			Tablebases::init(settings::options.getString(settings::OPTION_SYZYGY_PATH));
 			if (Tablebases::MaxCardinality < 3) {
 				sync_cout << "Couldn't find any Tablebase files!!" << sync_endl;
 				exit(1);
@@ -220,16 +153,13 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 			InitializeMaterialTable();
 		}
 	}
-	else if (!tokens[2].compare("SyzygyProbeDepth")) {
-		SYZYGY_PROBE_DEPTH = Value(stoi(tokens[4]));
-	}
 #endif
 }
 
-void UCIInterface::ucinewgame(){
+void UCIInterface::ucinewgame() {
 	initialized = true;
 	Engine->NewGame();
-	if (USE_BOOK) Engine->BookFile = BOOK_FILE; else Engine->BookFile = "";
+	if (settings::options.getBool(settings::OPTION_OWN_BOOK)) Engine->BookFile = settings::options.getString(settings::OPTION_BOOK_FILE); else Engine->BookFile = "";
 }
 
 #define MAX_FEN 0x80
@@ -335,7 +265,7 @@ void UCIInterface::go(std::vector<std::string> &tokens) {
 			++idx;
 			moveTime = stoi(tokens[idx]);
 			searchmoves = false;
-		} 
+		}
 		else if (!tokens[idx].compare(inc)) {
 			++idx;
 			increment = stoi(tokens[idx]);
@@ -363,7 +293,7 @@ void UCIInterface::go(std::vector<std::string> &tokens) {
 			searchmoves = false;
 			mode = FIXED_TIME_PER_MOVE;
 		}
-		else if (!tokens[idx].compare("ponder")) {
+		else if (!tokens[idx].compare(settings::OPTION_PONDER)) {
 			ponderStartTime = tnow;
 			ponder = true;
 			searchmoves = false;
@@ -442,7 +372,7 @@ void UCIInterface::divide(std::vector<std::string> &tokens) {
 	std::cout << "Runtime: " << runtime << " ms\t" << std::endl;
 }
 
-void UCIInterface::quit(){
+void UCIInterface::quit() {
 	deleteThread();
 	//utils::logger::instance()->flush();
 	exit(EXIT_SUCCESS);

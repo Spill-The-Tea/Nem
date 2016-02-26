@@ -105,7 +105,7 @@ namespace tt {
 		Entry entry[CLUSTER_SIZE];
 	};
 
-	void InitializeTranspositionTable(int sizeInMB);
+	void InitializeTranspositionTable();
 
 	void FreeTranspositionTable();
 

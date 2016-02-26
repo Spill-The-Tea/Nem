@@ -355,11 +355,8 @@ namespace cecp {
 	}
 
 	void xboard::memory(std::vector<std::string> tokens) {
-		int hashSize = stoi(tokens[1]);
-		if (hashSize != HashSizeMB) {
-			HashSizeMB = hashSize;
-			tt::InitializeTranspositionTable(HashSizeMB);
-		}
+		settings::options.set(settings::OPTION_HASH, tokens[1]);
+		tt::InitializeTranspositionTable();
 	}
 
 	void xboard::cores(std::vector<std::string> tokens) {
@@ -388,8 +385,8 @@ namespace cecp {
 		sync_cout << "feature option=\"Clear Hash -button\"" << sync_endl;
 		sync_cout << "feature option=\"MultiPV -spin " << Engine->MultiPv << " 1 216\"" << sync_endl;
 		sync_cout << "feature option=\"Contempt -spin 0 -1000 1000\"" << sync_endl;
-		sync_cout << "feature option=\"BookFile -file " << BOOK_FILE.c_str() << "\"" << sync_endl;
-		sync_cout << "feature option=\"OwnBook -check " << (USE_BOOK ? "1\"" : "0\"") << sync_endl;
+		sync_cout << "feature option=\"BookFile -file " << settings::options.getString(settings::OPTION_BOOK_FILE).c_str() << "\"" << sync_endl;
+		sync_cout << "feature option=\"OwnBook -check " << (settings::options.getBool(settings::OPTION_OWN_BOOK) ? "1\"" : "0\"") << sync_endl;
 		sync_cout << "feature done=1" << sync_endl;
 	}
 
@@ -509,8 +506,7 @@ namespace cecp {
 
 #ifdef TB
 	void xboard::egtpath(std::vector<std::string> tokens) {
-		SYZYGY_PATH = tokens[1];
-		Tablebases::init(SYZYGY_PATH);
+		Tablebases::init(settings::options.getString(settings::OPTION_SYZYGY_PATH));
 		if (Tablebases::MaxCardinality < 3) {
 			sync_cout << "Couldn't find any Tablebase files!!" << sync_endl;
 			exit(1);
@@ -531,23 +527,23 @@ namespace cecp {
 			name = tokens[1].substr(0, indx);
 			value = tokens[1].substr(indx + 1);
 		}
-		if (!name.compare("Clear Hash")) {
+		if (!name.compare(settings::OPTION_CLEAR_HASH)) {
 			tt::clear();
 			pawn::clear();
 			Engine->Reset();
 		}
-		else if (!name.compare("MultiPV")) {
+		else if (!name.compare(settings::OPTION_MULTIPV)) {
 			Engine->MultiPv = stoi(tokens[1]);
 		}
-		else if (!name.compare("Contempt")) {
+		else if (!name.compare(settings::OPTION_CONTEMPT)) {
 			Contempt = Value(stoi(tokens[1]));
 		}
-		else if (!name.compare("BookFile")) {
-			BOOK_FILE = value;
-			if (BOOK_FILE.empty()) USE_BOOK = false;
+		else if (!name.compare(settings::OPTION_BOOK_FILE)) {
+			((settings::OptionString *)settings::options[settings::OPTION_BOOK_FILE])->set(value);
+			if (((settings::OptionString *)settings::options[settings::OPTION_BOOK_FILE])->getValue().empty()) ((settings::OptionCheck *)settings::options[settings::OPTION_OWN_BOOK])->set(false);
 		}
-		else if (!name.compare("OwnBook")) {
-			USE_BOOK = !value.compare("1");
+		else if (!name.compare(settings::OPTION_OWN_BOOK)) {
+			((settings::OptionCheck *)settings::options[settings::OPTION_OWN_BOOK])->set(!value.compare("1"));
 		}
 	}
 

@@ -138,7 +138,7 @@ void baseSearch::debugInfo(std::string info)
 }
 
 Move baseSearch::GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount) {
-	if (USE_BOOK && BookFile.size() > 0) {
+	if (settings::options.getBool(settings::OPTION_OWN_BOOK) && BookFile.size() > 0) {
 		if (book == nullptr) book = new polyglot::book(BookFile);
 		book->probe(pos, true, moves, moveCount);
 	}

@@ -922,7 +922,7 @@ std::string position::print() {
 
 		ss << " |\n +---+---+---+---+---+---+---+---+\n";
 	}
-	ss << "\nChecked:         " << std::boolalpha << IsCheck() << std::noboolalpha
+	ss << "\nChecked:         " << std::boolalpha << Checked() << std::noboolalpha
 		<< "\nEvaluation:      " << this->evaluate()
 		<< "\nFen:             " << fen()
 		<< "\nHash:            " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << Hash
@@ -1045,7 +1045,7 @@ bool position::validateMove(Move move) {
 				&& ((InBetweenFields[fromSquare][InitialRookSquare[2 * SideToMove + (toSquare < fromSquare)]] & OccupiedBB()) == 0)
 				&& (((InBetweenFields[fromSquare][toSquare] | ToBitboard(toSquare)) & attackedByThem) == 0)
 				&& (InitialRookSquareBB[2 * SideToMove + (toSquare < fromSquare)] & PieceBB(ROOK, SideToMove))
-				&& !IsCheck();
+				&& !Checked();
 		}
 		else if (type(move) == NORMAL) result = (attacks[fromSquare] & ToBitboard(toSquare)) != 0;
 		else result = false;

@@ -656,7 +656,7 @@ int Tablebases::probe_dtz(position& pos, int *success)
 				position next(pos);
 				if (next.ApplyMove(move)) break;
 			}
-			if (moves->move == MOVE_NONE && !pos.IsCheck()) {
+			if (moves->move == MOVE_NONE && !pos.Checked()) {
 				pos.ResetMoveGeneration();
 				pos.GenerateMoves<QUIETS>();
 				moves = pos.GetMoves(moveCount);
@@ -709,7 +709,7 @@ bool Tablebases::root_probe(position& pos, std::vector<ValuatedMove>& rootMoves,
 		position next(pos);
 		next.ApplyMove(move);
 		int v = 0;
-		if (next.IsCheck() && dtz > 0) {
+		if (next.Checked() && dtz > 0) {
 			if (next.GetResult() != OPEN) v = 1;
 		}
 		if (!v) {

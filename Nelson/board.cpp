@@ -711,7 +711,7 @@ void Initialize() {
 	InitializeMaterialTable();
 	InitializeShadowedFields();
 	pawn::initialize();
-	tt::InitializeTranspositionTable(HashSizeMB);
+	tt::InitializeTranspositionTable();
 	int64_t end = now();
 	auto runtime = end - begin;
 	std::cout << "Initialization Time: " << runtime << "ms" << std::endl;

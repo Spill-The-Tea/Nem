@@ -117,6 +117,8 @@ namespace pawn {
 
 namespace tt {
 
+	int initializedSizeInMB = 0;
+
 	uint8_t _generation = 0;
     uint64_t ProbeCounter = 0;
 	uint64_t HitCounter = 0;
@@ -141,12 +143,16 @@ namespace tt {
 		return clusterCount;
 	}
 
-	void InitializeTranspositionTable(int sizeInMB) {
-		FreeTranspositionTable();
-		uint64_t clusterCount = CalculateClusterCount(sizeInMB);
-		Table = static_cast<Cluster *>(calloc(clusterCount, sizeof(Cluster)));
-		MASK = clusterCount - 1;
-		ResetCounter();
+	void InitializeTranspositionTable() {
+		int newHashSize = settings::options.getInt(settings::OPTION_HASH);
+		if (initializedSizeInMB != newHashSize) {
+			FreeTranspositionTable();
+			uint64_t clusterCount = CalculateClusterCount(newHashSize);
+			Table = static_cast<Cluster *>(calloc(clusterCount, sizeof(Cluster)));
+			MASK = clusterCount - 1;
+			ResetCounter();
+			initializedSizeInMB = newHashSize;
+		}
 	}
 
 	void clear() {

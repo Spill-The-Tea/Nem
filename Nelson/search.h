@@ -205,7 +205,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		goto END;
 	}
 	//check if book is available
-	if (USE_BOOK && BookFile.size() > 0) {
+	if (settings::options.getBool(settings::OPTION_OWN_BOOK) && BookFile.size() > 0) {
 		if (book == nullptr) book = new polyglot::book(BookFile);
 		//Currently engine isn't looking for the best book move, but selects on of the available bookmoves by random, with entries weight used to define the
 		//probability 
@@ -225,14 +225,17 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		}
 	}
 #ifdef NBF
-	if (NBF_BOOK.size() > 0) {
-		if (nbfBook == nullptr) nbfBook = new positionbook::book(NBF_BOOK);
-		ValuatedMove bookMove = nbfBook->probe(pos, generatedMoves, rootMoveCount, timeManager.estimatedDepth());
-		if (bookMove.move != MOVE_NONE) {
-			BestMove = bookMove;
-			info(pos, 0);
-			utils::debugInfo("NBF Book move");
-			goto END;
+	{
+		std::string nbfBookFile = settings::options.getString(settings::OPTION_NBF_BOOK);
+		if (nbfBookFile.size() > 0) {
+			if (nbfBook == nullptr) nbfBook = new positionbook::book(nbfBookFile);
+			ValuatedMove bookMove = nbfBook->probe(pos, generatedMoves, rootMoveCount, timeManager.estimatedDepth());
+			if (bookMove.move != MOVE_NONE) {
+				BestMove = bookMove;
+				info(pos, 0);
+				utils::debugInfo("NBF Book move");
+				goto END;
+			}
 		}
 	}
 #endif
@@ -252,7 +255,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	//and then search normally. This way the engine will play "better" than by simply choosing the "best" tablebase move (which is
 	//the move which minimizes the number until drawPlyCount is reset without changing the result
 	tbHits = 0;
-	probeTB = true;
+	probeTB = Tablebases::MaxCardinality > 0;
 	if (pos.GetMaterialTableEntry()->IsTablebaseEntry()) {
 		std::vector<ValuatedMove> tbMoves(rootMoves, rootMoves + rootMoveCount);
 		bool tbHit = Tablebases::root_probe(pos, tbMoves, score);
@@ -552,7 +555,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	// Tablebase probe
 	// Probing is only done if root position was no tablebase position (probeTB is true) and if drawPlyCount = 0 (in that case we get the necessary WDL information) to return
 	// immediately
-	if (probeTB && depth >= SYZYGY_PROBE_DEPTH && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry())
+	if (probeTB && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry())
 	{
 		int found, v = Tablebases::probe_wdl(pos, &found);
 		if (found)
