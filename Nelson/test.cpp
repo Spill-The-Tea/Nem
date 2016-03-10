@@ -18,6 +18,20 @@ namespace test {
 	void testTB() {
 		std::map<std::string, Move> tests;
 		tests["8/RK5p/8/8/6k1/8/8/8 w - - 0 1"] = createMove(B7, C6);
+		tests["8/8/8/8/1p2P3/4P3/1k6/3K4 w - - 0 1"] = createMove(E4, E5);
+		tests["8/8/8/8/1p2P3/4P3/1k6/3K4 b - - 0 1"] = createMove(B4, B3);
+		tests["8/5k2/8/8/3P4/3K4/8/8 w - - 0 1"] = createMove(D3, C4);
+		tests["7K/8/k1P5/7p/8/8/8/8 w - - 0 1"] = createMove(H8, G7);
+		tests["Q3K2k/2q5/8/8/5N2/8/8/8 w - - 0 1"] = createMove(F4, D5);
+		tests["8/8/8/8/7k/8/r4p1B/5K2 w - - 0 1"] = createMove(H2, D6);
+		tests["8/8/5pp1/8/8/7P/6K1/1k6 w - - 0 1"] = createMove(G2, F3);
+		tests["8/8/3r4/7p/1KR5/8/8/6k1 w - - 0 1"] = createMove(B4, C5);
+		tests["2K5/8/2p5/8/1p6/1P6/8/6k1 w - - 0 1"] = createMove(C8, B7);
+		tests["1K2k2N/7p/8/6P1/8/8/8/8 w - - 0 1"] = createMove(B8, C8);
+		tests["1K5N/7p/2k5/6P1/8/8/8/8 b - - 0 1"] = createMove(C6, D7);
+		tests["3k4/1K6/8/8/6P1/8/6P1/8 w - - 0 1"] = createMove(B7, C6);
+		tests["8/8/8/1B6/8/8/4n3/1KBk4 w - - 0 1"] = createMove(B5, A4);
+		tests["8/6B1/8/8/B7/8/K1pk4/8 b - - 0 1"] = createMove<PROMOTION>(C2, C1, KNIGHT);
 		std::map<std::string, Move>::iterator iter;
 		for (iter = tests.begin(); iter != tests.end(); ++iter) {
 			std::string fen = iter->first;
@@ -27,7 +41,9 @@ namespace test {
 			int moveCount = pos.GeneratedMoveCount();
 			std::vector<ValuatedMove> tbMoves(generatedMoves, generatedMoves + moveCount);
 			Value score;
-			Tablebases::root_probe(pos, tbMoves, score);
+			if (!Tablebases::root_probe(pos, tbMoves, score)) {
+				Tablebases::root_probe_wdl(pos, tbMoves, score);
+			}
 			if (tbMoves.size() == 0 || tbMoves[0].move != move) {
 				std::cout << "Error: expected " << toString(move) << " in position " << fen << std::endl;
 			}

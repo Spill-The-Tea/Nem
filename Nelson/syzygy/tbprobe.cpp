@@ -703,7 +703,7 @@ bool Tablebases::root_probe(position& pos, std::vector<ValuatedMove>& rootMoves,
 	int dtz = probe_dtz(pos, &success);
 	if (!success) return false;
 
-	// Probe each move.
+	 // Probe each move.
 	for (size_t i = 0; i < rootMoves.size(); i++) {
 		Move move = rootMoves[i].move;
 		position next(pos);
@@ -727,8 +727,6 @@ bool Tablebases::root_probe(position& pos, std::vector<ValuatedMove>& rootMoves,
 		rootMoves[i].score = (Value)v;
 	}
 
-	// Obtain 50-move counter for the root position.
-	// In Stockfish there seems to be no clean way, so we do it like this:
 	int cnt50 = pos.GetDrawPlyCount();
 
 	// Use 50-move counter to determine whether the root position is
@@ -743,11 +741,10 @@ bool Tablebases::root_probe(position& pos, std::vector<ValuatedMove>& rootMoves,
 	score = wdl_to_Value[wdl + 2];
 	// If the position is winning or losing, but too few moves left, adjust the
 	// score to show how close it is to winning or losing.
-	// NOTE: int(PawnValueEg) is used as scaling factor in score_to_uci().
 	if (wdl == 1 && dtz <= 100)
-		score = (Value)(((200 - dtz - cnt50) * int(PieceValuesEG[PAWN])) / 200);
+		score = (Value)(((200 - dtz - cnt50) * int(PieceValues[PAWN].egScore)) / 200);
 	else if (wdl == -1 && dtz >= -100)
-		score = -(Value)(((200 + dtz - cnt50) * int(PieceValuesEG[PAWN])) / 200);
+		score = -(Value)(((200 + dtz - cnt50) * int(PieceValues[PAWN].egScore)) / 200);
 
 	// Now be a bit smart about filtering out moves.
 	size_t j = 0;

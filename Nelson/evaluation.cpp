@@ -216,8 +216,7 @@ Value evaluateFromScratch(const position& pos) {
 	eval materialEvaluation;
 	for (PieceType pt = QUEEN; pt <= PAWN; ++pt) {
 		int diff = popcount(pos.PieceBB(pt, WHITE)) - popcount(pos.PieceBB(pt, BLACK));
-		materialEvaluation.egScore += diff * PieceValuesEG[pt];
-		materialEvaluation.mgScore += diff * PieceValuesMG[pt];
+		materialEvaluation += diff * PieceValues[pt];
 	}
 	Phase_t phase = Phase(popcount(pos.PieceBB(QUEEN, WHITE)), popcount(pos.PieceBB(QUEEN, BLACK)),
 		popcount(pos.PieceBB(ROOK, WHITE)), popcount(pos.PieceBB(ROOK, BLACK)),
@@ -239,7 +238,7 @@ Value evaluatePawnEnding(const position& pos) {
 			Square convSquare = ConversionSquare<WHITE>(passedPawnSquare);
 			int distToConv = std::min(7 - (passedPawnSquare >> 3), 5);
 			if (distToConv < (ChebishevDistance(lsb(pos.PieceBB(KING, BLACK)), convSquare) - (pos.GetSideToMove() == BLACK))) {
-				unstoppable += Value(PieceValuesEG[QUEEN] - ((distToConv + 1 + (pos.GetSideToMove() == BLACK)) * PieceValuesEG[PAWN]));
+				unstoppable += Value(PieceValues[QUEEN].egScore - ((distToConv + 1 + (pos.GetSideToMove() == BLACK)) * PieceValues[PAWN].egScore));
 			}
 			wpassed &= wpassed - 1;
 		}
@@ -249,7 +248,7 @@ Value evaluatePawnEnding(const position& pos) {
 			Square convSquare = ConversionSquare<BLACK>(passedPawnSquare);
 			int distToConv = std::min((passedPawnSquare >> 3), 5);
 			if (distToConv < (ChebishevDistance(lsb(pos.PieceBB(KING, WHITE)), convSquare) - (pos.GetSideToMove() == WHITE))) {
-				unstoppable -= Value(PieceValuesEG[QUEEN] - ((distToConv + 1 + (pos.GetSideToMove() == WHITE)) * PieceValuesEG[PAWN]));
+				unstoppable -= Value(PieceValues[QUEEN].egScore - ((distToConv + 1 + (pos.GetSideToMove() == WHITE)) * PieceValues[PAWN].egScore));
 			}
 			bpassed &= bpassed - 1;
 		}
@@ -266,7 +265,7 @@ Value evaluateKBPxKBPx(const position& pos) {
 	Bitboard darkSquareBishops = pos.PieceTypeBB(BISHOP) & DARKSQUARES;
 	if (darkSquareBishops != 0 && (darkSquareBishops & (darkSquareBishops - 1)) == 0) {
 		//oposite colored bishops
-		result.Material -= result.Material > 0 ? PieceValuesMG[PAWN] : -PieceValuesMG[PAWN];
+		result.Material -= result.Material > 0 ? PieceValues[PAWN].mgScore : -PieceValues[PAWN].mgScore;
 	}
 	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
 }

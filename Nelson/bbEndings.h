@@ -34,7 +34,7 @@ namespace kpk
 			bKingSquare = Square(bKingSquare ^ 7);
 		}
 		if (probe(wKingSquare, pawnSquare, bKingSquare, stm)) {
-			result = VALUE_KNOWN_WIN + PieceValuesEG[PAWN] + Value(pawnSquare >> 3);						
+			result = VALUE_KNOWN_WIN + PieceValues[PAWN].egScore + Value(pawnSquare >> 3);						
 		}
 		else {
 			return pos.GetSideToMove() == EngineSide ? -Contempt : Contempt;  //To force taking of the pawn (if possible)

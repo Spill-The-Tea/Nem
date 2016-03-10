@@ -83,11 +83,11 @@ template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 	int relativeRank = pawnSq >> 3;
 	if (WinningSide == WHITE) relativeRank = 7 - relativeRank;
 	if ((pawnBB & (A_FILE | C_FILE | F_FILE | H_FILE)) == 0)
-		result = VALUE_KNOWN_WIN + PieceValuesEG[QUEEN] - PieceValuesEG[PAWN] - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
+		result = VALUE_KNOWN_WIN + PieceValues[QUEEN].egScore - PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
 	else {
 
 		if (relativeRank != Rank7)
-			result = VALUE_KNOWN_WIN + PieceValuesEG[QUEEN] - PieceValuesEG[PAWN] - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
+			result = VALUE_KNOWN_WIN + PieceValues[QUEEN].egScore - PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
 		else {
 			//Now we need to probe the bitbase => therefore normalize position (White is winning and pawn is on left hals of board)
 			Square wKingSquare, bKingSquare, wQueenSquare;
@@ -113,7 +113,7 @@ template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 				wQueenSquare = Square(wQueenSquare ^ 7);
 			}
 			bool isWin = pawnSq == A2 ? kqkp::probeA2(wKingSquare, wQueenSquare, bKingSquare, stm) : kqkp::probeC2(wKingSquare, wQueenSquare, bKingSquare, stm);
-			if (isWin) result = VALUE_KNOWN_WIN + PieceValuesEG[QUEEN] - PieceValuesEG[PAWN] - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
+			if (isWin) result = VALUE_KNOWN_WIN + PieceValues[QUEEN].egScore - PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
 			else return evaluateDraw(pos);
 		}
 	}
@@ -272,7 +272,7 @@ template <Color SideWithoutPawns> Value evaluateKNKPx(const position& pos) {
 	//2 pawns => Knight counts half => total Material value = 0.5 Bishop - 2 Pawns = -40
 	//3 pawns => Knight counts 2/3  => total Material Value = -80
 	//4 pawns => Knight counts 3/4  => total Material Value = -160
-	Value result = Value(int(int(PieceValuesEG[KNIGHT])*(1.0 - 1.0 / pawnCount))) - pawnCount * PieceValuesEG[PAWN]; //from Side without Pawns POV
+	Value result = Value(int(int(PieceValues[KNIGHT].egScore)*(1.0 - 1.0 / pawnCount))) - pawnCount * PieceValues[PAWN].egScore; //from Side without Pawns POV
 	//King and Knight should try to control or block the pawns frontfill
 	Bitboard frontspan = SideWithoutPawns == WHITE ? FrontFillSouth(pawns) : FrontFillNorth(pawns);
 	//result += Value(5 * popcount(frontspan & (pos.AttacksByPieceType(SideWithoutPawns, KNIGHT) | pos.PieceTypeBB(KNIGHT)))
@@ -299,7 +299,7 @@ template <Color SideWithoutPawns> Value evaluateKBKPx(const position& pos) {
 	//2 pawns => Bishop counts half => total Material value = 0.5 Bishop - 2 Pawns = -40
 	//3 pawns => Bishop counts 2/3  => total Material Value = -80
 	//4 pawns => Bishop counts 3/4  => total Material Value = -160
-	Value result = Value(int(int(PieceValuesEG[BISHOP])*(1.0 - 1.0 / pawnCount))) - pawnCount * PieceValuesEG[PAWN]; //from Side without Pawns POV
+	Value result = Value(int(int(PieceValues[BISHOP].egScore)*(1.0 - 1.0 / pawnCount))) - pawnCount * PieceValues[PAWN].egScore; //from Side without Pawns POV
 	Bitboard frontspan = SideWithoutPawns == WHITE ? FrontFillSouth(pawns) : FrontFillNorth(pawns);
 	result += Value(popcount(frontspan & (pos.AttacksByPieceType(SideWithoutPawns, BISHOP) | pos.PieceTypeBB(BISHOP) | pos.AttacksByPieceType(SideWithoutPawns, KING) | pos.PieceBB(KING, SideWithoutPawns))));
 	result -= Value(2 * popcount(pos.PieceTypeBB(PAWN) & pos.AttacksByPieceType(Color(SideWithoutPawns ^ 1), KING)));
@@ -317,7 +317,7 @@ template <Color StrongerSide> Value evaluateKRKP(const position& pos) {
 	int dtc = StrongerSide == WHITE ? pawnSquare >> 3 : 7 - (pawnSquare >> 3);
 	Bitboard pfront = StrongerSide == WHITE ? FrontFillSouth(pos.PieceTypeBB(PAWN)) : FrontFillNorth(pos.PieceTypeBB(PAWN));
 	if (pfront & pos.PieceBB(KING, StrongerSide)) {
-		result = VALUE_KNOWN_WIN + PieceValuesEG[ROOK] - PieceValuesEG[PAWN] + Value(dtc - ChebishevDistance(strongerKingSquare, pawnSquare));
+		result = VALUE_KNOWN_WIN + PieceValues[ROOK].egScore - PieceValues[PAWN].egScore + Value(dtc - ChebishevDistance(strongerKingSquare, pawnSquare));
 		return StrongerSide == pos.GetSideToMove() ? result : -result;
 	}
 	Color WeakerSide = Color(StrongerSide ^ 1);
@@ -329,7 +329,7 @@ template <Color StrongerSide> Value evaluateKRKP(const position& pos) {
 	Square rookSquare = lsb(pos.PieceTypeBB(ROOK));
 	if (ChebishevDistance(weakKingSquare, pawnSquare) > (3 + (pos.GetSideToMove() == WeakerSide))
 		&& ChebishevDistance(weakKingSquare, rookSquare) >= 3) {
-		result = VALUE_KNOWN_WIN + PieceValuesEG[ROOK] - PieceValuesEG[PAWN] + Value(dtc - ChebishevDistance(strongerKingSquare, pawnSquare));
+		result = VALUE_KNOWN_WIN + PieceValues[ROOK].egScore - PieceValues[PAWN].egScore + Value(dtc - ChebishevDistance(strongerKingSquare, pawnSquare));
 		return StrongerSide == pos.GetSideToMove() ? result : -result;
 	}
 	// If the pawn is far advanced and supported by the defending king,

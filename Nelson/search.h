@@ -269,7 +269,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 			std::copy(tbMoves.begin(), tbMoves.end(), rootMoves);
 			if (rootMoveCount == 1) {
 				BestMove = rootMoves[0]; //if tablebase probe only returns one move play => play it and done!
-				utils::debugInfo("Only one tablebase move preserving the result!");
+				utils::debugInfo("Tablebase move", toString(BestMove.move));
 				goto END;
 			}
 		}
@@ -628,7 +628,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 
 			position cpos(pos);
 			cpos.copy(pos);
-			Value limit = PieceValuesMG[GetPieceType(pos.getCapturedInLastMove())];
+			Value limit = PieceValues[GetPieceType(pos.getCapturedInLastMove())].mgScore;
 			Move ttm = ttMove;
 			if (ttm != MOVE_NONE && cpos.SEE(ttMove) < limit) ttm = MOVE_NONE;
 			cpos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, nullptr, MOVE_NONE, ttm, limit);
@@ -693,7 +693,8 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		position next(pos);
 		if (next.ApplyMove(move)) {
 			bool critical = move == counter || !pos.QuietMoveGenerationPhaseStarted() || moveIndex == 0;
-			//Check extension
+			//critical = critical || GetPieceType(pos.GetPieceOnSquare(from(move))) == PAWN && ((pos.GetSideToMove() == WHITE && from(move) > H5) || (pos.GetSideToMove() == BLACK && from(move) < A4));
+		   //Check extension
 			int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
 			if (!extension && to(move) == recaptureSquare) {
 				++extension;
@@ -701,12 +702,8 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			int reduction = 0;
 			//LMR: Late move reduction
 			if (lmr && !critical && moveIndex >= 2 && !extension && !next.Checked()) {
-				if (PVNode) {
-					if (moveIndex >= 5) reduction = 1;
-				}
-				else {
-					if (moveIndex >= 5) reduction = depth / 3; else reduction = 1;
-				}
+				reduction = settings::LMRReduction(depth, moveIndex);
+				if (PVNode && reduction > 0) --reduction;
 			}
 			if (ZWS) {
 				score = -Search<false>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, subpv, !next.GetMaterialTableEntry()->SkipPruning());
@@ -787,7 +784,7 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		}
 		//Delta Pruning
 		if (!pos.GetMaterialTableEntry()->IsLateEndgame()) {
-			Value delta = PieceValuesEG[pos.GetMostValuableAttackedPieceType()] + int(pos.PawnOn7thRank()) * (PieceValuesEG[QUEEN] - PieceValuesEG[PAWN]) + DELTA_PRUNING_SAFETY_MARGIN;
+			Value delta = PieceValues[pos.GetMostValuableAttackedPieceType()].egScore + int(pos.PawnOn7thRank()) * (PieceValues[QUEEN].egScore - PieceValues[PAWN].egScore) + DELTA_PRUNING_SAFETY_MARGIN;
 			if (standPat + delta < alpha) return SCORE_DP(alpha);
 		}
 		if (alpha < standPat) alpha = standPat;

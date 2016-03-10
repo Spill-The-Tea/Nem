@@ -17,8 +17,7 @@ const int MASK_TIME_CHECK = (1 << 14) - 1; //Time is only checked each MASK_TIME
 
 //Material Values
 //King piece value is set to a very large number, to ensure that any capture sequence where the king is "captured" is << 0
-const Value PieceValuesMG[]{ Value(950), Value(490), Value(325), Value(325), Value(80), VALUE_KNOWN_WIN, VALUE_ZERO };
-const Value PieceValuesEG[]{ Value(950), Value(550), Value(325), Value(325), Value(100), VALUE_KNOWN_WIN, VALUE_ZERO };
+const eval PieceValues[]{ eval(950), eval(490, 550), eval(325), eval(325), eval(80, 100), eval(VALUE_KNOWN_WIN), eval(0) };
 
 const int PAWN_TABLE_SIZE = 1 << 14; //has to be power of 2
 
@@ -93,12 +92,12 @@ const eval MALUS_DOUBLED_PAWN = eval(0,20);
 //const eval BONUS_PASSED_PAWN_BACKED = eval(0, 15); //Passed pawn with own rook behind
 //const eval MALUS_PASSED_PAWN_BLOCKED[6] = { eval(0, 3), eval(0,10), eval(0,10), eval(0,30), EVAL_ZERO, eval(0,30) }; //Passed pawn with own rook behind
 
-const Value BONUS_BISHOP_PAIR = Value(50);
+const eval BONUS_BISHOP_PAIR = eval(50);
 const Value BONUS_CASTLING = Value(0);
 
 const Value BONUS_TEMPO = Value(5);
 
-const Value DELTA_PRUNING_SAFETY_MARGIN = Value(PieceValuesEG[PAWN] >> 1);
+const Value DELTA_PRUNING_SAFETY_MARGIN = Value(PieceValues[PAWN].egScore >> 1);
 
 const Value PAWN_SHELTER_2ND_RANK = Value(20);
 const Value PAWN_SHELTER_3RD_RANK = Value(10);
@@ -109,8 +108,8 @@ const Value BETA_PRUNING_FACTOR = Value(100);
 const Value PROBCUT_MARGIN = Value(90);
 
 const int FULTILITY_PRUNING_DEPTH = 3;
-const Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValuesMG[BISHOP], PieceValuesMG[ROOK], PieceValuesMG[QUEEN] };
-const Value FUTILITY_PRUNING_MARGIN[4] = { VALUE_ZERO, PieceValuesMG[BISHOP], PieceValuesMG[ROOK], PieceValuesMG[QUEEN] };
+const Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
+const Value FUTILITY_PRUNING_MARGIN[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
 
 const Value CAPTURE_SCORES[6][6] = {
 	// Captured:  QUEEN, ROOK,   BISHOP,   KNIGHT,    PAWN,      EP-Capture
@@ -125,6 +124,15 @@ const Value CAPTURE_SCORES[6][6] = {
 const int LMPMoveCount[4] = { 0, 7, 9, 13 };
 
 namespace settings {
+
+	void Initialize();
+	int LMRReduction(int depth, int moveNumber);
+
+	const eval SCALE_BISHOP_PAIR_WITH_PAWNS(0); //Reduce Bonus Bishop Pair by this value for each pawn on the board
+	const eval BONUS_BISHOP_PAIR_NO_OPP_MINOR(0); //Bonus for Bishop pair, if opponent has no minor piece for exchange
+	const eval SCALE_EXCHANGE_WITH_PAWNS(0); //Decrease Value of Exchange with number of pawns
+	const eval SCALE_EXCHANGE_WITH_MAJORS(0); //Decrease Value of Exchange with number of majors
+
 	enum OptionType { SPIN, CHECK, BUTTON, STRING };
 
 	const std::string OPTION_HASH = "Hash";

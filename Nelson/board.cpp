@@ -712,6 +712,7 @@ void Initialize() {
 	InitializeShadowedFields();
 	pawn::initialize();
 	tt::InitializeTranspositionTable();
+	settings::Initialize();
 	int64_t end = now();
 	auto runtime = end - begin;
 	std::cout << "Initialization Time: " << runtime << "ms" << std::endl;

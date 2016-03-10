@@ -17,6 +17,26 @@ Protocol protocol = NO_PROTOCOL;
 
 namespace settings {
 
+	static int LMR_REDUCTION[64][64];
+	static const double LMR_BASE = 0.3;
+	static const double LMR_NON_PV = 1.5;
+	static const double LMR_PV = 2.25;
+
+	void Initialize() {
+		for (int depth = 0; depth < 64; depth++) {
+			for (int moves = 0; moves < 64; moves++) {				
+				double reduction = std::log(moves) * std::log(depth) / 2; //F
+				if (reduction < 0.8) LMR_REDUCTION[depth][moves] = 0;
+				else LMR_REDUCTION[depth][moves] = int(std::round(reduction));
+			}
+		}
+	}
+
+	int LMRReduction(int depth, int moveNumber)
+	{
+		return LMR_REDUCTION[std::min(depth, 63)][std::min(moveNumber, 63)];
+	}
+
 	Options options;
 
 	Option::Option(std::string Name, OptionType Type, std::string DefaultValue, std::string MinValue, std::string MaxValue)
@@ -175,7 +195,8 @@ namespace settings {
 			}
 			_value = ss.str();
 		}
-		else _value = tokens[4];
+		else if (tokens.size() == 5) _value = tokens[4];
+		else _value = "";
 	}
 
 	void OptionHash::set(std::string value)

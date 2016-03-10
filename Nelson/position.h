@@ -315,7 +315,7 @@ inline Bitboard position::NonPawnMaterial(const Color c) const { return Occupied
 inline Bitboard position::PieceTypeBB(const PieceType pt) const { return OccupiedByPieceType[pt]; }
 
 inline bool position::IsWinningCapture(const ValuatedMove& move) const {
-	return (Board[to(move.move)] != BLANK && (PieceValuesMG[GetPieceType(Board[from(move.move)])] - PieceValuesMG[GetPieceType(Board[to(move.move)])]) < PieceValuesMG[PAWN])
+	return (Board[to(move.move)] != BLANK && (PieceValues[GetPieceType(Board[from(move.move)])].mgScore - PieceValues[GetPieceType(Board[to(move.move)])].mgScore) < PieceValues[PAWN].mgScore)
 		|| type(move.move) == ENPASSANT || type(move.move) == PROMOTION;
 }
 

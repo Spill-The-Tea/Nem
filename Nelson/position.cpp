@@ -368,13 +368,13 @@ void position::evaluateByCaptureScore(int startIndex) {
 
 void position::evaluateByMVVLVA(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
-		moves[i].score = PieceValuesMG[GetPieceType(Board[to(moves[i].move)])] - 150 * relativeRank(GetSideToMove(), Rank(to(moves[i].move) >> 3));
+		moves[i].score = PieceValues[GetPieceType(Board[to(moves[i].move)])].mgScore - 150 * relativeRank(GetSideToMove(), Rank(to(moves[i].move) >> 3));
 	}
 }
 
 void position::evaluateBySEE(int startIndex) {
 	if (movepointer - 2 == startIndex)
-		moves[startIndex].score = PieceValuesMG[QUEEN]; //No need for SEE if there is only one move to be evaluated
+		moves[startIndex].score = PieceValues[QUEEN].mgScore; //No need for SEE if there is only one move to be evaluated
 	else
 		for (int i = startIndex; i < movepointer - 1; ++i) moves[i].score = SEE(moves[i].move);
 }
@@ -629,7 +629,7 @@ const Bitboard position::getSquareOfLeastValuablePiece(const Bitboard attadef, c
 Value position::SEE_Sign(Move move) const {
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
-	if (PieceValuesMG[GetPieceType(Board[fromSquare])] <= PieceValuesMG[GetPieceType(Board[toSquare])] && type(move) != PROMOTION) return VALUE_KNOWN_WIN;
+	if (PieceValues[GetPieceType(Board[fromSquare])].mgScore <= PieceValues[GetPieceType(Board[toSquare])].mgScore && type(move) != PROMOTION) return VALUE_KNOWN_WIN;
 	return SEE(move);
 }
 
@@ -648,11 +648,11 @@ const Value position::SEE(Move move) const
 	Bitboard fromSet = ToBitboard(fromSquare);
 	Bitboard occ = OccupiedBB();
 	Bitboard attadef = AttacksOfField(toSquare);
-	gain[d] = PieceValuesMG[GetPieceType(Board[toSquare])];
+	gain[d] = PieceValues[GetPieceType(Board[toSquare])].mgScore;
 	while (true)
 	{
 		d++; // next depth and side
-		gain[d] = PieceValuesMG[GetPieceType(Board[fromSquare])] - gain[d - 1]; // speculative store, if defended
+		gain[d] = PieceValues[GetPieceType(Board[fromSquare])].mgScore - gain[d - 1]; // speculative store, if defended
 		if (std::max(-gain[d - 1], gain[d]) < 0) break; // pruning does not influence the result
 		attadef ^= fromSet; // reset bit in set to traverse
 		occ ^= fromSet; // reset bit in temporary occupancy (for x-Rays)
