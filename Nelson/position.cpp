@@ -362,7 +362,7 @@ void position::insertionSort(ValuatedMove* first, ValuatedMove* last)
 
 void position::evaluateByCaptureScore(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
-		moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 20 * (type(moves[i].move) == PROMOTION);
+		moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 2 * (type(moves[i].move) == PROMOTION);
 	}
 }
 
@@ -391,7 +391,7 @@ void position::evaluateCheckEvasions(int startIndex) {
 			moves[i].score = history->getValue(p, toSquare);
 		}
 		else {
-			moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 20 * (type(moves[i].move) == PROMOTION);
+			moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 2 * (type(moves[i].move) == PROMOTION);
 			quietsIndex++;
 		}
 	}
@@ -1101,7 +1101,7 @@ void position::NullMove(Square epsquare) {
 	Bitboard tmp = attackedByThem;
 	attackedByThem = attackedByUs;
 	attackedByUs = tmp;
-	if (StaticEval != VALUE_NOTYETDETERMINED) StaticEval = -StaticEval + 2 * BONUS_TEMPO;
+	if (StaticEval != VALUE_NOTYETDETERMINED) StaticEval = -StaticEval;
 }
 
 void position::deleteParents() {

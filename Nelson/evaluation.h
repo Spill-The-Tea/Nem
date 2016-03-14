@@ -456,6 +456,21 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	//	}
 	//	ptBonus = BONUS_KNIGHT_OUTPOST;
 	//}
+	//Bishops
+	eval bonusBishop = eval(0);
+	//if (popcount(pos.PieceBB(BISHOP, COL)) == 1) {
+	//	Square squareBishop = lsb(pos.PieceBB(BISHOP, COL));
+	//	Bitboard bbSameColor = squaresOfSameColor(squareBishop);
+	//	int nrOfOwnPanws = popcount(pos.PieceBB(PAWN, COL));
+	//	if (nrOfOwnPanws > 4) {
+	//		int nrOfPawnsOnSameColor = popcount(pos.PieceBB(PAWN, COL) & bbSameColor);
+	//		int nrOfPawnsOnOtherColor = nrOfOwnPanws - nrOfPawnsOnSameColor;
+	//		if (nrOfPawnsOnSameColor - nrOfPawnsOnOtherColor > 2)
+	//		bonusBishop -= eval(7, 9) * (nrOfPawnsOnSameColor - nrOfPawnsOnOtherColor);
+	//	}
+	//	Bitboard bbOppPawn = pos.PieceBB(PAWN, OTHER);
+	//	if (bbOppPawn != EMPTY) bonusBishop.egScore += Value(12 * popcount(bbOppPawn & bbSameColor) / popcount(bbOppPawn));
+	//}
 	//Rooks
 	Bitboard seventhRank = COL == WHITE ? RANK7 : RANK2;
 	Bitboard rooks = pos.PieceBB(ROOK, COL);
@@ -490,5 +505,5 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 		//	}
 		passedPawns &= passedPawns - 1;
 	}
-	return bonusPassedPawns + bonusRook + eval(bonusKnightOutpost, 0);
+	return bonusPassedPawns + bonusRook + bonusBishop + eval(bonusKnightOutpost, 0);
 }

@@ -111,15 +111,35 @@ const int FULTILITY_PRUNING_DEPTH = 3;
 const Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
 const Value FUTILITY_PRUNING_MARGIN[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
 
+enum CAPTURES {             
+	QxP, BxP, NxP, RxP, QxN,
+	QxR, RxN, QxB, BxN, RxB,
+	KxP, EP, PxP, KxN, PxB,
+	BxR, PxN, NxR, NxN, NxB,
+	RxR, BxB, PxR, KxB, KxR,
+	QxQ, 
+	RxQ, BxQ, NxQ, PxQ, KxQ //Winning Captures of Queen
+};
+
 const Value CAPTURE_SCORES[6][6] = {
 	// Captured:  QUEEN, ROOK,   BISHOP,   KNIGHT,    PAWN,      EP-Capture
-		{ Value(250), Value(60),  Value(80),  Value(50),  Value(10),  Value(0) },   // QUEEN
-		{ Value(260), Value(200), Value(100), Value(70),  Value(40),  Value(0) },   // ROOK
-		{ Value(270), Value(150), Value(210), Value(90),  Value(20),  Value(0) },   // BISHOP
-		{ Value(280), Value(170), Value(190), Value(180), Value(30),  Value(0) },   // KNIGHT
-		{ Value(290), Value(220), Value(140), Value(160), Value(120), Value(120)},   // PAWN
-		{ Value(300), Value(240), Value(230), Value(130), Value(110), Value(0) }    // KING
+		{ Value(QxQ), Value(QxR),  Value(QxB),  Value(QxN),  Value(QxP),  Value(0) },   // QUEEN
+		{ Value(RxQ), Value(RxR), Value(RxB), Value(RxN),  Value(RxP),  Value(0) },   // ROOK
+		{ Value(BxQ), Value(BxR), Value(BxB), Value(BxN),  Value(BxP),  Value(0) },   // BISHOP
+		{ Value(NxQ), Value(NxR), Value(NxB), Value(NxN), Value(NxP),  Value(0) },   // KNIGHT
+		{ Value(PxQ), Value(PxR), Value(PxB), Value(PxN), Value(PxP), Value(EP)},   // PAWN
+		{ Value(KxQ), Value(KxR), Value(KxB), Value(KxN), Value(KxP), Value(0) }    // KING
 };
+
+//const Value CAPTURE_SCORES[6][6] = {
+//	// Captured:  QUEEN, ROOK,   BISHOP,   KNIGHT,    PAWN,      EP-Capture
+//	{ Value(250), Value(60),  Value(80),  Value(50),  Value(10),  Value(0) },   // QUEEN
+//	{ Value(260), Value(200), Value(100), Value(70),  Value(40),  Value(0) },   // ROOK
+//	{ Value(270), Value(150), Value(210), Value(90),  Value(20),  Value(0) },   // BISHOP
+//	{ Value(280), Value(170), Value(190), Value(180), Value(30),  Value(0) },   // KNIGHT
+//	{ Value(290), Value(220), Value(140), Value(160), Value(120), Value(120) },   // PAWN
+//	{ Value(300), Value(240), Value(230), Value(130), Value(110), Value(0) }    // KING
+//};
 
 const int LMPMoveCount[4] = { 0, 7, 9, 13 };
 

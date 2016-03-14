@@ -140,7 +140,8 @@ public:
 	//checks if a move is quiet and not a castling move (used in search for pruning decisions)
 	inline bool IsQuietAndNoCastles(const Move move) const { return type(move) == NORMAL && Board[to(move)] == BLANK; }
 	//checks if a move is a tactical (cpture or promotion) move
-	inline bool IsTactical(const ValuatedMove& move) const { return Board[to(move.move)] != BLANK || type(move.move) == ENPASSANT || type(move.move) == PROMOTION; }
+	inline bool IsTactical(const Move& move) const { return Board[to(move)] != BLANK || type(move) == ENPASSANT || type(move) == PROMOTION; }
+	inline bool IsTactical(const ValuatedMove& move) const { return IsTactical(move.move); }
 	//checks if a move is a winning capture (winning here includes equal captures and promotions, NxB and BxN are included as well) - Currently not used!
 	inline bool IsWinningCapture(const ValuatedMove& move) const;
 	//returns the current value of StaticEval - doesn't check if evaluate has been executed
@@ -176,7 +177,7 @@ public:
 #endif
 
 private:
-	//These are the members, which are copied by the copied constructor and contain the full information
+	//These are the members, which are copied by the copy constructor and contain the full information
 	Bitboard OccupiedByColor[2];
 	Bitboard OccupiedByPieceType[6];
 	//Zobrist hash hey
@@ -342,7 +343,8 @@ inline PieceType position::GetMostValuableAttackedPieceType() const {
 }
 
 inline Value position::evaluate() {
-	if (StaticEval != VALUE_NOTYETDETERMINED) return StaticEval = material->EvaluationFunction(*this);
+	if (StaticEval != VALUE_NOTYETDETERMINED) 
+		return StaticEval;
 	if (GetResult() == OPEN) {
 		return StaticEval = material->EvaluationFunction(*this);
 	}
