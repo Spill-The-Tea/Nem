@@ -9,7 +9,23 @@
 #include "search.h"
 #include "hashtables.h"
 
-void startThread(search<SLAVE> & slave) {
+#ifdef STAT
+  int64_t Capture_Stat[2][6][5]; //[cutoff][capturing piece][captured piece]
+
+  void printCaptureStat()
+  {
+	  const char pieceChar[6] = { 'Q', 'R', 'B', 'N', 'P', 'K' };
+	  for (int i = 0; i < 6; ++i) {
+		  for (int j = 0; j < 5; ++j) {
+			  std::cout << pieceChar[i] << 'x' << pieceChar[j] << "\t" 
+				  << 1.0 * Capture_Stat[1][i][j] / (Capture_Stat[1][i][j] + Capture_Stat[0][i][j]) << "\t" 
+				  << (Capture_Stat[1][i][j] + Capture_Stat[0][i][j]) << std::endl;
+		  } 
+	  }
+  }
+#endif
+
+  void startThread(search<SLAVE> & slave) {
 	slave.startHelper();
 }
 
@@ -81,7 +97,7 @@ void baseSearch::info(position &pos, int pvIndx, SearchResultType srt) {
 			std::string srtString;
 			if (srt == SearchResultType::FAIL_LOW) srtString = " upperbound"; else if (srt == SearchResultType::FAIL_HIGH) srtString = " lowerbound";
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
-				sync_cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score cp " << BestMove.score << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 				<< " hashfull " << tt::GetHashFull()
 #ifdef TB
 				<< " tbhits " << tbHits
@@ -91,7 +107,7 @@ void baseSearch::info(position &pos, int pvIndx, SearchResultType srt) {
 			else {
 				int pliesToMate;
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
-				sync_cout << "info depth " << _depth << " seldepth " << MaxDepth << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
 #ifdef TB
 					<< " tbhits " << tbHits
@@ -114,7 +130,7 @@ void baseSearch::info(position &pos, int pvIndx, SearchResultType srt) {
 					xscore = -100000 - pliesToMate;
 				}
 			}
-			sync_cout << _depth << " " << xscore << " " << _thinkTime / 10 << " " << NodeCount << " " /*<< MaxDepth << " " << (NodeCount / _thinkTime) * 1000
+			sync_cout << _depth << " " << xscore << " " << _thinkTime / 10 << " " << NodeCount << " " /*<< std::max(MaxDepth, _depth) << " " << (NodeCount / _thinkTime) * 1000
 #ifdef TB
 				<< " " << tbHits
 #endif

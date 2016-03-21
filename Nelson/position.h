@@ -172,6 +172,8 @@ public:
 	inline bool QuietMoveGenerationPhaseStarted() const { return generationPhases[generationPhase] >= QUIETS_POSITIVE; }
 	//Validate a move and return it if validated, else return another valid move
 	Move validMove(Move proposedMove);
+	//Checks if a move gives check
+	bool givesCheck(Move move);
 #ifdef TRACE
 	std::string printPath() const;
 #endif
@@ -214,6 +216,8 @@ private:
 	Bitboard attackedByUs;
 	//Attack bitboard containing all attacks by a certain Piece Type
 	Bitboard attacksByPt[12];
+	//Bitboards of pieces pinned to king of given Color: bbPinned[0] contains white an black pieces "pinned" to white king
+	Bitboard bbPinned[2] = { ALL_SQUARES, ALL_SQUARES };
 	//indices needed to manage staged move generation
 	int moveIterationPointer;
 	int phaseStartIndex;
@@ -296,6 +300,8 @@ private:
 	bool checkMaterialIsUnusual();
 	//Returns a bitboard indicating all squares where a piece can move to, because it's either not attacked by the opponent or protected and not attacked by less valued pieces
 	const Bitboard safeSquaresForPiece(Piece piece) const;
+	//Get Pinned Pieces
+	template<Color COLOR_OF_KING> Bitboard PinnedPieces();
 
 #ifdef TRACE
 	bool nullMovePosition = false;
@@ -989,6 +995,23 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 
 inline Bitboard position::AttacksByPieceType(Color color, PieceType pieceType) const {
 	return attacksByPt[GetPiece(pieceType, color)];
+}
+
+template<Color COLOR_OF_KING> Bitboard position::PinnedPieces() {
+	if (bbPinned[COLOR_OF_KING] != ALL_SQUARES) return bbPinned[COLOR_OF_KING];
+	bbPinned[COLOR_OF_KING] = EMPTY;
+	Square kingSquare = lsb(PieceBB(KING, COLOR_OF_KING));
+	Bitboard pinner = (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]) & SlidingAttacksRookTo[kingSquare];
+	pinner |= (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]) & SlidingAttacksBishopTo[kingSquare];
+	pinner &= OccupiedByColor[COLOR_OF_KING ^ 1];
+	Bitboard occ = OccupiedBB();
+	while (pinner)
+	{
+		Bitboard blocker = InBetweenFields[lsb(pinner)][kingSquare] & occ;
+		if (popcount(blocker) == 1) bbPinned[COLOR_OF_KING] |= blocker;
+		pinner &= pinner - 1;
+	}
+	return bbPinned[COLOR_OF_KING];
 }
 
 

@@ -15,10 +15,13 @@ namespace test {
 		P4   //Legal move generation
 	};
 
-	int64_t bench(std::vector<std::string> fens, int depth);
-	int64_t bench(int depth); //Benchmark positions from SF
-	int64_t bench2(int depth); //Random positions
-	int64_t bench(std::string filename, int depth);
+	int64_t benchmark(int depth);
+	int64_t benchmark(std::string filename, int depth);
+	int64_t bench(std::vector<std::string> fens, int depth, int64_t &totalTime);
+	int64_t bench(int depth, int64_t &totalTime); //Benchmark positions from SF
+	int64_t bench2(int depth, int64_t &totalTime); //100 Random positions from GM games
+	int64_t bench3(int depth, int64_t &totalTime); //200 Random positions from own games
+	int64_t bench(std::string filename, int depth, int64_t &totalTime);
 
 
 	uint64_t perft(position &pos, int depth);
@@ -44,6 +47,7 @@ namespace test {
 	bool testPopcount();
 	bool testLSB();
 	bool testMSB();
+	bool testGivesCheck();
 #ifdef NBF
 	bool testNBF();
 #endif

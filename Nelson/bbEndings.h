@@ -39,8 +39,6 @@ namespace kpk
 		else {
 			return pos.GetSideToMove() == EngineSide ? -Contempt : Contempt;  //To force taking of the pawn (if possible)
 		}
-		//if (StrongerSide == BLACK) result = -result;
-		//return result * (1 - 2 * pos.GetSideToMove());
 		return StrongerSide == pos.GetSideToMove() ? result : -result;
 	}
 

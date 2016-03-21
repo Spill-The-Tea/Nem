@@ -72,10 +72,6 @@ enum Square : unsigned char {
 	OUTSIDE
 };
 
-inline Bitboard operator&(Bitboard b, Square s) {
-	return b & (1ull << s);
-}
-
 enum Rank {
 	Rank1, Rank2, Rank3, Rank4, Rank5, Rank6, Rank7, Rank8
 };
@@ -126,6 +122,7 @@ typedef uint32_t MaterialKey_t;
 typedef uint64_t PawnKey_t;
 typedef uint16_t Phase_t;
 
+//Operator overloads are copied from SF
 #define ENABLE_BASE_OPERATORS_ON(T)                                             \
 	inline T operator+(const T d1, const T d2) { return T(int(d1) + int(d2)); } \
 	inline T operator-(const T d1, const T d2) { return T(int(d1) - int(d2)); } \
@@ -452,6 +449,7 @@ private:
 	Value Table[12][64];
 };
 
+//Inspired by (=more or less copied from) Stockfish 
 struct CounterMoveHistoryManager {
 public:
 	CounterMoveHistoryManager() { initialize(); }

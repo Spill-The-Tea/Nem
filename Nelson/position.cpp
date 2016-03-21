@@ -44,6 +44,8 @@ void position::copy(const position &pos) {
 	this->attackedByUs = pos.attackedByUs;
 	this->attackedByThem = pos.attackedByThem;
 	this->lastAppliedMove = pos.lastAppliedMove;
+	bbPinned[Color::WHITE] = bbPinned[Color::WHITE];
+	bbPinned[Color::BLACK] = bbPinned[Color::BLACK];
 }
 
 int position::AppliedMovesBeforeRoot = 0;
@@ -530,19 +532,7 @@ Bitboard position::calculateAttacks(Color color) {
 }
 
 Bitboard position::checkBlocker(Color colorOfBlocker, Color kingColor) {
-	Bitboard result = EMPTY;
-	Square kingSquare = lsb(PieceBB(KING, kingColor));
-	Bitboard pinner = (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]) & SlidingAttacksRookTo[kingSquare];
-	pinner |= (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]) & SlidingAttacksBishopTo[kingSquare];
-	pinner &= OccupiedByColor[kingColor ^ 1];
-	Bitboard occ = OccupiedBB();
-	while (pinner)
-	{
-		Bitboard blocker = InBetweenFields[lsb(pinner)][kingSquare] & occ;
-		if (popcount(blocker) == 1) result |= blocker & OccupiedByColor[colorOfBlocker];
-		pinner &= pinner - 1;
-	}
-	return result;
+	return kingColor == Color::WHITE ? PinnedPieces<WHITE>() & OccupiedByColor[colorOfBlocker] : PinnedPieces<BLACK>() & OccupiedByColor[colorOfBlocker];
 }
 
 const Bitboard position::considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from) const
@@ -1062,6 +1052,61 @@ Move position::validMove(Move proposedMove)
 	}
 	return movecount > 0 ? moves[0].move : MOVE_NONE;
 }
+bool position::givesCheck(Move move)
+{
+	Square fromSquare = from(move);
+	Square toSquare = to(move);
+	Square kingSquare = lsb(PieceBB(KING, Color(SideToMove ^ 1)));
+	MoveType moveType = type(move);
+	PieceType pieceType;
+	if (moveType == MoveType::NORMAL)
+		pieceType = GetPieceType(GetPieceOnSquare(fromSquare));
+	else if (moveType == MoveType::PROMOTION)
+		pieceType = promotionType(move);
+	else if (moveType == MoveType::ENPASSANT) pieceType = PieceType::PAWN;
+	else {
+		toSquare = File(toSquare & 7) == File::FileG ? Square(toSquare - 1) : Square(toSquare + 1);
+		pieceType = ROOK; //Castling
+	}
+	//Check direct checks
+	switch (pieceType)
+	{
+	case KNIGHT:
+		if (ToBitboard(toSquare) & KnightAttacks[kingSquare]) return true;
+		break;
+	case PAWN:
+		if (PawnAttacks[SideToMove][toSquare] & ToBitboard(kingSquare)) return true;
+		break;
+	case BISHOP:
+		if (BishopTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1))) return true;
+		break;
+	case ROOK: 
+		if (RookTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1))) return true;
+		break;
+	case QUEEN:
+		if ((RookTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1))) || (BishopTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1)))) return true;
+		break;
+	default:
+		break;
+	}
+	//now check for discovered check
+	Bitboard dc = SideToMove == Color::WHITE ? PinnedPieces<Color::BLACK>() : PinnedPieces<Color::WHITE>();
+	if (moveType == MoveType::ENPASSANT) {
+	//in EP-captures 2 "from"-Moves have to be checked for discovered (from-square and square of captured pawn)
+		if ((ToBitboard(fromSquare) & dc) != EMPTY) { //capturing pawn was pinned
+			if ((ToBitboard(toSquare) & RaysBySquares[fromSquare][kingSquare]) == EMPTY) return true; //pin wasn't along capturing diagonal
+		}
+		Square capturedPawnSquare = Square(toSquare - 8 + 16 * int(SideToMove));
+		if ((ToBitboard(capturedPawnSquare) & dc) == EMPTY) return false; //captured pawn isn't pinned
+		if ((ToBitboard(toSquare) & RaysBySquares[capturedPawnSquare][kingSquare]) != EMPTY) return false; //captured pawn was pinned, but capturing pawn is now blocking
+	}
+	else {
+		if (moveType == MoveType::CASTLING || (ToBitboard(fromSquare) & dc) == EMPTY) return false;
+		return (ToBitboard(toSquare) & RaysBySquares[fromSquare][kingSquare]) == EMPTY;
+	}
+	return false;
+}
+
 #ifdef TRACE
 std::string position::printPath() const
 {

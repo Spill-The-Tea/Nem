@@ -113,7 +113,7 @@ void timemanager::init() {
 		if (_inc == 0 && _movestogo > 1) {
 			int64_t spareTime = _time / 3; //Leave 1/3 of time for further moves
 			_hardStopTime -= spareTime;
-			_hardStopTime.store(std::min(_hardStopTime.load(), _starttime + 4 * (_stopTime - _starttime)));
+			//_hardStopTime.store(std::min(_hardStopTime.load(), _starttime + 4 * (_stopTime - _starttime)));
 		}
 	}
 }

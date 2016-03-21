@@ -157,7 +157,7 @@ namespace tt {
 				}
 			}
 		}
-		// Find an entry to be replaced according to the replacement strategy
+		// Find an entry to be replaced according to the replacement strategy (which is from an older version of Stockfish)
 		Entry* replace = tte;
 		for (unsigned i = 1; i < CLUSTER_SIZE; ++i)
 			if ((tte[i].generation() == _generation || tte[i].type() == EXACT)

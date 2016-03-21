@@ -63,17 +63,12 @@ void UCIInterface::dispatch(std::string line) {
 		setvalue(tokens);
 	else if (!command.compare("bench")) {
 		if (tokens.size() == 1) {
-			test::bench(11);
-			test::bench2(11);
+			test::benchmark(11);
 		}
 		else {
 			std::string filename = line.substr(6, std::string::npos);
-			test::bench(filename, 11);
+			test::benchmark(filename, 11);
 		}
-	}
-	else if (!command.compare("sbench")) {
-		int64_t nc = test::bench(11);
-		std::cout << "bench: " << nc << std::endl;
 	}
 	else if (!command.compare("eval")) {
 		std::cout << _position->printEvaluation() << std::endl;

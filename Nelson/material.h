@@ -1,7 +1,7 @@
 #pragma once
 
 #include "types.h"
-
+//Material table is using the indexing scheme proposed by H.G.Müller in http://www.talkchess.com/forum/viewtopic.php?t=33561
 const int materialKeyFactors[] = { 729, 1458, 486, -405, 279, -270, 246, -244, 2916, 26244, 0, 0, 0 };
 const int MAX_PIECE_COUNT[] = { 1, 1, 2, 2, 2, 2, 2, 2 }; //Max piece count "normal" positions
 const int MATERIAL_KEY_OFFSET = 1839; //this assures that the Material Key is always > 0 => material key = 0 can be used for unusual material due to promotions (2 queens,..)

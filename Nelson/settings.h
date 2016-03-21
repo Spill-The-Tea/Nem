@@ -141,8 +141,7 @@ const Value CAPTURE_SCORES[6][6] = {
 //	{ Value(300), Value(240), Value(230), Value(130), Value(110), Value(0) }    // KING
 //};
 
-const int LMPMoveCount[4] = { 0, 7, 9, 13 };
-
+const int LMPMoveCount[16] = { 3, 5, 8, 12, 18, 25, 33, 42, 52, 62, 74, 87, 101, 115, 131, 147 };
 namespace settings {
 
 	void Initialize();
