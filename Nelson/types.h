@@ -378,6 +378,7 @@ struct ExtendedMove {
 const ExtendedMove EXTENDED_MOVE_NONE(BLANK, MOVE_NONE);
 
 inline bool operator==(const ExtendedMove& em1, const ExtendedMove& em2) { return em1.move == em2.move && em1.piece == em2.piece; }
+inline bool operator!=(const ExtendedMove& em1, const ExtendedMove& em2) { return em1.move != em2.move || em1.piece != em2.piece; }
 
 inline bool positiveScore(const ValuatedMove& vm) { return vm.score > 0; }
 

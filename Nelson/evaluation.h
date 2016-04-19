@@ -418,22 +418,6 @@ template <Color COL> eval evaluateThreats(const position& pos) {
 	return result;
 }
 
-template <Color COL> eval evaluateSpace(const position& pos) {
-	Bitboard space;
-	Color OTHER = Color(COL ^ 1);
-	if (COL == WHITE) space = 0x3c3c3c00; else space = 0x3c3c3c00000000;
-	Bitboard safe = space & ~pos.PieceBB(PAWN, COL) & ~pos.AttacksByPieceType(OTHER, PAWN)
-		& (pos.AttacksByColor(COL) | ~pos.AttacksByColor(OTHER));
-	// Find all squares which are at most three squares behind some friendly pawn
-	Bitboard behind = pos.PieceBB(PAWN, COL);
-	behind |= (COL == WHITE ? behind >> 8 : behind << 8);
-	behind |= (COL == WHITE ? behind >> 16 : behind << 16);
-	int bonus = popcount(safe) + popcount(behind & safe);
-	int weight = popcount(pos.PieceTypeBB(KNIGHT) | pos.PieceTypeBB(BISHOP));
-	eval result((bonus * weight * weight) >> 2, 0);
-	return result;
-}
-
 template <Color COL> eval evaluatePieces(const position& pos) {
 	Color OTHER = Color(COL ^ 1);
 	//Knights
@@ -458,19 +442,6 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	//}
 	//Bishops
 	eval bonusBishop = eval(0);
-	//if (popcount(pos.PieceBB(BISHOP, COL)) == 1) {
-	//	Square squareBishop = lsb(pos.PieceBB(BISHOP, COL));
-	//	Bitboard bbSameColor = squaresOfSameColor(squareBishop);
-	//	int nrOfOwnPanws = popcount(pos.PieceBB(PAWN, COL));
-	//	if (nrOfOwnPanws > 4) {
-	//		int nrOfPawnsOnSameColor = popcount(pos.PieceBB(PAWN, COL) & bbSameColor);
-	//		int nrOfPawnsOnOtherColor = nrOfOwnPanws - nrOfPawnsOnSameColor;
-	//		if (nrOfPawnsOnSameColor - nrOfPawnsOnOtherColor > 2)
-	//		bonusBishop -= eval(7, 9) * (nrOfPawnsOnSameColor - nrOfPawnsOnOtherColor);
-	//	}
-	//	Bitboard bbOppPawn = pos.PieceBB(PAWN, OTHER);
-	//	if (bbOppPawn != EMPTY) bonusBishop.egScore += Value(12 * popcount(bbOppPawn & bbSameColor) / popcount(bbOppPawn));
-	//}
 	//Rooks
 	Bitboard seventhRank = COL == WHITE ? RANK7 : RANK2;
 	Bitboard rooks = pos.PieceBB(ROOK, COL);
@@ -481,7 +452,6 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 		Bitboard rooksOnSemiOpen = bbHalfOpen & rooks;
 		bonusRook += popcount(rooksOnSemiOpen) * ROOK_ON_SEMIOPENFILE;
 		bonusRook += 2 * popcount(FileFill(pos.GetPawnEntry()->openFiles) & rooks) * ROOK_ON_OPENFILE;
-		//bonusRook += popcount((rooksOnSemiOpen | rooksOnOpen)  & (pos.PieceBB(QUEEN, OTHER) | pos.PieceBB(KING, OTHER))) * ROOK_ON_SEMIOPENFILE_WITH_KQ;
 	}
 	//Passed Pawns (passed pawn bonus is already assigned statically in pawn::probe. Nevertheless all aspects related to position of other pieces have to be 
 	//evaluated here) dynamically 

@@ -174,6 +174,8 @@ public:
 	Move validMove(Move proposedMove);
 	//Checks if a move gives check
 	bool givesCheck(Move move);
+	//Get Pinned Pieces
+	template<Color COLOR_OF_KING> Bitboard PinnedPieces() const;
 #ifdef TRACE
 	std::string printPath() const;
 #endif
@@ -217,7 +219,7 @@ private:
 	//Attack bitboard containing all attacks by a certain Piece Type
 	Bitboard attacksByPt[12];
 	//Bitboards of pieces pinned to king of given Color: bbPinned[0] contains white an black pieces "pinned" to white king
-	Bitboard bbPinned[2] = { ALL_SQUARES, ALL_SQUARES };
+	mutable Bitboard bbPinned[2] = { ALL_SQUARES, ALL_SQUARES };
 	//indices needed to manage staged move generation
 	int moveIterationPointer;
 	int phaseStartIndex;
@@ -272,9 +274,9 @@ private:
 	//Calculates Bitboards of pieces blocking a check. If colorOfBlocker = kingColor, these are the pinned pieces, else these are candidates for discovered checks
 	Bitboard checkBlocker(Color colorOfBlocker, Color kingColor);
 	//Calculates the material key of this position
-	MaterialKey_t calculateMaterialKey();
+	MaterialKey_t calculateMaterialKey() const;
 	//Calculates the Pawn Key of this position
-	PawnKey_t calculatePawnKey();
+	PawnKey_t calculatePawnKey() const;
 	//different move evaluation methods (used for move ordering):
 	void evaluateByCaptureScore(int startIndex = 0);
 	void evaluateByMVVLVA(int startIndex = 0);
@@ -297,11 +299,10 @@ private:
 	//Checks if at least one valid move exists - ATTENTION must not be called on a newly initialized position where attackedByThem isn't calculated yet!!
 	template<bool CHECKED> bool CheckValidMoveExists();
 	//Checks for unusual Material (this means one side has more than one Queen or more than 2 rooks, knights or bishop)
-	bool checkMaterialIsUnusual();
+	bool checkMaterialIsUnusual() const;
 	//Returns a bitboard indicating all squares where a piece can move to, because it's either not attacked by the opponent or protected and not attacked by less valued pieces
 	const Bitboard safeSquaresForPiece(Piece piece) const;
-	//Get Pinned Pieces
-	template<Color COLOR_OF_KING> Bitboard PinnedPieces();
+
 
 #ifdef TRACE
 	bool nullMovePosition = false;
@@ -997,7 +998,7 @@ inline Bitboard position::AttacksByPieceType(Color color, PieceType pieceType) c
 	return attacksByPt[GetPiece(pieceType, color)];
 }
 
-template<Color COLOR_OF_KING> Bitboard position::PinnedPieces() {
+template<Color COLOR_OF_KING> Bitboard position::PinnedPieces() const {
 	if (bbPinned[COLOR_OF_KING] != ALL_SQUARES) return bbPinned[COLOR_OF_KING];
 	bbPinned[COLOR_OF_KING] = EMPTY;
 	Square kingSquare = lsb(PieceBB(KING, COLOR_OF_KING));

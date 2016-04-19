@@ -48,10 +48,6 @@ namespace test {
 	bool testLSB();
 	bool testMSB();
 	bool testGivesCheck();
-#ifdef NBF
-	bool testNBF();
-#endif
-
 
 #ifdef TB
 	void testTB();

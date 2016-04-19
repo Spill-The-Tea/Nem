@@ -107,9 +107,6 @@ protected:
 	std::mutex mtxXAnalysisOutput;
 	//Polyglot book object to read book moves
 	polyglot::book * book = nullptr;
-#ifdef NBF
-	positionbook::book * nbfBook = nullptr;
-#endif
 	//History tables used in move ordering during search
 	CounterMoveHistoryManager cmHistory;
 	HistoryManager History;
@@ -231,21 +228,6 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 			goto END;
 		}
 	}
-#ifdef NBF
-	{
-		std::string nbfBookFile = settings::options.getString(settings::OPTION_NBF_BOOK);
-		if (nbfBookFile.size() > 0) {
-			if (nbfBook == nullptr) nbfBook = new positionbook::book(nbfBookFile);
-			ValuatedMove bookMove = nbfBook->probe(pos, generatedMoves, rootMoveCount, timeManager.estimatedDepth());
-			if (bookMove.move != MOVE_NONE) {
-				BestMove = bookMove;
-				info(pos, 0);
-				utils::debugInfo("NBF Book move");
-				goto END;
-			}
-		}
-	}
-#endif
 	//If a search move list is provided replace root moves by srach moves
 	if (searchMoves.size()) {
 		rootMoveCount = int(searchMoves.size());
@@ -613,7 +595,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			&& pos.NonPawnMaterial(pos.GetSideToMove())
 			) {
 			int reduction = (depth + 14) / 5;
-			Square epsquare = pos.GetEPSquare();
+			Square epsquare = pos.GetEPSquare();	
 			pos.NullMove();
 			Value nullscore = -Search<false>(-beta, -alpha, pos, depth - reduction, subpv, false, true);
 			pos.NullMove(epsquare);
@@ -678,6 +660,8 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	int moveIndex = 0;
 	bool ZWS = false;
 	Square recaptureSquare = pos.GetLastAppliedMove() && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
+	//bool singularExtensionNode = depth >= 8  && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
+	//	&& excludeMove == MOVE_NONE && ttEntry.type() == tt::LOWER_BOUND && ttEntry.depth() >= depth - 3;
 	while ((move = pos.NextMove())) {
 		if (move == excludeMove) continue;
 		//Late move Pruning I
@@ -685,16 +669,17 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		//	moveIndex++;
 		//	continue;
 		//}
-		bool prunable = !PVNode && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
+		bool prunable = !PVNode && depth <= 3 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
 			&& move != killer[2 * pos.GetPliesFromRoot()].move && move != killer[2 * pos.GetPliesFromRoot() + 1].move && pos.IsQuietAndNoCastles(move) && !pos.givesCheck(move);
 		if (prunable) {
+			//assert(type(move) == MoveType::NORMAL && pos.GetPieceOnSquare(to(move)) == Piece::BLANK);
 			// late-move pruning II
-			if (depth <= 3 && moveIndex >= depth * 4) {
+			if (moveIndex >= depth * 4) {
 				moveIndex++;
 				continue;
 			}
 			//SEE pruning 
-			if (depth <= 3 && pos.SEE_Sign(move) < 0) {
+			if (pos.SEE_Sign(move) < 0) {
 				moveIndex++;
 				continue;
 			}
@@ -713,6 +698,11 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			if (!extension && to(move) == recaptureSquare) {
 				++extension;
 			}
+			//if (singularExtensionNode &&  move == ttMove && !extension)
+			//{
+			//	Value rBeta = ttValue - 2 * depth;
+			//	if (Search<false>(rBeta - 1, rBeta, pos, depth / 2, subpv, false, false, move) < rBeta) ++extension;
+			//}
 			int reduction = 0;
 			//LMR: Late move reduction
 			if (lmr && !critical && moveIndex >= 2 && !extension && !next.Checked()) {
@@ -856,12 +846,20 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 		History.update(v, movingPiece, toSquare);
 		Piece prevPiece = BLANK;
 		Square prevTo = OUTSIDE;
+		//Piece ownPrevPiece = BLANK;
+		//Square ownPrevTo = OUTSIDE;
 		Move lastApplied;
 		if ((lastApplied = FixCastlingMove(pos.GetLastAppliedMove()))) {
 			prevTo = to(lastApplied);
 			prevPiece = pos.GetPieceOnSquare(prevTo);
 			counterMove[int(pos.GetPieceOnSquare(prevTo))][prevTo] = cutoffMove;
 			cmHistory.update(v, prevPiece, prevTo, movingPiece, toSquare);
+			//Move ownPrevMove = MOVE_NONE;
+			//if ((ownPrevMove = FixCastlingMove(pos.Previous()->GetLastAppliedMove()))) {
+			//	ownPrevTo = to(ownPrevMove);
+			//	ownPrevPiece = pos.Previous()->GetPieceOnSquare(ownPrevTo);
+			//	cmHistory.update(v, ownPrevPiece, ownPrevTo, movingPiece, toSquare);
+			//}
 		}
 		if (moveIndex > 0) {
 			ValuatedMove * alreadyProcessedQuiets = pos.GetMovesOfCurrentPhase();
@@ -872,6 +870,9 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 				History.update(-v, movingPiece, toSquare);
 				if (pos.GetLastAppliedMove())
 					cmHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
+				//if (ownPrevTo != OUTSIDE) {
+				//	cmHistory.update(-v, ownPrevPiece, ownPrevTo, movingPiece, toSquare);
+				//}
 				alreadyProcessedQuiets++;
 			}
 		}

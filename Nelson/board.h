@@ -60,6 +60,7 @@ const Bitboard RookSquareAfterCastling[4] = { ToBitboard(F1), ToBitboard(D1), To
 const Bitboard SaveSquaresForKing = 0xe7c300000000c3e7;
 const Bitboard ShelterPawns2ndRank = 0xe700000000e700;
 const Bitboard ShelterPawns3rdRank = 0xe70000e70000;
+//const Bitboard TrappedBishopSquares = 0x4281000000008142;
 
 #ifdef USE_PEXT
 extern Bitboard ROOK_MASKS[64];
@@ -125,7 +126,7 @@ inline bool sameColor(Square s1, Square s2) {
 }
 
 inline Bitboard squaresOfSameColor(Square s) {
-	return (DARKSQUARES & s) ? DARKSQUARES : ~DARKSQUARES;
+	return (DARKSQUARES & ToBitboard(s)) ? DARKSQUARES : ~DARKSQUARES;
 }
 
 #ifdef USE_PEXT

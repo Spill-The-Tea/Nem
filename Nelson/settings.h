@@ -168,9 +168,6 @@ namespace settings {
 	const std::string OPTION_SYZYGY_PATH = "SyzygyPath";
 	const std::string OPTION_SYZYGY_PROBE_DEPTH = "SyzygyProbeDepth";
 #endif
-#ifdef NBF
-	const std::string OPTION_NBF_BOOK = "NBFBook";
-#endif
 
 	class Option {
 	public:

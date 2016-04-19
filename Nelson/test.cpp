@@ -1021,30 +1021,6 @@ namespace test {
 		return true;
 	}
 
-#ifdef NBF
-	bool testNBF()
-	{
-		std::ofstream epdFile("test.epd");
-		if (!epdFile.is_open()) return false;
-		epdFile << "1B1b1k2/1B3npp/1p6/p1p5/8/1P4P1/P6P/7K b - - bm Ke7; ce 12; acd 30;" << std::endl;
-		epdFile << "1B1b1k2/1B3npp/1p6/p1p5/8/1P6/P5PP/7K w - - bm g3; ce -59; acd 32;" << std::endl;
-		epdFile << "1B1b1k2/1B3npp/1pp5/p7/8/1P6/P5PP/7K b - - bm c5; ce 0; acd 26;" << std::endl;
-		epdFile.close();
-		positionbook::createBookFile("test.epd");
-		positionbook::book book("test.nbf");
-		position pos("1B1b1k2/1B3npp/1p6/p1p5/8/1P4P1/P6P/7K b - -");
-		ValuatedMove * moves = pos.GenerateMoves<LEGAL>();
-		int moveCount = pos.GeneratedMoveCount();
-		Move m = createMove(F8, E7);
-		ValuatedMove vm = book.probe(pos, moves, moveCount, 30);
-		if (!vm.move == m || std::abs((int)vm.score - 12) > 4)
-			return false;
-		std::remove("test.epd");
-		std::remove("test.nbf");
-		return false;
-	}
-#endif
-
 	void testResult() {
 		int64_t begin = now();
 		testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/stalemate.epd", DRAW);

@@ -44,8 +44,8 @@ void position::copy(const position &pos) {
 	this->attackedByUs = pos.attackedByUs;
 	this->attackedByThem = pos.attackedByThem;
 	this->lastAppliedMove = pos.lastAppliedMove;
-	bbPinned[Color::WHITE] = bbPinned[Color::WHITE];
-	bbPinned[Color::BLACK] = bbPinned[Color::BLACK];
+	this->bbPinned[Color::WHITE] = pos.bbPinned[Color::WHITE];
+	this->bbPinned[Color::BLACK] = pos.bbPinned[Color::BLACK];
 }
 
 int position::AppliedMovesBeforeRoot = 0;
@@ -161,8 +161,8 @@ bool position::ApplyMove(Move move) {
 	attackedByUs = calculateAttacks(SideToMove);
 	//calculatePinned();
 	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
-	assert((checkMaterialIsUnusual() && MaterialKey == MATERIAL_KEY_UNUSUAL) || MaterialKey == calculateMaterialKey());
-	assert(PawnKey == calculatePawnKey());
+	//assert((checkMaterialIsUnusual() && MaterialKey == MATERIAL_KEY_UNUSUAL) || MaterialKey == calculateMaterialKey());
+	//assert(PawnKey == calculatePawnKey());
 	if (pawn->Key != PawnKey) pawn = pawn::probe(*this);
 	lastAppliedMove = move;
 	if (material->IsTheoreticalDraw()) result = DRAW;
@@ -421,7 +421,15 @@ void position::evaluateByHistory(int startIndex) {
 				Piece p = Board[from(fixedMove)];
 				moves[i].score = history->getValue(p, toSquare);
 				Move fixedLastApplied = FixCastlingMove(lastAppliedMove);
-				if (lastAppliedMove && cmHistory) moves[i].score += 2 * cmHistory->getValue(Board[to(fixedLastApplied)], to(fixedLastApplied), p, toSquare);
+				if (lastAppliedMove && cmHistory) {
+					moves[i].score += 2 * cmHistory->getValue(Board[to(fixedLastApplied)], to(fixedLastApplied), p, toSquare);
+					//Move prevMove = MOVE_NONE;
+					//if ((prevMove = FixCastlingMove(Previous()->GetLastAppliedMove()))) {
+					//	Square prevTo = to(prevMove);
+					//	Piece prevPiece = Previous()->GetPieceOnSquare(prevTo);
+					//	moves[i].score += cmHistory->getValue(prevPiece, prevTo, p, toSquare);
+					//}
+				}
 				Bitboard toBB = ToBitboard(toSquare);
 				if (toBB & safeSquaresForPiece(p))
 					moves[i].score = Value(moves[i].score + 500);
@@ -930,14 +938,14 @@ std::string position::printGeneratedMoves() {
 	return ss.str();
 }
 
-MaterialKey_t position::calculateMaterialKey() {
+MaterialKey_t position::calculateMaterialKey() const {
 	MaterialKey_t key = MATERIAL_KEY_OFFSET;
 	for (int i = WQUEEN; i <= BPAWN; ++i)
 		key += materialKeyFactors[i] * popcount(PieceBB(GetPieceType(Piece(i)), Color(i & 1)));
 	return key;
 }
 
-PawnKey_t position::calculatePawnKey() {
+PawnKey_t position::calculatePawnKey() const {
 	PawnKey_t key = 0;
 	Bitboard pawns = PieceBB(PAWN, WHITE);
 	while (pawns) {
@@ -1143,6 +1151,7 @@ void position::NullMove(Square epsquare) {
 #endif
 	SwitchSideToMove();
 	SetEPSquare(epsquare);
+	tt::prefetch(GetHash());
 	Bitboard tmp = attackedByThem;
 	attackedByThem = attackedByUs;
 	attackedByUs = tmp;
@@ -1154,7 +1163,7 @@ void position::deleteParents() {
 	delete(previous);
 }
 
-bool position::checkMaterialIsUnusual() {
+bool position::checkMaterialIsUnusual() const {
 	return popcount(PieceBB(QUEEN, WHITE)) > 1
 		|| popcount(PieceBB(QUEEN, BLACK)) > 1
 		|| popcount(PieceBB(ROOK, WHITE)) > 2

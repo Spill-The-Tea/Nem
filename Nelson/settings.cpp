@@ -153,9 +153,6 @@ namespace settings {
 #ifdef TB
 		(*this)[OPTION_SYZYGY_PATH] = (Option *)(new OptionString(OPTION_SYZYGY_PATH));
 #endif 
-#ifdef NBF
-		(*this)[OPTION_NBF_BOOK] = (Option *)(new OptionString(OPTION_NBF_BOOK));
-#endif
 	}
 
 	OptionCheck::OptionCheck(std::string Name, bool value)
@@ -163,7 +160,7 @@ namespace settings {
 		name = Name;
 		otype = OptionType::CHECK;
 		defaultValue = utils::bool2String(value);
-		value = _value;
+		_value = value;
 		maxValue = "";
 		minValue = "";
 	}

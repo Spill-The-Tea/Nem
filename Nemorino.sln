@@ -1,16 +1,25 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 14
-VisualStudioVersion = 14.0.24720.0
+VisualStudioVersion = 14.0.25123.0
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nemorino", "Nelson\Nelson.vcxproj", "{B23D2DB6-4387-478B-A153-4C34596B8C7E}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6CB46E9E-786B-4AB2-9E0A-4EAC39D8038E}"
+	ProjectSection(SolutionItems) = preProject
+		Performance1.psess = Performance1.psess
+		Testsuite Results.txt = Testsuite Results.txt
+	EndProjectSection
 EndProject
 Global
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
+	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64
+		Release no Popcount|Win32 = Release no Popcount|Win32
+		Release no Popcount|x64 = Release no Popcount|x64
 		Release|Win32 = Release|Win32
 		Release|x64 = Release|x64
 	EndGlobalSection
@@ -19,6 +28,10 @@ Global
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Debug|Win32.Build.0 = Debug|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Debug|x64.ActiveCfg = Debug|x64
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Debug|x64.Build.0 = Debug|x64
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release no Popcount|Win32.ActiveCfg = Release no Popcount|Win32
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release no Popcount|Win32.Build.0 = Release no Popcount|Win32
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release no Popcount|x64.ActiveCfg = Release no Popcount|x64
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release no Popcount|x64.Build.0 = Release no Popcount|x64
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release|Win32.ActiveCfg = Release|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release|Win32.Build.0 = Release|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release|x64.ActiveCfg = Release|x64

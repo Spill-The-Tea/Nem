@@ -16,7 +16,6 @@
   </ItemGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
-    <Text Include="EvaluationContinuity.txt" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="position.cpp">
@@ -64,9 +63,6 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="stat.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="syzygy\tbprobe.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -108,9 +104,6 @@
     <ClInclude Include="hashtables.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="resource.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="book.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -123,20 +116,12 @@
     <ClInclude Include="utils.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="stat.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="syzygy\tbprobe.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="xboard.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <ResourceCompile Include="Nelson.rc">
-      <Filter>Resource Files</Filter>
-    </ResourceCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="setup.bat">

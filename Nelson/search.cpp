@@ -168,15 +168,15 @@ std::string baseSearch::GetXAnalysisOutput() {
 
 baseSearch::~baseSearch() {
 	if (book != nullptr) delete book;
-#ifdef NBF
-	if (nbfBook != nullptr) delete nbfBook;
-#endif
 }
 
 baseSearch::baseSearch() {
 	PonderMode.store(false);
 	Stop.store(false);
 	Exit.store(false);
+	for (int i = 0; i < 12; ++i)
+		for (int j = 0; j < 64; ++j)
+			counterMove[i][j] = MOVE_NONE;
 	BestMove.move = MOVE_NONE;
 	BestMove.score = VALUE_NOTYETDETERMINED;
 	cmHistory.initialize();

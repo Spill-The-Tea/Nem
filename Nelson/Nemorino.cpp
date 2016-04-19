@@ -17,7 +17,7 @@
 #endif
 
 const int MAJOR_VERSION = 0;
-const int MINOR_VERSION = 57;
+const int MINOR_VERSION = 58;
 
 
 static bool popcountSupport();
@@ -94,13 +94,6 @@ int main(int argc, const char* argv[]) {
 			std::cout << std::left << std::setw(width) << "print" << "Outputs the internal board with some information like evaluation and hash keys" << std::endl;
 			std::cout << std::left << std::setw(width) << "help" << "Prints out this help lines" << std::endl;
 			std::cout << std::left << std::setw(width) << "quit" << "Exits the program" << std::endl;
-#ifdef NBF
-			std::cout << std::left << std::setw(width) << "makepbo <epdfile>" << "Creates an PBO Book from an EPD file " << std::endl;
-		}
-		else if (!input.compare(0, 7, "makepbo")) {
-			positionbook::createBookFile(input.substr(8));
-
-#endif
 		}
 		else if (!input.compare(0, 4, "quit")) break;
 	}
