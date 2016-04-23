@@ -70,6 +70,7 @@ public:
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
+	inline eval GetPsqEval() const { return PsqEval; }
 	/* The position struct provides staged move generation. To make use of it the staged move generation has to be initialized first by calling InitializeMoveIterator.
 	   Then every call to NextMove() will return the next move until MOVE_NONE is returned */
 	//Initialize staged move generation, by providing the necessary information for move ordering
@@ -197,6 +198,7 @@ private:
 	Color SideToMove;
 	int pliesFromRoot;
 	Piece Board[64];
+	eval PsqEval;
 
 	//Pointer to the previous position
 	position * previous = nullptr;

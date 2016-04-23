@@ -14,11 +14,12 @@ public:
 	eval Threats = EVAL_ZERO;
 	eval KingSafety = EVAL_ZERO;
 	eval Pieces = EVAL_ZERO;
+	eval PsqEval = EVAL_ZERO;
 	//eval Space = EVAL_ZERO;
 	eval PawnStructure = EVAL_ZERO;
 
 	inline Value GetScore(const Phase_t phase, const Color sideToMove) {
-		return (Material + (Mobility + KingSafety + Threats + Pieces + PawnStructure).getScore(phase)) * (1 - 2 * sideToMove);
+		return (Material + (Mobility + KingSafety + Threats + Pieces + PawnStructure + PsqEval).getScore(phase)) * (1 - 2 * sideToMove);
 	}
 };
 
@@ -447,7 +448,7 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	Bitboard rooks = pos.PieceBB(ROOK, COL);
 	eval bonusRook = EVAL_ZERO;
 	if (rooks) {
-		bonusRook = popcount(rooks & seventhRank) * ROOK_ON_7TH;
+		//bonusRook = popcount(rooks & seventhRank) * ROOK_ON_7TH;
 		Bitboard bbHalfOpen = COL == WHITE ? FileFill(pos.GetPawnEntry()->halfOpenFilesWhite) : FileFill(pos.GetPawnEntry()->halfOpenFilesBlack);
 		Bitboard rooksOnSemiOpen = bbHalfOpen & rooks;
 		bonusRook += popcount(rooksOnSemiOpen) * ROOK_ON_SEMIOPENFILE;

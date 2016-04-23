@@ -460,10 +460,12 @@ template<bool SquareIsEmpty> void position::set(const Piece piece, const Square 
 		OccupiedByPieceType[GetPieceType(captured)] &= ~squareBB;
 		OccupiedByColor[GetColor(captured)] &= ~squareBB;
 		Hash ^= ZobristKeys[captured][square];
+		PsqEval -= settings::PSQT[captured][square];
 	}
 	OccupiedByPieceType[GetPieceType(piece)] |= squareBB;
 	OccupiedByColor[GetColor(piece)] |= squareBB;
 	Board[square] = piece;
+	PsqEval += settings::PSQT[piece][square];
 	Hash ^= ZobristKeys[piece][square];
 }
 
@@ -471,6 +473,7 @@ void position::remove(const Square square) {
 	Bitboard NotSquareBB = ~(1ull << square);
 	Piece piece = Board[square];
 	Board[square] = BLANK;
+	PsqEval -= settings::PSQT[piece][square];
 	OccupiedByPieceType[GetPieceType(piece)] &= NotSquareBB;
 	OccupiedByColor[GetColor(piece)] &= NotSquareBB;
 	Hash ^= ZobristKeys[piece][square];
@@ -676,6 +679,7 @@ void position::setFromFEN(const std::string& fen) {
 	DrawPlyCount = 0;
 	AppliedMovesBeforeRoot = 0;
 	Hash = ZobristMoveColor;
+	PsqEval = EVAL_ZERO;
 	std::istringstream ss(fen);
 	ss >> std::noskipws;
 	unsigned char token;

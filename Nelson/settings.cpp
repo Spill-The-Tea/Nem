@@ -21,10 +21,221 @@ namespace settings {
 	static const double LMR_BASE = 0.3;
 	static const double LMR_NON_PV = 1.5;
 	static const double LMR_PV = 2.25;
+	eval PSQT[12][64];
+
+	//PSQT Values are copied 1:1 (including comments :-) from a post on talkchess - these are
+	//the values from Hakkapeliitta
+
+	// -15,-10, -5, 0, 0, -5,-10,-15 for every rank(except 1st, 7th and 8th), rank bonus = 5 for every rank starting from 3rd and ending at 6th
+	// last rank bonus = 60(no other bonuses), 6th rank bonus = 20
+	// d3/e3 bonus = 10, d4/e4 bonus = 20, e5/d5 bonus = 20
+	// a4/h4 penalty = 10, f2/c2 bonus = 10, g2/b2 bonus = 5
+	// centered around zero
+	const int pstPawnMg[64] = {
+		0,  0,  0,  0,  0,  0,  0,  0,       // 1st rank, applies to all PSTs
+		-33,-18,-13,-18,-18,-13,-18,-33,
+		-28,-23,-13, -3, -3,-13,-23,-28,
+		-33,-18,-13, 12, 12,-13,-18,-33,
+		-18,-13, -8, 17, 17, -8,-13,-18,
+		7, 12, 17, 22, 22, 17, 12,  7,
+		42, 42, 42, 42, 42, 42, 42, 42,
+		0,  0,  0,  0,  0,  0,  0,  0     // 8th rank, applies to all PSts
+	};
+
+	// rank bonus = 5 starting from the 3rd rank and ending at 6th, last rank bonus = 60(no other bonuses), 6th rank bonus = 20
+	// centered around zero
+	const int pstPawnEg[64] = {
+		0,  0,  0,  0,  0,  0,  0,  0,
+		-22,-22,-22,-22,-22,-22,-22,-22,
+		-17,-17,-17,-17,-17,-17,-17,-17,
+		-12,-12,-12,-12,-12,-12,-12,-12,
+		-7, -7, -7, -7, -7, -7, -7, -7,
+		18, 18, 18, 18, 18, 18, 18, 18,
+		38, 38, 38, 38, 38, 38, 38, 38,
+		0,  0,  0,  0,  0,  0,  0,  0
+	};
+
+	// based on the center-manhattan distance
+	// d5/e5 bonus = 10
+	// d6/e6 bonus = 30
+	// f5/c5 bonus = 10
+	// f6/c6 bonus = 10
+	// centered around zero
+	const int pstKnightMg[64] = {
+		-36,-26,-16, -6, -6,-16,-26,-36,
+		-26,-16, -6,  9,  9, -6,-16,-26,
+		-16, -6,  9, 29, 29,  9, -6,-16,
+		-6,  9, 29, 39, 39, 29,  9, -6,
+		-6,  9, 39, 49, 49, 39,  9, -6,
+		-16, -6, 19, 59, 59, 19, -6,-16,
+		-26,-16, -6,  9,  9, -6,-16,-26,
+		-36,-26,-16, -6, -6,-16,-26,-36
+	};
+
+	// based on the center-manhattan distance
+	// centered around zero
+	const int pstKnightEg[64] = {
+		-34,-24,-14, -4, -4,-14,-24,-34,
+		-24,-14, -4, 11, 11, -4,-14,-24,
+		-14, -4, 11, 31, 31, 11, -4,-14,
+		-4, 11, 31, 41, 41, 31, 11, -4,
+		-4, 11, 31, 41, 41, 31, 11, -4,
+		-14, -4, 11, 31, 31, 11, -4,-14,
+		-24,-14, -4, 11, 11, -4,-14,-24,
+		-34,-24,-14, -4, -4,-14,-24,-34
+	};
+
+	// based on center-manhattan distance
+	// last rank penalty = 10
+	// b2/g2 bonus = 10
+	// b5/g5 bonus = 5
+	// centered around zero
+	const int pstBishopMg[64] = {
+		-24,-19,-14, -9, -9,-14,-19,-24,
+		-9,  6,  1,  6,  6,  1,  6, -9,
+		-4,  1,  6, 11, 11,  6,  1, -4,
+		1,  6, 11, 16, 16, 11,  6,  1,
+		1, 11, 11, 16, 16, 11, 11,  1,
+		-4,  1,  6, 11, 11,  6,  1, -4,
+		-9, -4,  1,  6,  6,  1, -4, -9,
+		-14, -9, -4,  1,  1, -5, -9,-14
+	};
+
+	// based on center-manhattan distance
+	// centered around zero
+	const int pstBishopEg[64] = {
+		-15,-10, -5,  0,  0, -5,-10,-15,
+		-10, -5,  0,  5,  5,  0, -5,-10,
+		-5,  0,  5, 10, 10,  5,  0, -5,
+		0,  5, 10, 15, 15, 10,  5,  0,
+		0,  5, 10, 15, 15, 10,  5,  0,
+		-5,  0,  5, 10, 10,  5,  0, -5,
+		-10, -5,  0,  5,  5,  0, -5,-10,
+		-15,-10, -5,  0,  0, -5,-10,-15
+	};
+
+	// c-/f-file bonus = 2, d-/e-file bonus = 5, 7th rank bonus = 10
+	// centered around zero
+	const int pstRookMg[64] = {
+		-3, -3, -1,  2,  2, -1, -3, -3,
+		-3, -3, -1,  2,  2, -1, -3, -3,
+		-3, -3, -1,  2,  2, -1, -3, -3,
+		-3, -3, -1,  2,  2, -1, -3, -3,
+		-3, -3, -1,  2,  2, -1, -3, -3,
+		-3, -3, -1,  2,  2, -1, -3, -3,
+		7,  7,  9, 12, 12,  9,  7,  7,
+		-3, -3, -1,  2,  2, -1, -3, -3,
+	};
+
+	// all zeroes is correct, there is no correct placement even generally for the rook in the endgame
+	// centered around zero
+	const int pstRookEg[64] = {
+		0,  0,  0,  0,  0,  0,  0,  0,
+		0,  0,  0,  0,  0,  0,  0,  0,
+		0,  0,  0,  0,  0,  0,  0,  0,
+		0,  0,  0,  0,  0,  0,  0,  0,
+		0,  0,  0,  0,  0,  0,  0,  0,
+		0,  0,  0,  0,  0,  0,  0,  0,
+		0,  0,  0,  0,  0,  0,  0,  0,
+		0,  0,  0,  0,  0,  0,  0,  0,
+	};
+
+	// based on center-manhattan distance
+	// first rank penalty = 5
+	// centered around zero
+	const int pstQueenMg[64] = {
+		-19,-14, -9, -4, -4, -9,-14,-19,
+		-9, -4,  1,  6,  6,  1, -4, -9,
+		-4,  1,  6, 11, 11,  6,  1, -4,
+		1,  6, 11, 16, 16, 11,  6,  1,
+		1,  6, 11, 16, 16, 11,  6,  1,
+		-4,  1,  6, 11, 11,  6,  1, -4,
+		-9, -4,  1,  6,  6,  1, -4, -9,
+		-14, -9, -4,  1,  1, -4, -9,-14
+	};
+
+	// based on center-manhattan distance
+	// centered around zero
+	const int pstQueenEg[64] = {
+		-15,-10, -5,  0,  0, -5,-10,-15,
+		-10, -5,  0,  5,  5,  0, -5,-10,
+		-5,  0,  5, 10, 10,  5,  0, -5,
+		0,  5, 10, 15, 15, 10,  5,  0,
+		0,  5, 10, 15, 15, 10,  5,  0,
+		-5,  0,  5, 10, 10,  5,  0, -5,
+		-10, -5,  0,  5,  5,  0, -5,-10,
+		-15,-10, -5,  0,  0, -5,-10,-15
+	};
+
+	// stay the hell away from center, instead castle
+	// cannot and should not be centered around zero
+	const int pstKingMg[64] = {
+		5,  6,  4,  0,  0,  1,  6,  4,
+		5,  5,  0, -5, -5,  0,  5,  5,
+		-5, -5, -5,-10,-10, -5, -5, -5,
+		-10,-10,-20,-30,-30,-20,-10,-10,
+		-20,-25,-30,-40,-40,-30,-25,-20,
+		-40,-40,-50,-60,-60,-50,-40,-40,
+		-50,-50,-60,-60,-60,-60,-50,-50,
+		-60,-60,-60,-60,-60,-60,-60,-60
+	};
+
+	// based on center-manhattan distance
+	// centered around zero
+	const int pstKingEg[64] = {
+		-38,-28,-18, -8, -8,-18,-28,-38,
+		-28,-18, -8, 13, 13, -8,-18,-28,
+		-18, -8, 13, 43, 43, 13, -8,-18,
+		-8, 13, 43, 53, 53, 43, 13, -8,
+		-8, 13, 43, 53, 53, 43, 13, -8,
+		-18, -8, 13, 43, 43, 13, -8,-18,
+		-28,-18, -8, 13, 13, -8,-18,-28,
+		-38,-28,-18, -8, -8,-18,-28,-38,
+	};
+	void initPSQT()
+	{
+		for (Piece p = WQUEEN; p <= BKING; ++p) {
+			for (Square s = A1; s <= H8; ++s) {
+				PSQT[p][s] = EVAL_ZERO;
+			}
+		}
+		//Take over values from const arrays
+		for (int i = 0; i < 64; ++i) {
+			PSQT[WPAWN][i] = eval(pstPawnMg[i], pstPawnEg[i]);
+			PSQT[WKING][i] = eval(pstKingMg[i], pstKingEg[i]);
+			PSQT[WQUEEN][i] = eval(pstQueenMg[i], pstQueenEg[i]);
+			PSQT[WROOK][i] = eval(pstRookMg[i], pstRookEg[i]);
+			PSQT[WBISHOP][i] = eval(pstBishopMg[i], pstBishopEg[i]);
+			PSQT[WKNIGHT][i] = eval(pstKnightMg[i], pstKnightEg[i]);
+		}
+		for (PieceType p = QUEEN; p <= KING; ++p) {
+			//Normalize (to ensure that PSQT doesn't add piece value
+			eval offset = EVAL_ZERO;
+			for (int rank = 0; rank < 8; ++rank) {
+				for (int file = 0; file < 8; ++file) {
+					offset += PSQT[2*p][8 * rank + file];
+				}
+			}
+			offset.mgScore = offset.mgScore / 64;
+			offset.egScore = offset.egScore / 64;
+			for (int rank = 0; rank < 8; ++rank) {
+				for (int file = 0; file < 8; ++file) {
+					PSQT[2 * p][8 * rank + file] -= offset;
+				}
+			}
+			//Add Values for Black Pieces
+			for (int rank = 0; rank < 8; ++rank) {
+				for (int file = 0; file < 8; ++file) {
+					PSQT[2 * p + 1][8 * (7 - rank) + file] = -PSQT[2 * p][8 * rank + file];
+				}
+			}
+		}
+	}
 
 	void Initialize() {
+		initPSQT();
 		for (int depth = 0; depth < 64; depth++) {
-			for (int moves = 0; moves < 64; moves++) {				
+			for (int moves = 0; moves < 64; moves++) {
 				double reduction = std::log(moves) * std::log(depth) / 2; //F
 				if (reduction < 0.8) LMR_REDUCTION[depth][moves] = 0;
 				else LMR_REDUCTION[depth][moves] = int(std::round(reduction));
@@ -124,7 +335,7 @@ namespace settings {
 	{
 		if (find(key) == end()) {
 			(*this)[key] = (Option *)(new OptionString(key));
-		} 
+		}
 		at(key)->set(value);
 	}
 

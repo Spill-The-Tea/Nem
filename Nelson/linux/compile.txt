@@ -1,0 +1,23 @@
+
+-------------- Build: Release in Nelson (compiler: GNU GCC Compiler)---------------
+
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/bbEndings.cpp" -o .objs/bbEndings.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/board.cpp" -o .objs/board.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/book.cpp" -o .objs/book.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/evaluation.cpp" -o .objs/evaluation.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/hashtables.cpp" -o .objs/hashtables.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/Material.cpp" -o .objs/Material.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/Nemorino.cpp" -o .objs/Nemorino.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/pgn.cpp" -o .objs/pgn.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/position.cpp" -o .objs/position.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/search.cpp" -o .objs/search.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/test.cpp" -o .objs/test.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/timemanager.cpp" -o .objs/timemanager.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/uci.cpp" -o .objs/uci.o
+g++ -Wmain -lpthread -std=c++11 -O3 -march=core2 -DNDEBUG -D_CONSOLE  -c "/run/user/1000/gvfs/smb-share:server=cg2013,share=users/chrgu_000/Documents/Visual Studio 2013/Projects/Nelson/Nelson/utils.cpp" -o .objs/utils.o
+g++  -o gcc/release/nemorino .objs/bbEndings.o .objs/board.o .objs/book.o .objs/evaluation.o .objs/hashtables.o .objs/Material.o .objs/Nemorino.o .objs/pgn.o .objs/position.o .objs/search.o .objs/settings.o .objs/test.o .objs/timemanager.o .objs/uci.o .objs/utils.o  -lpthread -std=c++11
+Output file is gcc/release/nemorino with size 736,00 KB
+Process terminated with status 0 (0 minute(s), 47 second(s))
+0 error(s), 0 warning(s) (0 minute(s), 47 second(s))
+
+

@@ -169,6 +169,9 @@ namespace settings {
 	const std::string OPTION_SYZYGY_PROBE_DEPTH = "SyzygyProbeDepth";
 #endif
 
+	extern eval PSQT[12][64];
+	void initPSQT();
+
 	class Option {
 	public:
 		Option() { };
