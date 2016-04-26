@@ -23,27 +23,20 @@ namespace settings {
 	static const double LMR_PV = 2.25;
 	eval PSQT[12][64];
 
-	//PSQT Values are copied 1:1 (including comments :-) from a post on talkchess - these are
+	//PSQT Values are copied 1:1 from a post on talkchess - these are
 	//the values from Hakkapeliitta
-
-	// -15,-10, -5, 0, 0, -5,-10,-15 for every rank(except 1st, 7th and 8th), rank bonus = 5 for every rank starting from 3rd and ending at 6th
-	// last rank bonus = 60(no other bonuses), 6th rank bonus = 20
-	// d3/e3 bonus = 10, d4/e4 bonus = 20, e5/d5 bonus = 20
-	// a4/h4 penalty = 10, f2/c2 bonus = 10, g2/b2 bonus = 5
-	// centered around zero
+	//There might be a lot of room for improvement :-)
 	const int pstPawnMg[64] = {
-		0,  0,  0,  0,  0,  0,  0,  0,       // 1st rank, applies to all PSTs
+		0,  0,  0,  0,  0,  0,  0,  0,       
 		-33,-18,-13,-18,-18,-13,-18,-33,
 		-28,-23,-13, -3, -3,-13,-23,-28,
 		-33,-18,-13, 12, 12,-13,-18,-33,
 		-18,-13, -8, 17, 17, -8,-13,-18,
 		7, 12, 17, 22, 22, 17, 12,  7,
 		42, 42, 42, 42, 42, 42, 42, 42,
-		0,  0,  0,  0,  0,  0,  0,  0     // 8th rank, applies to all PSts
+		0,  0,  0,  0,  0,  0,  0,  0     
 	};
 
-	// rank bonus = 5 starting from the 3rd rank and ending at 6th, last rank bonus = 60(no other bonuses), 6th rank bonus = 20
-	// centered around zero
 	const int pstPawnEg[64] = {
 		0,  0,  0,  0,  0,  0,  0,  0,
 		-22,-22,-22,-22,-22,-22,-22,-22,
@@ -55,12 +48,6 @@ namespace settings {
 		0,  0,  0,  0,  0,  0,  0,  0
 	};
 
-	// based on the center-manhattan distance
-	// d5/e5 bonus = 10
-	// d6/e6 bonus = 30
-	// f5/c5 bonus = 10
-	// f6/c6 bonus = 10
-	// centered around zero
 	const int pstKnightMg[64] = {
 		-36,-26,-16, -6, -6,-16,-26,-36,
 		-26,-16, -6,  9,  9, -6,-16,-26,
@@ -72,8 +59,6 @@ namespace settings {
 		-36,-26,-16, -6, -6,-16,-26,-36
 	};
 
-	// based on the center-manhattan distance
-	// centered around zero
 	const int pstKnightEg[64] = {
 		-34,-24,-14, -4, -4,-14,-24,-34,
 		-24,-14, -4, 11, 11, -4,-14,-24,
@@ -85,11 +70,6 @@ namespace settings {
 		-34,-24,-14, -4, -4,-14,-24,-34
 	};
 
-	// based on center-manhattan distance
-	// last rank penalty = 10
-	// b2/g2 bonus = 10
-	// b5/g5 bonus = 5
-	// centered around zero
 	const int pstBishopMg[64] = {
 		-24,-19,-14, -9, -9,-14,-19,-24,
 		-9,  6,  1,  6,  6,  1,  6, -9,
@@ -101,8 +81,6 @@ namespace settings {
 		-14, -9, -4,  1,  1, -5, -9,-14
 	};
 
-	// based on center-manhattan distance
-	// centered around zero
 	const int pstBishopEg[64] = {
 		-15,-10, -5,  0,  0, -5,-10,-15,
 		-10, -5,  0,  5,  5,  0, -5,-10,
@@ -114,8 +92,6 @@ namespace settings {
 		-15,-10, -5,  0,  0, -5,-10,-15
 	};
 
-	// c-/f-file bonus = 2, d-/e-file bonus = 5, 7th rank bonus = 10
-	// centered around zero
 	const int pstRookMg[64] = {
 		-3, -3, -1,  2,  2, -1, -3, -3,
 		-3, -3, -1,  2,  2, -1, -3, -3,
@@ -127,8 +103,6 @@ namespace settings {
 		-3, -3, -1,  2,  2, -1, -3, -3,
 	};
 
-	// all zeroes is correct, there is no correct placement even generally for the rook in the endgame
-	// centered around zero
 	const int pstRookEg[64] = {
 		0,  0,  0,  0,  0,  0,  0,  0,
 		0,  0,  0,  0,  0,  0,  0,  0,
@@ -140,9 +114,6 @@ namespace settings {
 		0,  0,  0,  0,  0,  0,  0,  0,
 	};
 
-	// based on center-manhattan distance
-	// first rank penalty = 5
-	// centered around zero
 	const int pstQueenMg[64] = {
 		-19,-14, -9, -4, -4, -9,-14,-19,
 		-9, -4,  1,  6,  6,  1, -4, -9,
@@ -154,8 +125,6 @@ namespace settings {
 		-14, -9, -4,  1,  1, -4, -9,-14
 	};
 
-	// based on center-manhattan distance
-	// centered around zero
 	const int pstQueenEg[64] = {
 		-15,-10, -5,  0,  0, -5,-10,-15,
 		-10, -5,  0,  5,  5,  0, -5,-10,
@@ -167,8 +136,6 @@ namespace settings {
 		-15,-10, -5,  0,  0, -5,-10,-15
 	};
 
-	// stay the hell away from center, instead castle
-	// cannot and should not be centered around zero
 	const int pstKingMg[64] = {
 		5,  6,  4,  0,  0,  1,  6,  4,
 		5,  5,  0, -5, -5,  0,  5,  5,
@@ -180,8 +147,6 @@ namespace settings {
 		-60,-60,-60,-60,-60,-60,-60,-60
 	};
 
-	// based on center-manhattan distance
-	// centered around zero
 	const int pstKingEg[64] = {
 		-38,-28,-18, -8, -8,-18,-28,-38,
 		-28,-18, -8, 13, 13, -8,-18,-28,
@@ -192,6 +157,7 @@ namespace settings {
 		-28,-18, -8, 13, 13, -8,-18,-28,
 		-38,-28,-18, -8, -8,-18,-28,-38,
 	};
+
 	void initPSQT()
 	{
 		for (Piece p = WQUEEN; p <= BKING; ++p) {
@@ -228,6 +194,11 @@ namespace settings {
 				for (int file = 0; file < 8; ++file) {
 					PSQT[2 * p + 1][8 * (7 - rank) + file] = -PSQT[2 * p][8 * rank + file];
 				}
+			}
+		}
+		for (Piece p = WQUEEN; p <= BKING; ++p) {
+			for (Square s = A1; s <= H8; ++s) {
+				PSQT[p][s] = PSQT[p][s] * 2 / 3;
 			}
 		}
 	}

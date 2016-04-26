@@ -131,16 +131,6 @@ const Value CAPTURE_SCORES[6][6] = {
 		{ Value(KxQ), Value(KxR), Value(KxB), Value(KxN), Value(KxP), Value(0) }    // KING
 };
 
-//const Value CAPTURE_SCORES[6][6] = {
-//	// Captured:  QUEEN, ROOK,   BISHOP,   KNIGHT,    PAWN,      EP-Capture
-//	{ Value(250), Value(60),  Value(80),  Value(50),  Value(10),  Value(0) },   // QUEEN
-//	{ Value(260), Value(200), Value(100), Value(70),  Value(40),  Value(0) },   // ROOK
-//	{ Value(270), Value(150), Value(210), Value(90),  Value(20),  Value(0) },   // BISHOP
-//	{ Value(280), Value(170), Value(190), Value(180), Value(30),  Value(0) },   // KNIGHT
-//	{ Value(290), Value(220), Value(140), Value(160), Value(120), Value(120) },   // PAWN
-//	{ Value(300), Value(240), Value(230), Value(130), Value(110), Value(0) }    // KING
-//};
-
 const int LMPMoveCount[16] = { 3, 5, 8, 12, 18, 25, 33, 42, 52, 62, 74, 87, 101, 115, 131, 147 };
 namespace settings {
 

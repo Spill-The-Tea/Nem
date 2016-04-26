@@ -1,0 +1,185 @@
+From d0c111d002bdd538be8a31de3ef3286706f8aef6 Mon Sep 17 00:00:00 2001
+From: Christian <chr.guenther@web.de>
+Date: Sun, 11 Oct 2015 21:35:18 +0200
+Subject: [PATCH] 0.26: - Fixed Isolated Pawn determination          - Backward
+ pawns
+
+---
+ Nelson/board.h        | 29 +++++++++++++++++++++++++++++
+ Nelson/evaluation.h   | 19 -------------------
+ Nelson/hashtables.cpp | 24 +++++++++++++++++-------
+ Nelson/position.cpp   |  2 +-
+ Nelson/settings.h     |  4 ++--
+ Nemorino.sln          |  7 -------
+ 6 files changed, 49 insertions(+), 36 deletions(-)
+
+diff --git a/Nelson/board.h b/Nelson/board.h
+index c5cbadf..92a9923 100644
+--- a/Nelson/board.h
++++ b/Nelson/board.h
+@@ -164,6 +164,35 @@ inline Bitboard FrontFillSouth(Bitboard gen) {
+ 	return gen;
+ }
+ 
++inline byte Fileset(Bitboard gen) {
++	return (byte)FrontFillSouth(gen);
++}
++
++inline Bitboard FileFill(byte fileset) {
++	return 0x0101010101010101ull * Bitboard(fileset);
++}
++
++inline Bitboard FileFill(Bitboard gen) {
++	return 0x0101010101010101ull * FrontFillSouth(gen);
++}
++
++inline byte IslandsEastFiles(byte f) { return f &  ~(f >> 1); }
++inline byte IslandsWestFiles(byte f) { return f &  ~(f << 1); }
++
++inline byte IslandsEastFiles(Bitboard bb) { byte f = Fileset(bb); return f &  ~(f >> 1); }
++inline byte IslandsWestFiles(Bitboard bb) { byte f = Fileset(bb); return f &  ~(f << 1); }
++
++inline byte IsolatedFiles(Bitboard gen) {
++	byte f = Fileset(gen);
++	return IslandsEastFiles(f) & IslandsWestFiles(f);
++}
++
++inline byte IsolatedFiles(byte fileset) {
++	return IslandsEastFiles(fileset) & IslandsWestFiles(fileset);
++}
++
++
++
+ inline int ChebishevDistance(Square sq1, Square sq2) {
+ 	return (std::max)(abs((sq1>>3) - (sq2>>3)), abs((sq1 & 7) - (sq2 & 7)));
+ }
+diff --git a/Nelson/evaluation.h b/Nelson/evaluation.h
+index b4bec48..7905cc5 100644
+--- a/Nelson/evaluation.h
++++ b/Nelson/evaluation.h
+@@ -471,25 +471,6 @@ template <Color COL> eval evaluatePieces(const position& pos) {
+ 			if ((pos.PieceBB(PAWN, OTHER) & rookFile) == 0) 
+ 				bonusRook += ROOK_ON_OPENFILE;
+ 		}
+-		//else {
+-		//	//Trapped Rook
+-		//	bool onBaseRank = rookRank == (COL * 7);
+-		//	if (onBaseRank && ((rookRankBB & pos.PieceBB(KING, COL)) != 0) && popcount(pos.GetAttacksFrom(rookSquare) & ~pos.ColorBB(COL)) <= 3) {
+-		//		Bitboard ownPawns = pos.PieceBB(PAWN, COL);
+-		//		ownPawns &= COL == WHITE ? HALF_OF_WHITE : HALF_OF_BLACK;
+-		//		bool trapped = true;
+-		//		for (int file = std::max((rookSquare & 7) - 2, 0); file <= std::min((rookSquare & 7) + 2, 7); ++file) {
+-		//			trapped = trapped && ((ownPawns & FILES[file]) != 0);
+-		//			if (!trapped) break;
+-		//		}
+-		//		if (trapped) 
+-		//			bonusRook -= (1 + (pos.GetCastlesForColor(COL) == 0)) * ROOK_TRAPPED;
+-		//	}
+-		//}
+-		////aligned pawns
+-		//Bitboard alignedPawns = rookRankBB & pawns;
+-		//bonusRook += popcount(alignedPawns) * ROOK_ALIGNED_WITH_PAWNS;
+-
+ 		rooks &= rooks - 1;
+ 	}
+ 	return bonusRook + eval(bonusKnightOutpost, 0);
+diff --git a/Nelson/hashtables.cpp b/Nelson/hashtables.cpp
+index 227c302..d1b35f2 100644
+--- a/Nelson/hashtables.cpp
++++ b/Nelson/hashtables.cpp
+@@ -21,6 +21,8 @@ namespace pawn {
+ 		result->Score = VALUE_ZERO;
+ 		Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
+ 		Bitboard bbBlack = pos.PieceBB(PAWN, BLACK);
++		Bitboard bbFilesWhite = FileFill(bbWhite);
++		Bitboard bbFilesBlack = FileFill(bbBlack);
+ 		Bitboard attacksWhite = ((bbWhite << 9) & NOT_A_FILE) | ((bbWhite << 7) & NOT_H_FILE);
+ 		Bitboard attacksBlack = ((bbBlack >> 9) & NOT_H_FILE) | ((bbBlack >> 7) & NOT_A_FILE);
+ 		//frontspans
+@@ -44,13 +46,21 @@ namespace pawn {
+ 		result->Score += (popcount(ppW & attacksWhite & HALF_OF_BLACK)
+ 			- popcount(ppB & attacksBlack & HALF_OF_WHITE)) * BONUS_PROTECTED_PASSED_PAWN;
+ 		//isolated pawns
+-		Bitboard west = (bbWhite >> 1) & NOT_H_FILE;
+-		Bitboard east = (bbWhite << 1) & NOT_A_FILE;
+-		Bitboard  bbIsolatedWhite = bbWhite & ~(FrontFillNorth(west) | FrontFillSouth(west) | FrontFillNorth(east) | FrontFillSouth(east));
+-		west = (bbBlack >> 1) & NOT_H_FILE;
+-		east = (bbBlack << 1) & NOT_A_FILE;
+-		Bitboard  bbIsolatedBlack = bbBlack & ~(FrontFillNorth(west) | FrontFillSouth(west) | FrontFillNorth(east) | FrontFillSouth(east));
+-		result->Score -= (popcount(bbIsolatedWhite) - popcount(bbIsolatedBlack)) * MALUS_ISOLATED_PAWN;
++		result->Score -= (popcount(IsolatedFiles(bbFilesWhite)) - popcount(IsolatedFiles(bbFilesBlack))) * MALUS_ISOLATED_PAWN;
++		//pawn islands
++		result->Score += MALUS_ISLAND_COUNT*(popcount(IslandsEastFiles(bbBlack)) - popcount(IslandsEastFiles(bbWhite)));
++		//backward pawns
++		Bitboard bbWBackward = bbWhite & ~bbBFrontspan; //Backward pawns are open pawns
++		Bitboard frontspan = FrontFillNorth(bbWBackward << 8);
++		Bitboard stopSquares = frontspan & attacksBlack; //Where the advancement is stopped by an opposite pawn
++		stopSquares &= ~bbWAttackset; //and the stop square isn't part of the own pawn attack
++		bbWBackward &= FrontFillSouth(stopSquares); 
++		Bitboard bbBBackward = bbBlack & ~bbWFrontspan; //Backward pawns are open pawns
++		frontspan = FrontFillSouth(bbBBackward >> 8);
++		stopSquares = frontspan & attacksWhite; //Where the advancement is stopped by an opposite pawn
++		stopSquares &= ~bbBAttackset; //and the stop square isn't part of the own pawn attack
++		bbBBackward &= FrontFillNorth(stopSquares);
++		result->Score -= (popcount(bbWBackward) - popcount(bbBBackward)) * MALUS_BACKWARD_PAWN;
+ 		result->Key = pos.GetPawnKey();
+ 		return result;
+ 	}
+diff --git a/Nelson/position.cpp b/Nelson/position.cpp
+index 1917463..e8777bf 100644
+--- a/Nelson/position.cpp
++++ b/Nelson/position.cpp
+@@ -158,7 +158,7 @@ bool position::ApplyMove(Move move) {
+ 	movepointer = 0;
+ 	attackedByUs = calculateAttacks(SideToMove);
+ 	//calculatePinned();
+-	attackedByThem = 0ull;
++	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
+ 	assert((checkMaterialIsUnusual() && MaterialKey == MATERIAL_KEY_UNUSUAL) || MaterialKey == calculateMaterialKey());
+ 	assert(PawnKey == calculatePawnKey());
+ 	if (pawn->Key != PawnKey) pawn = pawn::probe(*this);
+diff --git a/Nelson/settings.h b/Nelson/settings.h
+index 2fd56be..611581a 100644
+--- a/Nelson/settings.h
++++ b/Nelson/settings.h
+@@ -65,8 +65,6 @@ const eval KingOnMany(3, 63);
+ const eval ROOK_ON_OPENFILE(10, 0);
+ const eval ROOK_ON_SEMIOPENFILE(10, 0);
+ const eval ROOK_ON_7TH(20, 0);
+-const eval ROOK_ALIGNED_WITH_PAWNS(3, 13);
+-const eval ROOK_TRAPPED(45, 0);
+ 
+ const Value BONUS_KNIGHT_OUTPOST = Value(5);
+ const Value BONUS_BISHOP_OUTPOST = Value(0);
+@@ -75,6 +73,8 @@ const Value BONUS_BISHOP_OUTPOST = Value(0);
+ const Value PASSED_PAWN_BONUS[4] = { Value(30), Value(37), Value(77), Value(162) };
+ const Value BONUS_PROTECTED_PASSED_PAWN = Value(30);
+ const Value MALUS_ISOLATED_PAWN = Value(25);
++const Value MALUS_BACKWARD_PAWN = Value(20);
++const Value MALUS_ISLAND_COUNT = Value(0);
+ const Value BONUS_BISHOP_PAIR = Value(0);
+ const Value BONUS_CASTLING = Value(0);
+ 
+diff --git a/Nemorino.sln b/Nemorino.sln
+index 5036788..93a78c1 100644
+--- a/Nemorino.sln
++++ b/Nemorino.sln
+@@ -6,15 +6,8 @@ MinimumVisualStudioVersion = 10.0.40219.1
+ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nemorino", "Nelson\Nelson.vcxproj", "{B23D2DB6-4387-478B-A153-4C34596B8C7E}"
+ EndProject
+ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{6CB46E9E-786B-4AB2-9E0A-4EAC39D8038E}"
+-	ProjectSection(SolutionItems) = preProject
+-		Performance1.psess = Performance1.psess
+-		Performance2.psess = Performance2.psess
+-	EndProjectSection
+ EndProject
+ Global
+-	GlobalSection(Performance) = preSolution
+-		HasPerformanceSessions = true
+-	EndGlobalSection
+ 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+ 		Debug|Win32 = Debug|Win32
+ 		Debug|x64 = Debug|x64
+-- 
+1.9.5.msysgit.0
+
