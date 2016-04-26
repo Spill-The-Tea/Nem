@@ -6,6 +6,16 @@
 *.user
 *.sln.docstates
 *.opendb
+*.xlsx
+*.etl
+*.db
+Testsuite Results.txt
+book.bin
+.vs/config/
+Nelson/linux/
+Nelson/compression/liblzf/
+Nelson/ReleaseW32/
+Nelson/.objs
 
 # Build results
 [Dd]ebug/
