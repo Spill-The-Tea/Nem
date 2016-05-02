@@ -36,7 +36,6 @@ The engine requires a CPU with POPCNT support and 64-bit Windows.
 * Tapered Eval based on Material, Mobility, Threats, King Safety, and Pawn Structure
 * Special evaluation functions for some endgames
 * Copy/Make
-* No Piece-Square Tables
 * So far completely untuned
 
 ### Remarks ###
