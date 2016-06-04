@@ -109,6 +109,7 @@ protected:
 	polyglot::book * book = nullptr;
 	//History tables used in move ordering during search
 	CounterMoveHistoryManager cmHistory;
+	CounterMoveHistoryManager followupHistory;
 	HistoryManager History;
 	//Killer moves: 2 slots per ply from Root (so at ply N the indices 2*N and 2*N+1 contain the relevant killer moves)
 	ExtendedMove killer[2 * MAX_DEPTH];
@@ -649,9 +650,9 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
 	bool futilityPruning = !skipNullMove && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
 	if (futilityPruning && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
-		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, nullptr, counter, ttMove);
+		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, &followupHistory, nullptr, counter, ttMove);
 	else
-		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &cmHistory, &killer[2 * pos.GetPliesFromRoot()], counter, ttMove);
+		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &cmHistory, &followupHistory, &killer[2 * pos.GetPliesFromRoot()], counter, ttMove);
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
@@ -691,7 +692,6 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
-			bool critical = move == counter || !pos.QuietMoveGenerationPhaseStarted() || moveIndex == 0;
 			//critical = critical || GetPieceType(pos.GetPieceOnSquare(from(move))) == PAWN && ((pos.GetSideToMove() == WHITE && from(move) > H5) || (pos.GetSideToMove() == BLACK && from(move) < A4));
 		   //Check extension
 			int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
@@ -705,7 +705,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			//}
 			int reduction = 0;
 			//LMR: Late move reduction
-			if (lmr && !critical && moveIndex >= 2 && !extension && !next.Checked()) {
+			if (lmr && extension == 0 && moveIndex != 0 && move != counter && pos.QuietMoveGenerationPhaseStarted() && !next.Checked()) {
 				reduction = settings::LMRReduction(depth, moveIndex);
 				if (PVNode && reduction > 0) --reduction;
 			}
@@ -801,8 +801,8 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		}
 		if (alpha < standPat) alpha = standPat;
 	}
-	if (WithChecks) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, nullptr, MOVE_NONE);
-	else pos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, nullptr, MOVE_NONE);
+	if (WithChecks) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, &followupHistory, nullptr, MOVE_NONE);
+	else pos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, &followupHistory, nullptr, MOVE_NONE);
 	Move move;
 	Value score;
 	tt::NodeType nt = tt::UPPER_BOUND;
@@ -846,6 +846,8 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 		History.update(v, movingPiece, toSquare);
 		Piece prevPiece = BLANK;
 		Square prevTo = OUTSIDE;
+		Piece prev2Piece = BLANK;
+		Square prev2To = OUTSIDE;
 		//Piece ownPrevPiece = BLANK;
 		//Square ownPrevTo = OUTSIDE;
 		Move lastApplied;
@@ -854,12 +856,12 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 			prevPiece = pos.GetPieceOnSquare(prevTo);
 			counterMove[int(pos.GetPieceOnSquare(prevTo))][prevTo] = cutoffMove;
 			cmHistory.update(v, prevPiece, prevTo, movingPiece, toSquare);
-			//Move ownPrevMove = MOVE_NONE;
-			//if ((ownPrevMove = FixCastlingMove(pos.Previous()->GetLastAppliedMove()))) {
-			//	ownPrevTo = to(ownPrevMove);
-			//	ownPrevPiece = pos.Previous()->GetPieceOnSquare(ownPrevTo);
-			//	cmHistory.update(v, ownPrevPiece, ownPrevTo, movingPiece, toSquare);
-			//}
+			Move lastApplied2;
+			if (pos.Previous() && (lastApplied2 = FixCastlingMove(pos.Previous()->GetLastAppliedMove()))) {
+				prev2To = to(lastApplied2);
+				prev2Piece = pos.Previous()->GetPieceOnSquare(prev2To);
+				followupHistory.update(v, prev2Piece, prev2To, movingPiece, toSquare);
+			}
 		}
 		if (moveIndex > 0) {
 			ValuatedMove * alreadyProcessedQuiets = pos.GetMovesOfCurrentPhase();
@@ -870,6 +872,8 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 				History.update(-v, movingPiece, toSquare);
 				if (pos.GetLastAppliedMove())
 					cmHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
+				if (pos.Previous() && pos.Previous()->GetLastAppliedMove())
+					followupHistory.update(-v, prev2Piece, prev2To, movingPiece, toSquare);
 				//if (ownPrevTo != OUTSIDE) {
 				//	cmHistory.update(-v, ownPrevPiece, ownPrevTo, movingPiece, toSquare);
 				//}

@@ -102,14 +102,14 @@ const Value DELTA_PRUNING_SAFETY_MARGIN = Value(PieceValues[PAWN].egScore >> 1);
 const Value PAWN_SHELTER_2ND_RANK = Value(20);
 const Value PAWN_SHELTER_3RD_RANK = Value(10);
 
-const Value BETA_PRUNING_MARGIN[8] = { Value(0), Value(200), Value(400), Value(600), Value(800), Value(1000), Value(1200), Value(1400) };
+//const Value BETA_PRUNING_MARGIN[8] = { Value(0), Value(200), Value(400), Value(600), Value(800), Value(1000), Value(1200), Value(1400) };
 const Value BETA_PRUNING_FACTOR = Value(100);
 
 const Value PROBCUT_MARGIN = Value(90);
 
 const int FULTILITY_PRUNING_DEPTH = 3;
 const Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
-const Value FUTILITY_PRUNING_MARGIN[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
+//const Value FUTILITY_PRUNING_MARGIN[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
 
 enum CAPTURES {             
 	QxP, BxP, NxP, RxP, QxN,
@@ -159,7 +159,7 @@ namespace settings {
 	const std::string OPTION_SYZYGY_PROBE_DEPTH = "SyzygyProbeDepth";
 #endif
 
-	extern eval PSQT[12][64];
+	extern const eval PSQT[12][64];
 	void initPSQT();
 
 	class Option {

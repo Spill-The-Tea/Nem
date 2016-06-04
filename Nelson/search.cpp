@@ -43,6 +43,7 @@ void baseSearch::Reset() {
 	History.initialize();
 	searchMoves.clear();
 	cmHistory.initialize();
+	followupHistory.initialize();
 	for (int i = 0; i < MAX_DEPTH; ++i){
 		killer[2*i] = EXTENDED_MOVE_NONE;
 		killer[2 * i + 1] = EXTENDED_MOVE_NONE;
@@ -180,6 +181,7 @@ baseSearch::baseSearch() {
 	BestMove.move = MOVE_NONE;
 	BestMove.score = VALUE_NOTYETDETERMINED;
 	cmHistory.initialize();
+	followupHistory.initialize();
 	History.initialize();
 	_thinkTime = 0;
 	for (int i = 0; i < PV_MAX_LENGTH; ++i) PVMoves[i] = MOVE_NONE;

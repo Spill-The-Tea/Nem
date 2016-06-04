@@ -17,7 +17,7 @@
 #endif
 
 const int MAJOR_VERSION = 0;
-const int MINOR_VERSION = 59;
+const int MINOR_VERSION = 60;
 
 
 static bool popcountSupport();
@@ -27,28 +27,19 @@ int main(int argc, const char* argv[]) {
 		std::cout << "No Popcount support - Engine does't work on this hardware!" << std::endl;
 		return 0;
 	}
-	Initialize();
 	std::string input = "";
-	if (argc > 1) {
-		for (int i = 1; i <= argc - 2; ++i) {
-			std::string argument(argv[i]);
-			if (!argument.compare("setvalue")) {
-				std::string name(argv[i + 1]);
-				std::string value(argv[i + 2]);
-				settings::options.set(name, value);
-			}
-		}
-	}
 	position pos;
 	while (true) {
 		std::getline(std::cin, input);
 		if (!input.compare(0, 3, "uci")) {
+			Initialize();
 			protocol = UCI;
 			UCIInterface uciInterface;
 			uciInterface.loop();
 			return 0;
 		}
 		else if (!input.compare(0, 6, "xboard")) {
+			Initialize();
 			protocol = XBOARD;
 			cecp::xboard xb;
 			xb.loop();
@@ -58,25 +49,30 @@ int main(int argc, const char* argv[]) {
 			std::cout << "Nemorino " << MAJOR_VERSION << "." << MINOR_VERSION << std::endl;
 		}
 		else if (!input.compare(0, 8, "position")) {
+			Initialize();
 			std::string fen;
 			if (input.length() < 10) fen = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 			else fen = input.substr(9);
 			pos.setFromFEN(fen);
 		}
 		else if (!input.compare(0, 6, "perft ")) {
+			Initialize();
 			int depth = atoi(input.substr(6).c_str());
 			std::cout << "Perft:\t" << test::perft(pos, depth) << "\t" << pos.fen() << std::endl;
 		}
 		else if (!input.compare(0, 7, "divide ")) {
+			Initialize();
 			int depth = atoi(input.substr(7).c_str());
 			test::divide(pos, depth);
 		}
 		else if (!input.compare(0, 5, "bench")) {
+			Initialize();
 			int depth = 11;
 			if (input.length() > 6) depth = atoi(input.substr(6).c_str());
 			test::benchmark(depth);
 		}
 		else if (!input.compare(0, 5, "print")) {
+			Initialize();
 			std::cout << pos.print() << std::endl;
 		}
 		else if (!input.compare(0, 4, "help")) {
@@ -96,6 +92,14 @@ int main(int argc, const char* argv[]) {
 			std::cout << std::left << std::setw(width) << "quit" << "Exits the program" << std::endl;
 		}
 		else if (!input.compare(0, 4, "quit")) break;
+		else if (!input.compare(0, 8, "setvalue")) {
+			std::vector<std::string> token = utils::split(input);
+			int indx = 1;
+			while (indx < token.size() - 1) {
+				settings::options.set(token[indx], token[indx + 1]);
+				indx += 2;
+			}
+		}
 	}
 }
 

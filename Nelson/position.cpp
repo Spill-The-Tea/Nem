@@ -422,13 +422,11 @@ void position::evaluateByHistory(int startIndex) {
 				moves[i].score = history->getValue(p, toSquare);
 				Move fixedLastApplied = FixCastlingMove(lastAppliedMove);
 				if (lastAppliedMove && cmHistory) {
-					moves[i].score += 2 * cmHistory->getValue(Board[to(fixedLastApplied)], to(fixedLastApplied), p, toSquare);
-					//Move prevMove = MOVE_NONE;
-					//if ((prevMove = FixCastlingMove(Previous()->GetLastAppliedMove()))) {
-					//	Square prevTo = to(prevMove);
-					//	Piece prevPiece = Previous()->GetPieceOnSquare(prevTo);
-					//	moves[i].score += cmHistory->getValue(prevPiece, prevTo, p, toSquare);
-					//}
+				    moves[i].score += 2 * cmHistory->getValue(Board[to(fixedLastApplied)], to(fixedLastApplied), p, toSquare);
+				    if (Previous() && Previous()->lastAppliedMove) {
+				     	fixedLastApplied = FixCastlingMove(Previous()->lastAppliedMove);
+				        moves[i].score += 2 * followupHistory->getValue(Previous()->Board[to(fixedLastApplied)], to(fixedLastApplied), p, toSquare);
+				    }
 				}
 				Bitboard toBB = ToBitboard(toSquare);
 				if (toBB & safeSquaresForPiece(p))

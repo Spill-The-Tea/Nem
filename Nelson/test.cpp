@@ -596,7 +596,7 @@ namespace test {
 		nodeCount++;
 		if (depth == 0) return 1;
 		uint64_t result = 0;
-		pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, MOVE_NONE);
+		pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, nullptr, MOVE_NONE);
 		Move move;
 		while ((move = pos.NextMove())) {
 			position next(pos);
@@ -625,7 +625,7 @@ namespace test {
 		nodeCount++;
 		if (depth == 0) return 1;
 		uint64_t result = 0;
-		pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, MOVE_NONE);
+		pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, nullptr, MOVE_NONE);
 		Move move;
 		while ((move = pos.NextMove())) {
 			position next(pos);
@@ -661,7 +661,7 @@ namespace test {
 	}
 
 	void divide3(position &pos, int depth) {
-		pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, MOVE_NONE);
+		pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, nullptr, MOVE_NONE);
 		Move move;
 		uint64_t total = 0;
 		while ((move = pos.NextMove())) {

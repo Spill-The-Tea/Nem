@@ -126,6 +126,21 @@ namespace tt {
 		return MOVE_NONE;
 	}
 
+	template <ProbeType PT> inline Value staticEval(const uint64_t hash) {
+		Entry* const tte = firstEntry(hash);
+		if (PT == THREAD_SAFE) {
+			for (unsigned i = 0; i < CLUSTER_SIZE; ++i) {
+				if (tte[i].GetKey() == hash) return tte[i].evalValue();
+			}
+		}
+		else {
+			for (unsigned i = 0; i < CLUSTER_SIZE; ++i) {
+				if (tte[i].key == hash) return tte[i].evalValue();
+			}
+		}
+		return VALUE_NOTYETDETERMINED;
+	}
+
 	template <ProbeType PT> inline Entry* probe(const uint64_t hash, bool& found, Entry& entry) {
 		ProbeCounter++;
 		Entry* const tte = firstEntry(hash);

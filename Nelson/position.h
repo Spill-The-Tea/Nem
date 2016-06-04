@@ -74,7 +74,7 @@ public:
 	/* The position struct provides staged move generation. To make use of it the staged move generation has to be initialized first by calling InitializeMoveIterator.
 	   Then every call to NextMove() will return the next move until MOVE_NONE is returned */
 	//Initialize staged move generation, by providing the necessary information for move ordering
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryManager *history, CounterMoveHistoryManager *counterMoveHistory, ExtendedMove * killerMove, Move counter, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE);
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryManager *history, CounterMoveHistoryManager *counterMoveHistory, CounterMoveHistoryManager *followupHistory, ExtendedMove * killerMove, Move counter, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE);
 	//Get next move. If MOVE_NONE is returned end of move list is reached
 	Move NextMove();
 	//SEE (Static Exchange Evaluation): The implementation is copied from Chess Programming Wiki (https://chessprogramming.wikispaces.com/SEE+-+The+Swap+Algorithm)
@@ -237,6 +237,7 @@ private:
 	Piece capturedInLastMove = BLANK;
 	HistoryManager * history;
 	CounterMoveHistoryManager * cmHistory;
+	CounterMoveHistoryManager * followupHistory;
 	Move counterMove = MOVE_NONE;
 	ValuatedMove * firstNegative;
 	bool canPromote = false;
@@ -972,7 +973,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryManager * historyStats, CounterMoveHistoryManager * dblHistoryStats, ExtendedMove* killerMove, Move counter, Move hashmove, Value limit) {
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryManager * historyStats, CounterMoveHistoryManager * counterHistoryStats, CounterMoveHistoryManager * followupHistoryStats, ExtendedMove* killerMove, Move counter, Move hashmove, Value limit) {
 	if (SMGT == REPETITION) {
 		moveIterationPointer = 0;
 		generationPhase = generationPhaseOffset[SMGT];
@@ -990,7 +991,8 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 	movepointer = 0;
 	phaseStartIndex = 0;
 	history = historyStats;
-	cmHistory = dblHistoryStats;
+	cmHistory = counterHistoryStats;
+	followupHistory = followupHistoryStats;
 	hashmove ? hashMove = hashmove : hashMove = MOVE_NONE;
 	if (Checked()) generationPhase = generationPhaseOffset[CHECK] + (hashMove == MOVE_NONE);
 	else generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);
