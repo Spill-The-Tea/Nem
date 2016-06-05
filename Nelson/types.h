@@ -451,9 +451,10 @@ private:
 };
 
 //Inspired by (=more or less copied from) Stockfish 
-struct CounterMoveHistoryManager {
+//Is used to keep track of countermove and followup move history
+struct MoveSequenceHistoryManager {
 public:
-	CounterMoveHistoryManager() { initialize(); }
+	MoveSequenceHistoryManager() { initialize(); }
 
 	inline void update(Value v, Piece p1, Square s1, Piece p2, Square s2) {
 		if (abs(int(Table[p1][s1][p2][s2])) < MAX_HISTORY_VALUE) {
@@ -462,17 +463,7 @@ public:
 	}
 	inline Value const getValue(const Piece p1, const Square s1, const Piece p2, const Square s2) { return Table[p1][s1][p2][s2]; }
 	inline void initialize() { std::memset(Table, 0, sizeof(Table)); }
-	inline void age() {
-		for (int p = 0; p < 12; ++p) {
-			for (int s = 0; s < 64; ++s) {
-				for (int p1 = 0; p1 < 12; ++p1) {
-					for (int s1 = 0; s1 < 64; ++s1) {
-						Table[p][s][p1][s1] = Table[p][s][p1][s1] / 2;
-					}
-				}
-			}
-		}
-	}
+
 private:
 	Value Table[12][64][12][64];
 };

@@ -13,6 +13,8 @@ Testsuite Results.txt
 book.bin
 .vs/config/
 Nelson/linux/
+Nelson/linux/Nelson/
+Nelson/linux/Nelson/.objs/
 Nelson/compression/liblzf/
 Nelson/ReleaseW32/
 Nelson/.objs
@@ -67,6 +69,7 @@ dlldata.c
 *.pidb
 *.svclog
 *.scc
+*.o
 
 # Chutzpah Test files
 _Chutzpah*

@@ -108,8 +108,8 @@ protected:
 	//Polyglot book object to read book moves
 	polyglot::book * book = nullptr;
 	//History tables used in move ordering during search
-	CounterMoveHistoryManager cmHistory;
-	CounterMoveHistoryManager followupHistory;
+	MoveSequenceHistoryManager cmHistory;
+	MoveSequenceHistoryManager followupHistory;
 	HistoryManager History;
 	//Killer moves: 2 slots per ply from Root (so at ply N the indices 2*N and 2*N+1 contain the relevant killer moves)
 	ExtendedMove killer[2 * MAX_DEPTH];
@@ -622,7 +622,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			Value limit = PieceValues[GetPieceType(pos.getCapturedInLastMove())].mgScore;
 			Move ttm = ttMove;
 			if (ttm != MOVE_NONE && cpos.SEE(ttMove) < limit) ttm = MOVE_NONE;
-			cpos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, nullptr, MOVE_NONE, ttm, limit);
+			cpos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, &followupHistory, nullptr, MOVE_NONE, ttm, limit);
 			Move move;
 			while ((move = cpos.NextMove())) {
 				position next(cpos);

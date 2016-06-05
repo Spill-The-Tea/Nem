@@ -410,6 +410,15 @@ Move position::GetCounterMove(Move(&counterMoves)[12][64]) {
 }
 
 void position::evaluateByHistory(int startIndex) {
+	Move fixedPrevApplied;
+	Piece prevPiece;
+	if (Previous() && Previous()->lastAppliedMove) {
+		fixedPrevApplied = FixCastlingMove(Previous()->lastAppliedMove);
+		prevPiece = Previous()->Board[to(fixedPrevApplied)];
+	}
+	else fixedPrevApplied = MOVE_NONE;
+	Move fixedLastApplied = FixCastlingMove(lastAppliedMove);
+	Piece lastPiece = Board[to(fixedLastApplied)];
 	for (int i = startIndex; i < movepointer - 1; ++i) {
 		if (moves[i].move == counterMove) {
 			moves[i].score = VALUE_MATE;
@@ -420,13 +429,9 @@ void position::evaluateByHistory(int startIndex) {
 				Square toSquare = to(fixedMove);
 				Piece p = Board[from(fixedMove)];
 				moves[i].score = history->getValue(p, toSquare);
-				Move fixedLastApplied = FixCastlingMove(lastAppliedMove);
 				if (lastAppliedMove && cmHistory) {
-				    moves[i].score += 2 * cmHistory->getValue(Board[to(fixedLastApplied)], to(fixedLastApplied), p, toSquare);
-				    if (Previous() && Previous()->lastAppliedMove) {
-				     	fixedLastApplied = FixCastlingMove(Previous()->lastAppliedMove);
-				        moves[i].score += 2 * followupHistory->getValue(Previous()->Board[to(fixedLastApplied)], to(fixedLastApplied), p, toSquare);
-				    }
+				    moves[i].score += 2 * cmHistory->getValue(lastPiece, to(fixedLastApplied), p, toSquare);
+				    if (fixedPrevApplied) moves[i].score += 2 * followupHistory->getValue(prevPiece, to(fixedPrevApplied), p, toSquare);
 				}
 				Bitboard toBB = ToBitboard(toSquare);
 				if (toBB & safeSquaresForPiece(p))

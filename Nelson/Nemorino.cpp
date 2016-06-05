@@ -27,6 +27,15 @@ int main(int argc, const char* argv[]) {
 		std::cout << "No Popcount support - Engine does't work on this hardware!" << std::endl;
 		return 0;
 	}
+	if (argc > 1 && argv[1]) {
+		std::string arg1(argv[1]);
+		if (!arg1.compare("bench")) {
+			Initialize();
+			int depth = 11;
+			test::benchmark(depth);
+			return 0;
+		}
+	}
 	std::string input = "";
 	position pos;
 	while (true) {

@@ -5,7 +5,12 @@
 #include <string>
 #include <algorithm>
 #include <iostream>
+#ifdef _MSC_VER // Windows
 #include <process.h>
+#else
+#include <sys/types.h>
+#include <unistd.h>
+#endif
 #include "utils.h"
 #include "pgn.h"
 
@@ -16,7 +21,11 @@ namespace polyglot {
 		this->open(fileName, std::ifstream::in | std::ifstream::binary);
 		this->seekg(0, std::ios::end);
 		count = size_t(this->tellg() / sizeof(Entry));
-		srand(uint32_t(time(NULL)*_getpid()));;
+#ifdef _MSC_VER // Windows
+		srand(uint32_t(time(NULL)*_getpid()));
+#else
+        srand(uint32_t(time(NULL)*getpid()));
+#endif
 	}
 
 	book::book(const std::string& filename)
@@ -25,7 +34,11 @@ namespace polyglot {
 		this->open(fileName, std::ifstream::in | std::ifstream::binary);
 		this->seekg(0, std::ios::end);
 		count = size_t(this->tellg() / sizeof(Entry));
+#ifdef _MSC_VER // Windows
 		srand(uint32_t(time(NULL)*_getpid()));
+#else
+        srand(uint32_t(time(NULL)*getpid()));
+#endif
 	}
 
 
