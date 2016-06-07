@@ -40,10 +40,10 @@ void baseSearch::Reset() {
 	cutoffMoveIndexSum = 0;
 	Stop.store(false);
 	PonderMode.store(false);
-	History.initialize();
+	History.age();
 	searchMoves.clear();
-	cmHistory.initialize();
-	followupHistory.initialize();
+	cmHistory.age();
+	followupHistory.age();
 	for (int i = 0; i < MAX_DEPTH; ++i){
 		killer[2*i] = EXTENDED_MOVE_NONE;
 		killer[2 * i + 1] = EXTENDED_MOVE_NONE;
