@@ -117,6 +117,12 @@ protected:
 	uint64_t cutoffAt1stMove = 0;
 	uint64_t cutoffCount = 0;
 	uint64_t cutoffMoveIndexSum = 0;
+#ifdef STAT_LMR
+	uint64_t nullMoveCount = 0;
+	uint64_t lmrCount = 0;
+	uint64_t failedNullMove = 0;
+	uint64_t failedLmrCount = 0;
+#endif STAT_LMR
 	//in xboard protocol in analysis mode, the GUI determines the point in time when information shall be provided (in UCI the engine determines these 
 	//point in times. As this information is only available while the search's recursion level is root the information is prepared, whenever feasible and
 	//stored in member XAnylysisOutput, where the protocol driver can retrieve it at any point in time
@@ -165,7 +171,7 @@ public:
 
 private:
 	//Main recursive search method
-	template<bool PVNode> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true, bool skipNullMove = false, Move excludeMove = MOVE_NONE);
+	template<bool PVNode> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true, bool nullMove = false, Move excludeMove = MOVE_NONE);
 	//At root level there is a different search method (as there is some special logic requested)
 	Value SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove = 0);
 	//Quiescence Search (different implementations for positions in check and not in check)
@@ -376,6 +382,18 @@ END://when pondering engine must not return a best move before opponent moved =>
 		utils::debugInfo(ss.str());
 		BestMove.move = PVMoves[0];
 	}
+#ifdef STAT_LMR
+	if (lmrCount) {
+		std::stringstream ss;
+		ss << "lmr:  " << lmrCount << " | " << failedLmrCount << " | " << std::setprecision(4) << 100.0 * failedLmrCount / lmrCount << "%";
+		utils::debugInfo(ss.str());
+	}
+	if (nullMoveCount) {
+		std::stringstream ss;
+		ss << "null: " << nullMoveCount << " | " << failedNullMove << " | " << std::setprecision(4) << 100.0 * failedNullMove / nullMoveCount << "%";
+		utils::debugInfo(ss.str());
+	}
+#endif
 	//If for some reason search did not find a best move return the  first one (to avoid loss and it's anyway the best guess then)
 	if (BestMove.move == MOVE_NONE) BestMove = rootMoves[0];
 	if (rootMoves) delete[] rootMoves;
@@ -470,23 +488,37 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 		//To make engine prefer castling add bonus for castling moves (see https://chessprogramming.wikispaces.com/Ronald+de+Man#Scoring%20Root%20Moves)
 		if (type(rootMoves[i].move) == CASTLING) bonus = BONUS_CASTLING; else bonus = VALUE_ZERO;
 		if (ZWS) {
+#ifdef STAT_LMR
+			lmrCount += reduction > 0;
+#endif
 			score = bonus - Search<false>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, subpv, !next.GetMaterialTableEntry()->SkipPruning());
-			if (score > alpha && score < beta)
+			if (score > alpha && score < beta) {
+#ifdef STAT_LMR
+				failedLmrCount += reduction > 0;
+#endif
 				//Research without reduction and with full alpha-beta window
 				score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+			}
 		}
 		else {
+#ifdef STAT_LMR
+			lmrCount += reduction > 0;
+#endif
 			score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1 - reduction, subpv, !next.GetMaterialTableEntry()->SkipPruning());
-			if (reduction > 0 && score > alpha && score < beta)
+			if (reduction > 0 && score > alpha && score < beta) {
+#ifdef STAT_LMR
+				failedLmrCount++;
+#endif
 				//Research without reduction
 				score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+			}
 		}
 		if (Stopped()) break;
 		rootMoves[i].score = score;
 		if (score > bestScore) {
 			bestScore = score;
 			pv[0] = rootMoves[i].move;
-			memcpy(pv + 1, subpv, (PV_MAX_LENGTH - 1)*sizeof(Move));
+			memcpy(pv + 1, subpv, (PV_MAX_LENGTH - 1) * sizeof(Move));
 			if (i > 0) {
 				//make sure that best move is always in first place 
 				ValuatedMove bm = rootMoves[i];
@@ -506,7 +538,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 }
 
 //This is the main alpha-beta search routine
-template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune, bool skipNullMove, Move excludeMove) {
+template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune, bool nullMove, Move excludeMove) {
 	if (depth > 0) {
 		++NodeCount;
 	}
@@ -566,7 +598,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
 		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + BONUS_TEMPO;
-	if (!skipNullMove && prune && !checked) {
+	if (!nullMove && prune && !checked) {
 		//Check if Value from TT is better
 		Value effectiveEvaluation = staticEvaluation;
 		if (ttFound &&
@@ -596,8 +628,12 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			&& pos.NonPawnMaterial(pos.GetSideToMove())
 			) {
 			int reduction = (depth + 14) / 5;
-			Square epsquare = pos.GetEPSquare();	
+			if (int(effectiveEvaluation - beta) > int(PieceValues[PAWN].egScore)) ++reduction;
+			Square epsquare = pos.GetEPSquare();
 			pos.NullMove();
+#ifdef STAT_LMR
+			nullMoveCount++;
+#endif
 			Value nullscore = -Search<false>(-beta, -alpha, pos, depth - reduction, subpv, false, true);
 			pos.NullMove(epsquare);
 			if (nullscore >= beta) {
@@ -607,6 +643,9 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 				Value verificationScore = Search<false>(beta - 1, beta, pos, depth - reduction, subpv, false);
 				if (verificationScore >= beta) return SCORE_NMP(nullscore);
 			}
+#ifdef STAT_LMR
+			failedNullMove++;
+#endif
 		}
 
 		// ProbCut (copied from SF)
@@ -648,7 +687,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	}
 	Move counter = pos.GetCounterMove(counterMove);
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
-	bool futilityPruning = !skipNullMove && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
+	bool futilityPruning = !nullMove && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
 	if (futilityPruning && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, &followupHistory, nullptr, counter, ttMove);
 	else
@@ -694,10 +733,14 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		if (next.ApplyMove(move)) {
 			//critical = critical || GetPieceType(pos.GetPieceOnSquare(from(move))) == PAWN && ((pos.GetSideToMove() == WHITE && from(move) > H5) || (pos.GetSideToMove() == BLACK && from(move) < A4));
 		   //Check extension
-			int extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
+			int extension;
+			if (next.GetMaterialTableEntry()->Phase == 256 && pos.GetMaterialTableEntry()->Phase < 256 && next.GetMaterialScore() >= -PieceValues[PAWN].egScore && next.GetMaterialScore() <= PieceValues[PAWN].egScore)
+				extension = 3;
+			else extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
 			if (!extension && to(move) == recaptureSquare) {
 				++extension;
 			}
+
 			//if (singularExtensionNode &&  move == ttMove && !extension)
 			//{
 			//	Value rBeta = ttValue - 2 * depth;
@@ -708,14 +751,27 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			if (lmr && extension == 0 && moveIndex != 0 && move != counter && pos.QuietMoveGenerationPhaseStarted() && !next.Checked()) {
 				reduction = settings::LMRReduction(depth, moveIndex);
 				if (PVNode && reduction > 0) --reduction;
+#ifdef STAT_LMR
+				lmrCount += reduction > 0;
+#endif
 			}
 			if (ZWS) {
 				score = -Search<false>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, subpv, !next.GetMaterialTableEntry()->SkipPruning());
-				if (score > alpha && score < beta) score = -Search<PVNode>(-beta, -alpha, next, depth - 1 + extension, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+				if (score > alpha && score < beta) {
+					score = -Search<PVNode>(-beta, -alpha, next, depth - 1 + extension, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+#ifdef STAT_LMR
+					failedLmrCount += reduction > 0;
+#endif
+				}
 			}
 			else {
 				score = -Search<PVNode>(-beta, -alpha, next, depth - 1 - reduction + extension, subpv, !next.GetMaterialTableEntry()->SkipPruning());
-				if (score > alpha && reduction > 0) score = -Search<PVNode>(-beta, -alpha, next, depth - 1 + extension, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+				if (score > alpha && reduction > 0) {
+					score = -Search<PVNode>(-beta, -alpha, next, depth - 1 + extension, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+#ifdef STAT_LMR
+					failedLmrCount++;
+#endif
+				}
 			}
 #if STAT
 			if (!checked && type(move) == MoveType::NORMAL && pos.IsTactical(move)) {
@@ -737,7 +793,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 					nodeType = tt::EXACT;
 					alpha = score;
 					pv[0] = move;
-					memcpy(pv + 1, subpv, (PV_MAX_LENGTH - 1)*sizeof(Move));
+					memcpy(pv + 1, subpv, (PV_MAX_LENGTH - 1) * sizeof(Move));
 				}
 			}
 		}
@@ -834,8 +890,8 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 		cutoffAt1stMove += moveIndex == 0;
 	}
 	if (moveIndex < 0 || pos.QuietMoveGenerationPhaseStarted()) {
-		Square toSquare = to(cutoffMove);
 		Piece movingPiece = pos.GetPieceOnSquare(from(cutoffMove));
+		Square toSquare = to(cutoffMove);
 		if (moveIndex >= 0) {
 			ExtendedMove killerMove(movingPiece, cutoffMove);
 			int pfr = pos.GetPliesFromRoot();

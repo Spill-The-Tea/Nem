@@ -410,15 +410,16 @@ Move position::GetCounterMove(Move(&counterMoves)[12][64]) {
 }
 
 void position::evaluateByHistory(int startIndex) {
-	Move fixedPrevApplied;
-	Piece prevPiece;
-	if (Previous() && Previous()->lastAppliedMove) {
-		fixedPrevApplied = FixCastlingMove(Previous()->lastAppliedMove);
-		prevPiece = Previous()->Board[to(fixedPrevApplied)];
+	Move lastMoves[2] = { MOVE_NONE, MOVE_NONE};
+	Piece lastMovingPieces[2] = { Piece::BLANK, Piece::BLANK};
+	if (lastAppliedMove) {
+		lastMoves[0] = FixCastlingMove(lastAppliedMove);
+		lastMovingPieces[0] = Board[to(lastMoves[0])];
+		if (Previous() && Previous()->lastAppliedMove) {
+			lastMoves[1] = FixCastlingMove(Previous()->lastAppliedMove);
+			lastMovingPieces[1] = Previous()->Board[to(lastMoves[1])];
+		}
 	}
-	else fixedPrevApplied = MOVE_NONE;
-	Move fixedLastApplied = FixCastlingMove(lastAppliedMove);
-	Piece lastPiece = Board[to(fixedLastApplied)];
 	for (int i = startIndex; i < movepointer - 1; ++i) {
 		if (moves[i].move == counterMove) {
 			moves[i].score = VALUE_MATE;
@@ -429,9 +430,9 @@ void position::evaluateByHistory(int startIndex) {
 				Square toSquare = to(fixedMove);
 				Piece p = Board[from(fixedMove)];
 				moves[i].score = history->getValue(p, toSquare);
-				if (lastAppliedMove && cmHistory) {
-				    moves[i].score += 2 * cmHistory->getValue(lastPiece, to(fixedLastApplied), p, toSquare);
-				    if (fixedPrevApplied) moves[i].score += 2 * followupHistory->getValue(prevPiece, to(fixedPrevApplied), p, toSquare);
+				if (lastMoves[0] && cmHistory) {
+					moves[i].score += 2 * cmHistory->getValue(lastMovingPieces[0], to(lastMoves[0]), p, toSquare);
+					if (lastMoves[1]) moves[i].score += 2 * followupHistory->getValue(lastMovingPieces[1], to(lastMoves[1]), p, toSquare);
 				}
 				Bitboard toBB = ToBitboard(toSquare);
 				if (toBB & safeSquaresForPiece(p))
@@ -1095,7 +1096,7 @@ bool position::givesCheck(Move move)
 	case BISHOP:
 		if (BishopTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1))) return true;
 		break;
-	case ROOK: 
+	case ROOK:
 		if (RookTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1))) return true;
 		break;
 	case QUEEN:
@@ -1107,7 +1108,7 @@ bool position::givesCheck(Move move)
 	//now check for discovered check
 	Bitboard dc = SideToMove == Color::WHITE ? PinnedPieces<Color::BLACK>() : PinnedPieces<Color::WHITE>();
 	if (moveType == MoveType::ENPASSANT) {
-	//in EP-captures 2 "from"-Moves have to be checked for discovered (from-square and square of captured pawn)
+		//in EP-captures 2 "from"-Moves have to be checked for discovered (from-square and square of captured pawn)
 		if ((ToBitboard(fromSquare) & dc) != EMPTY) { //capturing pawn was pinned
 			if ((ToBitboard(toSquare) & RaysBySquares[fromSquare][kingSquare]) == EMPTY) return true; //pin wasn't along capturing diagonal
 		}

@@ -26,12 +26,12 @@ const int PAWN_TABLE_SIZE = 1 << 14; //has to be power of 2
 
 const eval MOBILITY_BONUS_KNIGHT[] = { MBV(-21, -17), MBV(-14, -10), MBV(-3, -3), MBV(1, 0), MBV(5, 3), MBV(9, 7), MBV(12, 9), MBV(14, 10), MBV(15, 11) };
 const eval MOBILITY_BONUS_BISHOP[] = { MBV(-17, -16), MBV(-9, -8), MBV(2, 0), MBV(7, 5), MBV(11, 10), MBV(16, 14), MBV(20, 18), MBV(23, 21), MBV(24, 23),
-                                       MBV(26, 24), MBV(27, 25), MBV(27, 26), MBV(28, 26), MBV(29, 27) };
-const eval MOBILITY_BONUS_ROOK[] = {   MBV(-16, -18), MBV(-10, -9), MBV(-2, 0), MBV(0, 5), MBV(2, 11), MBV(4, 16), MBV(6, 21), MBV(7, 27), MBV(9, 32),
-                                       MBV(10, 36), MBV(10, 38), MBV(11, 40), MBV(12, 41), MBV(12, 41), MBV(12, 42) };
-const eval MOBILITY_BONUS_QUEEN[] = {  MBV(-14, -13), MBV(-9, -8), MBV(-2, -2), MBV(0, 0), MBV(2, 3), MBV(4, 6), MBV(4, 10), MBV(6, 13), MBV(7, 13), MBV(7, 14),
-                                       MBV(7, 14), MBV(7, 14), MBV(7, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14),
-                                       MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14) };
+MBV(26, 24), MBV(27, 25), MBV(27, 26), MBV(28, 26), MBV(29, 27) };
+const eval MOBILITY_BONUS_ROOK[] = { MBV(-16, -18), MBV(-10, -9), MBV(-2, 0), MBV(0, 5), MBV(2, 11), MBV(4, 16), MBV(6, 21), MBV(7, 27), MBV(9, 32),
+MBV(10, 36), MBV(10, 38), MBV(11, 40), MBV(12, 41), MBV(12, 41), MBV(12, 42) };
+const eval MOBILITY_BONUS_QUEEN[] = { MBV(-14, -13), MBV(-9, -8), MBV(-2, -2), MBV(0, 0), MBV(2, 3), MBV(4, 6), MBV(4, 10), MBV(6, 13), MBV(7, 13), MBV(7, 14),
+MBV(7, 14), MBV(7, 14), MBV(7, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14),
+MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14), MBV(8, 14) };
 
 #undef MBV
 
@@ -108,8 +108,7 @@ const Value BETA_PRUNING_FACTOR = Value(100);
 const Value PROBCUT_MARGIN = Value(90);
 
 const int FULTILITY_PRUNING_DEPTH = 3;
-const Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
-//const Value FUTILITY_PRUNING_MARGIN[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
+const Value FUTILITY_PRUNING_LIMIT[FULTILITY_PRUNING_DEPTH + 1] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
 
 enum CAPTURES {             
 	QxP, BxP, NxP, RxP, QxN,

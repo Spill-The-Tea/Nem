@@ -38,6 +38,12 @@ void baseSearch::Reset() {
 	cutoffAt1stMove = 0;
 	cutoffCount = 0;
 	cutoffMoveIndexSum = 0;
+#ifdef STAT_LMR
+	nullMoveCount = 0;
+	failedNullMove = 0;
+	lmrCount = 0;
+	failedLmrCount = 0;
+#endif
 	Stop.store(false);
 	PonderMode.store(false);
 	History.age();
