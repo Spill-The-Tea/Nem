@@ -97,7 +97,7 @@ const Value BONUS_CASTLING = Value(0);
 
 const Value BONUS_TEMPO = Value(5);
 
-const Value DELTA_PRUNING_SAFETY_MARGIN = Value(PieceValues[PAWN].egScore >> 1);
+const Value DELTA_PRUNING_SAFETY_MARGIN = Value(PieceValues[PAWN].egScore);
 
 const Value PAWN_SHELTER_2ND_RANK = Value(20);
 const Value PAWN_SHELTER_3RD_RANK = Value(10);
