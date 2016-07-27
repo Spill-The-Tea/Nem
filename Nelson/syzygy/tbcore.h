@@ -1,11 +1,11 @@
 /*
-  Copyright (c) 2011-2013 Ronald de Man
+  Copyright (c) 2011-2015 Ronald de Man
 */
 
 #ifndef TBCORE_H
 #define TBCORE_H
 
-#ifndef WIN32
+#ifndef _WIN32
 #include <pthread.h>
 #define SEP_CHAR ':'
 #define FD int
@@ -17,7 +17,8 @@
 #define FD_ERR INVALID_HANDLE_VALUE
 #endif
 
-#ifndef WIN32
+#ifdef TB_HAVE_THREADS
+#ifndef _WIN32
 #define LOCK_T pthread_mutex_t
 #define LOCK_INIT(x) pthread_mutex_init(&(x), NULL)
 #define LOCK(x) pthread_mutex_lock(&(x))
@@ -28,13 +29,11 @@
 #define LOCK(x) WaitForSingleObject(x, INFINITE)
 #define UNLOCK(x) ReleaseMutex(x)
 #endif
-
-#ifndef _MSC_VER
-#define BSWAP32(v) __builtin_bswap32(v)
-#define BSWAP64(v) __builtin_bswap64(v)
-#else
-#define BSWAP32(v) _byteswap_ulong(v)
-#define BSWAP64(v) _byteswap_uint64(v)
+#else       /* !TB_HAVE_THREADS */
+#define LOCK_T          int
+#define LOCK_INIT(x)    /* NOP */
+#define LOCK(x)         /* NOP */
+#define UNLOCK(x)       /* NOP */
 #endif
 
 #define WDLSUFFIX ".rtbw"
@@ -43,19 +42,23 @@
 #define DTZDIR "RTBZDIR"
 #define TBPIECES 6
 
+#define WDL_MAGIC 0x5d23e871
+#define DTZ_MAGIC 0xa50c66d7
+
+#define TBHASHBITS 10
+
 typedef unsigned long long uint64;
 typedef unsigned int uint32;
 typedef unsigned char ubyte;
 typedef unsigned short ushort;
 
-const ubyte WDL_MAGIC[4] = { 0x71, 0xe8, 0x23, 0x5d };
-const ubyte DTZ_MAGIC[4] = { 0xd7, 0x66, 0x0c, 0xa5 };
-
-#define TBHASHBITS 10
-
 struct TBHashEntry;
 
+#ifdef DECOMP64
 typedef uint64 base_t;
+#else
+typedef uint32 base_t;
+#endif
 
 struct PairsData {
   char *indextable;
@@ -79,10 +82,11 @@ struct TBEntry {
   ubyte symmetric;
   ubyte has_pawns;
 }
-#ifndef WIN32
-__attribute__((__may_alias__))
-#endif
+#ifdef __GNUC__
+__attribute__((__may_alias__));
+#else
 ;
+#endif
 
 struct TBEntry_piece {
   char *data;

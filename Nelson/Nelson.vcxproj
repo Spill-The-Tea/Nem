@@ -251,7 +251,6 @@
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
       <CompileAs>Default</CompileAs>
       <AdditionalIncludeDirectories>C:\Users\chrgu_000\Documents\Visual Studio 2015\Lib\boost_1_60_0;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <AdditionalOptions>-d2SSAOptimizer- %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -265,8 +264,9 @@
       <Command>copy /Y  "$(SolutionDir)\Nelson\*.cpp"  "$(USERPROFILE)\workspace\Nelson\*.*"
 copy /Y  "$(SolutionDir)\Nelson\*.h"  "$(USERPROFILE)\workspace\Nelson\*.*"
 copy /Y  "$(SolutionDir)\Nelson\syzygy\*.cpp"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
+copy /Y  "$(SolutionDir)\Nelson\syzygy\*.c"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
 copy /Y  "$(SolutionDir)\Nelson\syzygy\*.h"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
-"C:\Program Files\7-Zip\7z" a C:\Users\chrgu_000\Dropbox\aws\nemorino.zip *.h *.cpp syzygy\*.h syzygy\*.cpp
+"C:\Program Files\7-Zip\7z" a C:\Users\chrgu_000\Dropbox\aws\nemorino.zip *.h *.cpp syzygy\*.h syzygy\*.cpp syzygy\*.c
 copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\
 copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nemorino2.exe</Command>
     </PostBuildEvent>
@@ -349,7 +349,8 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClCompile Include="board.cpp" />
     <ClCompile Include="book.cpp" />
     <ClCompile Include="evaluation.cpp" />
-    <ClCompile Include="syzygy\tbprobe.cpp" />
+    <ClCompile Include="syzygy\tbprobe.c" />
+    <ClCompile Include="tablebase.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="hashtables.cpp" />
     <ClCompile Include="bbEndings.cpp" />
@@ -369,6 +370,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClInclude Include="book.h" />
     <ClInclude Include="evaluation.h" />
     <ClInclude Include="syzygy\tbprobe.h" />
+    <ClInclude Include="tablebase.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="hashtables.h" />
     <ClInclude Include="bbEndings.h" />

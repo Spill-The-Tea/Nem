@@ -15,7 +15,7 @@
 #include "timemanager.h"
 
 #ifdef TB
-#include "syzygy/tbprobe.h"
+#include "tablebase.h"
 #endif
 
 void UCIInterface::copySettings(baseSearch * source, baseSearch * destination) {

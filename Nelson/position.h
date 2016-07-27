@@ -124,6 +124,8 @@ public:
 	inline Bitboard AttackedByThem() const { return attackedByThem; }
 	//checks if the position is already repeated (if one of the ancestors has the same zobrist hash). This is no check for 3-fold repetition!
 	bool checkRepetition();
+	//checks if there are any repetitions in prior moves
+	bool hasRepetition();
 	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
 	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount; }
 	//applies a null move to the given position (there is no copy/make for null move), the EPSquare is the only information which has to be restored afterwards
@@ -156,6 +158,7 @@ public:
 	  This method should always be used when a copy is neede without applying a move */
 	void copy(const position &pos);
 	inline bool CastlingAllowed(CastleFlag castling) const { return (CastlingOptions & castling) != 0; }
+	inline unsigned GetCastles() const { return CastlingOptions; }
 	inline CastleFlag GetCastlesForColor(Color color) const { return color == WHITE ? CastleFlag(CastlingOptions & (W0_0 | W0_0_0)) : CastleFlag(CastlingOptions & (B0_0 | B0_0_0)); }
 	//creates the SAN (standard algebraic notation) representation of a move
 	std::string toSan(Move move);

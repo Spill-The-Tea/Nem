@@ -410,8 +410,8 @@ Move position::GetCounterMove(Move(&counterMoves)[12][64]) {
 }
 
 void position::evaluateByHistory(int startIndex) {
-	Move lastMoves[2] = { MOVE_NONE, MOVE_NONE};
-	Piece lastMovingPieces[2] = { Piece::BLANK, Piece::BLANK};
+	Move lastMoves[2] = { MOVE_NONE, MOVE_NONE };
+	Piece lastMovingPieces[2] = { Piece::BLANK, Piece::BLANK };
 	if (lastAppliedMove) {
 		lastMoves[0] = FixCastlingMove(lastAppliedMove);
 		lastMovingPieces[0] = Board[to(lastMoves[0])];
@@ -969,6 +969,13 @@ PawnKey_t position::calculatePawnKey() const {
 }
 
 Result position::GetResult() {
+	//if (!result) {
+	//	bool checked = Checked();
+	//	if (checked && !CheckValidMoveExists<true>()) result = MATE;
+	//	else if (!checked && !CheckValidMoveExists<false>()) result = DRAW;
+	//	else if (DrawPlyCount >= 100 || checkRepetition()) result = DRAW;
+	//	else result = OPEN;
+	//}
 	if (!result) {
 		if (DrawPlyCount > 100 || checkRepetition()) result = DRAW;
 		else if (Checked()) {
@@ -988,7 +995,7 @@ DetailedResult position::GetDetailedResult() {
 		return GetSideToMove() == WHITE ? BLACK_MATES : WHITE_MATES;
 	}
 	else {
-		if (DrawPlyCount > 100) return DRAW_50_MOVES;
+		if (DrawPlyCount >= 100) return DRAW_50_MOVES;
 		else if (GetMaterialTableEntry()->IsTheoreticalDraw()) return DRAW_MATERIAL;
 		else if (!Checked() && !CheckValidMoveExists<false>()) return DRAW_STALEMATE;
 		else {
@@ -1015,6 +1022,16 @@ bool position::checkRepetition() {
 		if (prev->GetHash() == GetHash())
 			return true;
 		prev = prev->Previous();
+	}
+	return false;
+}
+
+bool position::hasRepetition() {
+	position * pos = this;
+	int count50 = DrawPlyCount;
+	while (pos && pos->GetDrawPlyCount() > 0) {
+		if (pos->checkRepetition()) return true;
+		pos = pos->Previous();
 	}
 	return false;
 }

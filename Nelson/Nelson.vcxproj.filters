@@ -63,10 +63,13 @@
     <ClCompile Include="utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="syzygy\tbprobe.cpp">
+    <ClCompile Include="xboard.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="xboard.cpp">
+    <ClCompile Include="syzygy\tbprobe.c">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="tablebase.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -120,6 +123,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="xboard.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="tablebase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

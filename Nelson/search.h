@@ -16,7 +16,7 @@
 #include "utils.h"
 
 #ifdef TB
-#include "syzygy/tbprobe.h"
+#include "tablebase.h"
 #endif
 
 #ifdef STAT
@@ -27,7 +27,7 @@ void printCaptureStat();
 
 
 enum ThreadType { SINGLE, MASTER, SLAVE };
-enum SearchResultType { EXACT_RESULT, FAIL_LOW, FAIL_HIGH };
+enum SearchResultType { EXACT_RESULT, FAIL_LOW, FAIL_HIGH, TABLEBASE_MOVE, UNIQUE_MOVE, BOOK_MOVE };
 
 /* The baseSearch and search structs represent basically the engine. The "design" shows what happens when and experienced developer coming from "real" OO languages
    (like Java or C# - with interfaces, ...) meets C++. I don't like it, but it works and there is no need to refactor it!
@@ -122,7 +122,7 @@ protected:
 	uint64_t lmrCount = 0;
 	uint64_t failedNullMove = 0;
 	uint64_t failedLmrCount = 0;
-#endif STAT_LMR
+#endif
 	//in xboard protocol in analysis mode, the GUI determines the point in time when information shall be provided (in UCI the engine determines these 
 	//point in times. As this information is only available while the search's recursion level is root the information is prepared, whenever feasible and
 	//stored in member XAnylysisOutput, where the protocol driver can retrieve it at any point in time
@@ -207,6 +207,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	if (rootMoveCount == 0) {
 		BestMove.move = MOVE_NONE;
 		BestMove.score = VALUE_ZERO;
+		info(pos, 0, SearchResultType::UNIQUE_MOVE);
 		utils::debugInfo("No valid move!");
 		return BestMove;
 	}
@@ -232,6 +233,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 				ponderMove = book->probe(next, true, replies, next.GeneratedMoveCount());
 				if (ponderMove == MOVE_NONE && next.GeneratedMoveCount() > 0) ponderMove = replies->move;
 			}
+			info(pos, 0, SearchResultType::BOOK_MOVE);
 			goto END;
 		}
 	}
@@ -255,7 +257,6 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	if (pos.GetMaterialTableEntry()->IsTablebaseEntry()) {
 		std::vector<ValuatedMove> tbMoves(rootMoves, rootMoves + rootMoveCount);
 		bool tbHit = Tablebases::root_probe(pos, tbMoves, score);
-		if (!tbHit) tbHit = Tablebases::root_probe_wdl(pos, tbMoves, score);
 		if (tbHit) {
 			tbHits++;
 			probeTB = false;
@@ -264,7 +265,8 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 			rootMoves = new ValuatedMove[rootMoveCount];
 			std::copy(tbMoves.begin(), tbMoves.end(), rootMoves);
 			if (rootMoveCount == 1) {
-				BestMove = rootMoves[0]; //if tablebase probe only returns one move play => play it and done!
+				BestMove = rootMoves[0]; //if tablebase probe only returns one move => play it and done!
+				info(pos, 0, SearchResultType::TABLEBASE_MOVE);
 				utils::debugInfo("Tablebase move", toString(BestMove.move));
 				goto END;
 			}
@@ -363,7 +365,6 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		}
 		if (Stopped()) break;
 	}
-
 	if (T == MASTER) {
 		//search is done, send helper threads to sleep
 		for (int i = 0; i < HelperThreads; ++i) slaves[i].StopThinking();
@@ -578,9 +579,10 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	// Tablebase probe
 	// Probing is only done if root position was no tablebase position (probeTB is true) and if drawPlyCount = 0 (in that case we get the necessary WDL information) to return
 	// immediately
-	if (probeTB && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry())
+	if (false && probeTB && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry())
 	{
-		int found, v = Tablebases::probe_wdl(pos, &found);
+		int found;
+		int v = Tablebases::probe_wdl(pos, &found);
 		if (found)
 		{
 			tbHits++;

@@ -13,11 +13,11 @@
 #include "xboard.h"
 
 #ifdef TB
-#include "syzygy/tbprobe.h"
+#include "tablebase.h"
 #endif
 
 const int MAJOR_VERSION = 0;
-const int MINOR_VERSION = 63;
+const int MINOR_VERSION = 64;
 
 
 static bool popcountSupport();
@@ -104,7 +104,7 @@ int main(int argc, const char* argv[]) {
 		else if (!input.compare(0, 8, "setvalue")) {
 			std::vector<std::string> token = utils::split(input);
 			int indx = 1;
-			while (indx < token.size() - 1) {
+			while (indx < (int)token.size() - 1) {
 				settings::options.set(token[indx], token[indx + 1]);
 				indx += 2;
 			}

@@ -340,15 +340,15 @@ namespace settings {
 
 	void OptionString::read(std::vector<std::string>& tokens)
 	{
-		if (tokens.size() > 5) {
+		if ((int)tokens.size() > 5) {
 			std::stringstream ss;
 			ss << tokens[4];
-			for (int i = 5; i < tokens.size(); ++i) {
+			for (int i = 5; i < (int)tokens.size(); ++i) {
 				ss << " " << tokens[i];
 			}
 			_value = ss.str();
 		}
-		else if (tokens.size() == 5) _value = tokens[4];
+		else if ((int)tokens.size() == 5) _value = tokens[4];
 		else _value = "";
 	}
 

@@ -444,7 +444,6 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	//Bishops
 	eval bonusBishop = eval(0);
 	//Rooks
-	Bitboard seventhRank = COL == WHITE ? RANK7 : RANK2;
 	Bitboard rooks = pos.PieceBB(ROOK, COL);
 	eval bonusRook = EVAL_ZERO;
 	if (rooks) {

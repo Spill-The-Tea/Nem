@@ -5,7 +5,7 @@
 #include "position.h"
 
 #ifdef TB
-#include "syzygy/tbprobe.h"
+#include "tablebase.h"
 #endif
 
 
@@ -104,9 +104,10 @@ void InitializeMaterialTable() {
 											else MaterialTable[key].setMostValuedPiece(BLACK, KING);
 #ifdef TB
 											if (Tablebases::MaxCardinality > 0) {
-												int totalPieceCount = 0;
+												int totalPieceCount = 2;
 												for (int i = 0; i < 10; ++i) totalPieceCount += pieceCounts[i];
-												if (totalPieceCount <= Tablebases::MaxCardinality) MaterialTable[key].Flags |= MSF_TABLEBASE_ENTRY;
+												if (totalPieceCount <= Tablebases::MaxCardinality) 
+													MaterialTable[key].Flags |= MSF_TABLEBASE_ENTRY;
 											}
 #endif
 #ifdef _DEBUG
