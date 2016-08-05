@@ -9,7 +9,7 @@ Nemorino is a UCI chess engine.
 * Standard Chess and Chess960
 * Multi Core support (Very Lazy SMP)
 * Multi PV analysis mode
-* CECP support (not yet 100% stable)
+* CECP support (experimental - all testing is done using UCI)
 ##### UCI parameters: #####
 - UCI_Chess960:     If set to true engine will play according to Chess960 rules (default false)
 - Hash:             Size in MBytes used for the transposition table (default is 32. Nemorino will use additional memory for other fixed-size hash tables)
@@ -36,7 +36,11 @@ The engine requires a CPU with POPCNT support and 64-bit Windows.
 * Tapered Eval based on Material, Mobility, Threats, King Safety, and Pawn Structure
 * Special evaluation functions for some endgames
 * Copy/Make
-* So far completely untuned
+* Syzygy Tablebases accessed via [Fathom](https://github.com/basil00/Fathom)
+
+### License ###
+
+[GNU GENERAL PUBLIC LICENSE Version 3](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 ### Remarks ###
 
