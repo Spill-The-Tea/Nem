@@ -901,7 +901,7 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 			killer[2 * pfr] = killerMove;
 		}
 		Value v = Value(depth * depth);
-		History.update(v, movingPiece, toSquare);
+		History.update(v, movingPiece, cutoffMove);
 		Piece prevPiece = BLANK;
 		Square prevTo = OUTSIDE;
 		Piece prev2Piece = BLANK;
@@ -927,7 +927,7 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 				Move alreadyProcessedMove = FixCastlingMove(alreadyProcessedQuiets->move);
 				movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedMove));
 				toSquare = to(alreadyProcessedMove);
-				History.update(-v, movingPiece, toSquare);
+				History.update(-v, movingPiece, alreadyProcessedMove);
 				if (pos.GetLastAppliedMove())
 					cmHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
 				if (pos.Previous() && pos.Previous()->GetLastAppliedMove())

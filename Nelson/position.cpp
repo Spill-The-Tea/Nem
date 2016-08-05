@@ -388,9 +388,8 @@ void position::evaluateCheckEvasions(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
 		quiets = quiets || (moves[i].move == firstQuiet->move);
 		if (quiets && history) {
-			Square toSquare = to(moves[i].move);
 			Piece p = Board[from(moves[i].move)];
-			moves[i].score = history->getValue(p, toSquare);
+			moves[i].score = history->getValue(p, moves[i].move);
 		}
 		else {
 			moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 2 * (type(moves[i].move) == PROMOTION);
@@ -429,7 +428,7 @@ void position::evaluateByHistory(int startIndex) {
 				Move fixedMove = FixCastlingMove(moves[i].move);
 				Square toSquare = to(fixedMove);
 				Piece p = Board[from(fixedMove)];
-				moves[i].score = history->getValue(p, toSquare);
+				moves[i].score = history->getValue(p, fixedMove);
 				if (lastMoves[0] && cmHistory) {
 					moves[i].score += 2 * cmHistory->getValue(lastMovingPieces[0], to(lastMoves[0]), p, toSquare);
 					if (lastMoves[1]) moves[i].score += 2 * followupHistory->getValue(lastMovingPieces[1], to(lastMoves[1]), p, toSquare);

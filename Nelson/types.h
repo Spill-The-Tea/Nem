@@ -439,22 +439,26 @@ public:
 		initialize();
 	}
 
-	inline void update(Value v, Piece p, Square s) {
-		if (abs(int(Table[p][s])) < MAX_HISTORY_VALUE) {
-			Table[p][s] += v;
+	inline void update(Value v, Piece p, Move m) {
+		int fs = from(m);
+		int ts = to(m);
+		if (abs(int(Table[p][fs][ts])) < MAX_HISTORY_VALUE) {
+			Table[p][fs][ts] += v;
 		}
 	}
-	inline Value const getValue(const Piece p, const Square s) { return Table[p][s]; }
+	inline Value const getValue(const Piece p, const Move m) { return Table[p][from(m)][to(m)]; }
 	inline void initialize() { std::memset(Table, 0, sizeof(Table)); }
 	inline void age() {
 		for (int i = 0; i < 12; ++i) {
 			for (int j = 0; j < 64; ++j) {
-				Table[i][j] = Table[i][j] / 2;
+				for (int k = 0; k < 64; ++k) {
+					Table[i][j][k] = Table[i][j][k] / 2;
+				}
 			}
 		}
 	}
 private:
-	Value Table[12][64];
+	Value Table[12][64][64];
 };
 
 //Inspired by (=more or less copied from) Stockfish 
