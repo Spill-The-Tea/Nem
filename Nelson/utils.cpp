@@ -49,6 +49,27 @@ namespace utils {
 		return TrimRight(TrimLeft(s));
 	}
 
+	uint64_t MurmurHash2A(uint64_t input, uint64_t seed)
+	{
+		const uint64_t m = 0xc6a4a7935bd1e995;
+		const int r = 47;
+		uint64_t h = seed ^ (8 * m);
+		uint64_t k = input;
+
+		k *= m;
+		k ^= k >> r;
+		k *= m;
+
+		h ^= k;
+		h *= m;
+
+		h ^= h >> r;
+		h *= m;
+		h ^= h >> r;
+
+		return h;
+	}
+
 	void replaceExt(std::string& s, const std::string& newExt) {
 		std::string::size_type i = s.rfind('.', s.length());
 		if (i != std::string::npos) {
@@ -148,16 +169,16 @@ namespace utils {
 
 	void dumpSearchTreeToFile() {
 		std::ofstream file;
-		file.open("searchTree.txt");      
+		file.open("searchTree.txt");
 		for (auto const& entry : searchTree) {
-			file << std::setw(8) << std::right << entry.NodeNumber 
-				 << std::setw(17) << std::right << std::hex << entry.Hash
-				 << std::setw(4) << std::right << std::dec << entry.Depth
-				 << std::setw(7) << std::right << entry.Score
-				 << " " << std::setw(4) << std::left << s_desc[(int)entry.Type]
-				 << entry.Path << std::endl;
+			file << std::setw(8) << std::right << entry.NodeNumber
+				<< std::setw(17) << std::right << std::hex << entry.Hash
+				<< std::setw(4) << std::right << std::dec << entry.Depth
+				<< std::setw(7) << std::right << entry.Score
+				<< " " << std::setw(4) << std::left << s_desc[(int)entry.Type]
+				<< entry.Path << std::endl;
 		}
-		file.close();              
+		file.close();
 	}
 
 #endif

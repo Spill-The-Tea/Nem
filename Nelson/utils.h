@@ -19,9 +19,18 @@ namespace utils {
 	std::string TrimRight(const std::string& s);
 	std::string Trim(const std::string& s);
 
+	uint64_t MurmurHash2A(uint64_t input, uint64_t seed = 0x4f4863d5038ea3a3);
+
 	inline std::string bool2String(bool val) { if (val) return "true"; else return "false"; }
 
 	template <class T> T clamp(T value, T lowerBound, T upperBound) { return std::max(lowerBound, std::min(value, upperBound)); }
+
+	const double K = -1.13 / 400;
+	inline double sigmoid(Value score) { return 1 / (1 + std::pow(10, K * (int)score)); }
+
+	inline double interpolatedResult(double result, int ply, int totalPlies) {
+		return 0.5 + ((result - 0.5) * ply) / totalPlies;
+	}
 
 	class logger {
 	public:

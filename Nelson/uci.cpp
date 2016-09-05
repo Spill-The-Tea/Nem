@@ -73,6 +73,9 @@ void UCIInterface::dispatch(std::string line) {
 	else if (!command.compare("eval")) {
 		std::cout << _position->printEvaluation() << std::endl;
 	}
+	else if (!command.compare("qscore")) {
+		qscore(tokens);
+	}
 	//else if (!strcmp(token, "eval"))
 	//	cout << printEvaluation(pos);
 	//else if (!strcmp(token, "qeval"))
@@ -209,6 +212,36 @@ void UCIInterface::deleteThread() {
 		Mainthread = nullptr;
 	}
 	Engine->Reset();
+}
+
+void UCIInterface::qscore(std::vector<std::string>& tokens)
+{
+	double result = stod(tokens[1]);
+	std::vector<position *> positions;
+	positions.push_back(_position);
+	position * pos = _position;
+	while ((pos = pos->Previous()) != nullptr) positions.push_back(pos);
+	double totalError = 0;
+	int totalPlies = (int)positions.size();
+	int plies = totalPlies+1;
+	int count = 0;
+	for (auto it = positions.rbegin(); it != positions.rend(); ++it)
+	{
+		--plies;
+		position * pos = *it;
+#ifdef TUNEPP
+		if (pos->GetPawnEntry()->passedPawns == EMPTY) continue;
+#endif
+		if (pos->Checked()) continue;
+		Value score = (dynamic_cast<search<SINGLE>*>(Engine))->qscore(pos);
+		if (std::abs(int(score - pos->evaluate())) > 100) continue;
+		if (pos->GetSideToMove() == BLACK) score = -score;
+		double error = result - utils::sigmoid(score);
+		totalError += error * error;
+		++count;
+	}
+	if (count > 0) totalError = totalError / count; else totalError = 0;
+	sync_cout << "info string error " << totalError << " count " << count << sync_endl;
 }
 
 //bool validatePonderMove(Move bestmove, Move pondermove) {

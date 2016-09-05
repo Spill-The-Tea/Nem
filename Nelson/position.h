@@ -74,7 +74,7 @@ public:
 	/* The position struct provides staged move generation. To make use of it the staged move generation has to be initialized first by calling InitializeMoveIterator.
 	   Then every call to NextMove() will return the next move until MOVE_NONE is returned */
 	//Initialize staged move generation, by providing the necessary information for move ordering
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryManager *history, MoveSequenceHistoryManager *counterMoveHistory, MoveSequenceHistoryManager *followupHistory, ExtendedMove * killerMove, Move counter, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE);
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryManager *history, MoveSequenceHistoryManager *counterMoveHistory, MoveSequenceHistoryManager *followupHistory, killer::manager * km, Move counter, Move hashmove = MOVE_NONE, Value limit = -VALUE_MATE);
 	//Get next move. If MOVE_NONE is returned end of move list is reached
 	Move NextMove();
 	//SEE (Static Exchange Evaluation): The implementation is copied from Chess Programming Wiki (https://chessprogramming.wikispaces.com/SEE+-+The+Swap+Algorithm)
@@ -235,7 +235,7 @@ private:
 	Value StaticEval = VALUE_NOTYETDETERMINED;
 	//Information needed for move ordering during staged move generation
 	Move hashMove = MOVE_NONE;
-	ExtendedMove *killer;
+	killer::manager *killerManager;
 	Move lastAppliedMove = MOVE_NONE;
 	Piece capturedInLastMove = BLANK;
 	HistoryManager * history;
@@ -976,7 +976,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryManager * historyStats, MoveSequenceHistoryManager * counterHistoryStats, MoveSequenceHistoryManager * followupHistoryStats, ExtendedMove* killerMove, Move counter, Move hashmove, Value limit) {
+template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryManager * historyStats, MoveSequenceHistoryManager * counterHistoryStats, MoveSequenceHistoryManager * followupHistoryStats, killer::manager * km, Move counter, Move hashmove, Value limit) {
 	if (SMGT == REPETITION) {
 		moveIterationPointer = 0;
 		generationPhase = generationPhaseOffset[SMGT];
@@ -987,7 +987,7 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 		generationPhase = generationPhaseOffset[SMGT];
 		return;
 	}
-	if (SMGT == MAIN_SEARCH) killer = killerMove; else killer = nullptr;
+	if (SMGT == MAIN_SEARCH) killerManager = km; else killerManager = nullptr;
 	counterMove = counter;
 	if (!attackedByThem) attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	moveIterationPointer = -1;

@@ -98,7 +98,7 @@ namespace pawn {
 		Bitboard frontspan = FrontFillNorth(bbWBackward << 8);
 		Bitboard stopSquares = frontspan & attacksBlack; //Where the advancement is stopped by an opposite pawn
 		stopSquares &= ~bbWAttackset; //and the stop square isn't part of the own pawn attack
-		bbWBackward &= FrontFillSouth(stopSquares); 
+		bbWBackward &= FrontFillSouth(stopSquares);
 		Bitboard bbBBackward = bbBlack & ~bbWFrontspan; //Backward pawns are open pawns
 		frontspan = FrontFillSouth(bbBBackward >> 8);
 		stopSquares = frontspan & attacksWhite; //Where the advancement is stopped by an opposite pawn
@@ -120,7 +120,7 @@ namespace tt {
 	int initializedSizeInMB = 0;
 
 	uint8_t _generation = 0;
-    uint64_t ProbeCounter = 0;
+	uint64_t ProbeCounter = 0;
 	uint64_t HitCounter = 0;
 	uint64_t FillCounter = 0;
 
@@ -156,7 +156,7 @@ namespace tt {
 	}
 
 	void clear() {
-		std::memset(Table, 0, (MASK+1) * sizeof(Cluster));
+		std::memset(Table, 0, (MASK + 1) * sizeof(Cluster));
 	}
 
 	void FreeTranspositionTable() {
@@ -181,7 +181,7 @@ namespace tt {
 		_mm_prefetch((char*)&Table[hash & MASK], _MM_HINT_T0);
 #endif // _MSC_VER
 #ifdef __GNUC__
-        __builtin_prefetch((char*)&Table[hash & MASK]);
+		__builtin_prefetch((char*)&Table[hash & MASK]);
 #endif // __GNUC__
 	}
 
@@ -191,4 +191,48 @@ namespace tt {
 	uint64_t GetEntryCount() {
 		return GetClusterCount() * CLUSTER_SIZE;
 	}
+}
+
+namespace killer {
+
+	ExtendedMove manager::getMove(const position & pos, int index) const
+	{
+		//Move result;
+		//if (index < NB_SLOTS_KILLER) result = plyTable[NB_SLOTS_KILLER * pos.GetPliesFromRoot() + index];
+		//else if (pos.GetPliesFromRoot() >= 2) {
+		//	result = plyTable[NB_SLOTS_KILLER * (pos.GetPliesFromRoot() - 2) + index];
+		//}
+		return plyTable[NB_SLOTS_KILLER * pos.GetPliesFromRoot() + index];
+		//return ctxtTable[utils::MurmurHash2A(pos.ColorBB(pos.GetSideToMove())) & (KILLER_TABLE_SIZE - 1)];
+	}
+
+	void manager::store(const position & pos, Move move)
+	{
+		ExtendedMove em(pos.GetPieceOnSquare(from(move)), move);
+		store(pos, em);
+		//ctxtTable[utils::MurmurHash2A(pos.ColorBB(pos.GetSideToMove())) & (KILLER_TABLE_SIZE - 1)] = move;
+	}
+
+	void manager::store(const position & pos, ExtendedMove move)
+	{
+		int pfr = pos.GetPliesFromRoot();
+		//for (int i = NB_SLOTS_KILLER - 1; i > 0; --i)
+		plyTable[NB_SLOTS_KILLER * pfr + 1] = plyTable[NB_SLOTS_KILLER * pfr];
+		plyTable[NB_SLOTS_KILLER * pfr] = move;
+	}
+
+	void manager::clear()
+	{
+		for (int i = 0; i < MAX_DEPTH; ++i) {
+			plyTable[2 * i] = EXTENDED_MOVE_NONE;
+			plyTable[2 * i + 1] = EXTENDED_MOVE_NONE;
+		}
+	}
+
+	bool manager::isKiller(const position & pos, Move move)
+	{
+		int pfr = pos.GetPliesFromRoot();
+		return (move == plyTable[NB_SLOTS_KILLER * pfr].move) || (move == plyTable[NB_SLOTS_KILLER * pfr + 1].move);
+	}
+
 }

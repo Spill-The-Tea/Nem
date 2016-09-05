@@ -17,9 +17,14 @@ const int MASK_TIME_CHECK = (1 << 14) - 1; //Time is only checked each MASK_TIME
 
 //Material Values
 //King piece value is set to a very large number, to ensure that any capture sequence where the king is "captured" is << 0
+#ifdef TUNE
+extern eval PieceValues[7];
+#else
 const eval PieceValues[]{ eval(950), eval(490, 550), eval(325), eval(325), eval(80, 100), eval(VALUE_KNOWN_WIN), eval(0) };
+#endif
 
 const int PAWN_TABLE_SIZE = 1 << 14; //has to be power of 2
+const int KILLER_TABLE_SIZE = 1 << 11; //has to be power of 2
 
 //Mobility bonus values
 #define MBV(MGV, EGV) eval(9*MGV/8, 9*EGV/8)
@@ -60,6 +65,7 @@ const Value KING_SAFETY[100] = {
 
 // Threat[defended/weak][minor/major attacking][attacked PieceType] contains
 // bonuses according to which piece type attacks which one.
+// "inspired" by SF
 const eval Threat[][2][6] = {
 	{ { eval(0, 0), eval(0, 0), eval(10, 18), eval(12, 19), eval(22, 49), eval(18, 53) }, // Defended Minor
 	{ eval(0, 0), eval(0, 0), eval(5, 7), eval(5, 7), eval(4, 7), eval(12, 24) } }, // Defended Major
@@ -79,8 +85,13 @@ const Value BONUS_KNIGHT_OUTPOST = Value(5);
 const Value BONUS_BISHOP_OUTPOST = Value(0);
 
 //Parameters for Pawn Structure Evaluation
+#ifdef TUNE
+extern eval PASSED_PAWN_BONUS[6];
+extern eval BONUS_PROTECTED_PASSED_PAWN[6];
+#else
 const eval PASSED_PAWN_BONUS[6] = { eval(0), eval(0), eval(30), eval(37), eval(77), eval(140) };
 const eval BONUS_PROTECTED_PASSED_PAWN[6] = { eval(0), eval(0), eval(0), eval(30), eval(30), eval(30) };
+#endif
 const eval MALUS_ISOLATED_PAWN = eval(5);
 const eval MALUS_BACKWARD_PAWN = eval(20);
 const eval MALUS_ISLAND_COUNT = eval(5);
@@ -97,7 +108,7 @@ const Value BONUS_CASTLING = Value(0);
 
 const Value BONUS_TEMPO = Value(5);
 
-const Value DELTA_PRUNING_SAFETY_MARGIN = Value(PieceValues[PAWN].egScore);
+const Value DELTA_PRUNING_SAFETY_MARGIN = Value(VALUE_100CP);
 
 const Value PAWN_SHELTER_2ND_RANK = Value(20);
 const Value PAWN_SHELTER_3RD_RANK = Value(10);
@@ -109,7 +120,6 @@ const Value PROBCUT_MARGIN = Value(90);
 
 const int FULTILITY_PRUNING_DEPTH = 3;
 const Value FUTILITY_PRUNING_LIMIT[FULTILITY_PRUNING_DEPTH + 1] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
-
 enum CAPTURES {             
 	QxP, BxP, NxP, RxP, QxN,
 	QxR, RxN, QxB, BxN, RxB,
@@ -135,6 +145,7 @@ namespace settings {
 
 	void Initialize();
 	int LMRReduction(int depth, int moveNumber);
+	void processParameter(std::vector<std::string> parameters);
 
 	const eval SCALE_BISHOP_PAIR_WITH_PAWNS(0); //Reduce Bonus Bishop Pair by this value for each pawn on the board
 	const eval BONUS_BISHOP_PAIR_NO_OPP_MINOR(0); //Bonus for Bishop pair, if opponent has no minor piece for exchange

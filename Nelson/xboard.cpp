@@ -533,10 +533,10 @@ namespace cecp {
 			Engine->Reset();
 		}
 		else if (!name.compare(settings::OPTION_MULTIPV)) {
-			Engine->MultiPv = stoi(tokens[1]);
+			Engine->MultiPv = stoi(value);
 		}
 		else if (!name.compare(settings::OPTION_CONTEMPT)) {
-			Contempt = Value(stoi(tokens[1]));
+			Contempt = Value(stoi(value));
 		}
 		else if (!name.compare(settings::OPTION_BOOK_FILE)) {
 			((settings::OptionString *)settings::options[settings::OPTION_BOOK_FILE])->set(value);

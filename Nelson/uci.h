@@ -32,6 +32,7 @@ private:
 	void thinkAsync();
 	void ponderhit();
 	void deleteThread();
+	void qscore(std::vector<std::string> &tokens);
 
 	void copySettings(baseSearch * source, baseSearch * destination);
 };

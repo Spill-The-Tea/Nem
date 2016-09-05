@@ -17,7 +17,7 @@
 #endif
 
 const int MAJOR_VERSION = 0;
-const int MINOR_VERSION = 65;
+const int MINOR_VERSION = 66;
 
 
 static bool popcountSupport();
@@ -109,6 +109,12 @@ int main(int argc, const char* argv[]) {
 				indx += 2;
 			}
 		}
+#ifdef TUNE
+		else if (!input.compare(0, 10, "parameters")) {
+			std::vector<std::string> token = utils::split(input);
+			settings::processParameter(token);
+		}
+#endif
 	}
 }
 

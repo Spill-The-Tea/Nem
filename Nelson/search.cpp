@@ -50,11 +50,7 @@ void baseSearch::Reset() {
 	searchMoves.clear();
 	cmHistory.age();
 	followupHistory.age();
-	for (int i = 0; i < MAX_DEPTH; ++i){
-		killer[2*i] = EXTENDED_MOVE_NONE;
-		killer[2 * i + 1] = EXTENDED_MOVE_NONE;
-		//excludedMoves[i] = MOVE_NONE;
-	}
+	killerManager.clear();
 	for (int i = 0; i < PV_MAX_LENGTH; ++i) PVMoves[i] = MOVE_NONE;
 }
 

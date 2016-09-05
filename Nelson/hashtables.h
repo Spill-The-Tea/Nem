@@ -210,3 +210,22 @@ namespace tt {
 	uint64_t GetEntryCount();
 
 }
+
+namespace killer {
+
+	const int NB_SLOTS_KILLER = 2;
+	const int NB_KILLER = 2;
+
+	class manager {
+	public:
+		ExtendedMove getMove(const position & pos, int index) const;
+		void store(const position & pos, Move move);
+		void store(const position & pos, ExtendedMove move);
+		void clear();
+		bool isKiller(const position & pos, Move move);
+	private:
+		//Move ctxtTable[KILLER_TABLE_SIZE];
+		ExtendedMove plyTable[NB_SLOTS_KILLER * MAX_DEPTH];
+	};
+
+}

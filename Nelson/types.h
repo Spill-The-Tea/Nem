@@ -109,6 +109,7 @@ enum Value : int16_t {
 	VALUE_MIN = SHRT_MIN + 2,
 	VALUE_DRAW = 0,
 	VALUE_ZERO = 0,
+	VALUE_100CP = 100,
 	VALUE_KNOWN_WIN = 10000,
 	VALUE_MATE = 32000,
 	VALUE_INFINITE = 32001,
@@ -318,6 +319,8 @@ struct eval {
 	inline Value getScore(Phase_t phase) {
 		return Value(((((int)mgScore) * (256 - phase)) + (phase * (int)egScore)) / 256);
 	}
+
+	inline Value getAverage() const { return Value((mgScore + egScore) / 2); }
 
 	std::string print() {
 		std::stringstream ss;

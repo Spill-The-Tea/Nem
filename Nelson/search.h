@@ -111,8 +111,7 @@ protected:
 	MoveSequenceHistoryManager cmHistory;
 	MoveSequenceHistoryManager followupHistory;
 	HistoryManager History;
-	//Killer moves: 2 slots per ply from Root (so at ply N the indices 2*N and 2*N+1 contain the relevant killer moves)
-	ExtendedMove killer[2 * MAX_DEPTH];
+	killer::manager killerManager;
 	//Internal statistics (to get a measure of move ordering quality)
 	uint64_t cutoffAt1stMove = 0;
 	uint64_t cutoffCount = 0;
@@ -168,6 +167,8 @@ public:
 	//Utility method (not used when thinking). Checks if a position is quiet (that's static evalution is about the same as QSearch result). Might be
 	//useful for tuning
 	bool isQuiet(position &pos);
+
+	Value qscore(position * pos);
 
 private:
 	//Main recursive search method
@@ -237,7 +238,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 			goto END;
 		}
 	}
-	//If a search move list is provided replace root moves by srach moves
+	//If a search move list is provided replace root moves by search moves
 	if (searchMoves.size()) {
 		rootMoveCount = int(searchMoves.size());
 		rootMoves = new ValuatedMove[rootMoveCount];
@@ -693,7 +694,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	if (futilityPruning && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, &followupHistory, nullptr, counter, ttMove);
 	else
-		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &cmHistory, &followupHistory, &killer[2 * pos.GetPliesFromRoot()], counter, ttMove);
+		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &cmHistory, &followupHistory, &killerManager, counter, ttMove);
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
@@ -712,7 +713,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		//	continue;
 		//}
 		bool prunable = !PVNode && depth <= 3 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
-			&& move != killer[2 * pos.GetPliesFromRoot()].move && move != killer[2 * pos.GetPliesFromRoot() + 1].move && pos.IsQuietAndNoCastles(move) && !pos.givesCheck(move);
+			 && !killerManager.isKiller(pos, move) && pos.IsQuietAndNoCastles(move) && !pos.givesCheck(move);
 		if (prunable) {
 			//assert(type(move) == MoveType::NORMAL && pos.GetPieceOnSquare(to(move)) == Piece::BLANK);
 			// late-move pruning II
@@ -825,6 +826,7 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		if (Stopped()) return VALUE_ZERO;
 		if (pos.GetResult() != OPEN)  return SCORE_FINAL(pos.evaluateFinalPosition());
 	}
+#ifndef TUNE
 	//TT lookup
 	tt::Entry ttEntry;
 	bool ttFound;
@@ -837,6 +839,7 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		&& ((ttEntry.type() == tt::EXACT) || (ttValue >= beta && ttEntry.type() == tt::LOWER_BOUND) || (ttValue <= alpha && ttEntry.type() == tt::UPPER_BOUND))) {
 		return SCORE_TT(ttValue);
 	}
+#endif
 	bool checked = pos.Checked();
 	int ttDepth = WithChecks || checked ? 0 : -1;
 	Value standPat;
@@ -844,6 +847,9 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		standPat = VALUE_NOTYETDETERMINED;
 	}
 	else {
+#ifdef TUNE
+		standPat = pos.evaluate() + BONUS_TEMPO;
+#else
 		standPat = ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + BONUS_TEMPO;
 		//check if ttValue is better
 		if (ttFound && ttValue != VALUE_NOTYETDETERMINED && ((ttValue > standPat && ttEntry.type() == tt::LOWER_BOUND) || (ttValue < standPat && ttEntry.type() == tt::UPPER_BOUND))) standPat = ttValue;
@@ -852,6 +858,7 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 			else ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, MOVE_NONE, standPat);
 			return SCORE_SP(beta);
 		}
+#endif
 		//Delta Pruning
 		if (!checked && !pos.GetMaterialTableEntry()->IsLateEndgame()) {
 			Value delta = PieceValues[pos.GetMostValuableAttackedPieceType()].egScore + int(pos.PawnOn7thRank()) * (PieceValues[QUEEN].egScore - PieceValues[PAWN].egScore) + DELTA_PRUNING_SAFETY_MARGIN;
@@ -870,8 +877,10 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		if (next.ApplyMove(move)) {
 			score = -QSearch<false>(-beta, -alpha, next, depth - 1);
 			if (score >= beta) {
+#ifndef TUNE
 				if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, move, standPat);
 				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, move, standPat);
+#endif
 				return SCORE_BC(beta);
 			}
 			if (score > alpha) {
@@ -880,8 +889,10 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 			}
 		}
 	}
+#ifndef TUNE
 	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), alpha, nt, ttDepth, MOVE_NONE, standPat);
 	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), alpha, nt, ttDepth, MOVE_NONE, standPat);
+#endif
 	return SCORE_EXACT(alpha);
 }
 
@@ -896,9 +907,7 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 		Square toSquare = to(cutoffMove);
 		if (moveIndex >= 0) {
 			ExtendedMove killerMove(movingPiece, cutoffMove);
-			int pfr = pos.GetPliesFromRoot();
-			killer[2 * pfr + 1] = killer[2 * pfr];
-			killer[2 * pfr] = killerMove;
+			killerManager.store(pos, killerMove);
 		}
 		Value v = Value(depth * depth);
 		History.update(v, movingPiece, cutoffMove);
@@ -944,4 +953,13 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 template<ThreadType T> bool search<T>::isQuiet(position &pos) {
 	Value evaluationDiff = pos.GetStaticEval() - QSearch<true>(-VALUE_MATE, VALUE_MATE, pos, 0);
 	return std::abs(int16_t(evaluationDiff)) <= 30;
+}
+
+template<ThreadType T>
+inline Value search<T>::qscore(position * pos)
+{
+	if (pos->Checked())
+		return QSearch<true>(-VALUE_MATE, VALUE_MATE, *pos, 0);
+	else 
+		return QSearch<false>(-VALUE_MATE, VALUE_MATE, *pos, 0);
 }

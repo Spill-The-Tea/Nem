@@ -14,6 +14,12 @@ Protocol protocol = NO_PROTOCOL;
 //Value PASSED_PAWN_BONUS[4] = { Value(10), Value(30), Value(60), Value(100) };
 //Value BETA_PRUNING_FACTOR = Value(200);
 
+#ifdef TUNE
+eval PieceValues[7]{ eval(950), eval(490, 550), eval(325), eval(325), eval(80, 100), eval(VALUE_KNOWN_WIN), eval(0) };
+eval PASSED_PAWN_BONUS[6] = { eval(0), eval(0), eval(30), eval(37), eval(77), eval(140) };
+eval BONUS_PROTECTED_PASSED_PAWN[6] = { eval(0), eval(0), eval(0), eval(30), eval(30), eval(30) };
+#endif
+
 
 namespace settings {
 
@@ -192,6 +198,40 @@ namespace settings {
 	{
 		return LMR_REDUCTION[std::min(depth, 63)][std::min(moveNumber, 63)];
 	}
+
+#ifdef TUNE
+	void processParameter(std::vector<std::string> parameters)
+	{
+		for (int i = 1; i < parameters.size(); ++i) {
+			sync_cout << "info string " << parameters[i] << sync_endl;
+			size_t indx = parameters[i].find('=');
+			if (indx == std::string::npos) continue;
+			std::string key = parameters[i].substr(0, indx);
+			std::string value = parameters[i].substr(indx + 1);
+			int val = stoi(value);
+			if (!key.compare("QMG")) PieceValues[QUEEN].mgScore = Value(val);
+			else if (!key.compare("QEG")) PieceValues[QUEEN].egScore = Value(val);
+			else if (!key.compare("RMG")) PieceValues[ROOK].mgScore = Value(val);
+			else if (!key.compare("REG")) PieceValues[ROOK].egScore = Value(val);
+			else if(!key.compare("BMG")) PieceValues[BISHOP].mgScore = Value(val);
+			else if (!key.compare("BEG")) PieceValues[BISHOP].egScore = Value(val);
+			else if (!key.compare("NMG")) PieceValues[KNIGHT].mgScore = Value(val);
+			else if (!key.compare("NEG")) PieceValues[KNIGHT].egScore = Value(val);
+			else if (!key.compare("PMG")) PieceValues[PAWN].mgScore = Value(val);
+			else if (!key.compare("PEG")) PieceValues[PAWN].mgScore = Value(val);
+			else if (!key.compare(0, 3, "PPB")) {
+				int indx = stoi(key.substr(3));
+				PASSED_PAWN_BONUS[indx] = eval(val);
+			}
+			else if (!key.compare(0, 4, "BPPP")) {
+				int indx = stoi(key.substr(4));
+				BONUS_PROTECTED_PASSED_PAWN[indx] = eval(val);
+			}
+		}
+		sync_cout << "info string parameters set" << sync_endl;
+		for (int i = 0; i < 7; ++i) sync_cout << "info string " << PieceValues[i].mgScore << " " << PieceValues[i].egScore << sync_endl;
+	}
+#endif
 
 	Options options;
 

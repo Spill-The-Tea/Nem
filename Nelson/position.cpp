@@ -268,15 +268,10 @@ Move position::NextMove() {
 			if (validateMove(hashMove)) return hashMove;
 			break;
 		case KILLER:
-			if (killer) {
-				if (moveIterationPointer == 0) {
-					moveIterationPointer++;
-					if (!(killer->move == MOVE_NONE) && validateMove(*killer)) return killer->move;
-				}
-				if (moveIterationPointer == 1) {
-					moveIterationPointer++;
-					if (!((killer + 1)->move == MOVE_NONE) && validateMove(*(killer + 1))) return (killer + 1)->move;
-				}
+			while (moveIterationPointer < killer::NB_KILLER) {
+				ExtendedMove killerMove = killerManager->getMove(*this, moveIterationPointer);
+				++moveIterationPointer;
+				if (killerMove != EXTENDED_MOVE_NONE && validateMove(killerMove))  return killerMove.move;
 			}
 			++generationPhase;
 			moveIterationPointer = -1;
@@ -343,7 +338,11 @@ Move position::NextMove() {
 	} while (generationPhases[generationPhase] != NONE);
 	return MOVE_NONE;
 end_post_killer:
-	if (killer != nullptr && (killer->move == move || (killer + 1)->move == move)) return NextMove();
+	if (killerManager != nullptr) {
+		for (int i = 0; i < killer::NB_KILLER; ++i) {
+			if (move == killerManager->getMove(*this, i).move) return NextMove();
+		}
+	}
 end_post_hash:
 	if (hashMove && move == hashMove) return NextMove(); else return move;
 end:
