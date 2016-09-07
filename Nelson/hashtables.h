@@ -218,14 +218,20 @@ namespace killer {
 
 	class manager {
 	public:
-		ExtendedMove getMove(const position & pos, int index) const;
+		//returns the "index"th killerMove (0 <= index < NB_KILLER) 
+		Move getMove(const position & pos, int index) const;
+		//stores a killer move 
 		void store(const position & pos, Move move);
-		void store(const position & pos, ExtendedMove move);
+		//clears all killer moves
 		void clear();
-		bool isKiller(const position & pos, Move move);
+		//checks if a move is a killer move
+		bool isKiller(const position & pos, Move move) const;
 	private:
-		//Move ctxtTable[KILLER_TABLE_SIZE];
-		ExtendedMove plyTable[NB_SLOTS_KILLER * MAX_DEPTH];
+		//index of the first killer relevant for the position
+		int getIndex(const position & pos) const;
+		//killer table has NB_SLOTS_KILLER (Slots) * MAX_DEPTH (maximum search depth) * 2 (SideToMove) entries
+		//Parity: due to null moves there might be entries with same plies from root, with white and with black to move
+		Move plyTable[NB_SLOTS_KILLER * MAX_DEPTH * 2];
 	};
 
 }

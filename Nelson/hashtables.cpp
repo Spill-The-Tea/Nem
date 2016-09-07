@@ -195,44 +195,35 @@ namespace tt {
 
 namespace killer {
 
-	ExtendedMove manager::getMove(const position & pos, int index) const
+	Move manager::getMove(const position & pos, int index) const
 	{
-		//Move result;
-		//if (index < NB_SLOTS_KILLER) result = plyTable[NB_SLOTS_KILLER * pos.GetPliesFromRoot() + index];
-		//else if (pos.GetPliesFromRoot() >= 2) {
-		//	result = plyTable[NB_SLOTS_KILLER * (pos.GetPliesFromRoot() - 2) + index];
-		//}
-		return plyTable[NB_SLOTS_KILLER * pos.GetPliesFromRoot() + index];
-		//return ctxtTable[utils::MurmurHash2A(pos.ColorBB(pos.GetSideToMove())) & (KILLER_TABLE_SIZE - 1)];
+		return plyTable[getIndex(pos) + index];
 	}
+
 
 	void manager::store(const position & pos, Move move)
 	{
-		ExtendedMove em(pos.GetPieceOnSquare(from(move)), move);
-		store(pos, em);
-		//ctxtTable[utils::MurmurHash2A(pos.ColorBB(pos.GetSideToMove())) & (KILLER_TABLE_SIZE - 1)] = move;
-	}
-
-	void manager::store(const position & pos, ExtendedMove move)
-	{
-		int pfr = pos.GetPliesFromRoot();
-		//for (int i = NB_SLOTS_KILLER - 1; i > 0; --i)
-		plyTable[NB_SLOTS_KILLER * pfr + 1] = plyTable[NB_SLOTS_KILLER * pfr];
-		plyTable[NB_SLOTS_KILLER * pfr] = move;
+		int indx = getIndex(pos);
+		if (plyTable[indx] != move) {
+			plyTable[indx + 1] = plyTable[indx];
+			plyTable[indx] = move;
+		}
 	}
 
 	void manager::clear()
 	{
-		for (int i = 0; i < MAX_DEPTH; ++i) {
-			plyTable[2 * i] = EXTENDED_MOVE_NONE;
-			plyTable[2 * i + 1] = EXTENDED_MOVE_NONE;
-		}
+		std::memset(plyTable, 0, NB_SLOTS_KILLER * MAX_DEPTH * 2 * sizeof(Move));
 	}
 
-	bool manager::isKiller(const position & pos, Move move)
+	int manager::getIndex(const position & pos) const
 	{
-		int pfr = pos.GetPliesFromRoot();
-		return (move == plyTable[NB_SLOTS_KILLER * pfr].move) || (move == plyTable[NB_SLOTS_KILLER * pfr + 1].move);
+		return NB_SLOTS_KILLER * (2 * pos.GetPliesFromRoot() + int(pos.GetSideToMove()));
+	}
+
+	bool manager::isKiller(const position & pos, Move move) const
+	{
+		int index = getIndex(pos);
+		return (move == plyTable[index]) || (move == plyTable[index + 1]);
 	}
 
 }

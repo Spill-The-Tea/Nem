@@ -906,8 +906,7 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 		Piece movingPiece = pos.GetPieceOnSquare(from(cutoffMove));
 		Square toSquare = to(cutoffMove);
 		if (moveIndex >= 0) {
-			ExtendedMove killerMove(movingPiece, cutoffMove);
-			killerManager.store(pos, killerMove);
+			killerManager.store(pos, cutoffMove);
 		}
 		Value v = Value(depth * depth);
 		History.update(v, movingPiece, cutoffMove);
