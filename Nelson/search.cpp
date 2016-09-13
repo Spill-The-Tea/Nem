@@ -10,22 +10,22 @@
 #include "hashtables.h"
 
 #ifdef STAT
-  int64_t Capture_Stat[2][6][5]; //[cutoff][capturing piece][captured piece]
+int64_t Capture_Stat[2][6][5]; //[cutoff][capturing piece][captured piece]
 
-  void printCaptureStat()
-  {
-	  const char pieceChar[6] = { 'Q', 'R', 'B', 'N', 'P', 'K' };
-	  for (int i = 0; i < 6; ++i) {
-		  for (int j = 0; j < 5; ++j) {
-			  std::cout << pieceChar[i] << 'x' << pieceChar[j] << "\t" 
-				  << 1.0 * Capture_Stat[1][i][j] / (Capture_Stat[1][i][j] + Capture_Stat[0][i][j]) << "\t" 
-				  << (Capture_Stat[1][i][j] + Capture_Stat[0][i][j]) << std::endl;
-		  } 
-	  }
-  }
+void printCaptureStat()
+{
+	const char pieceChar[6] = { 'Q', 'R', 'B', 'N', 'P', 'K' };
+	for (int i = 0; i < 6; ++i) {
+		for (int j = 0; j < 5; ++j) {
+			std::cout << pieceChar[i] << 'x' << pieceChar[j] << "\t"
+				<< 1.0 * Capture_Stat[1][i][j] / (Capture_Stat[1][i][j] + Capture_Stat[0][i][j]) << "\t"
+				<< (Capture_Stat[1][i][j] + Capture_Stat[0][i][j]) << std::endl;
+		}
+	}
+}
 #endif
 
-  void startThread(search<SLAVE> & slave) {
+void startThread(search<SLAVE> & slave) {
 	slave.startHelper();
 }
 
@@ -73,7 +73,7 @@ std::string baseSearch::PrincipalVariation(position & pos, int depth) {
 		position next(pos);
 		if (!next.ApplyMove(PVMoves[i])) break;
 		pos = next;
-		if (i>0) ss << " ";
+		if (i > 0) ss << " ";
 		ss << toString(PVMoves[i]);
 		if (i == 1) ponderMove = PVMoves[i];
 	}
@@ -84,7 +84,7 @@ std::string baseSearch::PrincipalVariation(position & pos, int depth) {
 		position next(pos);
 		if (!next.ApplyMove(hashmove)) break;
 		pos = next;
-		if (i>0) ss << " ";
+		if (i > 0) ss << " ";
 		ss << toString(hashmove);
 		if (i == 1) ponderMove = hashmove;
 	}
@@ -137,7 +137,7 @@ void baseSearch::info(position &pos, int pvIndx, SearchResultType srt) {
 #ifdef TB
 				<< " " << tbHits
 #endif
-				<< "\t"*/ << PrincipalVariation(npos, _depth)  << srtChar[srt] << sync_endl;
+				<< "\t"*/ << PrincipalVariation(npos, _depth) << srtChar[srt] << sync_endl;
 		}
 	}
 }
@@ -157,8 +157,8 @@ void baseSearch::debugInfo(std::string info)
 }
 
 Move baseSearch::GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount) {
-	if (settings::options.getBool(settings::OPTION_OWN_BOOK) && BookFile.size() > 0) {
-		if (book == nullptr) book = new polyglot::book(BookFile);
+	if (settings::options.getBool(settings::OPTION_OWN_BOOK) && BookFile != nullptr) {
+		if (book == nullptr) book = new polyglot::book(*BookFile);
 		book->probe(pos, true, moves, moveCount);
 	}
 	return MOVE_NONE;
@@ -166,11 +166,23 @@ Move baseSearch::GetBestBookMove(position& pos, ValuatedMove * moves, int moveCo
 
 std::string baseSearch::GetXAnalysisOutput() {
 	std::lock_guard<std::mutex> lck(mtxXAnalysisOutput);
-	return XAnalysisOutput;
+	if (XAnalysisOutput == nullptr) XAnalysisOutput = new std::string();
+	return *XAnalysisOutput;
 }
 
 baseSearch::~baseSearch() {
-	if (book != nullptr) delete book;
+	if (book != nullptr) {
+		delete book;
+		book = nullptr;
+	}
+	if (BookFile != nullptr) {
+		delete BookFile;
+		BookFile = nullptr;
+	}
+	if (XAnalysisOutput != nullptr) {
+		delete XAnalysisOutput;
+		XAnalysisOutput = nullptr;
+	}
 }
 
 baseSearch::baseSearch() {

@@ -24,9 +24,6 @@ eval BONUS_PROTECTED_PASSED_PAWN[6] = { eval(0), eval(0), eval(0), eval(30), eva
 namespace settings {
 
 	static int LMR_REDUCTION[64][64];
-	static const double LMR_BASE = 0.3;
-	static const double LMR_NON_PV = 1.5;
-	static const double LMR_PV = 2.25;
 	const eval PSQT[12][64]{
 		{  // Piece Type 0
 			eval(-10,-8), eval(-7,-5), eval(-4,-2), eval(-2,0), eval(-2,0), eval(-4,-2), eval(-7,-5), eval(-10,-8),  // Rank 1

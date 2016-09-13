@@ -99,7 +99,7 @@ namespace Tablebases {
 					Square toSquare = Square(TB_GET_TO(moves[i]));
 					unsigned promotionPiece = TB_GET_PROMOTES(moves[i]);
 					if (repeated 
-						&& PieceType(pos.GetPieceOnSquare(fromSquare) != PieceType::PAWN)
+						&& GetPieceType(pos.GetPieceOnSquare(fromSquare)) != PieceType::PAWN
 						&& pos.GetPieceOnSquare(toSquare) == Piece::BLANK
 						&& promotionPiece == TB_PROMOTES_NONE
 						&& dtz < dtzMove + 1) continue;

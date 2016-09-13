@@ -57,7 +57,7 @@ public:
 	//Flag indicating that search shall be exited (will be called from destructor to stop engine threads)
 	std::atomic<bool> Exit;
 	//Polyglot bookfile if provided
-	std::string BookFile = "";
+	std::string * BookFile = nullptr;
 	int rootMoveCount = 0;
 	ValuatedMove * rootMoves = nullptr;
 	position rootPosition;
@@ -125,7 +125,7 @@ protected:
 	//in xboard protocol in analysis mode, the GUI determines the point in time when information shall be provided (in UCI the engine determines these 
 	//point in times. As this information is only available while the search's recursion level is root the information is prepared, whenever feasible and
 	//stored in member XAnylysisOutput, where the protocol driver can retrieve it at any point in time
-	std::string XAnalysisOutput;
+	std::string * XAnalysisOutput = nullptr;
 
 	//Array where moves from Principal Variation are stored
 	Move PVMoves[PV_MAX_LENGTH];
@@ -218,8 +218,8 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		goto END;
 	}
 	//check if book is available
-	if (settings::options.getBool(settings::OPTION_OWN_BOOK) && BookFile.size() > 0) {
-		if (book == nullptr) book = new polyglot::book(BookFile);
+	if (settings::options.getBool(settings::OPTION_OWN_BOOK) && BookFile != nullptr) {
+		if (book == nullptr) book = new polyglot::book(*BookFile);
 		//Currently engine isn't looking for the best book move, but selects on of the available bookmoves by random, with entries weight used to define the
 		//probability 
 		Move bookMove = book->probe(pos, false, generatedMoves, rootMoveCount);
@@ -476,7 +476,8 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 				std::stringstream ss;
 				ss << "stat01: " << (now() - timeManager.GetStartTime()) / 10 << " " << NodeCount << " "
 					<< depth << " " << rootMoveCount - i << " " << rootMoveCount + 1 << " " << toString(rootMoves[i].move);
-				XAnalysisOutput = ss.str();
+				if (XAnalysisOutput != nullptr) delete(XAnalysisOutput);
+				XAnalysisOutput = new std::string(ss.str());
 			}
 		}
 		//apply move
@@ -535,7 +536,6 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 			}
 		}
 	}
-	//	}
 	return bestScore;
 }
 
@@ -633,12 +633,13 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			int reduction = (depth + 14) / 5;
 			if (int(effectiveEvaluation - beta) > int(PieceValues[PAWN].egScore)) ++reduction;
 			Square epsquare = pos.GetEPSquare();
+			Move lastApplied = pos.GetLastAppliedMove();
 			pos.NullMove();
 #ifdef STAT_LMR
 			nullMoveCount++;
 #endif
 			Value nullscore = -Search<false>(-beta, -alpha, pos, depth - reduction, subpv, false, true);
-			pos.NullMove(epsquare);
+			pos.NullMove(epsquare, lastApplied);
 			if (nullscore >= beta) {
 				if (nullscore >= VALUE_MATE_THRESHOLD) nullscore = beta;
 				if (depth < 9 && beta < VALUE_KNOWN_WIN) return SCORE_NMP(nullscore);
@@ -702,7 +703,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	Move move;
 	int moveIndex = 0;
 	bool ZWS = false;
-	Square recaptureSquare = pos.GetLastAppliedMove() && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
+	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	//bool singularExtensionNode = depth >= 8  && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
 	//	&& excludeMove == MOVE_NONE && ttEntry.type() == tt::LOWER_BOUND && ttEntry.depth() >= depth - 3;
 	while ((move = pos.NextMove())) {
@@ -743,12 +744,14 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			if (!extension && to(move) == recaptureSquare) {
 				++extension;
 			}
-
 			//if (singularExtensionNode &&  move == ttMove && !extension)
 			//{
 			//	Value rBeta = ttValue - 2 * depth;
 			//	if (Search<false>(rBeta - 1, rBeta, pos, depth / 2, subpv, false, false, move) < rBeta) ++extension;
 			//}
+			if (!extension && moveIndex == 0 && pos.GeneratedMoveCount() == 1 && (pos.GetMoveGenerationPhase() == MoveGenerationType::CHECK_EVASION || pos.QuietMoveGenerationPhaseStarted())) {
+				++extension;
+			}
 			int reduction = 0;
 			//LMR: Late move reduction
 			if (lmr && extension == 0 && moveIndex != 0 && move != counter && pos.QuietMoveGenerationPhaseStarted() && !next.Checked()) {
@@ -917,13 +920,13 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 		//Piece ownPrevPiece = BLANK;
 		//Square ownPrevTo = OUTSIDE;
 		Move lastApplied;
-		if ((lastApplied = FixCastlingMove(pos.GetLastAppliedMove()))) {
+		if ((lastApplied = FixCastlingMove(pos.GetLastAppliedMove())) != MOVE_NONE) {
 			prevTo = to(lastApplied);
 			prevPiece = pos.GetPieceOnSquare(prevTo);
 			counterMove[int(pos.GetPieceOnSquare(prevTo))][prevTo] = cutoffMove;
 			cmHistory.update(v, prevPiece, prevTo, movingPiece, toSquare);
 			Move lastApplied2;
-			if (pos.Previous() && (lastApplied2 = FixCastlingMove(pos.Previous()->GetLastAppliedMove()))) {
+			if (pos.Previous() && (lastApplied2 = FixCastlingMove(pos.Previous()->GetLastAppliedMove())) != MOVE_NONE) {
 				prev2To = to(lastApplied2);
 				prev2Piece = pos.Previous()->GetPieceOnSquare(prev2To);
 				followupHistory.update(v, prev2Piece, prev2To, movingPiece, toSquare);
@@ -936,9 +939,9 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 				movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedMove));
 				toSquare = to(alreadyProcessedMove);
 				History.update(-v, movingPiece, alreadyProcessedMove);
-				if (pos.GetLastAppliedMove())
+				if (pos.GetLastAppliedMove() != MOVE_NONE)
 					cmHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
-				if (pos.Previous() && pos.Previous()->GetLastAppliedMove())
+				if (prev2To != Square::OUTSIDE) 
 					followupHistory.update(-v, prev2Piece, prev2To, movingPiece, toSquare);
 				//if (ownPrevTo != OUTSIDE) {
 				//	cmHistory.update(-v, ownPrevPiece, ownPrevTo, movingPiece, toSquare);

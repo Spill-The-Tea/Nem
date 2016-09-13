@@ -129,15 +129,15 @@ public:
 	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
 	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount; }
 	//applies a null move to the given position (there is no copy/make for null move), the EPSquare is the only information which has to be restored afterwards
-	void NullMove(Square epsquare = OUTSIDE);
+	void NullMove(Square epsquare = OUTSIDE, Move lastApplied = MOVE_NONE);
 	//delete all ancestors of the current positions and frees the assigned memory
 	void deleteParents();
 	//returns the last move applied, which lead to this position
-	inline Move GetLastAppliedMove() { return lastAppliedMove; }
+	inline Move GetLastAppliedMove() const { return lastAppliedMove; }
 	//get's the piece, which moved in the last applied move
-	inline Piece GetPreviousMovingPiece() { if (previous) return previous->GetPieceOnSquare(to(lastAppliedMove)); else return BLANK; }
+	inline Piece GetPreviousMovingPiece() const { if (previous && lastAppliedMove != MOVE_NONE) return previous->GetPieceOnSquare(to(lastAppliedMove)); else return BLANK; }
 	//returns the piece, which has been captured by the last applied move
-	inline Piece getCapturedInLastMove() { return capturedInLastMove; }
+	inline Piece getCapturedInLastMove() const { if (lastAppliedMove == MOVE_NONE) return Piece::BLANK; else return capturedInLastMove; }
 	//checks if a move is quiet (move is neither capture, nor promotion)
 	inline bool IsQuiet(const Move move) const { return (Board[to(move)] == BLANK) && (type(move) == NORMAL || type(move) == CASTLING); }
 	//checks if a move is quiet and not a castling move (used in search for pruning decisions)
@@ -174,6 +174,7 @@ public:
 	bool validateMove(Move move);
 	//For pruning decisions it's necessary to identify whether or not all special movee (like killer,..) are already returned
 	inline bool QuietMoveGenerationPhaseStarted() const { return generationPhases[generationPhase] >= QUIETS_POSITIVE; }
+	inline MoveGenerationType GetMoveGenerationPhase() const { return generationPhases[generationPhase]; }
 	//Validate a move and return it if validated, else return another valid move
 	Move validMove(Move proposedMove);
 	//Checks if a move gives check

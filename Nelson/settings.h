@@ -174,8 +174,9 @@ namespace settings {
 
 	class Option {
 	public:
-		Option() { };
+		Option() { otype = OptionType::STRING; };
 		Option(std::string Name, OptionType Type = OptionType::BUTTON, std::string DefaultValue = "", std::string MinValue = "", std::string MaxValue = "");
+		virtual ~Option() { };
 		void virtual set(std::string value) = 0;
 		void virtual read(std::vector<std::string> &tokens) = 0;
 		std::string printUCI();
@@ -193,6 +194,7 @@ namespace settings {
 	class OptionSpin: public Option {
 	public:
 		OptionSpin(std::string Name, int Value, int Min, int Max) : Option(Name, OptionType::SPIN, std::to_string(Value), std::to_string(Min), std::to_string(Max)) { };
+		virtual ~OptionSpin() { };
 		inline void set(std::string value) { _value = stoi(value); }
 		inline void set(int value) { _value = value; }
 		inline int getValue() { 
@@ -207,6 +209,7 @@ namespace settings {
 	class OptionCheck : public Option {
 	public:
 		OptionCheck(std::string Name, bool value);
+	    virtual ~OptionCheck() { };
 		void set(std::string value);
 		inline bool getValue() { return _value; }
 		inline void read(std::vector<std::string> &tokens) { set(tokens[4]); }
@@ -218,6 +221,7 @@ namespace settings {
 	class OptionString : public Option {
 	public:
 		OptionString(std::string Name, std::string defaultValue = "") : Option(Name, OptionType::STRING, defaultValue) { };
+		virtual ~OptionString() { };
 		void set(std::string value) { _value = value; }
 		inline std::string getValue() { return _value; }
 		void read(std::vector<std::string> &tokens);
@@ -228,6 +232,7 @@ namespace settings {
 	class OptionButton : public Option {
 	public:
 		OptionButton(std::string Name) : Option(Name, OptionType::BUTTON) { };
+		virtual ~OptionButton() { };
 		void set(std::string value) { }
 		inline void read(std::vector<std::string> &tokens) { }
 	};
@@ -235,12 +240,14 @@ namespace settings {
 	class OptionThread : public OptionSpin {
 	public:
 		OptionThread() : OptionSpin(OPTION_THREADS, HelperThreads + 1, 1, 128) { };
+		virtual ~OptionThread() { };
 		void set(std::string value);
 	};
 	
 	class Option960 : public OptionCheck {
 	public:
 		Option960() : OptionCheck(OPTION_CHESS960, Chess960) { };
+		virtual ~Option960() { };
 		void set(std::string value);
 		inline void set(bool value) { Chess960 = value; };
 	};
@@ -248,6 +255,7 @@ namespace settings {
 	class OptionContempt : public OptionSpin {
 	public:
 		OptionContempt() : OptionSpin(OPTION_CONTEMPT, Contempt, -1000, 1000) { };
+		virtual ~OptionContempt() { };
 		void set(std::string value);
 		void set(int value);
 	};
@@ -255,6 +263,7 @@ namespace settings {
 	class OptionHash : public OptionSpin {
 	public:
 		OptionHash() : OptionSpin(OPTION_HASH, 32, 1, 16384) { };
+		virtual ~OptionHash() { };
 		void set(std::string value);
 		void set(int value);
 	};

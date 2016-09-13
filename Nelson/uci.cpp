@@ -20,7 +20,7 @@
 
 void UCIInterface::copySettings(baseSearch * source, baseSearch * destination) {
 	destination->UciOutput = source->UciOutput;
-	destination->BookFile = source->BookFile;
+	destination->BookFile = new std::string(*source->BookFile);
 	destination->PonderMode.store(source->PonderMode.load());
 	destination->PrintCurrmove = source->PrintCurrmove;
 }
@@ -157,7 +157,7 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 void UCIInterface::ucinewgame() {
 	initialized = true;
 	Engine->NewGame();
-	if (settings::options.getBool(settings::OPTION_OWN_BOOK)) Engine->BookFile = settings::options.getString(settings::OPTION_BOOK_FILE); else Engine->BookFile = "";
+	if (settings::options.getBool(settings::OPTION_OWN_BOOK)) Engine->BookFile = new std::string(settings::options.getString(settings::OPTION_BOOK_FILE)); else Engine->BookFile = nullptr;
 }
 
 #define MAX_FEN 0x80

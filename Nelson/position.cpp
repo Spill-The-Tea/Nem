@@ -398,8 +398,8 @@ void position::evaluateCheckEvasions(int startIndex) {
 }
 
 Move position::GetCounterMove(Move(&counterMoves)[12][64]) {
-	if (previous) {
-		Square lastTo = to(previous->lastAppliedMove);
+	if (lastAppliedMove != MOVE_NONE) {
+		Square lastTo = to(lastAppliedMove);
 		return counterMoves[int(Board[lastTo])][lastTo];
 	}
 	return MOVE_NONE;
@@ -408,10 +408,10 @@ Move position::GetCounterMove(Move(&counterMoves)[12][64]) {
 void position::evaluateByHistory(int startIndex) {
 	Move lastMoves[2] = { MOVE_NONE, MOVE_NONE };
 	Piece lastMovingPieces[2] = { Piece::BLANK, Piece::BLANK };
-	if (lastAppliedMove) {
+	if (lastAppliedMove != MOVE_NONE) {
 		lastMoves[0] = FixCastlingMove(lastAppliedMove);
 		lastMovingPieces[0] = Board[to(lastMoves[0])];
-		if (Previous() && Previous()->lastAppliedMove) {
+		if (Previous() && Previous()->lastAppliedMove != MOVE_NONE) {
 			lastMoves[1] = FixCastlingMove(Previous()->lastAppliedMove);
 			lastMovingPieces[1] = Previous()->Board[to(lastMoves[1])];
 		}
@@ -1024,7 +1024,6 @@ bool position::checkRepetition() {
 
 bool position::hasRepetition() {
 	position * pos = this;
-	int count50 = DrawPlyCount;
 	while (pos && pos->GetDrawPlyCount() > 0) {
 		if (pos->checkRepetition()) return true;
 		pos = pos->Previous();
@@ -1166,13 +1165,14 @@ bool position::validateMove(ExtendedMove move) {
 }
 
 
-void position::NullMove(Square epsquare) {
+void position::NullMove(Square epsquare, Move lastApplied) {
 #ifdef TRACE
 	nullMovePosition = !nullMovePosition;
 #endif
 	SwitchSideToMove();
 	SetEPSquare(epsquare);
 	tt::prefetch(GetHash());
+	lastAppliedMove = lastApplied;
 	Bitboard tmp = attackedByThem;
 	attackedByThem = attackedByUs;
 	attackedByUs = tmp;

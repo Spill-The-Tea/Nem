@@ -473,8 +473,8 @@ namespace test {
 				<< srch->NodeCount / rt << std::setw(6) << srch->timeManager.GetEBF(depth) << std::setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
 				<< std::setw(6) << srch->cutoffAt1stMoveRate() << std::setw(6) << srch->cutoffAverageMove()
 				<< std::setw(40) << srch->PrincipalVariation(*pos, depth) << std::endl;
-			delete(pos);
 			delete(srch);
+			delete(pos);
 		}
 		avgBF = avgBF / (totalNodes - totalQNodes);
 		avgCIndx = avgCIndx / fens.size();
