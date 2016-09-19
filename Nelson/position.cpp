@@ -546,34 +546,19 @@ Bitboard position::checkBlocker(Color colorOfBlocker, Color kingColor) {
 	return kingColor == Color::WHITE ? PinnedPieces<WHITE>() & OccupiedByColor[colorOfBlocker] : PinnedPieces<BLACK>() & OccupiedByColor[colorOfBlocker];
 }
 
-const Bitboard position::considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from) const
-{
-	if ((fromSet & (SlidingAttacksRookTo[to] | SlidingAttacksBishopTo[to])) == 0) return 0;
-	Bitboard shadowed = ShadowedFields[to][from];
-	if ((shadowed & occ) == 0) return 0;
-	Bitboard attack = SlidingAttacksRookTo[to] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
-	attack |= SlidingAttacksBishopTo[to] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
-	attack &= shadowed;
-	while (attack != 0)
-	{
-		int attackingField = lsb(attack);
-		if ((InBetweenFields[attackingField][to] & occ) == 0) return ToBitboard(attackingField);
-		attack &= attack - 1;
-	}
-	return 0;
-}
-
-const Bitboard position::AttacksOfField(const Square targetField) const
+//Calculates a bitboard of attackers to a given square, but filtering pieces by occupancy mask 
+const Bitboard position::AttacksOfField(const Square targetField, const Bitboard occupanyMask) const
 {
 	//sliding attacks
 	Bitboard attacks = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
 	attacks |= SlidingAttacksBishopTo[targetField] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
+	attacks &= occupanyMask;
 	//Check for blockers
 	Bitboard tmpAttacks = attacks;
 	while (tmpAttacks != 0)
 	{
 		Square from = lsb(tmpAttacks);
-		Bitboard blocker = InBetweenFields[from][targetField] & OccupiedBB();
+		Bitboard blocker = InBetweenFields[from][targetField] & occupanyMask;
 		if (blocker) attacks &= ~ToBitboard(from);
 		tmpAttacks &= tmpAttacks - 1;
 	}
@@ -585,7 +570,7 @@ const Bitboard position::AttacksOfField(const Square targetField) const
 	attacks |= ((targetBB >> 9) & NOT_H_FILE) & PieceBB(PAWN, WHITE);
 	attacks |= ((targetBB << 7) & NOT_H_FILE) & PieceBB(PAWN, BLACK);
 	attacks |= ((targetBB << 9) & NOT_A_FILE) & PieceBB(PAWN, BLACK);
-	return attacks;
+	return attacks & occupanyMask;
 }
 
 const Bitboard position::AttacksOfField(const Square targetField, const Color attackingSide) const {
@@ -614,16 +599,31 @@ const Bitboard position::AttacksOfField(const Square targetField, const Color at
 	return attacks;
 }
 
-const Bitboard position::getSquareOfLeastValuablePiece(const Bitboard attadef, const int side) const
-{
-	Color diff = Color((SideToMove + side) & 1);
-	Bitboard subset = attadef & PieceBB(PAWN, diff); if (subset) return subset & (0 - subset); // single bit
-	subset = attadef & PieceBB(KNIGHT, diff); if (subset) return subset & (0 - subset); // single bit
-	subset = attadef & PieceBB(BISHOP, diff); if (subset) return subset & (0 - subset); // single bit
-	subset = attadef & PieceBB(ROOK, diff); if (subset) return subset & (0 - subset); // single bit
-	subset = attadef & PieceBB(QUEEN, diff); if (subset) return subset & (0 - subset); // single bit
-	subset = attadef & PieceBB(KING, diff);
-	return subset & (0 - subset);
+
+const PieceType position::getAndResetLeastValuableAttacker(Square toSquare, Bitboard attackers, Bitboard& occupied, Bitboard& attadef, Bitboard& mayXray) const {
+	Bitboard leastAttackers = attackers & PieceTypeBB(PAWN);
+	if (!leastAttackers) leastAttackers = attackers & (PieceTypeBB(KNIGHT) | PieceTypeBB(BISHOP));
+	if (!leastAttackers) leastAttackers = attackers & PieceTypeBB(ROOK);
+	if (!leastAttackers) leastAttackers = attackers & PieceTypeBB(QUEEN);
+	if (!leastAttackers) leastAttackers = attackers & PieceTypeBB(KING);
+	assert(leastAttackers);
+	leastAttackers &= (0 - leastAttackers);
+	Square leastAttackerSquare = lsb(leastAttackers);
+	occupied &= ~leastAttackers;
+	attadef &= ~leastAttackers;
+	//Check if there is an xray attack now 
+	Bitboard shadowed = ShadowedFields[toSquare][leastAttackerSquare];
+	Bitboard xray = mayXray & shadowed;
+	while (xray) {
+		Square xraySquare = lsb(xray);
+		if ((InBetweenFields[xraySquare][toSquare] & occupied) == 0) {
+			attadef |= ToBitboard(xraySquare);
+			mayXray &= ~attadef;
+			break;
+		}
+		xray &= xray - 1;
+	}
+	return GetPieceType(Board[leastAttackerSquare]);
 }
 
 //SEE method, which returns without exact value, when it's sure that value is positive (then VALUE_KNOWN_WIN is returned)
@@ -639,32 +639,60 @@ const Value position::SEE(Square from, const Square to) const
 	return SEE(createMove(from, to));
 }
 
+//This SEE implementation is a mixture of stockfish and Computer chess sample implementation
+//(see https://chessprogramming.wikispaces.com/SEE+-+The+Swap+Algorithm)
 const Value position::SEE(Move move) const
 {
+	if (type(move) == CASTLING) return VALUE_ZERO;
+
 	Value gain[32];
-	int d = 0;
+	int d = 1;
+
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
-	Bitboard mayXray = OccupiedByPieceType[BISHOP] | OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN];
-	Bitboard fromSet = ToBitboard(fromSquare);
-	Bitboard occ = OccupiedBB();
-	Bitboard attadef = AttacksOfField(toSquare);
-	gain[d] = PieceValues[GetPieceType(Board[toSquare])].mgScore;
-	while (true)
+	gain[0] = PieceValues[GetPieceType(Board[toSquare])].mgScore;
+	Color side = GetColor(Board[fromSquare]);
+	Bitboard fromBB = ToBitboard(fromSquare);
+	Bitboard occ = OccupiedBB() & (~fromBB);
+
+	if (type(move) == ENPASSANT)
 	{
-		d++; // next depth and side
-		gain[d] = PieceValues[GetPieceType(Board[fromSquare])].mgScore - gain[d - 1]; // speculative store, if defended
-		if (std::max(-gain[d - 1], gain[d]) < 0) break; // pruning does not influence the result
-		attadef ^= fromSet; // reset bit in set to traverse
-		occ ^= fromSet; // reset bit in temporary occupancy (for x-Rays)
-		if ((fromSet & mayXray) != 0)
-			attadef |= considerXrays(occ, toSquare, fromSet, fromSquare);
-		fromSet = getSquareOfLeastValuablePiece(attadef, d & 1);
-		if (fromSet == EMPTY) break;
-		fromSquare = lsb(fromSet);
+		occ ^= toSquare - 8 * (1 - 2 *side); 
+		gain[0] = PieceValues[PAWN].mgScore;
 	}
-	while (--d != 0)
-		gain[d - 1] = -std::max(-gain[d - 1], gain[d]);
+
+	// Get Attackers ofto Square
+	Bitboard attadef = AttacksOfField(toSquare, occ);
+	// Get potential xray attackers
+	Bitboard mayXRay = SlidingAttacksRookTo[toSquare] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
+	mayXRay |= SlidingAttacksBishopTo[toSquare] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
+	mayXRay &= occ;
+	mayXRay &= ~attadef;
+
+	// If there are no attackers we are done (we had a simple capture of a hanging piece)
+	side = Color(side ^1);
+	Bitboard attackers = attadef & OccupiedByColor[side];
+	if (!attackers) return gain[0];
+
+	PieceType capturingPiece = GetPieceType(Board[fromSquare]);
+
+	do {
+		assert(d < 32);
+
+		// Add the new entry to the swap list
+		gain[d] = -gain[d - 1] + PieceValues[capturingPiece].mgScore;
+
+		// Locate and remove the next least valuable attacker
+		capturingPiece = getAndResetLeastValuableAttacker(toSquare, attackers, occ, attadef, mayXRay);
+		side = Color(side ^ 1);
+		attackers = attadef & OccupiedByColor[side];
+		++d;
+
+	} while (attackers && (capturingPiece != KING || (--d, false))); // Stop before a king capture
+
+	// find the best achievable score by minimaxing
+	while (--d) gain[d - 1] = std::min(-gain[d], gain[d - 1]);
+
 	return gain[0];
 }
 

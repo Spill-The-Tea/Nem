@@ -106,6 +106,7 @@ public:
 	inline Value GetMaterialScore() const { return material->Score; }
 	inline MaterialTableEntry * GetMaterialTableEntry() const { return material; }
 	inline pawn::Entry * GetPawnEntry() const { return pawn; }
+	inline Value GetPawnScore() const { return pawn->Score.getScore(material->Phase); }
 	inline void InitMaterialPointer() { material = &MaterialTable[MaterialKey]; }
 	inline eval PawnStructureScore() const { return pawn->Score; }
 	//checks if the position is final and returns the result
@@ -293,11 +294,9 @@ private:
 	//Get's the best evaluated move from the move list starting at start Index
 	Move getBestMove(int startIndex);
 	void insertionSort(ValuatedMove* begin, ValuatedMove* end);
-	//SEE helper methods copied from Chess Programming Wiki
-	const Bitboard considerXrays(const Bitboard occ, const Square to, const Bitboard fromSet, const Square from) const;
-	const Bitboard getSquareOfLeastValuablePiece(const Bitboard attadef, const int side) const;
+	const PieceType getAndResetLeastValuableAttacker(Square toSquare, Bitboard stmAttackers, Bitboard& occupied, Bitboard& attackers, Bitboard& mayXray) const;
 	//return a bitboard of squares with pieces attacking the targetField
-	const Bitboard AttacksOfField(const Square targetField) const;
+	const Bitboard AttacksOfField(const Square targetField, const Bitboard occupied) const;
 	const Bitboard AttacksOfField(const Square targetField, const Color attackingSide) const;
 	//Checks is a oseudo-legal move is valid
 	inline bool isValid(Move move) { position next(*this); return next.ApplyMove(move); }

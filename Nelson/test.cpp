@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <iostream>
+#include <string> 
 #include <chrono>
 #include <iomanip>
 #include <fstream>
@@ -1972,53 +1973,27 @@ namespace test {
 	}
 
 	bool testSEE() {
-		position pos("1k1r4/1pp4p/p7/4p3/8/P5P1/1PP4P/2K1R3 w - - ");
-		Value see = pos.SEE(E1, E5);
+		std::vector<std::string> tests = {
+			"r6r/p1p1qpb1/Q4np1/8/4k3/2B4p/PPP1KPPP/R6R w - - 0 1;a6d3;0",
+			"8/8/2Kp4/8/3k4/8/8/8 w - - 0 1;c6d6;80",
+			"8/8/2Kp4/8/3k4/6b1/8/8 w - - 0 1;c6d6;-9920",
+			"3k4/4q3/4r3/4r3/4Q3/4R3/4R3/3K4 w - - 0 1;e4e5;30",
+			"3k4/4q3/4r3/4r3/4Q3/4R3/4R3/3K4 w - - 0 1;e5e4;950",
+			"3k4/4q3/4R3/4r3/4Q3/4r3/4R3/3K4 w - - 0 1;e6e7;470"
+		};
 		bool result = true;
-		if (see > 0)std::cout << "OK\t"; else {
-			std::cout << "ERROR\t";
-			result = false;
+		for (int i = 0; i < int(tests.size()); i++) {
+			auto tokens = utils::split(tests[i], ';');
+			assert(tokens.size() == 3);
+			position pos(tokens[0]);
+			Move move = parseMoveInUCINotation(tokens[1], pos);
+			std::cout << tokens[0] << std::endl;
+			Value vsee = pos.SEE(move);
+			bool lresult = vsee == std::stoi(tokens[2]);
+			result == result && lresult;
+			if (!lresult) std::cout << "ERROR ";
+			std::cout << tokens[1] << "\t" << vsee << "\t" << tokens[2] << std::endl;
 		}
-		std::cout << "SEE: " << see << "\t1k1r4/1pp4p/p7/4p3/8/P5P1/1PP4P/2K1R3 w - - \t" << toString(createMove(E1, E5)) << std::endl;
-		position pos2("1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - -");
-		see = pos2.SEE(D3, E5);
-		if (see < 0)std::cout << "OK\t"; else {
-			std::cout << "ERROR\t";
-			result = false;
-		}
-		std::cout << "SEE: " << see << "\t1k1r3q/1ppn3p/p4b2/4p3/8/P2N2P1/1PP1R1BP/2K1Q3 w - - \t" << toString(createMove(D3, E5)) << std::endl;
-
-		position pos3("2k1r3/1pp4p/p5p1/8/4P3/P7/1PP4P/1K1R4 b - - 0 1");
-		see = pos3.SEE(E8, E4);
-		if (see > 0) std::cout << "OK\t"; else {
-			std::cout << "ERROR\t";
-			result = false;
-		}
-		std::cout << "SEE: " << see << "\t2k1r3/1pp4p/p5p1/8/4P3/P7/1PP4P/1K1R4 b - - 0 1\t" << toString(createMove(E8, E4)) << std::endl;
-
-		position pos4("2k1q3/1pp1r1bp/p2n2p1/8/4P3/P4B2/1PPN3P/1K1R3Q b - - 0 1");
-		see = pos4.SEE(D6, E4);
-		if (see < 0)std::cout << "OK\t"; else {
-			std::cout << "ERROR\t";
-			result = false;
-		}
-		std::cout << "SEE: " << see << "\t2k1q3/1pp1r1bp/p2n2p1/8/4P3/P4B2/1PPN3P/1K1R3Q b - - 0 1 \t" << toString(createMove(D6, E4)) << std::endl;
-
-		position pos5("1k6/8/8/3pRrRr/8/8/8/1K6 w - - 0 1");
-		see = pos5.SEE(E5, D5);
-		if (see < 0)std::cout << "OK\t"; else {
-			std::cout << "ERROR\t";
-			result = false;
-		}
-		std::cout << "SEE: " << see << "\t1k6/8/8/3pRrRr/8/8/8/1K6 w - - 0 1  \t" << toString(createMove(E5, D5)) << std::endl;
-
-		position pos6("1k6/8/8/8/3PrRrR/8/8/1K6 b - - 0 1");
-		see = pos6.SEE(E4, D4);
-		if (see < 0)std::cout << "OK\t"; else {
-			std::cout << "ERROR\t";
-			result = false;
-		}
-		std::cout << "SEE: " << see << "\t1k6/8/8/8/3PrRrR/8/8/1K6 b - - 0 1 \t" << toString(createMove(E4, D4)) << std::endl;
 		return result;
 	}
 

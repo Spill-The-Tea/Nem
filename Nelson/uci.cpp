@@ -76,6 +76,12 @@ void UCIInterface::dispatch(std::string line) {
 	else if (!command.compare("qscore")) {
 		qscore(tokens);
 	}
+	else if (!command.compare("see")) {
+		see(tokens);
+	}
+	else if (!command.compare("testsee")) {
+		test::testSEE();
+	}
 	//else if (!strcmp(token, "eval"))
 	//	cout << printEvaluation(pos);
 	//else if (!strcmp(token, "qeval"))
@@ -398,6 +404,19 @@ void UCIInterface::divide(std::vector<std::string> &tokens) {
 	test::divide(*_position, depth);
 	int64_t runtime = now() - start;
 	std::cout << "Runtime: " << runtime << " ms\t" << std::endl;
+}
+
+void UCIInterface::see(std::vector<std::string> &tokens) {
+	if (_position == nullptr) {
+		std::cout << "No position specified!" << std::endl;
+		return;
+	}
+	if (tokens.size() < 2) {
+		std::cout << "No move specified!" << std::endl;
+		return;
+	}
+	Move move = parseMoveInUCINotation(tokens[1], *_position);
+	std::cout << "SEE: " << _position->SEE(move) << std::endl;
 }
 
 void UCIInterface::quit() {
