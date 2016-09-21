@@ -102,6 +102,12 @@ void InitializeMaterialTable() {
 											else if (nBN > 0) MaterialTable[key].setMostValuedPiece(BLACK, KNIGHT);
 											else if (nBP > 0) MaterialTable[key].setMostValuedPiece(BLACK, PAWN);
 											else MaterialTable[key].setMostValuedPiece(BLACK, KING);
+											if (MaterialTable[key].EvaluationFunction == &evaluateDefault) {
+												if (MaterialTable[key].GetMostExpensivePiece(BLACK) != KING && nWQ == 0 && nWR == 0 && nWB == 1 && nWN == 0 && nWP == 1) 
+													MaterialTable[key].EvaluationFunction = &evaluateKBPKx<WHITE>;
+												else if (MaterialTable[key].GetMostExpensivePiece(WHITE) != KING && nBQ == 0 && nBR == 0 && nBB == 1 && nBN == 0 && nBP == 1) 
+													MaterialTable[key].EvaluationFunction = &evaluateKBPKx<BLACK>;
+											}
 #ifdef TB
 											if (Tablebases::MaxCardinality > 0) {
 												int totalPieceCount = 2;

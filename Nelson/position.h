@@ -181,7 +181,7 @@ public:
 	//Checks if a move gives check
 	bool givesCheck(Move move);
 	//Get Pinned Pieces
-	template<Color COLOR_OF_KING> Bitboard PinnedPieces() const;
+	Bitboard PinnedPieces(Color colorOfKing) const;
 #ifdef TRACE
 	std::string printPath() const;
 #endif
@@ -227,6 +227,7 @@ private:
 	Bitboard attacksByPt[12];
 	//Bitboards of pieces pinned to king of given Color: bbPinned[0] contains white an black pieces "pinned" to white king
 	mutable Bitboard bbPinned[2] = { ALL_SQUARES, ALL_SQUARES };
+	mutable Bitboard bbPinner[2];
 	//indices needed to manage staged move generation
 	int moveIterationPointer;
 	int phaseStartIndex;
@@ -1005,21 +1006,6 @@ inline Bitboard position::AttacksByPieceType(Color color, PieceType pieceType) c
 	return attacksByPt[GetPiece(pieceType, color)];
 }
 
-template<Color COLOR_OF_KING> Bitboard position::PinnedPieces() const {
-	if (bbPinned[COLOR_OF_KING] != ALL_SQUARES) return bbPinned[COLOR_OF_KING];
-	bbPinned[COLOR_OF_KING] = EMPTY;
-	Square kingSquare = lsb(PieceBB(KING, COLOR_OF_KING));
-	Bitboard pinner = (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]) & SlidingAttacksRookTo[kingSquare];
-	pinner |= (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]) & SlidingAttacksBishopTo[kingSquare];
-	pinner &= OccupiedByColor[COLOR_OF_KING ^ 1];
-	Bitboard occ = OccupiedBB();
-	while (pinner)
-	{
-		Bitboard blocker = InBetweenFields[lsb(pinner)][kingSquare] & occ;
-		if (popcount(blocker) == 1) bbPinned[COLOR_OF_KING] |= blocker;
-		pinner &= pinner - 1;
-	}
-	return bbPinned[COLOR_OF_KING];
-}
+
 
 

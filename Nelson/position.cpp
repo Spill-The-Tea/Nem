@@ -46,6 +46,8 @@ void position::copy(const position &pos) {
 	this->lastAppliedMove = pos.lastAppliedMove;
 	this->bbPinned[Color::WHITE] = pos.bbPinned[Color::WHITE];
 	this->bbPinned[Color::BLACK] = pos.bbPinned[Color::BLACK];
+	this->bbPinner[Color::WHITE] = pos.bbPinner[Color::WHITE];
+	this->bbPinner[Color::BLACK] = pos.bbPinner[Color::BLACK];
 }
 
 int position::AppliedMovesBeforeRoot = 0;
@@ -543,7 +545,7 @@ Bitboard position::calculateAttacks(Color color) {
 }
 
 Bitboard position::checkBlocker(Color colorOfBlocker, Color kingColor) {
-	return kingColor == Color::WHITE ? PinnedPieces<WHITE>() & OccupiedByColor[colorOfBlocker] : PinnedPieces<BLACK>() & OccupiedByColor[colorOfBlocker];
+	return (PinnedPieces(kingColor) & OccupiedByColor[colorOfBlocker]);
 }
 
 //Calculates a bitboard of attackers to a given square, but filtering pieces by occupancy mask 
@@ -653,7 +655,7 @@ const Value position::SEE(Move move) const
 	gain[0] = PieceValues[GetPieceType(Board[toSquare])].mgScore;
 	Color side = GetColor(Board[fromSquare]);
 	Bitboard fromBB = ToBitboard(fromSquare);
-	Bitboard occ = OccupiedBB() & (~fromBB);
+	Bitboard occ = OccupiedBB() & (~fromBB) &(~ToBitboard(toSquare));
 
 	if (type(move) == ENPASSANT)
 	{
@@ -672,6 +674,11 @@ const Value position::SEE(Move move) const
 	// If there are no attackers we are done (we had a simple capture of a hanging piece)
 	side = Color(side ^1);
 	Bitboard attackers = attadef & OccupiedByColor[side];
+
+	//Consider pinned pieces
+	if ((attackers & PinnedPieces(side)) != EMPTY && (bbPinner[side] & occ) != EMPTY) 
+		attackers &= ~PinnedPieces(side);
+
 	if (!attackers) return gain[0];
 
 	PieceType capturingPiece = GetPieceType(Board[fromSquare]);
@@ -686,6 +693,9 @@ const Value position::SEE(Move move) const
 		capturingPiece = getAndResetLeastValuableAttacker(toSquare, attackers, occ, attadef, mayXRay);
 		side = Color(side ^ 1);
 		attackers = attadef & OccupiedByColor[side];
+		//Consider pinned pieces
+		if ((attackers & PinnedPieces(side)) != EMPTY && (bbPinner[side] & occ) != EMPTY)
+			attackers &= ~PinnedPieces(side);
 		++d;
 
 	} while (attackers && (capturingPiece != KING || (--d, false))); // Stop before a king capture
@@ -1146,7 +1156,7 @@ bool position::givesCheck(Move move)
 		break;
 	}
 	//now check for discovered check
-	Bitboard dc = SideToMove == Color::WHITE ? PinnedPieces<Color::BLACK>() : PinnedPieces<Color::WHITE>();
+	Bitboard dc = PinnedPieces(Color(SideToMove ^1));
 	if (moveType == MoveType::ENPASSANT) {
 		//in EP-captures 2 "from"-Moves have to be checked for discovered (from-square and square of captured pawn)
 		if ((ToBitboard(fromSquare) & dc) != EMPTY) { //capturing pawn was pinned
@@ -1336,4 +1346,23 @@ std::string position::printEvaluation() {
 	else {
 		return "Special Evaluation Function used!";
 	}
+}
+
+Bitboard position::PinnedPieces(Color colorOfKing) const {
+	if (bbPinned[colorOfKing] != ALL_SQUARES) return bbPinned[colorOfKing];
+	bbPinned[colorOfKing] = EMPTY;
+	bbPinner[colorOfKing] = EMPTY;
+	Square kingSquare = lsb(PieceBB(KING, colorOfKing));
+	Bitboard pinner = (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]) & SlidingAttacksRookTo[kingSquare];
+	pinner |= (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]) & SlidingAttacksBishopTo[kingSquare];
+	pinner &= OccupiedByColor[colorOfKing ^ 1];
+	Bitboard occ = OccupiedBB();
+	while (pinner)
+	{
+		Bitboard blocker = InBetweenFields[lsb(pinner)][kingSquare] & occ;
+		if (popcount(blocker) == 1) bbPinned[colorOfKing] |= blocker;
+		bbPinner[colorOfKing] |= isolateLSB(pinner);
+		pinner &= pinner - 1;
+	}
+	return bbPinned[colorOfKing];
 }

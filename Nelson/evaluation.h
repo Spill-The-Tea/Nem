@@ -26,6 +26,7 @@ public:
 Value evaluateDraw(const position& pos);
 Value evaluateFromScratch(const position& pos);
 template<Color WinningSide> Value evaluateKBPK(const position& pos);
+template<Color KBPSide> Value evaluateKBPKx(const position& pos);
 template <Color WinningSide> Value easyMate(const position& pos);
 template <Color WinningSide> Value evaluateKQKP(const position& pos);
 template <Color StrongerSide> Value evaluateKRKP(const position& pos);
@@ -141,13 +142,13 @@ template<Color WinningSide> Value evaluateKBPK(const position& pos) {
 					&& (ChebishevDistance(weakKing, conversionSquare) - (pos.GetSideToMove() != WinningSide) <= ChebishevDistance(strongKing, conversionSquare))) {
 					//Weak King is in pawn square and at least as near to the conversion square as the Strong King => search must solve it
 					if (WinningSide == WHITE) {
-						//Todo: heck if factors 10 and 5can't be replaced with 2 and 1
+						//Todo: check if factors 10 and 5 can't be replaced with 2 and 1
 						result = pos.GetMaterialScore()
 							+ Value(10 * (ChebishevDistance(weakKing, conversionSquare) - ChebishevDistance(strongKing, conversionSquare)))
 							+ Value(5 * (pawnSquare >> 3));
 					}
 					else {
-						//Todo: heck if factors 10 and 5can't be replaced with 2 and 1
+						//Todo: check if factors 10 and 5 can't be replaced with 2 and 1
 						result = pos.GetMaterialScore()
 							- Value(10 * (ChebishevDistance(weakKing, conversionSquare) - ChebishevDistance(strongKing, conversionSquare)))
 							- Value(5 * (7 - (pawnSquare >> 3)));
@@ -160,6 +161,22 @@ template<Color WinningSide> Value evaluateKBPK(const position& pos) {
 	result = WinningSide == WHITE ? VALUE_KNOWN_WIN + pos.GetMaterialScore() + Value(pawnSquare >> 3)
 		: pos.GetMaterialScore() - VALUE_KNOWN_WIN - Value(7 - (pawnSquare >> 3));
 	return result * (1 - 2 * pos.GetSideToMove());
+}
+
+template<Color KBPSide> Value evaluateKBPKx(const position& pos) {
+	Value result = evaluateDefault(pos);
+	//If Side with KBP is winning according to standard evaluation and pawn is on rook file, check if that's really the case	
+	if ((KBPSide == pos.GetSideToMove() && result <= evaluateDraw(pos)) || (KBPSide != pos.GetSideToMove() && result >= evaluateDraw(pos)) 
+		||((pos.PieceBB(PAWN, KBPSide) & (A_FILE | H_FILE)) == EMPTY)) return result;
+	//Now check if  bishop doesn't control conversion square but opposite king controls it => no win is possible
+	Square pawnSquare = lsb(pos.PieceBB(PAWN, KBPSide));
+	Square conversionSquare = KBPSide == WHITE ? Square(56 + (pawnSquare & 7)) : Square(pawnSquare & 7);
+	if (!oppositeColors(conversionSquare, lsb(pos.PieceBB(BISHOP, KBPSide)))) return result;
+	if (((KingAttacks[conversionSquare] | ToBitboard(conversionSquare)) & pos.PieceBB(KING, Color(KBPSide ^ 1))) != EMPTY) {
+		//KBPSide can't win
+		return evaluateDraw(pos);
+	}
+	return result;
 }
 
 const int PSQ_MateInCorner[64] = {
