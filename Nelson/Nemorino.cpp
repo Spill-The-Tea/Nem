@@ -16,8 +16,8 @@
 #include "tablebase.h"
 #endif
 
-const int MAJOR_VERSION = 0;
-const int MINOR_VERSION = 68;
+const int MAJOR_VERSION = 1;
+const int MINOR_VERSION = 0;
 
 
 static bool popcountSupport();

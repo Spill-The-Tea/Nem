@@ -266,6 +266,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 			rootMoves = new ValuatedMove[rootMoveCount];
 			std::copy(tbMoves.begin(), tbMoves.end(), rootMoves);
 			if (rootMoveCount == 1) {
+				rootMoves[0].score = score;
 				BestMove = rootMoves[0]; //if tablebase probe only returns one move => play it and done!
 				info(pos, 0, SearchResultType::TABLEBASE_MOVE);
 				utils::debugInfo("Tablebase move", toString(BestMove.move));

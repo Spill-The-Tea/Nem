@@ -20,7 +20,7 @@
 
 void UCIInterface::copySettings(baseSearch * source, baseSearch * destination) {
 	destination->UciOutput = source->UciOutput;
-	destination->BookFile = new std::string(*source->BookFile);
+	if (source->BookFile) destination->BookFile = new std::string(*source->BookFile);
 	destination->PonderMode.store(source->PonderMode.load());
 	destination->PrintCurrmove = source->PrintCurrmove;
 }
@@ -327,7 +327,7 @@ void UCIInterface::go(std::vector<std::string> &tokens) {
 			searchmoves = false;
 			mode = FIXED_TIME_PER_MOVE;
 		}
-		else if (!tokens[idx].compare(settings::OPTION_PONDER)) {
+		else if (!tokens[idx].compare("ponder")) {
 			ponderStartTime = tnow;
 			ponder = true;
 			searchmoves = false;

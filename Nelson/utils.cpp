@@ -53,7 +53,10 @@ namespace utils {
 	{
 		const uint64_t m = 0xc6a4a7935bd1e995;
 		const int r = 47;
+#pragma warning( push )
+#pragma warning( disable: 4307 )
 		uint64_t h = seed ^ (8 * m);
+#pragma warning( pop )
 		uint64_t k = input;
 
 		k *= m;
