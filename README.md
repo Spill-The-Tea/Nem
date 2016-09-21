@@ -21,7 +21,7 @@ Nemorino is a UCI chess engine.
 - BookFile:         Polyglot book file the engine shall use (default "book.bin"). Nemorino doesn't have an own book so far
 - OwnBook:          Use Polyglot book, specified by book file (default false)
 - SyzygyPath:       Path(es) to directories Syzygy tablebase files can be found. Seperate multiple directories by ';' on windows and by ':' on linux
-- SyzygyProbeDepth: Limits the depth where Syzygy tables are probed during the search (default 0).
+- UCI_Opponent:     With this command the GUI can send the name, title, elo and if the engine is playing a human or computer to the engine (see [UCI Specification](http://wbec-ridderkerk.nl/html/UCIProtocol.html))
 
 
 ### Installation ###
