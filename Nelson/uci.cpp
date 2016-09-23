@@ -95,6 +95,8 @@ void UCIInterface::dispatch(std::string line) {
 
 void UCIInterface::uci() {
 	Engine->UciOutput = true;
+	sync_cout << "id name Nemorino" << sync_endl;
+	sync_cout << "id author Christian Guenther" << sync_endl;
 	settings::options.printUCI();
 	sync_cout << "uciok" << sync_endl;
 }
