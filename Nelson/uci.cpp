@@ -164,6 +164,7 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 
 void UCIInterface::ucinewgame() {
 	initialized = true;
+	Engine->StopThinking();
 	Engine->NewGame();
 	if (settings::options.getBool(settings::OPTION_OWN_BOOK)) Engine->BookFile = new std::string(settings::options.getString(settings::OPTION_BOOK_FILE)); else Engine->BookFile = nullptr;
 }

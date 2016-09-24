@@ -195,7 +195,16 @@ inline uint64_t GetEPAttackersForToField(int to) { return EPAttackersForToField[
 
 #ifdef _MSC_VER
 #ifdef _WIN64
+#ifdef NO_POPCOUNT
+inline int popcount(Bitboard bb) {
+	bb -= (bb >> 1) & 0x5555555555555555ULL;
+	bb = ((bb >> 2) & 0x3333333333333333ULL) + (bb & 0x3333333333333333ULL);
+	bb = ((bb >> 4) + bb) & 0x0F0F0F0F0F0F0F0FULL;
+	return (bb * 0x0101010101010101ULL) >> 56;
+}
+#else
 inline int popcount(Bitboard bb) { return (int)_mm_popcnt_u64(bb); }
+#endif
 #else
 inline int popcount(Bitboard bb) {
 	bb -= (bb >> 1) & 0x5555555555555555ULL;

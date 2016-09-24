@@ -574,7 +574,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		&& ttEntry.depth() >= depth
 		&& ttValue != VALUE_NOTYETDETERMINED
 		&& ((ttEntry.type() == tt::EXACT) || (ttValue >= beta && ttEntry.type() == tt::LOWER_BOUND) || (ttValue <= alpha && ttEntry.type() == tt::UPPER_BOUND))) {
-		if (ttMove && pos.IsQuiet(ttMove)) updateCutoffStats(ttMove, depth, pos, -1);
+		if (ttMove && pos.IsQuiet(ttMove) && pos.validateMove(ttMove)) updateCutoffStats(ttMove, depth, pos, -1);
 		return SCORE_TT(ttValue);
 	}
 #ifdef TB

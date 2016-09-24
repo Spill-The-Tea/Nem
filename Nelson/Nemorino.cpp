@@ -17,16 +17,18 @@
 #endif
 
 const int MAJOR_VERSION = 1;
-const int MINOR_VERSION = 0;
+const int MINOR_VERSION = 1;
 
 
 static bool popcountSupport();
 
 int main(int argc, const char* argv[]) {
+#ifndef NO_POPCOUNT
 	if (!popcountSupport()) {
 		std::cout << "No Popcount support - Engine does't work on this hardware!" << std::endl;
 		return 0;
 	}
+#endif // !1
 	if (argc > 1 && argv[1]) {
 		std::string arg1(argv[1]);
 		if (!arg1.compare("bench")) {
@@ -55,7 +57,7 @@ int main(int argc, const char* argv[]) {
 			return 0;
 		}
 		else if (!input.compare(0, 7, "version")) {
-			std::cout << "Nemorino " << MAJOR_VERSION << "." << MINOR_VERSION << std::endl;
+			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << std::endl;
 		}
 		else if (!input.compare(0, 8, "position")) {
 			Initialize();
