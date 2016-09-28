@@ -29,7 +29,7 @@ Nemorino is a UCI chess engine.
 ### Installation ###
 Executables can be downloaded in the [Download section](https://bitbucket.org/christian_g_nther/nemorino/downloads)  
 Nemorino doesn't bring it's own UI. So for running it, you need a GUI supporting UCI (like [Arena](http://www.playwitharena.com/)).  
-The engine requires a CPU with POPCNT support and 64-bit Windows.
+The engine requires 64-bit Windows.
 
 ### Internals ###
 
