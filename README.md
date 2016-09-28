@@ -11,17 +11,19 @@ Nemorino is a UCI chess engine.
 * Multi PV analysis mode
 * CECP support (experimental - all testing is done using UCI)
 ##### UCI parameters: #####
-- UCI_Chess960:     If set to true engine will play according to Chess960 rules (default false)
-- Hash:             Size in MBytes used for the transposition table (default is 32. Nemorino will use additional memory for other fixed-size hash tables)
-- Clear Hash:       Will clear the transposition table
-- MultiPV:          Number of principal variations shown (default 1)
-- Threads:          Maximum number of threads (cores) used (default 1)
-- Ponder:           When set to true, engine will continue analysis while waiting for opponent's move (default false)
-- Contempt:         Score (in centipawns) for accepting draws. If Contempt > 0 then the engine will avoid draws (default 0)
-- BookFile:         Polyglot book file the engine shall use (default "book.bin"). Nemorino doesn't have an own book so far
-- OwnBook:          Use Polyglot book, specified by book file (default false)
-- SyzygyPath:       Path(es) to directories Syzygy tablebase files can be found. Seperate multiple directories by ';' on windows and by ':' on linux
-- UCI_Opponent:     With this command the GUI can send the name, title, elo and if the engine is playing a human or computer to the engine (see [UCI Specification](http://wbec-ridderkerk.nl/html/UCIProtocol.html))
+- **UCI_Chess960:**     If set to true engine will play according to Chess960 rules (default false)
+- **Hash:**             Size in MBytes used for the transposition table (default is 32. Nemorino will use additional memory for other fixed-size hash tables)
+- **Clear Hash:**       Will clear the transposition table
+- **MultiPV:**          Number of principal variations shown (default 1)
+- **Threads:**          Maximum number of threads (cores) used (default 1)
+- **Ponder:**           When set to true, engine will continue analysis while waiting for opponent's move (default false)
+- **Contempt:**         Score (in centipawns) for accepting draws. If Contempt > 0 then the engine will avoid draws (default 0)
+- **BookFile:**         Polyglot book file the engine shall use (default "book.bin"). Nemorino doesn't have an own book so far
+- **OwnBook:**          Use Polyglot book, specified by book file (default false)
+- **SyzygyPath:**       Path(es) to directories Syzygy tablebase files can be found. Seperate multiple directories by ';' on windows and by ':' on linux
+- **SyzygyProbeDepth:** Minimum search depth for probing Syzygy Bases. The lower the number, more tablebase lookups will be done, but search speed will decrease (default 8)
+- **MoveOverhead:**     Safety Time(in ms) needed to avoid time-losses (default 100)
+- **UCI_Opponent:**     With this command the GUI can send the name, title, elo and if the engine is playing a human or computer to the engine (see [UCI Specification](http://wbec-ridderkerk.nl/html/UCIProtocol.html))
 
 
 ### Installation ###
@@ -37,6 +39,19 @@ The engine requires a CPU with POPCNT support and 64-bit Windows.
 * Special evaluation functions for some endgames
 * Copy/Make
 * Syzygy Tablebases accessed via [Fathom](https://github.com/basil00/Fathom)
+
+### Version History ###
+
+**1.01:**
+
+*          Bugfix: rare crashes caused by hash collisions in transposition table
+*          Code changes for non-popcount compiles
+
+**1.02:**
+
+*          New Parameters: SyzygyProbeDepth and MoveOverhead
+*          Bugfix: Handling of EP-Squares in TB probing code
+
 
 ### License ###
 
