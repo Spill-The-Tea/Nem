@@ -545,6 +545,14 @@ namespace cecp {
 		else if (!name.compare(settings::OPTION_OWN_BOOK)) {
 			((settings::OptionCheck *)settings::options[settings::OPTION_OWN_BOOK])->set(!value.compare("1"));
 		}
+		else if (!name.compare(settings::OPTION_EMERGENCY_TIME)) {
+			EmergencyTime = stoi(value);
+		}
+#ifdef TB
+		else if (!name.compare(settings::OPTION_SYZYGY_PROBE_DEPTH)) {
+			settings::TBProbeDepth = stoi(value);
+		}
+#endif 
 	}
 
 	void xboard::clearPos() {

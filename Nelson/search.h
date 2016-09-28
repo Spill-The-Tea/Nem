@@ -581,7 +581,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 	// Tablebase probe
 	// Probing is only done if root position was no tablebase position (probeTB is true) and if drawPlyCount = 0 (in that case we get the necessary WDL information) to return
 	// immediately
-	if (false && probeTB && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry())
+	if (probeTB && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry() && depth >= settings::TBProbeDepth)
 	{
 		int found;
 		int v = Tablebases::probe_wdl(pos, &found);

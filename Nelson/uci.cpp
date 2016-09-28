@@ -148,6 +148,9 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 		pawn::clear();
 		Engine->Reset();
 	}
+	else if (!tokens[2].compare(settings::OPTION_EMERGENCY_TIME)) {
+		EmergencyTime = settings::options.getInt(settings::OPTION_EMERGENCY_TIME);
+	}
 #ifdef TB
 	else if (!tokens[2].compare(settings::OPTION_SYZYGY_PATH)) {
 		if (settings::options.getString(settings::OPTION_SYZYGY_PATH).size() > 1) {
@@ -158,6 +161,9 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 			}
 			InitializeMaterialTable();
 		}
+	}
+	else if (!tokens[2].compare(settings::OPTION_SYZYGY_PROBE_DEPTH)) {
+		settings::TBProbeDepth = settings::options.getInt(settings::OPTION_SYZYGY_PROBE_DEPTH);
 	}
 #endif
 }

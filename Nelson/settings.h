@@ -11,7 +11,7 @@ extern Value Contempt;        //Only accept draws, when evaluation is less then 
 extern Color EngineSide;      //Side played by the engine
 extern Protocol protocol;
 
-const int EmergencyTime = 100; //100 ms Emergency time
+extern int EmergencyTime; //100 ms Emergency time
 const int PV_MAX_LENGTH = 32; //Maximum Length of displayed Principal Variation
 const int MASK_TIME_CHECK = (1 << 14) - 1; //Time is only checked each MASK_TIME_CHECK nodes
 
@@ -164,9 +164,11 @@ namespace settings {
 	const std::string OPTION_BOOK_FILE = "BookFile";
 	const std::string OPTION_OWN_BOOK = "OwnBook";
 	const std::string OPTION_OPPONENT = "UCI_Opponent";
+	const std::string OPTION_EMERGENCY_TIME = "MoveOverhead";
 #ifdef TB
 	const std::string OPTION_SYZYGY_PATH = "SyzygyPath";
 	const std::string OPTION_SYZYGY_PROBE_DEPTH = "SyzygyProbeDepth";
+	extern int TBProbeDepth;
 #endif
 
 	extern const eval PSQT[12][64];

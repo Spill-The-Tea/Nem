@@ -21,7 +21,7 @@ namespace Tablebases {
 			pos.PieceTypeBB(PAWN),
 			pos.GetDrawPlyCount(),
 			pos.GetCastles(),
-			(unsigned int)pos.GetEPSquare(),
+			(unsigned int)(pos.GetEPSquare() & 63),
 			pos.GetSideToMove() == WHITE);
 		*success = int(result != TB_RESULT_FAILED);
 		return (int)result - 2;
@@ -58,7 +58,7 @@ namespace Tablebases {
 			pos.PieceTypeBB(PAWN),
 			pos.GetDrawPlyCount(),
 			pos.GetCastles(),
-			(unsigned int)pos.GetEPSquare(),
+			(unsigned int)(pos.GetEPSquare() & 63),
 			pos.GetSideToMove() == WHITE,
 			nullptr);
 		getResultMove(rootMoves, result);
@@ -78,7 +78,7 @@ namespace Tablebases {
 			pos.PieceTypeBB(PAWN),
 			pos.GetDrawPlyCount(),
 			pos.GetCastles(),
-			(unsigned int)pos.GetEPSquare(),
+			(unsigned int)(pos.GetEPSquare() & 63),
 			pos.GetSideToMove() == WHITE,
 			&moves[0]);
 		if (result == TB_RESULT_FAILED) return result;

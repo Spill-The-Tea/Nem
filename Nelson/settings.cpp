@@ -10,6 +10,7 @@ int HelperThreads = 0;
 Value Contempt = VALUE_ZERO;
 Color EngineSide = WHITE;
 Protocol protocol = NO_PROTOCOL;
+int EmergencyTime = 100;
 
 //Value PASSED_PAWN_BONUS[4] = { Value(10), Value(30), Value(60), Value(100) };
 //Value BETA_PRUNING_FACTOR = Value(200);
@@ -196,6 +197,10 @@ namespace settings {
 		return LMR_REDUCTION[std::min(depth, 63)][std::min(moveNumber, 63)];
 	}
 
+#ifdef TB
+	int TBProbeDepth = 8;
+#endif
+
 #ifdef TUNE
 	void processParameter(std::vector<std::string> parameters)
 	{
@@ -343,8 +348,10 @@ namespace settings {
 		(*this)[OPTION_BOOK_FILE] = (Option *)(new OptionString(OPTION_BOOK_FILE, "book.bin"));
 		(*this)[OPTION_OWN_BOOK] = (Option *)(new OptionCheck(OPTION_OWN_BOOK, false));
 		(*this)[OPTION_OPPONENT] = (Option *)(new OptionString(OPTION_OPPONENT));
+		(*this)[OPTION_EMERGENCY_TIME] = (Option *)(new OptionSpin(OPTION_EMERGENCY_TIME, 100, 0, 60000));
 #ifdef TB
 		(*this)[OPTION_SYZYGY_PATH] = (Option *)(new OptionString(OPTION_SYZYGY_PATH));
+		(*this)[OPTION_SYZYGY_PROBE_DEPTH] = (Option *)(new OptionSpin(OPTION_SYZYGY_PROBE_DEPTH, TBProbeDepth, 0, MAX_DEPTH+1));
 #endif 
 	}
 
