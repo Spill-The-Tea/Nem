@@ -3,6 +3,7 @@
 #include <thread>
 #include <mutex>
 #include <atomic>
+#include <ios>
 #include "types.h"
 #include "board.h"
 #include "settings.h"
@@ -181,6 +182,8 @@ namespace tt {
 				replace = &tte[i];
 		return found = false, replace;
 	}
+
+	bool dumpTT(std::ostream &stream);
 
 	void prefetch(uint64_t hash);
 

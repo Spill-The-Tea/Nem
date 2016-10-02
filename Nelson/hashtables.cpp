@@ -191,6 +191,19 @@ namespace tt {
 	uint64_t GetEntryCount() {
 		return GetClusterCount() * CLUSTER_SIZE;
 	}
+
+
+	bool dumpTT(std::ostream &stream) {
+		for (int i = 0; i <= MASK; ++i) {
+			Cluster * cluster = &Table[i];
+			for (int j = 0; j < CLUSTER_SIZE; ++j) {
+				if (cluster->entry[j].generation() == _generation) {
+					stream.write(reinterpret_cast<const char *>(&cluster->entry[j]), sizeof(Entry));
+				}
+			}
+		}
+		return true;
+	}
 }
 
 namespace killer {

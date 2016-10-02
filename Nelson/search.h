@@ -465,6 +465,10 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	pv[1] = MOVE_NONE; //pv[1] will be the ponder move, so we should make sure, that it is initialized as well
 	bool ZWS = false;  //ZWS: Zero Window Search
 	bool lmr = !pos.Checked() && depth >= 3;
+	bool ttFound;
+	tt::Entry ttEntry;
+	tt::Entry* ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
+	tt::NodeType nt = tt::NodeType::UPPER_BOUND;
 	//move loop
 	for (int i = startWithMove; i < rootMoveCount; ++i) {
 		if (T != SLAVE) {
@@ -529,14 +533,23 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 				for (int j = i; j > startWithMove; --j) rootMoves[j] = rootMoves[j - 1];
 				rootMoves[startWithMove] = bm;
 			}
-			if (score >= beta) return score;
+			if (score >= beta) {
+				//Update transposition table
+				if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::NodeType::LOWER_BOUND, depth, pv[0], VALUE_NOTYETDETERMINED);
+				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::NodeType::LOWER_BOUND, depth, pv[0], VALUE_NOTYETDETERMINED);
+				return score;
+			}
 			else if (score > alpha)
 			{
 				ZWS = true;
 				alpha = score;
+				nt = tt::NodeType::EXACT;
 			}
 		}
 	}
+	//Update transposition table
+	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nt, depth, pv[0], VALUE_NOTYETDETERMINED);
+	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nt, depth, pv[0], VALUE_NOTYETDETERMINED);
 	return bestScore;
 }
 
@@ -639,7 +652,7 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 #ifdef STAT_LMR
 			nullMoveCount++;
 #endif
-			Value nullscore = -Search<false>(-beta, -alpha, pos, depth - reduction, subpv, false, true);
+			Value nullscore = -Search<false>(-beta, -beta+1, pos, depth - reduction, subpv, false, true);
 			pos.NullMove(epsquare, lastApplied);
 			if (nullscore >= beta) {
 				if (nullscore >= VALUE_MATE_THRESHOLD) nullscore = beta;

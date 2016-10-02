@@ -157,6 +157,7 @@ bool position::ApplyMove(Move move) {
 		++DrawPlyCount;
 		break;
 	}
+	tt::prefetch(Hash); //for null move
 	SwitchSideToMove();
 	tt::prefetch(Hash);
 	movepointer = 0;
@@ -1209,7 +1210,6 @@ void position::NullMove(Square epsquare, Move lastApplied) {
 #endif
 	SwitchSideToMove();
 	SetEPSquare(epsquare);
-	tt::prefetch(GetHash());
 	lastAppliedMove = lastApplied;
 	Bitboard tmp = attackedByThem;
 	attackedByThem = attackedByUs;

@@ -79,8 +79,8 @@ void UCIInterface::dispatch(std::string line) {
 	else if (!command.compare("see")) {
 		see(tokens);
 	}
-	else if (!command.compare("testsee")) {
-		test::testSEE();
+	else if (!command.compare("dumpTT")) {
+		dumpTT(tokens);
 	}
 	//else if (!strcmp(token, "eval"))
 	//	cout << printEvaluation(pos);
@@ -432,4 +432,24 @@ void UCIInterface::quit() {
 	deleteThread();
 	//utils::logger::instance()->flush();
 	exit(EXIT_SUCCESS);
+}
+
+void UCIInterface::dumpTT(std::vector<std::string>& tokens)
+{
+	std::string filename;
+	if (tokens.size() < 2) {
+		filename = "dumpTT.dat";
+	}
+	else filename = tokens[1];
+	std::ofstream of;
+	of.open(filename, std::ios::binary | std::ios::out);
+	std::string fen = _position->fen();
+	size_t len = fen.length();
+	char * fena = new char[96];
+	for (size_t i = len; i < 96; ++i) fena[i] = 0x00;
+	fena[95] = popcount(tt::GetClusterCount() - 1);
+	strcpy(fena, fen.c_str());
+	of.write(fena, 96);
+	tt::dumpTT(of);
+	of.close();
 }

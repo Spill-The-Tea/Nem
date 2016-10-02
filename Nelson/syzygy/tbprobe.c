@@ -68,7 +68,7 @@
 #define BEST_NONE               0xFFFF
 #define SCORE_ILLEGAL           0x7FFF
 
-#ifndef TB_NO_HW_POP_COUNT
+#ifndef NO_POPCOUNT
 #ifdef TB_CUSTOM_POP_COUNT
 #define popcount(x) TB_CUSTOM_POP_COUNT(x)
 #else
