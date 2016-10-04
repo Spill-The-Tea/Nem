@@ -116,10 +116,8 @@ void InitializeMaterialTable() {
 													MaterialTable[key].Flags |= MSF_TABLEBASE_ENTRY;
 											}
 #endif
-#ifdef _DEBUG
 											assert(nWQ == (MaterialTable[key].GetMostExpensivePiece(WHITE) == QUEEN));
 											assert(nBQ == (MaterialTable[key].GetMostExpensivePiece(BLACK) == QUEEN));
-#endif
 											}
 										}
 									}

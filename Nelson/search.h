@@ -172,7 +172,7 @@ public:
 
 private:
 	//Main recursive search method
-	template<bool PVNode> Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true, bool nullMove = false, Move excludeMove = MOVE_NONE);
+	Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true, Move excludeMove = MOVE_NONE);
 	//At root level there is a different search method (as there is some special logic requested)
 	Value SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove = 0);
 	//Quiescence Search (different implementations for positions in check and not in check)
@@ -499,26 +499,26 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 #ifdef STAT_LMR
 			lmrCount += reduction > 0;
 #endif
-			score = bonus - Search<false>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+			score = bonus - Search(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, subpv);
 			if (score > alpha && score < beta) {
 #ifdef STAT_LMR
 				failedLmrCount += reduction > 0;
 #endif
 				//Research without reduction and with full alpha-beta window
-				score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+				score = bonus - Search(bonus - beta, bonus - alpha, next, depth - 1, subpv);
 			}
 		}
 		else {
 #ifdef STAT_LMR
 			lmrCount += reduction > 0;
 #endif
-			score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1 - reduction, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+			score = bonus - Search(bonus - beta, bonus - alpha, next, depth - 1 - reduction, subpv);
 			if (reduction > 0 && score > alpha && score < beta) {
 #ifdef STAT_LMR
 				failedLmrCount++;
 #endif
 				//Research without reduction
-				score = bonus - Search<true>(bonus - beta, bonus - alpha, next, depth - 1, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+				score = bonus - Search(bonus - beta, bonus - alpha, next, depth - 1, subpv);
 			}
 		}
 		if (Stopped()) break;
@@ -554,7 +554,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 }
 
 //This is the main alpha-beta search routine
-template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune, bool nullMove, Move excludeMove) {
+template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune, Move excludeMove) {
 	if (depth > 0) {
 		++NodeCount;
 	}
@@ -610,12 +610,14 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 		}
 	}
 #endif
+	bool PVNode = (beta > alpha + 1);
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
 		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + BONUS_TEMPO;
-	if (!nullMove && prune && !checked) {
+	prune = prune && (pos.GetLastAppliedMove() != MOVE_NONE) && (!pos.GetMaterialTableEntry()->SkipPruning());
+	if (pos.GetLastAppliedMove() != MOVE_NONE && prune && !checked) {
 		//Check if Value from TT is better
 		Value effectiveEvaluation = staticEvaluation;
 		if (ttFound &&
@@ -652,13 +654,13 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 #ifdef STAT_LMR
 			nullMoveCount++;
 #endif
-			Value nullscore = -Search<false>(-beta, -beta+1, pos, depth - reduction, subpv, false, true);
+			Value nullscore = -Search(-beta, -beta+1, pos, depth - reduction, subpv);
 			pos.NullMove(epsquare, lastApplied);
 			if (nullscore >= beta) {
 				if (nullscore >= VALUE_MATE_THRESHOLD) nullscore = beta;
 				if (depth < 9 && beta < VALUE_KNOWN_WIN) return SCORE_NMP(nullscore);
 				// Do verification search at high depths
-				Value verificationScore = Search<false>(beta - 1, beta, pos, depth - reduction, subpv, false);
+				Value verificationScore = Search(beta - 1, beta, pos, depth - reduction, subpv, false);
 				if (verificationScore >= beta) return SCORE_NMP(nullscore);
 			}
 #ifdef STAT_LMR
@@ -684,28 +686,27 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 			while ((move = cpos.NextMove())) {
 				position next(cpos);
 				if (next.ApplyMove(move)) {
-					Value score = -Search<false>(-rbeta, Value(-rbeta + 1), next, rdepth, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+					Value score = -Search(-rbeta, Value(-rbeta + 1), next, rdepth, subpv);
 					if (score >= rbeta)
 						return SCORE_PC(score);
 				}
 			}
 		}
 	}
-	//IID: No Hash move available => Try to find one with a reduced search
+	//Internal Iterative Deepening - this is a mystery as this code is clearly buggy, but fixing it lost Elo
+	//The if condition is missing brackets, so it should logically be if there is no ttMove and depending on PVNode or not depth is greater 3 or 6
 	if (!ttMove && PVNode ? depth >= 4 : depth > 6) {
 		position next(pos);
 		next.copy(pos);
-		//As there is no Hash move available, let's do a reduced search to get one
-		//Logically pruning and null move should be skipped here, as we are looking for a move and not for a cutoff,
-		//but at short time control there was no improvement and at longer time controls the engine played worse (Don't know why) without pruning and null-move
-		Search<PVNode>(alpha, beta, next, PVNode ? depth - 2 : depth / 2, subpv, true);
+		//If there is no hash move, we are looking for a move => therefore search should be called with prune = false, but prune = true improves strength
+		Search(alpha, beta, next, PVNode ? depth - 2 : depth / 2, subpv, true);
 		if (Stopped()) return VALUE_ZERO;
 		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	}
 	Move counter = pos.GetCounterMove(counterMove);
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
-	bool futilityPruning = !nullMove && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
+	bool futilityPruning = pos.GetLastAppliedMove() != MOVE_NONE && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
 	if (futilityPruning && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, &followupHistory, nullptr, counter, ttMove);
 	else
@@ -776,18 +777,18 @@ template<ThreadType T> template<bool PVNode> Value search<T>::Search(Value alpha
 #endif
 			}
 			if (ZWS) {
-				score = -Search<false>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+				score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, subpv);
 				if (score > alpha && score < beta) {
-					score = -Search<PVNode>(-beta, -alpha, next, depth - 1 + extension, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+					score = -Search(-beta, -alpha, next, depth - 1 + extension, subpv);
 #ifdef STAT_LMR
 					failedLmrCount += reduction > 0;
 #endif
 				}
 			}
 			else {
-				score = -Search<PVNode>(-beta, -alpha, next, depth - 1 - reduction + extension, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+				score = -Search(-beta, -alpha, next, depth - 1 - reduction + extension, subpv);
 				if (score > alpha && reduction > 0) {
-					score = -Search<PVNode>(-beta, -alpha, next, depth - 1 + extension, subpv, !next.GetMaterialTableEntry()->SkipPruning());
+					score = -Search(-beta, -alpha, next, depth - 1 + extension, subpv);
 #ifdef STAT_LMR
 					failedLmrCount++;
 #endif

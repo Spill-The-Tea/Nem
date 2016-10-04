@@ -148,41 +148,7 @@ namespace settings {
 		}
 	};
 
-	void initPSQT()
-	{
-#ifdef _DEBUG
-		//std::stringstream ssc;
-		//ssc << "{ " << std::endl;
-		//for (int pt = int(WQUEEN); pt <= int(BKING); ++pt) {
-		//	ssc << "\t{  // Piece Type " << pt << std::endl;
-		//	for (int rank = 0; rank < 8; ++rank) {
-		//		ssc << "\t\t";
-		//		for (int file = 0; file < 8; ++file) {
-		//			ssc << " eval(" << PSQT[pt][8 * rank + file].mgScore << "," << PSQT[pt][8 * rank + file].egScore << ")";
-		//			if (file < 7) ssc << ",";
-		//		}
-		//		if (rank < 7) ssc << ",";
-		//		ssc << "  // Rank " << rank + 1 << std::endl;
-		//	}
-		//	if (pt < int(BKING)) ssc << "\t}," << std::endl; else ssc << "\t}" << std::endl;
-		//}
-		//ssc << "};" << std::endl;
-		//std::cout << ssc.str() << std::endl;
-		//std::stringstream ssx;
-		//ssx << "PieceType;Rank;File;MGScore;EGScore" << std::endl;
-		//for (int pt = int(QUEEN); pt <= int(KING); ++pt) {
-		//	for (int rank = 0; rank < 8; ++rank) {
-		//		for (int file = 0; file < 8; ++file) {
-		//			ssx << pt << ";" << rank << ";" << file << ";" << PSQT[2 * pt][8 * rank + file].mgScore << ";" << PSQT[2 * pt][8 * rank + file].egScore << std::endl;
-		//		}
-		//	}
-		//}
-		//std::cout << ssx.str() << std::endl;
-#endif
-	}
-
 	void Initialize() {
-		initPSQT();
 		for (int depth = 0; depth < 64; depth++) {
 			for (int moves = 0; moves < 64; moves++) {
 				double reduction = std::log(moves) * std::log(depth) / 2; //F

@@ -172,7 +172,6 @@ namespace settings {
 #endif
 
 	extern const eval PSQT[12][64];
-	void initPSQT();
 
 	class Option {
 	public:
