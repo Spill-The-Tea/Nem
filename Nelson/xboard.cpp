@@ -579,7 +579,7 @@ namespace cecp {
 
 	Move xboard::parseMoveInXBoardNotation(const std::string& xboardMove, const position& pos) {
 		if (!Chess960 || xboardMove[0] != 'O') return parseMoveInUCINotation(xboardMove, pos);
-		Square kingSquare = lsb(pos.PieceBB(KING, pos.GetSideToMove()));
+		Square kingSquare = pos.KingSquare(pos.GetSideToMove());
 		if (!xboardMove.compare("O-O")) {
 			return createMove<CASTLING>(kingSquare, InitialRookSquare[2 * pos.GetSideToMove()]);
 		}

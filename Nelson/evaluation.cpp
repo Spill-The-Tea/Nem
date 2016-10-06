@@ -45,8 +45,8 @@ Value evaluateDraw(const position& pos) {
 eval evaluateKingSafety(const position& pos) {
 	eval result;
 	//Areas around the king
-	Bitboard kingRingWhite = pos.PieceBB(KING, WHITE) | KingAttacks[lsb(pos.PieceBB(KING, WHITE))];
-	Bitboard kingRingBlack = pos.PieceBB(KING, BLACK) | KingAttacks[lsb(pos.PieceBB(KING, BLACK))];
+	Bitboard kingRingWhite = pos.PieceBB(KING, WHITE) | KingAttacks[pos.KingSquare(WHITE)];
+	Bitboard kingRingBlack = pos.PieceBB(KING, BLACK) | KingAttacks[pos.KingSquare(BLACK)];
 	Bitboard kingZoneWhite = kingRingWhite | (kingRingWhite << 8);
 	Bitboard kingZoneBlack = kingRingBlack | (kingRingBlack >> 8);
 	int attackUnits = 0;
@@ -238,7 +238,7 @@ Value evaluatePawnEnding(const position& pos) {
 			Square passedPawnSquare = lsb(wpassed);
 			Square convSquare = ConversionSquare<WHITE>(passedPawnSquare);
 			int distToConv = std::min(7 - (passedPawnSquare >> 3), 5);
-			if (distToConv < (ChebishevDistance(lsb(pos.PieceBB(KING, BLACK)), convSquare) - (pos.GetSideToMove() == BLACK))) {
+			if (distToConv < (ChebishevDistance(pos.KingSquare(BLACK), convSquare) - (pos.GetSideToMove() == BLACK))) {
 				unstoppable += Value(PieceValues[QUEEN].egScore - ((distToConv + 1 + (pos.GetSideToMove() == BLACK)) * PieceValues[PAWN].egScore));
 			}
 			wpassed &= wpassed - 1;
@@ -248,7 +248,7 @@ Value evaluatePawnEnding(const position& pos) {
 			Square passedPawnSquare = lsb(bpassed);
 			Square convSquare = ConversionSquare<BLACK>(passedPawnSquare);
 			int distToConv = std::min((passedPawnSquare >> 3), 5);
-			if (distToConv < (ChebishevDistance(lsb(pos.PieceBB(KING, WHITE)), convSquare) - (pos.GetSideToMove() == WHITE))) {
+			if (distToConv < (ChebishevDistance(pos.KingSquare(WHITE), convSquare) - (pos.GetSideToMove() == WHITE))) {
 				unstoppable -= Value(PieceValues[QUEEN].egScore - ((distToConv + 1 + (pos.GetSideToMove() == WHITE)) * PieceValues[PAWN].egScore));
 			}
 			bpassed &= bpassed - 1;

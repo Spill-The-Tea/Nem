@@ -96,6 +96,7 @@ bool position::ApplyMove(Move move) {
 			else MaterialKey -= materialKeyFactors[capturedInLastMove];
 			material = &MaterialTable[MaterialKey];
 		}
+		if (kingSquares[SideToMove] == fromSquare) kingSquares[SideToMove] = toSquare;
 		break;
 	case ENPASSANT:
 		set<true>(moving, toSquare);
@@ -155,8 +156,11 @@ bool position::ApplyMove(Move move) {
 		RemoveCastlingOption(CastleFlag(W0_0_0 << (2 * SideToMove)));
 		SetEPSquare(OUTSIDE);
 		++DrawPlyCount;
+		kingSquares[SideToMove] = toSquare;
 		break;
 	}
+	assert(kingSquares[WHITE] = lsb(PieceBB(KING, WHITE)));
+	assert(kingSquares[BLACK] = lsb(PieceBB(KING, BLACK)));
 	tt::prefetch(Hash); //for null move
 	SwitchSideToMove();
 	tt::prefetch(Hash);
@@ -530,7 +534,7 @@ Bitboard position::calculateAttacks(Color color) {
 		attacksByPt[GetPiece(KNIGHT, color)] |= attacks[sq];
 		knights &= knights - 1;
 	}
-	Square kingSquare = lsb(PieceBB(KING, color));
+	Square kingSquare = kingSquares[color];
 	attacks[kingSquare] = KingAttacks[kingSquare];
 	attacksByPt[GetPiece(KING, color)] = attacks[kingSquare];
 	attacksByPt[GetPiece(PAWN, color)] = 0ull;
@@ -737,6 +741,9 @@ void position::setFromFEN(const std::string& fen) {
 		}
 	}
 
+	kingSquares[WHITE] = lsb(PieceBB(KING, WHITE));
+	kingSquares[BLACK] = lsb(PieceBB(KING, BLACK));
+
 	//Side to Move
 	ss >> token;
 	if (token != 'w') SwitchSideToMove();
@@ -795,7 +802,7 @@ void position::setFromFEN(const std::string& fen) {
 		else if (token == '-') continue;
 		else {
 			if (token >= 'A' && token <= 'H') {
-				File kingFile = File(lsb(PieceBB(KING, WHITE)) & 7);
+				File kingFile = File(kingSquares[WHITE] & 7);
 				InitialKingSquareBB[WHITE] = PieceBB(KING, WHITE);
 				InitialKingSquare[WHITE] = lsb(InitialKingSquareBB[WHITE]);
 				File rookFile = File((int)token - (int)'A');
@@ -809,7 +816,7 @@ void position::setFromFEN(const std::string& fen) {
 				}
 			}
 			else if (token >= 'a' && token <= 'h') {
-				File kingFile = File(lsb(PieceBB(KING, BLACK)) & 7);
+				File kingFile = File(kingSquares[BLACK] & 7);
 				InitialKingSquareBB[BLACK] = PieceBB(KING, BLACK);
 				InitialKingSquare[BLACK] = lsb(InitialKingSquareBB[BLACK]);
 				File rookFile = File((int)token - (int)'a');
@@ -1123,7 +1130,7 @@ bool position::givesCheck(Move move)
 {
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
-	Square kingSquare = lsb(PieceBB(KING, Color(SideToMove ^ 1)));
+	Square kingSquare = kingSquares[SideToMove ^ 1];
 	MoveType moveType = type(move);
 	PieceType pieceType;
 	if (moveType == MoveType::NORMAL)
@@ -1352,7 +1359,7 @@ Bitboard position::PinnedPieces(Color colorOfKing) const {
 	if (bbPinned[colorOfKing] != ALL_SQUARES) return bbPinned[colorOfKing];
 	bbPinned[colorOfKing] = EMPTY;
 	bbPinner[colorOfKing] = EMPTY;
-	Square kingSquare = lsb(PieceBB(KING, colorOfKing));
+	Square kingSquare = kingSquares[colorOfKing];
 	Bitboard pinner = (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]) & SlidingAttacksRookTo[kingSquare];
 	pinner |= (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]) & SlidingAttacksBishopTo[kingSquare];
 	pinner &= OccupiedByColor[colorOfKing ^ 1];

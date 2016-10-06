@@ -182,6 +182,7 @@ public:
 	bool givesCheck(Move move);
 	//Get Pinned Pieces
 	Bitboard PinnedPieces(Color colorOfKing) const;
+	inline Square KingSquare(Color color) const { return kingSquares[color]; }
 #ifdef TRACE
 	std::string printPath() const;
 #endif
@@ -204,6 +205,8 @@ private:
 	int pliesFromRoot;
 	Piece Board[64];
 	eval PsqEval;
+	//King Squares
+	Square kingSquares[2];
 
 	//Pointer to the previous position
 	position * previous = nullptr;
@@ -228,6 +231,7 @@ private:
 	//Bitboards of pieces pinned to king of given Color: bbPinned[0] contains white an black pieces "pinned" to white king
 	mutable Bitboard bbPinned[2] = { ALL_SQUARES, ALL_SQUARES };
 	mutable Bitboard bbPinner[2];
+
 	//indices needed to manage staged move generation
 	int moveIterationPointer;
 	int phaseStartIndex;
@@ -376,7 +380,7 @@ template<bool CHECKED> bool position::CheckValidMoveExists() {
 	assert(attackedByThem); //should have been already calculated
 	//Start with king (Castling need not be considered - as there is always another legal move available with castling
 	//In Chess960 this might be different)
-	Square kingSquare = lsb(PieceBB(KING, SideToMove));
+	Square kingSquare = kingSquares[SideToMove];
 	Bitboard kingTargets = KingAttacks[kingSquare] & ~OccupiedByColor[SideToMove] & ~attackedByThem;
 	if (CHECKED && kingTargets) {
 		if (popcount(kingTargets) > 2) return true; //unfortunately 8/5p2/5kp1/8/4p3/R4n2/1r3K2/4q3 w - - shows that king itself can even block 2 sliders
@@ -495,7 +499,7 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 	ValuatedMove * result = &moves[movepointer];
 	//There are 2 options to give check: Either give check with the moving piece, or a discovered check by
 	//moving a check blocking piece
-	Square opposedKingSquare = lsb(PieceBB(KING, Color(SideToMove ^ 1)));
+	Square opposedKingSquare = kingSquares[SideToMove ^ 1];
 	//1. Discovered Checks
 	Bitboard discoveredCheckCandidates = checkBlocker(SideToMove, Color(SideToMove ^ 1));
 	Bitboard targets = ~OccupiedBB();
@@ -522,7 +526,7 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 		knights &= knights - 1;
 	}
 	//1c Kings
-	Square kingSquare = lsb(PieceBB(KING, SideToMove));
+	Square kingSquare = kingSquares[SideToMove];
 	if (discoveredCheckCandidates & PieceBB(KING, SideToMove)) {
 		Bitboard kingTargets = KingAttacks[kingSquare] & ~attackedByThem & targets & (~InBetweenFields[opposedKingSquare][kingSquare] & ~ShadowedFields[opposedKingSquare][kingSquare]);
 		while (kingTargets) {
@@ -655,7 +659,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 	//Rooksliders
 	Bitboard targets;
 	if (MGT == ALL || MGT == TACTICAL || MGT == QUIETS || MGT == CHECK_EVASION) {
-		Square kingSquare = lsb(PieceBB(KING, SideToMove));
+		Square kingSquare = kingSquares[SideToMove];
 		Bitboard checkBlocker = 0;
 		bool doubleCheck = false;
 		if (MGT == CHECK_EVASION) {
@@ -964,7 +968,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 				promotionTarget &= promotionTarget - 1;
 			}
 			//King Captures are always winning as kings can only capture uncovered pieces
-			Square kingSquare = lsb(PieceBB(KING, SideToMove));
+			Square kingSquare = kingSquares[SideToMove];
 			Bitboard kingTargets = KingAttacks[kingSquare] & ColorBB(SideToMove ^ 1) & ~attackedByThem;
 			while (kingTargets) {
 				AddMove(createMove(kingSquare, lsb(kingTargets)));

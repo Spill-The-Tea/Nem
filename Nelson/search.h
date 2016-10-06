@@ -654,7 +654,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 #ifdef STAT_LMR
 			nullMoveCount++;
 #endif
-			Value nullscore = -Search(-beta, -beta+1, pos, depth - reduction, subpv);
+			Value nullscore = -Search(-beta, -beta + 1, pos, depth - reduction, subpv);
 			pos.NullMove(epsquare, lastApplied);
 			if (nullscore >= beta) {
 				if (nullscore >= VALUE_MATE_THRESHOLD) nullscore = beta;
@@ -729,7 +729,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 		//	continue;
 		//}
 		bool prunable = !PVNode && depth <= 3 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
-			 && !killerManager.isKiller(pos, move) && pos.IsQuietAndNoCastles(move) && !pos.givesCheck(move);
+			&& !killerManager.isKiller(pos, move) && pos.IsQuietAndNoCastles(move) && !pos.givesCheck(move);
 		if (prunable) {
 			//assert(type(move) == MoveType::NORMAL && pos.GetPieceOnSquare(to(move)) == Piece::BLANK);
 			// late-move pruning II
@@ -832,18 +832,17 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 #ifdef TRACE
 	size_t traceIndex = utils::addTraceEntry(NodeCount, pos.printPath(), depth, pos.GetHash());
 #endif
+	MaxDepth = std::max(MaxDepth, pos.GetPliesFromRoot());
+	if (T == MASTER) {
+		if (!Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop.store(true);
+	}
+	if (Stopped()) return VALUE_ZERO;
+	if (pos.GetResult() != OPEN)  return SCORE_FINAL(pos.evaluateFinalPosition());
 	//Mate distance pruning
 	alpha = Value(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), int(alpha)));
 	beta = Value(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, int(beta)));
 	if (alpha >= beta) return SCORE_MDP(alpha);
-	if (!WithChecks) {
-		MaxDepth = std::max(MaxDepth, pos.GetPliesFromRoot());
-		if (T == MASTER) {
-			if (!Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop.store(true);
-		}
-		if (Stopped()) return VALUE_ZERO;
-		if (pos.GetResult() != OPEN)  return SCORE_FINAL(pos.evaluateFinalPosition());
-	}
+	Move ttMove = MOVE_NONE;
 #ifndef TUNE
 	//TT lookup
 	tt::Entry ttEntry;
@@ -857,6 +856,7 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		&& ((ttEntry.type() == tt::EXACT) || (ttValue >= beta && ttEntry.type() == tt::LOWER_BOUND) || (ttValue <= alpha && ttEntry.type() == tt::UPPER_BOUND))) {
 		return SCORE_TT(ttValue);
 	}
+	if (ttFound && ttEntry.move()) ttMove = ttEntry.move();
 #endif
 	bool checked = pos.Checked();
 	int ttDepth = WithChecks || checked ? 0 : -1;
@@ -884,8 +884,8 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 		}
 		if (alpha < standPat) alpha = standPat;
 	}
-	if (WithChecks) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, &followupHistory, nullptr, MOVE_NONE);
-	else pos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, &followupHistory, nullptr, MOVE_NONE);
+	if (WithChecks) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, &followupHistory, nullptr, MOVE_NONE, ttMove);
+	else pos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, &followupHistory, nullptr, MOVE_NONE, ttMove);
 	Move move;
 	Value score;
 	tt::NodeType nt = tt::UPPER_BOUND;
@@ -956,7 +956,7 @@ template<ThreadType T> void search<T>::updateCutoffStats(const Move cutoffMove, 
 				History.update(-v, movingPiece, alreadyProcessedMove);
 				if (pos.GetLastAppliedMove() != MOVE_NONE)
 					cmHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
-				if (prev2To != Square::OUTSIDE) 
+				if (prev2To != Square::OUTSIDE)
 					followupHistory.update(-v, prev2Piece, prev2To, movingPiece, toSquare);
 				//if (ownPrevTo != OUTSIDE) {
 				//	cmHistory.update(-v, ownPrevPiece, ownPrevTo, movingPiece, toSquare);
@@ -977,6 +977,6 @@ inline Value search<T>::qscore(position * pos)
 {
 	if (pos->Checked())
 		return QSearch<true>(-VALUE_MATE, VALUE_MATE, *pos, 0);
-	else 
+	else
 		return QSearch<false>(-VALUE_MATE, VALUE_MATE, *pos, 0);
 }

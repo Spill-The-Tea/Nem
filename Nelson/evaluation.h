@@ -61,13 +61,13 @@ template <Color WinningSide> Value easyMate(const position& pos) {
 	Value result = pos.GetMaterialScore();
 	if (WinningSide == WHITE) {
 		result += VALUE_KNOWN_WIN;
-		result += Value(PSQ_GoForMate[lsb(pos.PieceBB(KING, BLACK))]);
-		result += Value(BonusDistance[ChebishevDistance(lsb(pos.PieceBB(KING, BLACK)), lsb(pos.PieceBB(KING, WHITE)))]);
+		result += Value(PSQ_GoForMate[pos.KingSquare(BLACK)]);
+		result += Value(BonusDistance[ChebishevDistance(pos.KingSquare(BLACK), pos.KingSquare(WHITE))]);
 	}
 	else {
 		result -= VALUE_KNOWN_WIN;
-		result -= Value(PSQ_GoForMate[lsb(pos.PieceBB(KING, WHITE))]);
-		result -= Value(BonusDistance[ChebishevDistance(lsb(pos.PieceBB(KING, BLACK)), lsb(pos.PieceBB(KING, WHITE)))]);
+		result -= Value(PSQ_GoForMate[pos.KingSquare(WHITE)]);
+		result -= Value(BonusDistance[ChebishevDistance(pos.KingSquare(BLACK), pos.KingSquare(WHITE))]);
 	}
 
 	return result * (1 - 2 * pos.GetSideToMove());
@@ -81,7 +81,7 @@ template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 	//First check if it's a "clear" win
 	Bitboard pawnBB = pos.PieceBB(PAWN, Color(WinningSide ^ 1));
 	Square pawnSq = lsb(pawnBB);
-	Square winningKingSquare = lsb(pos.PieceBB(KING, WinningSide));
+	Square winningKingSquare = pos.KingSquare(WinningSide);
 	int relativeRank = pawnSq >> 3;
 	if (WinningSide == WHITE) relativeRank = 7 - relativeRank;
 	if ((pawnBB & (A_FILE | C_FILE | F_FILE | H_FILE)) == 0)
@@ -96,7 +96,7 @@ template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 			Color stm;
 			if (WinningSide == WHITE) {
 				wKingSquare = winningKingSquare;
-				bKingSquare = lsb(pos.PieceBB(KING, BLACK));
+				bKingSquare = pos.KingSquare(BLACK);
 				wQueenSquare = lsb(pos.PieceBB(QUEEN, WHITE));
 				stm = pos.GetSideToMove();
 			}
@@ -104,7 +104,7 @@ template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 				//flip colors
 				pawnSq = Square(pawnSq ^ 56);
 				wKingSquare = Square(winningKingSquare ^ 56);
-				bKingSquare = Square(lsb(pos.PieceBB(KING, WHITE)) ^ 56);
+				bKingSquare = Square(pos.KingSquare(WHITE) ^ 56);
 				wQueenSquare = Square(lsb(pos.PieceBB(QUEEN, BLACK)) ^ 56);
 				stm = Color(pos.GetSideToMove() ^ 1);
 			}
@@ -135,8 +135,8 @@ template<Color WinningSide> Value evaluateKBPK(const position& pos) {
 			Bitboard conversionSquareControl = KingAttacks[conversionSquare] | (ToBitboard(conversionSquare));
 			if (pos.PieceBB(KING, Color(WinningSide ^ 1)) & conversionSquareControl) return evaluateDraw(pos);
 			if ((pos.PieceBB(KING, WinningSide) & conversionSquareControl) == 0) { //Strong king doesn't control conversion square
-				Square weakKing = lsb(pos.PieceBB(KING, Color(WinningSide ^ 1)));
-				Square strongKing = lsb(pos.PieceBB(KING, WinningSide));
+				Square weakKing = pos.KingSquare(Color(WinningSide ^ 1));
+				Square strongKing = pos.KingSquare(WinningSide);
 				Bitboard bbRank2 = WinningSide == WHITE ? RANK2 : RANK7;
 				if ((ChebishevDistance(weakKing, conversionSquare) + (pos.GetSideToMove() != WinningSide) <= ChebishevDistance(pawnSquare, conversionSquare) - ((bbPawn & bbRank2) != 0)) //King is in Pawnsquare
 					&& (ChebishevDistance(weakKing, conversionSquare) - (pos.GetSideToMove() != WinningSide) <= ChebishevDistance(strongKing, conversionSquare))) {
@@ -191,8 +191,8 @@ const int PSQ_MateInCorner[64] = {
 };
 
 template <Color WinningSide> Value evaluateKNBK(const position& pos) {
-	Square winnerKingSquare = lsb(pos.PieceBB(KING, WinningSide));
-	Square loosingKingSquare = lsb(pos.PieceBB(KING, Color(WinningSide ^ 1)));
+	Square winnerKingSquare = pos.KingSquare(WinningSide);
+	Square loosingKingSquare = pos.KingSquare(Color(WinningSide ^ 1));
 
 	if ((DARKSQUARES & pos.PieceBB(BISHOP, WinningSide)) == 0) {
 		//transpose KingSquares
@@ -331,7 +331,7 @@ template <Color StrongerSide> Value evaluateKRKP(const position& pos) {
 	Value result;
 	//if the stronger King is in the front of the pawn it's a win
 	Square pawnSquare = lsb(pos.PieceTypeBB(PAWN));
-	Square strongerKingSquare = lsb(pos.PieceBB(KING, StrongerSide));
+	Square strongerKingSquare = pos.KingSquare(StrongerSide);
 	int dtc = StrongerSide == WHITE ? pawnSquare >> 3 : 7 - (pawnSquare >> 3);
 	Bitboard pfront = StrongerSide == WHITE ? FrontFillSouth(pos.PieceTypeBB(PAWN)) : FrontFillNorth(pos.PieceTypeBB(PAWN));
 	if (pfront & pos.PieceBB(KING, StrongerSide)) {
@@ -343,7 +343,7 @@ template <Color StrongerSide> Value evaluateKRKP(const position& pos) {
 	if (StrongerSide == WHITE && pawnRank == 6) pawnSquare = Square(pawnSquare - 8);
 	else if (StrongerSide == BLACK && pawnRank == 1) pawnSquare = Square(pawnSquare + 8);
 	//if the weaker king is far away from rook and pawn it's a win
-	Square weakKingSquare = lsb(pos.PieceBB(KING, WeakerSide));
+	Square weakKingSquare = pos.KingSquare(WeakerSide);
 	Square rookSquare = lsb(pos.PieceTypeBB(ROOK));
 	if (ChebishevDistance(weakKingSquare, pawnSquare) > (3 + (pos.GetSideToMove() == WeakerSide))
 		&& ChebishevDistance(weakKingSquare, rookSquare) >= 3) {
@@ -472,8 +472,8 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	}
 	//Passed Pawns (passed pawn bonus is already assigned statically in pawn::probe. Nevertheless all aspects related to position of other pieces have to be 
 	//evaluated here) dynamically 
-	Square ownKingSquare = lsb(pos.PieceBB(KING, COL));
-	Square opponentKingSquare = lsb(pos.PieceBB(KING, OTHER));
+	Square ownKingSquare = pos.KingSquare(COL);
+	Square opponentKingSquare = pos.KingSquare(OTHER);
 	eval bonusPassedPawns = EVAL_ZERO;
 	Bitboard passedPawns = pos.GetPawnEntry()->passedPawns & pos.ColorBB(COL);
 	while (passedPawns) {

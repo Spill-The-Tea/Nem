@@ -17,15 +17,15 @@ namespace kpk
 		Value result;
 		if (StrongerSide == WHITE) {
 			pawnSquare = lsb(pos.PieceBB(PAWN, WHITE));
-			wKingSquare = lsb(pos.PieceBB(KING, WHITE));
-			bKingSquare = lsb(pos.PieceBB(KING, BLACK));
+			wKingSquare = pos.KingSquare(WHITE);
+			bKingSquare = pos.KingSquare(BLACK);
 			stm = pos.GetSideToMove();
 		}
 		else {
 			//flip colors
 			pawnSquare = Square(lsb(pos.PieceBB(PAWN, BLACK)) ^ 56);
-			wKingSquare = Square(lsb(pos.PieceBB(KING, BLACK)) ^ 56);
-			bKingSquare = Square(lsb(pos.PieceBB(KING, WHITE)) ^ 56);
+			wKingSquare = Square(pos.KingSquare(BLACK) ^ 56);
+			bKingSquare = Square(pos.KingSquare(WHITE) ^ 56);
 			stm = Color(pos.GetSideToMove() ^ 1);
 		}
 		if ((pawnSquare & 7) > FileD) {
