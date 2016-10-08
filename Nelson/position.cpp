@@ -705,6 +705,10 @@ const Value position::SEE(Move move) const
 
 	} while (attackers && (capturingPiece != KING || (--d, false))); // Stop before a king capture
 
+	if (capturingPiece == PAWN && (toSquare <= H1 || toSquare >= A8)) {
+		gain[d-1] += PieceValues[QUEEN].mgScore - PieceValues[PAWN].mgScore;
+	}
+
 	// find the best achievable score by minimaxing
 	while (--d) gain[d - 1] = std::min(-gain[d], gain[d - 1]);
 

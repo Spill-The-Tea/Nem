@@ -176,7 +176,7 @@ private:
 	//At root level there is a different search method (as there is some special logic requested)
 	Value SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove = 0);
 	//Quiescence Search (different implementations for positions in check and not in check)
-	template<bool WithChecks> Value QSearch(Value alpha, Value beta, position &pos, int depth);
+	Value QSearch(Value alpha, Value beta, position &pos, int depth);
 	//Updates killer, history and counter move history tables, whenever a cutoff has happened
 	void updateCutoffStats(const Move cutoffMove, int depth, position &pos, int moveIndex);
 	//Thread id (0: MASTER or SINGLE, SLAVES are sequentially numbered starting with 1
@@ -575,7 +575,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	if (alpha >= beta) return SCORE_MDP(alpha);
 	//If depth = 0 is reached go to Quiescence Search
 	if (depth <= 0) {
-		return QSearch<true>(alpha, beta, pos, depth);
+		return QSearch(alpha, beta, pos, 0);
 	}
 	//TT lookup
 	bool ttFound;
@@ -630,9 +630,9 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			&& ttMove == MOVE_NONE
 			&& !pos.PawnOn7thRank())
 		{
-			if (depth <= 1 && (effectiveEvaluation + 302) <= alpha) return QSearch<true>(alpha, beta, pos, 0);
+			if (depth <= 1 && (effectiveEvaluation + 302) <= alpha) return QSearch(alpha, beta, pos, 0);
 			Value razorAlpha = alpha - Value(256 + 16 * depth);
-			Value razorScore = QSearch<true>(razorAlpha, Value(razorAlpha + 1), pos, 0);
+			Value razorScore = QSearch(razorAlpha, Value(razorAlpha + 1), pos, 0);
 			if (razorScore <= razorAlpha) return SCORE_RAZ(razorScore);
 		}
 		// Beta Pruning
@@ -826,7 +826,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	return SCORE_EXACT(bestScore);
 }
 
-template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value alpha, Value beta, position &pos, int depth) {
+template<ThreadType T> Value search<T>::QSearch(Value alpha, Value beta, position &pos, int depth) {
 	++QNodeCount;
 	++NodeCount;
 #ifdef TRACE
@@ -858,6 +858,7 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 	}
 	if (ttFound && ttEntry.move()) ttMove = ttEntry.move();
 #endif
+	bool WithChecks = depth == 0;
 	bool checked = pos.Checked();
 	int ttDepth = WithChecks || checked ? 0 : -1;
 	Value standPat;
@@ -889,11 +890,12 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 	Move move;
 	Value score;
 	tt::NodeType nt = tt::UPPER_BOUND;
+	Move bestMove = MOVE_NONE;
 	while ((move = pos.NextMove())) {
 		if (!checked && pos.SEE_Sign(move) < VALUE_ZERO) continue;
 		position next(pos);
 		if (next.ApplyMove(move)) {
-			score = -QSearch<false>(-beta, -alpha, next, depth - 1);
+			score = -QSearch(-beta, -alpha, next, depth - 1);
 			if (score >= beta) {
 #ifndef TUNE
 				if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, ttDepth, move, standPat);
@@ -904,12 +906,13 @@ template<ThreadType T> template<bool WithChecks> Value search<T>::QSearch(Value 
 			if (score > alpha) {
 				nt = tt::EXACT;
 				alpha = score;
+				bestMove = move;
 			}
 		}
 	}
 #ifndef TUNE
-	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), alpha, nt, ttDepth, MOVE_NONE, standPat);
-	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), alpha, nt, ttDepth, MOVE_NONE, standPat);
+	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), alpha, nt, ttDepth, bestMove, standPat);
+	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), alpha, nt, ttDepth, bestMove, standPat);
 #endif
 	return SCORE_EXACT(alpha);
 }
@@ -975,8 +978,5 @@ template<ThreadType T> bool search<T>::isQuiet(position &pos) {
 template<ThreadType T>
 inline Value search<T>::qscore(position * pos)
 {
-	if (pos->Checked())
-		return QSearch<true>(-VALUE_MATE, VALUE_MATE, *pos, 0);
-	else
-		return QSearch<false>(-VALUE_MATE, VALUE_MATE, *pos, 0);
+	return QSearch(-VALUE_MATE, VALUE_MATE, *pos, 0);
 }
