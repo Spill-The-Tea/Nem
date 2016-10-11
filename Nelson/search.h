@@ -616,9 +616,15 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
 		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + BONUS_TEMPO;
-	prune = prune && (pos.GetLastAppliedMove() != MOVE_NONE) && (!pos.GetMaterialTableEntry()->SkipPruning());
-	if (pos.GetLastAppliedMove() != MOVE_NONE && prune && !checked) {
+	prune = prune && !checked && (pos.GetLastAppliedMove() != MOVE_NONE) && (!pos.GetMaterialTableEntry()->SkipPruning());
+	if (prune && pos.GetLastAppliedMove() != MOVE_NONE) {
 		//Check if Value from TT is better
+		// Beta Pruning
+		if (depth < 7
+			&& staticEvaluation < VALUE_KNOWN_WIN
+			&& (staticEvaluation - settings::BetaPruningMargin(depth)) >= beta
+			&& pos.NonPawnMaterial(pos.GetSideToMove()))
+			return SCORE_BP(staticEvaluation - settings::BetaPruningMargin(depth));
 		Value effectiveEvaluation = staticEvaluation;
 		if (ttFound &&
 			((ttValue > staticEvaluation && ttEntry.type() == tt::LOWER_BOUND)
@@ -635,12 +641,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			Value razorScore = QSearch(razorAlpha, Value(razorAlpha + 1), pos, 0);
 			if (razorScore <= razorAlpha) return SCORE_RAZ(razorScore);
 		}
-		// Beta Pruning
-		if (depth < 7
-			&& effectiveEvaluation < VALUE_KNOWN_WIN
-			&& (effectiveEvaluation - BETA_PRUNING_FACTOR * depth) >= beta
-			&& pos.NonPawnMaterial(pos.GetSideToMove()))
-			return SCORE_BP(effectiveEvaluation - BETA_PRUNING_FACTOR * depth);
+
 		//Null Move Pruning
 		if (depth > 1 //only if there is available depth to reduce
 			&& effectiveEvaluation >= beta
@@ -717,7 +718,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	bool lmr = !checked && depth >= 3;
 	Move move;
 	int moveIndex = 0;
-	bool ZWS = false;
+	bool ZWS = !PVNode;
 	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	//bool singularExtensionNode = depth >= 8  && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
 	//	&& excludeMove == MOVE_NONE && ttEntry.type() == tt::LOWER_BOUND && ttEntry.depth() >= depth - 3;
@@ -778,6 +779,8 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			}
 			if (ZWS) {
 				score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, subpv);
+				if (score > alpha && reduction) 
+					score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 + extension, subpv);
 				if (score > alpha && score < beta) {
 					score = -Search(-beta, -alpha, next, depth - 1 + extension, subpv);
 #ifdef STAT_LMR

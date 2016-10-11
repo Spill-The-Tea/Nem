@@ -78,7 +78,6 @@ public:
 	//Get next move. If MOVE_NONE is returned end of move list is reached
 	Move NextMove();
 	//SEE (Static Exchange Evaluation): The implementation is copied from Chess Programming Wiki (https://chessprogramming.wikispaces.com/SEE+-+The+Swap+Algorithm)
-	const Value SEE(Square from, const Square to) const;
 	const Value SEE(Move move) const;
 	//SEE method, which returns without exact value, when it's sure that value is positive (then VALUE_KNOWN_WIN is returned)
 	Value SEE_Sign(Move move) const;

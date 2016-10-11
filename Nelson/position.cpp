@@ -641,11 +641,6 @@ Value position::SEE_Sign(Move move) const {
 	return SEE(move);
 }
 
-const Value position::SEE(Square from, const Square to) const
-{
-	return SEE(createMove(from, to));
-}
-
 //This SEE implementation is a mixture of stockfish and Computer chess sample implementation
 //(see https://chessprogramming.wikispaces.com/SEE+-+The+Swap+Algorithm)
 const Value position::SEE(Move move) const
