@@ -10,5 +10,5 @@ pipelines:
     - step:
         script: # Modify the commands below to build your repository.
           - cd Nelson
-          - make -f ./Nelson/Makefile
-          - ./Nelson/deploy-to-s3.bash
+          - make
+          - ./deploy-to-s3.bash
