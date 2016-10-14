@@ -699,8 +699,8 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	if (!ttMove && PVNode ? depth >= 4 : depth > 6) {
 		position next(pos);
 		next.copy(pos);
-		//If there is no hash move, we are looking for a move => therefore search should be called with prune = false, but prune = true improves strength
-		Search(alpha, beta, next, PVNode ? depth - 2 : depth / 2, subpv, true);
+		//If there is no hash move, we are looking for a move => therefore search should is called with prune = false
+		Search(alpha, beta, next, PVNode ? depth - 2 : depth / 2, subpv, ttMove != MOVE_NONE);
 		if (Stopped()) return VALUE_ZERO;
 		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;

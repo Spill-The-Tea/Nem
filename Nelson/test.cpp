@@ -7,6 +7,7 @@
 #include <string>
 #include <map>
 #include <cstdlib>
+#include <vector>
 #include "test.h"
 #include "search.h"
 #include "hashtables.h"
@@ -1114,32 +1115,6 @@ namespace test {
 		pos.ApplyMove(move);
 		key = 0x00fdd303c946bdd9;
 		std::cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << std::endl;
-	}
-
-	void testParsePGN() {
-		std::string filename = "C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/twic1048.pgn";
-		std::vector<std::vector<Move>> parsed = pgn::parsePGNFile(filename);
-	}
-
-	void testMateInDos() {
-		std::string filename = "C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/MateenDos.pgn";
-		std::map<std::string, Move> exercises = pgn::parsePGNExerciseFile(filename);
-		search<SINGLE> * engine = new search < SINGLE >;
-		int count = 0;
-		int failed = 0;
-		for (std::map<std::string, Move>::iterator it = exercises.begin(); it != exercises.end(); ++it) {
-			engine->Reset();
-			position pos(it->first);
-			engine->timeManager.initialize(FIXED_DEPTH, 0, 3);
-			++count;
-			ValuatedMove result = engine->Think(pos);
-			std::cout << count << "\t" << ((result.move == it->second) ? "OK\t" : "ERROR\t") << toString(result.move) << "\t" << toString(it->second)
-				<< "\t" << result.score << "\t" << it->first << std::endl;
-			failed += result.move != it->second;
-		}
-		std::cout << "+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++" << std::endl;
-		std::cout << failed << " of " << count << " failed!";
-		delete engine;
 	}
 
 	uint64_t perftNodes = 0;

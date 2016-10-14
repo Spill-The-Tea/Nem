@@ -131,12 +131,16 @@ unsigned TB_LARGEST = 0;
 #ifdef TB_CUSTOM_LSB
 #define lsb(b) TB_CUSTOM_LSB(b)
 #else
+#ifdef _MSC_VER
 static inline unsigned lsb(uint64_t b)
 {
 	unsigned long  index;
 	_BitScanForward64(&index, b);
     return index;
 }
+#elif __GNUC__
+static inline unsigned lsb(uint64_t b) { return __builtin_ctzll(b); }
+#endif
 #endif
 #define square(r, f)            (8 * (r) + (f))
 
