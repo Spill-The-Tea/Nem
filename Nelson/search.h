@@ -694,13 +694,13 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			}
 		}
 	}
-	//Internal Iterative Deepening - this is a mystery as this code is clearly buggy, but fixing it lost Elo
-	//The if condition is missing brackets, so it should logically be if there is no ttMove and depending on PVNode or not depth is greater 3 or 6
-	if (!ttMove && PVNode ? depth >= 4 : depth > 6) {
+	//Internal Iterative Deepening - it seems as IID helps as well if the found hash entry has very low depth
+	int iidDepth = PVNode ? depth - 2 : depth / 2;
+	if ((!ttMove || ttEntry.depth() < iidDepth + 1) && (PVNode ? depth > 3 : depth > 6)) {
 		position next(pos);
 		next.copy(pos);
 		//If there is no hash move, we are looking for a move => therefore search should is called with prune = false
-		Search(alpha, beta, next, PVNode ? depth - 2 : depth / 2, subpv, ttMove != MOVE_NONE);
+		Search(alpha, beta, next, iidDepth, subpv, ttMove != MOVE_NONE);
 		if (Stopped()) return VALUE_ZERO;
 		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
