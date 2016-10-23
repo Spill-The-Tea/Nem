@@ -172,6 +172,7 @@ namespace settings {
 #endif
 	const Value BETA_PRUNING_FACTOR = Value(100);
 	inline Value BetaPruningMargin(int depth) { return Value(depth * BETA_PRUNING_FACTOR); }
+	const int LIMIT_QSEARCH = -3;
 
 	extern const eval PSQT[12][64];
 

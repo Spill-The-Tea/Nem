@@ -779,7 +779,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			}
 			if (ZWS) {
 				score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, subpv);
-				if (score > alpha && reduction) 
+				if (score > alpha && reduction)
 					score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 + extension, subpv);
 				if (score > alpha && score < beta) {
 					score = -Search(-beta, -alpha, next, depth - 1 + extension, subpv);
@@ -863,7 +863,8 @@ template<ThreadType T> Value search<T>::QSearch(Value alpha, Value beta, positio
 #endif
 	bool WithChecks = depth == 0;
 	bool checked = pos.Checked();
-	int ttDepth = WithChecks || checked ? 0 : -1;
+	int ttDepth = WithChecks || checked ? 0 :
+		depth >= settings::LIMIT_QSEARCH ? -1 : -2;
 	Value standPat;
 	if (checked) {
 		standPat = VALUE_NOTYETDETERMINED;
@@ -895,7 +896,11 @@ template<ThreadType T> Value search<T>::QSearch(Value alpha, Value beta, positio
 	tt::NodeType nt = tt::UPPER_BOUND;
 	Move bestMove = MOVE_NONE;
 	while ((move = pos.NextMove())) {
-		if (!checked && pos.SEE_Sign(move) < VALUE_ZERO) continue;
+		if (!checked) {
+			if (depth > settings::LIMIT_QSEARCH) {
+				if (pos.SEE_Sign(move) < VALUE_ZERO) continue;
+			} else return standPat + pos.SEE(move);
+		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
 			score = -QSearch(-beta, -alpha, next, depth - 1);
