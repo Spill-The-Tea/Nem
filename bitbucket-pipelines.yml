@@ -11,4 +11,5 @@ pipelines:
         script: # Modify the commands below to build your repository.
           - cd Nelson
           - make
+          - chmod +x deploy-to-s3.bash
           - ./deploy-to-s3.bash
