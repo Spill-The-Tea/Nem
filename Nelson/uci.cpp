@@ -82,6 +82,11 @@ void UCIInterface::dispatch(std::string line) {
 	else if (!command.compare("dumpTT")) {
 		dumpTT(tokens);
 	}
+#ifdef TB
+	else if (!command.compare("tb")) {
+		tb();
+	}
+#endif
 	//else if (!strcmp(token, "eval"))
 	//	cout << printEvaluation(pos);
 	//else if (!strcmp(token, "qeval"))
@@ -453,3 +458,17 @@ void UCIInterface::dumpTT(std::vector<std::string>& tokens)
 	tt::dumpTT(of);
 	of.close();
 }
+
+#ifdef TB
+void UCIInterface::tb() {
+	if (_position == nullptr) {
+		std::cout << "No position provided!" << std::endl;
+		return;
+	}
+	if (!_position->GetMaterialTableEntry()->IsTablebaseEntry()) {
+		std::cout << "Position " << _position->fen() << " not found in tablebase!" << std::endl;
+		return;
+	}
+	Tablebases::probe(*_position);
+}
+#endif

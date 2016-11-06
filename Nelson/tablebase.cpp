@@ -1,3 +1,4 @@
+#include <iostream>
 #include "tablebase.h"
 
 namespace Tablebases {
@@ -147,6 +148,64 @@ namespace Tablebases {
 		else {
 			score = SCORES[TB_GET_WDL(result)];
 			return true;
+		}
+	}
+
+	void probe(position & pos)
+	{
+		unsigned int moves[TB_MAX_MOVES];
+		unsigned int result = tb_probe_root(
+			pos.ColorBB(WHITE),
+			pos.ColorBB(BLACK),
+			pos.PieceTypeBB(KING),
+			pos.PieceTypeBB(QUEEN),
+			pos.PieceTypeBB(ROOK),
+			pos.PieceTypeBB(BISHOP),
+			pos.PieceTypeBB(KNIGHT),
+			pos.PieceTypeBB(PAWN),
+			pos.GetDrawPlyCount(),
+			pos.GetCastles(),
+			(unsigned int)(pos.GetEPSquare() & 63),
+			pos.GetSideToMove() == WHITE,
+			&moves[0]);
+		if (result == TB_RESULT_FAILED) {
+			int success;
+			int wdl = probe_wdl(pos, &success);
+			if (success) {
+				printResult(wdl);
+				std::cout << "TB probe done!" << std::endl;
+			}
+			else std::cout << "TB probe failed!" << std::endl;
+		}
+		else {
+			unsigned wdl = TB_GET_WDL(result);
+			printResult(wdl-2);
+			const std::string wdls[5] = { "Loss", "Blessed Loss", "Draw", "Cursed Win", "Win" };
+			for (int i = 0; i < TB_MAX_MOVES; ++i) {
+				if (moves[i] == TB_RESULT_FAILED) break;
+				unsigned wdlMove = TB_GET_WDL(moves[i]);
+				unsigned dtzMove = TB_GET_DTZ(moves[i]);
+				int from = TB_GET_FROM(moves[i]);
+				int to = TB_GET_TO(moves[i]);
+				unsigned promotionPiece = TB_GET_PROMOTES(moves[i]);
+				Move move;
+				if (promotionPiece == TB_PROMOTES_NONE)
+					move = createMove(from, to);
+				else move = createMove<PROMOTION>(Square(from), Square(to), (PieceType)(promotionPiece - 1));
+				std::cout << std::setw(6) << toString(move) << " " << std::setw(10) << wdls[wdlMove] << " " << std::setw(3) << dtzMove << std::endl;
+			}
+			std::cout << "TB probe done!" << std::endl;
+		}
+	}
+
+	void printResult(int wdl)
+	{
+		switch (wdl) {
+		case -2: std::cout << "Loss" << std::endl; break;
+		case -1: std::cout << "Blessed Loss" << std::endl; break;
+		case 0: std::cout << "Draw" << std::endl; break;
+		case 1: std::cout << "Cursed Win" << std::endl; break;
+		case 2: std::cout << "Win" << std::endl; break;
 		}
 	}
 

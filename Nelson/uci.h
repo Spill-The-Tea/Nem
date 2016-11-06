@@ -35,7 +35,9 @@ private:
 	void see(std::vector<std::string> &tokens);
 	void qscore(std::vector<std::string> &tokens);
 	void dumpTT(std::vector<std::string> &tokens);
-
+#ifdef TB
+	void tb();
+#endif
 	void copySettings(baseSearch * source, baseSearch * destination);
 };
 
