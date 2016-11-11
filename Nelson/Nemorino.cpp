@@ -17,7 +17,7 @@
 #endif
 
 const int MAJOR_VERSION = 1;
-const int MINOR_VERSION = 10;
+const int MINOR_VERSION = 11;
 
 
 static bool popcountSupport();

@@ -84,7 +84,7 @@ enum File {
 };
 
 enum CastleFlag {
-	NoCastles, W0_0, W0_0_0, B0_0 = 4, B0_0_0 = 8
+	NoCastles, W0_0, W0_0_0, B0_0 = 4, B0_0_0 = 8, W_CASTLED_SHORT = 16, B_CASTLED_SHORT = 32, W_CASTLED_LONG = 64, B_CASTLED_LONG = 128
 };
 
 const int CastlesbyColor[] = { W0_0 | W0_0_0, B0_0 | B0_0_0 };

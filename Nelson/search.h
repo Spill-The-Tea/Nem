@@ -646,6 +646,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 		if (depth > 1 //only if there is available depth to reduce
 			&& effectiveEvaluation >= beta
 			&& pos.NonPawnMaterial(pos.GetSideToMove())
+			&& excludeMove == MOVE_NONE
 			) {
 			int reduction = (depth + 14) / 5;
 			if (int(effectiveEvaluation - beta) > int(PieceValues[PAWN].egScore)) ++reduction;
@@ -721,7 +722,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	bool ZWS = !PVNode;
 	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	//bool singularExtensionNode = depth >= 8  && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
-	//	&& excludeMove == MOVE_NONE && ttEntry.type() == tt::LOWER_BOUND && ttEntry.depth() >= depth - 3;
+	// 	&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
 	while ((move = pos.NextMove())) {
 		if (move == excludeMove) continue;
 		//Late move Pruning I
@@ -763,7 +764,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			//if (singularExtensionNode &&  move == ttMove && !extension)
 			//{
 			//	Value rBeta = ttValue - 2 * depth;
-			//	if (Search<false>(rBeta - 1, rBeta, pos, depth / 2, subpv, false, false, move) < rBeta) ++extension;
+			//	if (Search(rBeta - 1, rBeta, pos, depth / 2, subpv, true, move) < rBeta) ++extension;
 			//}
 			if (!extension && moveIndex == 0 && pos.GeneratedMoveCount() == 1 && (pos.GetMoveGenerationPhase() == MoveGenerationType::CHECK_EVASION || pos.QuietMoveGenerationPhaseStarted())) {
 				++extension;
