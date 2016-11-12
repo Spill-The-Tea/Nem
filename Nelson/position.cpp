@@ -161,8 +161,8 @@ bool position::ApplyMove(Move move) {
 		kingSquares[SideToMove] = toSquare;
 		break;
 	}
-	assert(kingSquares[WHITE] = lsb(PieceBB(KING, WHITE)));
-	assert(kingSquares[BLACK] = lsb(PieceBB(KING, BLACK)));
+	assert(kingSquares[WHITE] == lsb(PieceBB(KING, WHITE)));
+	assert(kingSquares[BLACK] == lsb(PieceBB(KING, BLACK)));
 	tt::prefetch(Hash); //for null move
 	SwitchSideToMove();
 	tt::prefetch(Hash);

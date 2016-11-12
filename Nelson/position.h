@@ -161,7 +161,7 @@ public:
 	inline bool CastlingAllowed(CastleFlag castling) const { return (CastlingOptions & castling) != 0; }
 	inline unsigned GetCastles() const { return CastlingOptions & 15; }
 	inline CastleFlag GetCastlesForColor(Color color) const { return color == WHITE ? CastleFlag(CastlingOptions & (W0_0 | W0_0_0)) : CastleFlag(CastlingOptions & (B0_0 | B0_0_0)); }
-	inline bool HasCastled(Color color) const { return (CastlingOptions & ((CastleFlag::W_CASTLED_SHORT | CastleFlag::W_CASTLED_LONG) << SideToMove)) != 0; }
+	inline bool HasCastled(Color color) const { return (CastlingOptions & ((CastleFlag::W_CASTLED_SHORT | CastleFlag::W_CASTLED_LONG) << color)) != 0; }
 	inline bool HasCastled(CastleFlag castleFlag) const { return (CastlingOptions & castleFlag) != 0; }
 	//creates the SAN (standard algebraic notation) representation of a move
 	std::string toSan(Move move);

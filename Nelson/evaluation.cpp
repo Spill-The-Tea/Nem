@@ -76,6 +76,10 @@ eval evaluateKingSafety(const position& pos) {
 		}
 		pieceBB &= pieceBB - 1;
 	}
+	//safe queen contact checks
+	Bitboard safeContactChecks = pos.AttacksByPieceType(WHITE, QUEEN) & kingRingBlack
+		& (pos.AttacksByPieceType(WHITE, KING) | pos.AttacksByPieceType(WHITE, PAWN) | pos.AttacksByPieceType(WHITE, KNIGHT) | pos.AttacksByPieceType(WHITE, ROOK) | pos.AttacksByPieceType(WHITE, BISHOP));
+	if (safeContactChecks) attackUnits += ATTACK_UNITS_SAFE_CONTACT_CHECK * popcount(safeContactChecks);
 	if (attackerCount > 1) result.mgScore = KING_SAFETY[std::min(attackUnits, 99)];
 	attackUnits = 0;
 	attackerCount = 0;
@@ -103,6 +107,9 @@ eval evaluateKingSafety(const position& pos) {
 		}
 		pieceBB &= pieceBB - 1;
 	}
+	safeContactChecks = pos.AttacksByPieceType(BLACK, QUEEN) & kingRingWhite 
+		& (pos.AttacksByPieceType(BLACK, KING) | pos.AttacksByPieceType(BLACK, PAWN) | pos.AttacksByPieceType(BLACK, KNIGHT) | pos.AttacksByPieceType(BLACK, ROOK) | pos.AttacksByPieceType(BLACK, BISHOP));
+	if (safeContactChecks) attackUnits += ATTACK_UNITS_SAFE_CONTACT_CHECK * popcount(safeContactChecks);
 	if (attackerCount > 1) result.mgScore -= KING_SAFETY[std::min(attackUnits, 99)];
 	Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
 	Bitboard bbBlack = pos.PieceBB(PAWN, BLACK);

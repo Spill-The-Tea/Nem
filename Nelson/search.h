@@ -459,7 +459,6 @@ template<ThreadType T> search<T>::~search() {
 template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove) {
 	Value score;
 	Value bestScore = -VALUE_MATE;
-	Value bonus;
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	pv[1] = MOVE_NONE; //pv[1] will be the ponder move, so we should make sure, that it is initialized as well
@@ -494,31 +493,30 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 			reduction = 1;
 		}
 		//To make engine prefer castling add bonus for castling moves (see https://chessprogramming.wikispaces.com/Ronald+de+Man#Scoring%20Root%20Moves)
-		if (type(rootMoves[i].move) == CASTLING) bonus = BONUS_CASTLING; else bonus = VALUE_ZERO;
 		if (ZWS) {
 #ifdef STAT_LMR
 			lmrCount += reduction > 0;
 #endif
-			score = bonus - Search(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, subpv);
+			score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 - reduction, subpv);
 			if (score > alpha && score < beta) {
 #ifdef STAT_LMR
 				failedLmrCount += reduction > 0;
 #endif
 				//Research without reduction and with full alpha-beta window
-				score = bonus - Search(bonus - beta, bonus - alpha, next, depth - 1, subpv);
+				score = -Search(-beta, -alpha, next, depth - 1, subpv);
 			}
 		}
 		else {
 #ifdef STAT_LMR
 			lmrCount += reduction > 0;
 #endif
-			score = bonus - Search(bonus - beta, bonus - alpha, next, depth - 1 - reduction, subpv);
+			score = -Search(-beta, -alpha, next, depth - 1 - reduction, subpv);
 			if (reduction > 0 && score > alpha && score < beta) {
 #ifdef STAT_LMR
 				failedLmrCount++;
 #endif
 				//Research without reduction
-				score = bonus - Search(bonus - beta, bonus - alpha, next, depth - 1, subpv);
+				score = -Search(-beta, -alpha, next, depth - 1, subpv);
 			}
 		}
 		if (Stopped()) break;
@@ -903,7 +901,8 @@ template<ThreadType T> Value search<T>::QSearch(Value alpha, Value beta, positio
 		if (!checked) {
 			if (depth > settings::LIMIT_QSEARCH) {
 				if (pos.SEE_Sign(move) < VALUE_ZERO) continue;
-			} else return standPat + pos.SEE(move);
+			}
+			else return standPat + pos.SEE(move);
 		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
