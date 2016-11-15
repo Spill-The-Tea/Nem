@@ -131,14 +131,14 @@ enum CAPTURES {
 	RxQ, BxQ, NxQ, PxQ, KxQ //Winning Captures of Queen
 };
 
-const Value CAPTURE_SCORES[6][6] = {
-	// Captured:  QUEEN, ROOK,   BISHOP,   KNIGHT,    PAWN,      EP-Capture
-		{ Value(QxQ), Value(QxR),  Value(QxB),  Value(QxN),  Value(QxP),  Value(0) },   // QUEEN
-		{ Value(RxQ), Value(RxR), Value(RxB), Value(RxN),  Value(RxP),  Value(0) },   // ROOK
-		{ Value(BxQ), Value(BxR), Value(BxB), Value(BxN),  Value(BxP),  Value(0) },   // BISHOP
-		{ Value(NxQ), Value(NxR), Value(NxB), Value(NxN), Value(NxP),  Value(0) },   // KNIGHT
-		{ Value(PxQ), Value(PxR), Value(PxB), Value(PxN), Value(PxP), Value(EP)},   // PAWN
-		{ Value(KxQ), Value(KxR), Value(KxB), Value(KxN), Value(KxP), Value(0) }    // KING
+const Value CAPTURE_SCORES[6][7] = {
+	// Captured:  QUEEN, ROOK,   BISHOP,   KNIGHT,    PAWN,   King,   EP-Capture/Promotion
+		{ Value(QxQ), Value(QxR),  Value(QxB),  Value(QxN),  Value(QxP),  Value(0),  Value(0) },   // QUEEN
+		{ Value(RxQ), Value(RxR), Value(RxB), Value(RxN),  Value(RxP),  Value(0),  Value(0) },   // ROOK
+		{ Value(BxQ), Value(BxR), Value(BxB), Value(BxN),  Value(BxP),  Value(0),  Value(0) },   // BISHOP
+		{ Value(NxQ), Value(NxR), Value(NxB), Value(NxN), Value(NxP),  Value(0),  Value(0) },   // KNIGHT
+		{ Value(PxQ), Value(PxR), Value(PxB), Value(PxN), Value(PxP),  Value(0), Value(EP)},   // PAWN
+		{ Value(KxQ), Value(KxR), Value(KxB), Value(KxN), Value(KxP), Value(0),  Value(0) }    // KING
 };
 
 const int LMPMoveCount[16] = { 3, 5, 8, 12, 18, 25, 33, 42, 52, 62, 74, 87, 101, 115, 131, 147 };

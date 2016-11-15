@@ -120,6 +120,7 @@ public:
 	//Should be called before search starts
 	inline void ResetPliesFromRoot() { pliesFromRoot = 0; }
 	inline Bitboard AttacksByPieceType(Color color, PieceType pieceType) const;
+	inline Bitboard AttacksExcludingPieceType(Color color, PieceType excludedPieceType) const;
 	inline Bitboard AttacksByColor(Color color) const { return (SideToMove == color) * attackedByUs + (SideToMove != color) * attackedByThem; }
 	inline Bitboard AttackedByThem() const { return attackedByThem; }
 	//checks if the position is already repeated (if one of the ancestors has the same zobrist hash). This is no check for 3-fold repetition!
@@ -315,7 +316,6 @@ private:
 	bool checkMaterialIsUnusual() const;
 	//Returns a bitboard indicating all squares where a piece can move to, because it's either not attacked by the opponent or protected and not attacked by less valued pieces
 	const Bitboard safeSquaresForPiece(Piece piece) const;
-
 
 #ifdef TRACE
 	bool nullMovePosition = false;
@@ -1010,6 +1010,15 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 
 inline Bitboard position::AttacksByPieceType(Color color, PieceType pieceType) const {
 	return attacksByPt[GetPiece(pieceType, color)];
+}
+
+inline Bitboard position::AttacksExcludingPieceType(Color color, PieceType excludedPieceType) const
+{
+	Bitboard bb = EMPTY;
+	for (PieceType p = QUEEN; p <= KING; ++p) {
+		if (p != excludedPieceType) bb |= AttacksByPieceType(color, p);
+	}
+	return bb;
 }
 
 
