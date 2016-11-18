@@ -44,6 +44,7 @@ void position::copy(const position &pos) {
 	this->attackedByUs = pos.attackedByUs;
 	this->attackedByThem = pos.attackedByThem;
 	this->lastAppliedMove = pos.lastAppliedMove;
+	this->StaticEval = pos.StaticEval;
 	this->bbPinned[Color::WHITE] = pos.bbPinned[Color::WHITE];
 	this->bbPinned[Color::BLACK] = pos.bbPinned[Color::BLACK];
 	this->bbPinner[Color::WHITE] = pos.bbPinner[Color::WHITE];

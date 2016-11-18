@@ -150,6 +150,7 @@ public:
 	inline bool IsWinningCapture(const ValuatedMove& move) const;
 	//returns the current value of StaticEval - doesn't check if evaluate has been executed
 	inline Value GetStaticEval() { return StaticEval; }
+	inline void SetStaticEval(Value evaluation) { StaticEval = evaluation; }
 	inline PieceType GetMostValuablePieceType(Color col) const;
 	inline PieceType GetMostValuableAttackedPieceType() const;
 	inline bool PawnOn7thRank() { return (PieceBB(PAWN, SideToMove) & RANKS[6 - 5 * SideToMove]) != 0; } //Side to Move has pawn on 7th Rank

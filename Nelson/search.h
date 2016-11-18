@@ -704,6 +704,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	}
+	if (!checked && ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED && pos.GetStaticEval() == VALUE_NOTYETDETERMINED) pos.SetStaticEval(ttEntry.evalValue() - BONUS_TEMPO);
 	Move counter = pos.GetCounterMove(counterMove);
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
 	bool futilityPruning = pos.GetLastAppliedMove() != MOVE_NONE && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
@@ -808,11 +809,11 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
 				return SCORE_BC(score);
 			}
+			ZWS = true;
 			if (score > bestScore) {
 				bestScore = score;
 				if (score > alpha)
 				{
-					ZWS = true;
 					nodeType = tt::EXACT;
 					alpha = score;
 					pv[0] = move;
