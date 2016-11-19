@@ -462,7 +462,6 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	pv[1] = MOVE_NONE; //pv[1] will be the ponder move, so we should make sure, that it is initialized as well
-	bool ZWS = false;  //ZWS: Zero Window Search
 	bool lmr = !pos.Checked() && depth >= 3;
 	bool ttFound;
 	tt::Entry ttEntry;
@@ -487,37 +486,23 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 		//apply move
 		position next(pos);
 		next.ApplyMove(rootMoves[i].move);
-		//determine reduction (Late Move Reduction)
-		int reduction = 0;
-		if (lmr && i >= startWithMove + 5 && pos.IsQuietAndNoCastles(rootMoves[i].move) && !next.Checked()) {
-			reduction = 1;
-		}
-		//To make engine prefer castling add bonus for castling moves (see https://chessprogramming.wikispaces.com/Ronald+de+Man#Scoring%20Root%20Moves)
-		if (ZWS) {
-#ifdef STAT_LMR
-			lmrCount += reduction > 0;
-#endif
+		if (i > startWithMove) {
+			int reduction = 0;
+			//Lmr for root moves
+			if (lmr && i >= startWithMove + 5 && pos.IsQuietAndNoCastles(rootMoves[i].move) && !next.Checked()) {
+				++reduction;
+			}
 			score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 - reduction, subpv);
+			if (reduction > 0 && score > alpha && score < beta) {
+				score = -Search(Value(-alpha - 1), -alpha, next, depth - 1, subpv);
+			}
 			if (score > alpha && score < beta) {
-#ifdef STAT_LMR
-				failedLmrCount += reduction > 0;
-#endif
 				//Research without reduction and with full alpha-beta window
 				score = -Search(-beta, -alpha, next, depth - 1, subpv);
 			}
 		}
 		else {
-#ifdef STAT_LMR
-			lmrCount += reduction > 0;
-#endif
-			score = -Search(-beta, -alpha, next, depth - 1 - reduction, subpv);
-			if (reduction > 0 && score > alpha && score < beta) {
-#ifdef STAT_LMR
-				failedLmrCount++;
-#endif
-				//Research without reduction
-				score = -Search(-beta, -alpha, next, depth - 1, subpv);
-			}
+			score = -Search(-beta, -alpha, next, depth - 1, subpv);
 		}
 		if (Stopped()) break;
 		rootMoves[i].score = score;
@@ -539,7 +524,6 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 			}
 			else if (score > alpha)
 			{
-				ZWS = true;
 				alpha = score;
 				nt = tt::NodeType::EXACT;
 			}
