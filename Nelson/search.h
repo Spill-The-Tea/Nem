@@ -679,7 +679,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	}
 	//Internal Iterative Deepening - it seems as IID helps as well if the found hash entry has very low depth
 	int iidDepth = PVNode ? depth - 2 : depth / 2;
-	if ((!ttMove || ttEntry.depth() < iidDepth + 1) && (PVNode ? depth > 3 : depth > 6)) {
+	if ((!ttMove || ttEntry.depth() < iidDepth) && (PVNode ? depth > 3 : depth > 6)) {
 		position next(pos);
 		next.copy(pos);
 		//If there is no hash move, we are looking for a move => therefore search should is called with prune = false
