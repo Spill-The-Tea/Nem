@@ -61,10 +61,11 @@ The engine requires 64-bit Windows.
 
 Nemorino is listed in several rating lists:
 
-* [CCRL 40/40 **Elo 2915 #46**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%201.02%2064-bit#Nemorino_1_02_64-bit)
-* [CCRL 40/4 ` `**Elo 2927 #43**](http://www.computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%201.0%2064-bit#Nemorino_1_0_64-bit)
-* [CEGT 40/4 ` `**Elo 2764 #41**](http://www.husvankempen.de/nunn/40_4_Ratinglist/40_4_single/467.html)
-* [CEGT 40/20 **Elo 2782 #31**](http://www.husvankempen.de/nunn/40_40%20Rating%20List/40_40%20SingleVersion/337.html)
+* [CCRL 40/40 **Elo 2909 #46**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%201.02%2064-bit#Nemorino_1_02_64-bit)
+* [CCRL 40/4 ` `**Elo 2928 #43**](http://www.computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%201.02%2064-bit#Nemorino_1_02_64-bit)
+* [CEGT 40/4 ` `**Elo 2763 #40**](http://www.husvankempen.de/nunn/40_4_Ratinglist/40_4_single/484.html)
+* [CEGT 40/20 **Elo 2782 #32**](http://www.husvankempen.de/nunn/40_40%20Rating%20List/40_40%20SingleVersion/337.html)
+* [FCP 40/10 ` `**Elo 2796 #29**](http://www.amateurschach.de/fcp-rating-list.txt)
 
 ### Remarks ###
 
