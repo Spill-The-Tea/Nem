@@ -713,7 +713,8 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 		//	moveIndex++;
 		//	continue;
 		//}
-		bool prunable = !PVNode && depth <= 3 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
+		int reducedDepth = depth - settings::LMRReduction(depth, moveIndex);
+		bool prunable = !PVNode && reducedDepth <= 3 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
 			&& !killerManager.isKiller(pos, move) && pos.IsQuietAndNoCastles(move) && !pos.givesCheck(move);
 		if (prunable) {
 			//assert(type(move) == MoveType::NORMAL && pos.GetPieceOnSquare(to(move)) == Piece::BLANK);
@@ -727,11 +728,6 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 				moveIndex++;
 				continue;
 			}
-			//if (depth <= 7 && pos.GetStaticEval() + (depth + 1) * 200 < alpha) {
-			//	bestScore = std::max(bestScore, pos.GetStaticEval() + (depth + 1) * 200);
-			//	moveIndex++;
-			//	continue;
-			//}
 		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
