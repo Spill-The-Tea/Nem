@@ -171,8 +171,11 @@ namespace settings {
 	const std::string OPTION_SYZYGY_PROBE_DEPTH = "SyzygyProbeDepth";
 	extern int TBProbeDepth;
 #endif
-	const Value BETA_PRUNING_FACTOR = Value(100);
+	const Value BETA_PRUNING_FACTOR = Value(95);
 	inline Value BetaPruningMargin(int depth) { return Value(depth * BETA_PRUNING_FACTOR); }
+	const Value RAZORING_FACTOR = Value(50);
+	const Value RAZORING_OFFSET= Value(50);
+	inline Value RazoringMargin(int depth) { return Value(depth * RAZORING_FACTOR + RAZORING_OFFSET); }
 	const int LIMIT_QSEARCH = -3;
 	const int LIMIT_QSEARCH_TT = LIMIT_QSEARCH + 1;
 

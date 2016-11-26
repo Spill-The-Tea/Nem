@@ -598,8 +598,8 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
 		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + BONUS_TEMPO;
-	prune = prune && !checked && (pos.GetLastAppliedMove() != MOVE_NONE) && (!pos.GetMaterialTableEntry()->SkipPruning());
-	if (prune && pos.GetLastAppliedMove() != MOVE_NONE) {
+	prune = prune && !PVNode && !checked && (pos.GetLastAppliedMove() != MOVE_NONE) && (!pos.GetMaterialTableEntry()->SkipPruning());
+	if (prune) {
 		//Check if Value from TT is better
 		// Beta Pruning
 		if (depth < 7
@@ -612,14 +612,14 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			((ttValue > staticEvaluation && ttEntry.type() == tt::LOWER_BOUND)
 				|| (ttValue < staticEvaluation && ttEntry.type() == tt::UPPER_BOUND))) effectiveEvaluation = ttValue;
 
-		//Razoring a la SF 
-		if (!checked && depth < 4
-			&& (effectiveEvaluation + Value(256 + 16 * depth)) <= alpha
+		//Razoring
+		if (depth < 4
+			&& (staticEvaluation + settings::RazoringMargin(depth)) <= alpha
 			&& ttMove == MOVE_NONE
 			&& !pos.PawnOn7thRank())
 		{
-			if (depth <= 1 && (effectiveEvaluation + 302) <= alpha) return QSearch(alpha, beta, pos, 0);
-			Value razorAlpha = alpha - Value(256 + 16 * depth);
+			//if (depth <= 1 && (effectiveEvaluation + settings::RazoringMargin(depth)) <= alpha) return QSearch(alpha, beta, pos, 0);
+			Value razorAlpha = alpha - settings::RazoringMargin(depth);
 			Value razorScore = QSearch(razorAlpha, Value(razorAlpha + 1), pos, 0);
 			if (razorScore <= razorAlpha) return SCORE_RAZ(razorScore);
 		}
@@ -708,12 +708,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	// 	&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
 	while ((move = pos.NextMove())) {
 		if (move == excludeMove) continue;
-		//Late move Pruning I
-		//if (!PVNode && !checked && !critical && depth <= 3 && moveIndex >= LMPMoveCount[depth]) {
-		//	moveIndex++;
-		//	continue;
-		//}
-		int reducedDepth = depth - settings::LMRReduction(depth, moveIndex);
+		int reducedDepth = lmr ? depth - settings::LMRReduction(depth, moveIndex) : depth;
 		bool prunable = !PVNode && reducedDepth <= 3 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
 			&& !killerManager.isKiller(pos, move) && pos.IsQuietAndNoCastles(move) && !pos.givesCheck(move);
 		if (prunable) {
