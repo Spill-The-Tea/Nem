@@ -1,4 +1,5 @@
 #include <iostream>
+#include <fstream>
 #include "settings.h"
 #include "utils.h"
 #include "hashtables.h"
@@ -16,7 +17,7 @@ int EmergencyTime = 100;
 //Value BETA_PRUNING_FACTOR = Value(200);
 
 #ifdef TUNE
-eval PieceValues[7]{ eval(950), eval(490, 550), eval(325), eval(325), eval(80, 100), eval(VALUE_KNOWN_WIN), eval(0) };
+eval PieceValues[7]{ eval(1025), eval(490, 550), eval(325), eval(325), eval(80, 100), eval(VALUE_KNOWN_WIN), eval(0) };
 eval PASSED_PAWN_BONUS[6] = { eval(0), eval(0), eval(30), eval(37), eval(77), eval(140) };
 eval BONUS_PROTECTED_PASSED_PAWN[6] = { eval(0), eval(0), eval(0), eval(30), eval(30), eval(30) };
 #endif
@@ -177,39 +178,40 @@ namespace settings {
 			std::string key = parameters[i].substr(0, indx);
 			std::string value = parameters[i].substr(indx + 1);
 			int val = stoi(value);
-			if (!key.compare("QMG")) PieceValues[QUEEN].mgScore = Value(val);
-			else if (!key.compare("QEG")) PieceValues[QUEEN].egScore = Value(val);
-			else if (!key.compare("RMG")) PieceValues[ROOK].mgScore = Value(val);
-			else if (!key.compare("REG")) PieceValues[ROOK].egScore = Value(val);
-			else if(!key.compare("BMG")) PieceValues[BISHOP].mgScore = Value(val);
-			else if (!key.compare("BEG")) PieceValues[BISHOP].egScore = Value(val);
-			else if (!key.compare("NMG")) PieceValues[KNIGHT].mgScore = Value(val);
-			else if (!key.compare("NEG")) PieceValues[KNIGHT].egScore = Value(val);
-			else if (!key.compare("PMG")) PieceValues[PAWN].mgScore = Value(val);
-			else if (!key.compare("PEG")) PieceValues[PAWN].mgScore = Value(val);
-			else if (!key.compare(0, 3, "PPB")) {
-				int indx = stoi(key.substr(3));
-				PASSED_PAWN_BONUS[indx] = eval(val);
-			}
-			else if (!key.compare(0, 4, "BPPP")) {
-				int indx = stoi(key.substr(4));
-				BONUS_PROTECTED_PASSED_PAWN[indx] = eval(val);
-			}
+			//if (!key.compare("QMG")) PieceValues[QUEEN].mgScore = Value(val);
+			//else if (!key.compare("QEG")) PieceValues[QUEEN].egScore = Value(val);
+			//else if (!key.compare("RMG")) PieceValues[ROOK].mgScore = Value(val);
+			//else if (!key.compare("REG")) PieceValues[ROOK].egScore = Value(val);
+			//else if (!key.compare("BMG")) PieceValues[BISHOP].mgScore = Value(val);
+			//else if (!key.compare("BEG")) PieceValues[BISHOP].egScore = Value(val);
+			//else if (!key.compare("NMG")) PieceValues[KNIGHT].mgScore = Value(val);
+			//else if (!key.compare("NEG")) PieceValues[KNIGHT].egScore = Value(val);
+			//else if (!key.compare("PMG")) PieceValues[PAWN].mgScore = Value(val);
+			//else if (!key.compare("PEG")) PieceValues[PAWN].mgScore = Value(val);
+			//else if (!key.compare(0, 3, "PPB")) {
+			//	int indx = stoi(key.substr(3));
+			//	PASSED_PAWN_BONUS[indx] = eval(val);
+			//}
+			//else if (!key.compare(0, 4, "BPPP")) {
+			//	int indx = stoi(key.substr(4));
+			//	BONUS_PROTECTED_PASSED_PAWN[indx] = eval(val);
+			//}
 		}
 		sync_cout << "info string parameters set" << sync_endl;
-		for (int i = 0; i < 7; ++i) sync_cout << "info string " << PieceValues[i].mgScore << " " << PieceValues[i].egScore << sync_endl;
+		//for (int i = 0; i < 7; ++i) sync_cout << "info string " << PieceValues[i].mgScore << " " << PieceValues[i].egScore << sync_endl;
 	}
 #endif
 
 	Options options;
 
-	Option::Option(std::string Name, OptionType Type, std::string DefaultValue, std::string MinValue, std::string MaxValue)
+	Option::Option(std::string Name, OptionType Type, std::string DefaultValue, std::string MinValue, std::string MaxValue, bool Technical)
 	{
 		name = Name;
 		otype = Type;
 		defaultValue = DefaultValue;
 		maxValue = MaxValue;
 		minValue = MinValue;
+		technical = Technical;
 	}
 
 	std::string Option::printUCI()
@@ -260,7 +262,8 @@ namespace settings {
 	void Options::printUCI()
 	{
 		for (auto it = begin(); it != end(); ++it) {
-			sync_cout << it->second->printUCI() << sync_endl;
+			if (!it->second->isTechnical())
+				sync_cout << it->second->printUCI() << sync_endl;
 		}
 	}
 
@@ -315,13 +318,54 @@ namespace settings {
 		(*this)[OPTION_OWN_BOOK] = (Option *)(new OptionCheck(OPTION_OWN_BOOK, false));
 		(*this)[OPTION_OPPONENT] = (Option *)(new OptionString(OPTION_OPPONENT));
 		(*this)[OPTION_EMERGENCY_TIME] = (Option *)(new OptionSpin(OPTION_EMERGENCY_TIME, 100, 0, 60000));
+		(*this)[OPTION_TEXEL_TUNING_WINS] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_WINS, "", true));
+		(*this)[OPTION_TEXEL_TUNING_DRAWS] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_DRAWS, "", true));
+		(*this)[OPTION_TEXEL_TUNING_LOSSES] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_LOSSES, "", true));
+		(*this)[OPTION_TEXEL_TUNING_LABELLED] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_LABELLED, "", true));
+#ifdef TUNE
+		(*this)[OPTION_PIECE_VALUES_QUEEN_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_QUEEN_MG, PieceValues[QUEEN].mgScore, 0, 2 * PieceValues[QUEEN].mgScore, false));
+		(*this)[OPTION_PIECE_VALUES_QUEEN_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_QUEEN_EG, PieceValues[QUEEN].egScore, 0, 2 * PieceValues[QUEEN].egScore, false));
+		(*this)[OPTION_PIECE_VALUES_ROOK_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_ROOK_MG, PieceValues[ROOK].mgScore, 0, 2 * PieceValues[ROOK].mgScore, false));
+		(*this)[OPTION_PIECE_VALUES_ROOK_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_ROOK_EG, PieceValues[ROOK].egScore, 0, 2 * PieceValues[ROOK].egScore, false));
+		(*this)[OPTION_PIECE_VALUES_BISHOP_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_BISHOP_MG, PieceValues[BISHOP].mgScore, 0, 2 * PieceValues[BISHOP].mgScore, false));
+		(*this)[OPTION_PIECE_VALUES_BISHOP_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_BISHOP_EG, PieceValues[BISHOP].egScore, 0, 2 * PieceValues[BISHOP].egScore, false));
+		(*this)[OPTION_PIECE_VALUES_KNIGHT_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_KNIGHT_MG, PieceValues[KNIGHT].mgScore, 0, 2 * PieceValues[KNIGHT].mgScore, false));
+		(*this)[OPTION_PIECE_VALUES_KNIGHT_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_KNIGHT_EG, PieceValues[KNIGHT].egScore, 0, 2 * PieceValues[KNIGHT].egScore, false));
+		(*this)[OPTION_PIECE_VALUES_PAWN_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_PAWN_MG, PieceValues[PAWN].mgScore, 0, 2 * PieceValues[PAWN].mgScore, false));
+		(*this)[OPTION_PIECE_VALUES_PAWN_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_PAWN_EG, PieceValues[PAWN].egScore, 0, 2 * PieceValues[PAWN].egScore, false));
+#endif
 #ifdef TB
 		(*this)[OPTION_SYZYGY_PATH] = (Option *)(new OptionString(OPTION_SYZYGY_PATH));
-		(*this)[OPTION_SYZYGY_PROBE_DEPTH] = (Option *)(new OptionSpin(OPTION_SYZYGY_PROBE_DEPTH, TBProbeDepth, 0, MAX_DEPTH+1));
+		(*this)[OPTION_SYZYGY_PROBE_DEPTH] = (Option *)(new OptionSpin(OPTION_SYZYGY_PROBE_DEPTH, TBProbeDepth, 0, MAX_DEPTH + 1));
 #endif 
+		//read ini file (if exists)
+		std::ifstream inifile("nemorino.ini");
+		if (inifile) {
+			for (std::string line; std::getline(inifile, line); )
+			{
+				std::size_t found = line.find("=");
+				if (found != std::string::npos) {
+					std::string key = line.substr(0, found);
+					std::string value = line.substr(found + 1);
+					if (find(key) != end()) {
+						switch (at(key)->getType()) {
+						case OptionType::STRING:
+							set(key, value);
+							break;
+						case OptionType::SPIN:
+							set(key, stoi(value));
+							break;
+						case OptionType::CHECK:
+							set(key, !value.compare("true"));
+							break;
+						}
+					}
+				}
+			}
+		}
 	}
 
-	OptionCheck::OptionCheck(std::string Name, bool value)
+	OptionCheck::OptionCheck(std::string Name, bool value, bool Technical)
 	{
 		name = Name;
 		otype = OptionType::CHECK;
@@ -329,6 +373,7 @@ namespace settings {
 		_value = value;
 		maxValue = "";
 		minValue = "";
+		technical = Technical;
 	}
 
 	void OptionCheck::set(std::string value)

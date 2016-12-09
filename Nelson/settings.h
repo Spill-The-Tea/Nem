@@ -20,7 +20,7 @@ const int MASK_TIME_CHECK = (1 << 14) - 1; //Time is only checked each MASK_TIME
 #ifdef TUNE
 extern eval PieceValues[7];
 #else
-const eval PieceValues[]{ eval(950), eval(490, 550), eval(325), eval(325), eval(80, 100), eval(VALUE_KNOWN_WIN), eval(0) };
+const eval PieceValues[7]{ eval(1025), eval(490, 550), eval(325), eval(325), eval(80, 100), eval(VALUE_KNOWN_WIN), eval(0) };
 #endif
 
 const int PAWN_TABLE_SIZE = 1 << 14; //has to be power of 2
@@ -166,6 +166,20 @@ namespace settings {
 	const std::string OPTION_OWN_BOOK = "OwnBook";
 	const std::string OPTION_OPPONENT = "UCI_Opponent";
 	const std::string OPTION_EMERGENCY_TIME = "MoveOverhead";
+	const std::string OPTION_TEXEL_TUNING_WINS = "TTWin"; //Path to file containing EPD records of won positions
+	const std::string OPTION_TEXEL_TUNING_DRAWS = "TTDraw"; //Path to file containing EPD records of drawn positions
+	const std::string OPTION_TEXEL_TUNING_LOSSES = "TTLoss"; //Path to file containing EPD records of lost positions
+	const std::string OPTION_TEXEL_TUNING_LABELLED = "TTLabeled"; //Path to file containing EPD records with WDL label
+	const std::string OPTION_PIECE_VALUES_QUEEN_MG = "PVQM";
+	const std::string OPTION_PIECE_VALUES_QUEEN_EG = "PVQE";
+	const std::string OPTION_PIECE_VALUES_ROOK_MG = "PVRM";
+	const std::string OPTION_PIECE_VALUES_ROOK_EG = "PVRE";
+	const std::string OPTION_PIECE_VALUES_BISHOP_MG = "PVBM";
+	const std::string OPTION_PIECE_VALUES_BISHOP_EG = "PVBE";
+	const std::string OPTION_PIECE_VALUES_KNIGHT_MG = "PVNM";
+	const std::string OPTION_PIECE_VALUES_KNIGHT_EG = "PVNE";
+	const std::string OPTION_PIECE_VALUES_PAWN_MG = "PVPM";
+	const std::string OPTION_PIECE_VALUES_PAWN_EG = "PVPE";
 #ifdef TB
 	const std::string OPTION_SYZYGY_PATH = "SyzygyPath";
 	const std::string OPTION_SYZYGY_PROBE_DEPTH = "SyzygyProbeDepth";
@@ -184,25 +198,28 @@ namespace settings {
 	class Option {
 	public:
 		Option() { otype = OptionType::STRING; };
-		Option(std::string Name, OptionType Type = OptionType::BUTTON, std::string DefaultValue = "", std::string MinValue = "", std::string MaxValue = "");
+		Option(std::string Name, OptionType Type = OptionType::BUTTON, std::string DefaultValue = "", std::string MinValue = "", std::string MaxValue = "", bool Technical = false);
 		virtual ~Option() { };
 		void virtual set(std::string value) = 0;
 		void virtual read(std::vector<std::string> &tokens) = 0;
 		std::string printUCI();
 		inline std::string getName() { return name; }
+		inline bool isTechnical() { return technical; }
+		inline OptionType getType() { return otype; }
 	protected:
 		std::string name;
 		OptionType otype;
 		std::string defaultValue;
 		std::string minValue;
 		std::string maxValue;
+		bool technical;
 	};
 
 
 
 	class OptionSpin: public Option {
 	public:
-		OptionSpin(std::string Name, int Value, int Min, int Max) : Option(Name, OptionType::SPIN, std::to_string(Value), std::to_string(Min), std::to_string(Max)) { };
+		OptionSpin(std::string Name, int Value, int Min, int Max, bool Technical = false) : Option(Name, OptionType::SPIN, std::to_string(Value), std::to_string(Min), std::to_string(Max), Technical) { };
 		virtual ~OptionSpin() { };
 		inline void set(std::string value) { _value = stoi(value); }
 		inline void set(int value) { _value = value; }
@@ -217,7 +234,7 @@ namespace settings {
 
 	class OptionCheck : public Option {
 	public:
-		OptionCheck(std::string Name, bool value);
+		OptionCheck(std::string Name, bool value, bool Technical = false);
 	    virtual ~OptionCheck() { };
 		void set(std::string value);
 		inline bool getValue() { return _value; }
@@ -229,7 +246,7 @@ namespace settings {
 
 	class OptionString : public Option {
 	public:
-		OptionString(std::string Name, std::string defaultValue = "") : Option(Name, OptionType::STRING, defaultValue) { };
+		OptionString(std::string Name, std::string defaultValue = "", bool Technical = false) : Option(Name, OptionType::STRING, defaultValue, "", "", Technical) { _value = defaultValue; };
 		virtual ~OptionString() { };
 		void set(std::string value) { _value = value; }
 		inline std::string getValue() { return _value; }
@@ -240,7 +257,7 @@ namespace settings {
 
 	class OptionButton : public Option {
 	public:
-		OptionButton(std::string Name) : Option(Name, OptionType::BUTTON) { };
+		OptionButton(std::string Name, bool Technical = false) : Option(Name, OptionType::BUTTON, "", "", "", Technical) { };
 		virtual ~OptionButton() { };
 		void set(std::string value) { }
 		inline void read(std::vector<std::string> &tokens) { }

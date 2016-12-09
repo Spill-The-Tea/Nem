@@ -76,6 +76,12 @@ void UCIInterface::dispatch(std::string line) {
 	else if (!command.compare("qscore")) {
 		qscore(tokens);
 	}
+	else if (!command.compare("tt1")) {
+		ttlabeled();
+	}
+	else if (!command.compare("tt2")) {
+		ttWDL();
+	}
 	else if (!command.compare("see")) {
 		see(tokens);
 	}
@@ -99,6 +105,7 @@ void UCIInterface::dispatch(std::string line) {
 }
 
 void UCIInterface::uci() {
+	updateFromOptions();
 	Engine->UciOutput = true;
 	sync_cout << "id name Nemorino" << sync_endl;
 	sync_cout << "id author Christian Guenther" << sync_endl;
@@ -107,7 +114,23 @@ void UCIInterface::uci() {
 }
 
 void UCIInterface::isready() {
+	updateFromOptions();
 	sync_cout << "readyok" << sync_endl;
+}
+
+void UCIInterface::updateFromOptions() {
+	ponderActive = settings::options.getBool(settings::OPTION_PONDER);
+	EmergencyTime = settings::options.getInt(settings::OPTION_EMERGENCY_TIME);
+#ifdef TUNE
+	PieceValues[QUEEN] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_EG));
+	PieceValues[ROOK] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_EG));
+	PieceValues[BISHOP] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_BISHOP_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_BISHOP_EG));
+	PieceValues[KNIGHT] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_EG));
+	PieceValues[PAWN] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_EG));
+#endif
+#ifdef TB
+	settings::TBProbeDepth = settings::options.getInt(settings::OPTION_SYZYGY_PROBE_DEPTH);
+#endif
 }
 
 void UCIInterface::setoption(std::vector<std::string> &tokens) {
@@ -249,9 +272,6 @@ void UCIInterface::qscore(std::vector<std::string>& tokens)
 	{
 		--plies;
 		position * pos = *it;
-#ifdef TUNEPP
-		if (pos->GetPawnEntry()->passedPawns == EMPTY) continue;
-#endif
 		if (pos->Checked()) continue;
 		Value score = (dynamic_cast<search<SINGLE>*>(Engine))->qscore(pos);
 		if (std::abs(int(score - pos->evaluate())) > 100) continue;
@@ -262,6 +282,83 @@ void UCIInterface::qscore(std::vector<std::string>& tokens)
 	}
 	if (count > 0) totalError = totalError / count; else totalError = 0;
 	sync_cout << "info string error " << totalError << " count " << count << sync_endl;
+}
+
+double UCIInterface::ttlabeled()
+{
+	std::string filename = settings::options.getString(settings::OPTION_TEXEL_TUNING_LABELLED);
+	if (filename.length() <= 0) {
+		sync_cout << "info string no input data file specified: setoption name TTLabeled value <filename>" << sync_endl;
+		return 0;
+	}
+	tt::clear();
+	pawn::clear();
+	Engine->Reset();
+	double totalError = 0;
+	int count = 0;
+	sync_cout << "info string starting to analyze positions from " << filename << sync_endl;
+	std::cout << "info string analysing ";
+	std::ifstream infile(filename);
+	for (std::string line; getline(infile, line); )
+	{
+		std::size_t found = line.find("c9");
+		if (found != std::string::npos) {
+			position pos(line.substr(0, found));
+			std::string rs = line.substr(found + 3);
+			double result = 1;
+			if (!rs.compare("\"1/2-1/2\";")) result = 0.5;
+			else if (!rs.compare("\"0-1\";")) result = 0;
+			Value score = (dynamic_cast<search<SINGLE>*>(Engine))->qscore(&pos);
+			if (pos.GetSideToMove() == BLACK) score = -score;
+			double error = result - utils::sigmoid(score);
+			totalError += error * error;
+			++count;
+			if ((count & 0x3FFF) == 0) std::cout << ".";
+		}
+	}
+	std::cout << std::endl;
+	if (count > 0) totalError = totalError / count; else totalError = 0;
+	sync_cout << "info string error " << totalError << " count " << count << sync_endl;
+	return totalError;
+}
+
+double UCIInterface::ttWDL() {
+	Engine->UciOutput = false;
+	const std::string params[3] = { settings::OPTION_TEXEL_TUNING_LOSSES, settings::OPTION_TEXEL_TUNING_DRAWS, settings::OPTION_TEXEL_TUNING_WINS };
+	for (int i = 0; i < 3; ++i) {
+		std::string filename = settings::options.getString(params[i]);
+		if (filename.length() <= 0) {
+			sync_cout << "info string no input data file specified: setoption name " << params[i] << " value <filename>" << sync_endl;
+			return 0;
+		}
+	}
+	tt::clear();
+	pawn::clear();
+	Engine->Reset();
+	double totalError = 0;
+	int count = 0;
+	for (int i = 0; i < 3; ++i) {
+		double result = 0.5 * i;
+		std::string filename = settings::options.getString(params[i]);
+		sync_cout << "info string starting to analyze positions from " << filename << sync_endl;
+		std::cout << "info string analysing ";
+		std::ifstream infile(filename);
+		for (std::string line; getline(infile, line); )
+		{
+			position pos(line);
+			Value score = (dynamic_cast<search<SINGLE>*>(Engine))->qscore(&pos);
+			if (pos.GetSideToMove() == BLACK) score = -score;
+			double error = result - utils::sigmoid(score);
+			totalError += error * error;
+			++count;
+			if ((count & 0x3FFF) == 0) std::cout << ".";
+
+		}
+		std::cout << std::endl;
+	}
+	if (count > 0) totalError = totalError / count; else totalError = 0;
+	sync_cout << "info string error " << totalError << " count " << count << sync_endl;
+	return totalError;
 }
 
 //bool validatePonderMove(Move bestmove, Move pondermove) {

@@ -3,6 +3,7 @@
 
 #include <stdio.h>
 #include <iostream>
+#include <fstream>
 #include "stdlib.h"
 #include "types.h"
 #include "board.h"
@@ -17,11 +18,14 @@
 #endif
 
 const int MAJOR_VERSION = 1;
-const int MINOR_VERSION = 18;
+const int MINOR_VERSION = 19;
 
 
 static bool popcountSupport();
 
+#ifdef NOMAD
+#include "nomad.h"
+#else
 int main(int argc, const char* argv[]) {
 #ifndef NO_POPCOUNT
 	if (!popcountSupport()) {
@@ -119,6 +123,7 @@ int main(int argc, const char* argv[]) {
 #endif
 	}
 }
+#endif
 
 #ifdef _MSC_VER
 static bool popcountSupport() {

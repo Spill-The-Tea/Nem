@@ -715,7 +715,9 @@ void Initialize() {
 	settings::Initialize();
 	int64_t end = now();
 	auto runtime = end - begin;
+#ifndef QUIET
 	std::cout << "Initialization Time: " << runtime << "ms" << std::endl;
+#endif
 }
 
 Move parseMoveInUCINotation(const std::string& uciMove, const position& pos) {
