@@ -90,7 +90,7 @@ const Value BONUS_BISHOP_OUTPOST = Value(0);
 extern eval PASSED_PAWN_BONUS[6];
 extern eval BONUS_PROTECTED_PASSED_PAWN[6];
 #else
-const eval PASSED_PAWN_BONUS[6] = { eval(0), eval(0), eval(30), eval(37), eval(77), eval(140) };
+const eval PASSED_PAWN_BONUS[6] = { eval(0), eval(0), eval(23), eval(39), eval(81), eval(101) };
 const eval BONUS_PROTECTED_PASSED_PAWN[6] = { eval(0), eval(0), eval(0), eval(30), eval(30), eval(30) };
 #endif
 const eval MALUS_ISOLATED_PAWN = eval(5);

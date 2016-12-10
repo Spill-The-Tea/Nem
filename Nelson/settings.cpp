@@ -18,7 +18,7 @@ int EmergencyTime = 100;
 
 #ifdef TUNE
 eval PieceValues[7]{ eval(1025), eval(490, 550), eval(325), eval(325), eval(80, 100), eval(VALUE_KNOWN_WIN), eval(0) };
-eval PASSED_PAWN_BONUS[6] = { eval(0), eval(0), eval(30), eval(37), eval(77), eval(140) };
+eval PASSED_PAWN_BONUS[6] = { eval(22), eval(18), eval(23), eval(39), eval(81), eval(101) };
 eval BONUS_PROTECTED_PASSED_PAWN[6] = { eval(0), eval(0), eval(0), eval(30), eval(30), eval(30) };
 #endif
 

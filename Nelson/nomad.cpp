@@ -119,12 +119,10 @@ namespace nomad {
 int main(int argc, const char* argv[]) {
 	if (argc > 1 && argv[1]) {
 		std::ifstream in(argv[1]);
-		double p[10];
-		for (int i = PieceType::PAWN; i <= PieceType::PAWN; i++) {
-			in >> p[2 * i];
-			PieceValues[i].mgScore = Value((int)p[2 * i]); 
-			in >> p[2 * i + 1];
-            PieceValues[i].egScore = Value((int)p[2 * i + 1]);
+		int p[10];
+		for (int i = 0; i < 6; i++) {
+			in >> p[i];
+			PASSED_PAWN_BONUS[i] = eval(p[i]);
 		}
 		Initialize();
 		std::cout << nomad::calculateError() << std::endl;
