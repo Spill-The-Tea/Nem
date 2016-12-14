@@ -59,8 +59,10 @@ extern Bitboard SlidingAttacksBishopTo[64];
 const Bitboard RookSquareAfterCastling[4] = { ToBitboard(F1), ToBitboard(D1), ToBitboard(F8), ToBitboard(D8) };
 
 const Bitboard SaveSquaresForKing = 0xe7c300000000c3e7;
+const Bitboard SaveSquaresForKingA[2] = { SaveSquaresForKing & HALF_OF_WHITE, SaveSquaresForKing & HALF_OF_BLACK }; //Index Color
 const Bitboard ShelterPawns2ndRank = 0xe700000000e700;
 const Bitboard ShelterPawns3rdRank = 0xe70000e70000;
+const Bitboard ShelterPawns4thRank = 0x8181000000;
 //const Bitboard TrappedBishopSquares = 0x4281000000008142;
 
 #ifdef USE_PEXT
@@ -87,6 +89,31 @@ extern Bitboard ShadowedFields[64][64];
 extern Bitboard KnightAttacks[64];
 extern Bitboard KingAttacks[64];
 extern Bitboard PawnAttacks[2][64];
+
+inline Bitboard mirrorHorizontal(Bitboard bb) {
+	const Bitboard k1 = Bitboard(0x5555555555555555);
+	const Bitboard k2 = Bitboard(0x3333333333333333);
+	const Bitboard k4 = Bitboard(0x0f0f0f0f0f0f0f0f);
+	bb = ((bb >> 1) & k1) + 2 * (bb & k1);
+	bb = ((bb >> 2) & k2) + 4 * (bb & k2);
+	bb = ((bb >> 4) & k4) + 16 * (bb & k4);
+	return bb;
+}
+
+inline Bitboard flipVertical(Bitboard bb) {
+#ifdef _MSC_VER
+	return _byteswap_uint64(bb);
+#elif __GNUC__
+	return __builtin_bswap64(bb);
+#else
+	const Bitboard k1 = Bitboard(0x00FF00FF00FF00FF);
+	const Bitboard k2 = Bitboard(0x0000FFFF0000FFFF);
+	bb = ((bb >> 8) & k1) | ((bb & k1) << 8);
+	bb = ((bb >> 16) & k2) | ((bb & k2) << 16);
+	bb = (bb >> 32) | (bb << 32);
+	return bb;
+#endif
+}
 
 void Initialize();
 

@@ -113,6 +113,7 @@ const Value DELTA_PRUNING_SAFETY_MARGIN = Value(VALUE_100CP);
 
 const eval PAWN_SHELTER_2ND_RANK = eval(30, -10);
 const eval PAWN_SHELTER_3RD_RANK = eval(15, -8);
+const eval PAWN_SHELTER_4TH_RANK = eval(8, -4);
 
 //const Value BETA_PRUNING_MARGIN[8] = { Value(0), Value(200), Value(400), Value(600), Value(800), Value(1000), Value(1200), Value(1400) };
 
