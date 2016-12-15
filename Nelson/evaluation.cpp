@@ -113,16 +113,38 @@ eval evaluateKingSafety(const position& pos) {
 	if (attackerCount > 1) result.mgScore -= KING_SAFETY[std::min(attackUnits, 99)];
 	Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
 	Bitboard bbBlack = pos.PieceBB(PAWN, BLACK);
-	//Pawn shelter
+	//Pawn shelter/storm
 	if (pos.PieceBB(KING, WHITE) & SaveSquaresForKing & HALF_OF_WHITE) { //Bonus only for castled king
 		result += PAWN_SHELTER_2ND_RANK * popcount(bbWhite & kingRingWhite & ShelterPawns2ndRank);
 		result += PAWN_SHELTER_3RD_RANK * popcount(bbWhite & kingZoneWhite & ShelterPawns3rdRank);
 		result += PAWN_SHELTER_4TH_RANK * popcount(bbWhite & (kingZoneWhite << 8) & ShelterPawns4thRank);
+		bool kingSide = (pos.KingSquare(WHITE) & 7) > 3;
+		Bitboard pawnStormArea = kingSide ? bbKINGSIDE : bbQUEENSIDE;
+		Bitboard stormPawns = pos.PieceBB(PAWN, BLACK) & pawnStormArea & (HALF_OF_WHITE | RANK5);
+		while (stormPawns) {
+			Square sq = lsb(stormPawns);
+			stormPawns &= stormPawns - 1;
+			Piece blocker = pos.GetPieceOnSquare(Square(sq - 8));
+			if ((blocker == WKING || GetPieceType(blocker) == PAWN) && (pos.GetAttacksFrom(sq) & pos.ColorBB(WHITE)) == EMPTY) 
+				continue;//blocked
+			result -= settings::PAWN_STORM[(sq >> 3) - 1];
+		}
 	}
 	if (pos.PieceBB(KING, BLACK) & SaveSquaresForKing & HALF_OF_BLACK) {
 		result -= PAWN_SHELTER_2ND_RANK * popcount(bbBlack & kingRingBlack & ShelterPawns2ndRank);
 		result -= PAWN_SHELTER_3RD_RANK * popcount(bbBlack & kingZoneBlack & ShelterPawns3rdRank);
 		result -= PAWN_SHELTER_4TH_RANK * popcount(bbBlack & (kingZoneBlack >> 8) & ShelterPawns4thRank);
+		bool kingSide = (pos.KingSquare(BLACK) & 7) > 3;
+		Bitboard pawnStormArea = kingSide ? bbKINGSIDE : bbQUEENSIDE;
+		Bitboard stormPawns = pos.PieceBB(PAWN, WHITE) & pawnStormArea & (HALF_OF_BLACK | RANK4);
+		while (stormPawns) {
+			Square sq = lsb(stormPawns);
+			stormPawns &= stormPawns - 1;
+			Piece blocker = pos.GetPieceOnSquare(Square(sq + 8));
+			if ((blocker == BKING || GetPieceType(blocker) == PAWN) && (pos.GetAttacksFrom(sq) & pos.ColorBB(BLACK)) == EMPTY) 
+				continue; //blocked
+			result += settings::PAWN_STORM[6 - (sq >> 3)];
+		}
 	}
 	return result;
 }

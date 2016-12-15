@@ -154,6 +154,8 @@ namespace settings {
 	const eval SCALE_EXCHANGE_WITH_PAWNS(0); //Decrease Value of Exchange with number of pawns
 	const eval SCALE_EXCHANGE_WITH_MAJORS(0); //Decrease Value of Exchange with number of majors
 
+	const eval PAWN_STORM[4] = { eval(10, 0), eval(25, 0), eval(15, 0), eval(5, 0) };
+
 	enum OptionType { SPIN, CHECK, BUTTON, STRING };
 
 	const std::string OPTION_HASH = "Hash";
