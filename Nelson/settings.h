@@ -27,7 +27,7 @@ const int PAWN_TABLE_SIZE = 1 << 14; //has to be power of 2
 const int KILLER_TABLE_SIZE = 1 << 11; //has to be power of 2
 
 //Mobility bonus values
-#define MBV(MGV, EGV) eval(9*MGV/8, 9*EGV/8)
+#define MBV(MGV, EGV) eval(14*MGV/10, 14*EGV/10)
 
 const eval MOBILITY_BONUS_KNIGHT[] = { MBV(-21, -17), MBV(-14, -10), MBV(-3, -3), MBV(1, 0), MBV(5, 3), MBV(9, 7), MBV(12, 9), MBV(14, 10), MBV(15, 11) };
 const eval MOBILITY_BONUS_BISHOP[] = { MBV(-17, -16), MBV(-9, -8), MBV(2, 0), MBV(7, 5), MBV(11, 10), MBV(16, 14), MBV(20, 18), MBV(23, 21), MBV(24, 23),
