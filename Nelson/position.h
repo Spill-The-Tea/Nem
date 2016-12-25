@@ -165,12 +165,17 @@ public:
 	inline CastleFlag GetCastlesForColor(Color color) const { return color == WHITE ? CastleFlag(CastlingOptions & (W0_0 | W0_0_0)) : CastleFlag(CastlingOptions & (B0_0 | B0_0_0)); }
 	inline bool HasCastled(Color color) const { return (CastlingOptions & ((CastleFlag::W_CASTLED_SHORT | CastleFlag::W_CASTLED_LONG) << color)) != 0; }
 	inline bool HasCastled(CastleFlag castleFlag) const { return (CastlingOptions & castleFlag) != 0; }
+	inline bool OpposedCastles() const {
+		return (CastlingOptions & (CastleFlag::W_CASTLED_SHORT | CastleFlag::B_CASTLED_LONG)) == (CastleFlag::W_CASTLED_SHORT | CastleFlag::B_CASTLED_LONG)
+			|| (CastlingOptions & (CastleFlag::B_CASTLED_SHORT | CastleFlag::W_CASTLED_LONG)) == (CastleFlag::B_CASTLED_SHORT | CastleFlag::W_CASTLED_LONG);
+	}
 	//creates the SAN (standard algebraic notation) representation of a move
 	std::string toSan(Move move);
 	//parses a move in SAN notation
 	Move parseSan(std::string move);
 	Move GetCounterMove(Move(&counterMoves)[12][64]);
 	inline bool Improved() { return previous == nullptr || previous->previous == nullptr || StaticEval >= previous->previous->StaticEval; }
+	inline bool Worsening() { return previous != nullptr && previous->previous != nullptr && StaticEval <= previous->previous->StaticEval - Value(10); }
 	//During staged move generation first only queen promotions are generated. When all other moves are generated and processed under promotions will be added
 	void AddUnderPromotions();
 	inline ValuatedMove * GetMoves(int & moveCount) { moveCount = movepointer - 1; return moves; }

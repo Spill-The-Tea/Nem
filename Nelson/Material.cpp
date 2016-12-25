@@ -279,6 +279,76 @@ void InitializeMaterialTable() {
 	key = calculateMaterialKey(&pieceCounts[0]); //KNKR
 	MaterialTable[key].Score = -Value(20);
 	pieceCounts[WKNIGHT] = 0; pieceCounts[BROOK] = 0;
+	//KQNKQ and KQBKQ => draw
+	pieceCounts[WQUEEN] = pieceCounts[BQUEEN] = 1;
+	for (Piece piece = WBISHOP; piece <= BKNIGHT; ++piece) {
+		pieceCounts[piece] = 1;
+		key = calculateMaterialKey(&pieceCounts[0]);
+		MaterialTable[key].Score = Value(0);
+		MaterialTable[key].EvaluationFunction = &evaluateDraw;
+		pieceCounts[piece] = 0;
+	}
+	pieceCounts[WQUEEN] = pieceCounts[BQUEEN] = 0;
+	//KQKRR => draw
+	pieceCounts[WQUEEN] = 1; pieceCounts[BROOK] = 2;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = Value(0);
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	pieceCounts[WQUEEN] = 0; pieceCounts[BROOK] = 0;
+	pieceCounts[BQUEEN] = 1; pieceCounts[WROOK] = 2;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = Value(0);
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	pieceCounts[BQUEEN] = 0; pieceCounts[WROOK] = 0;
+	//KQKRB => draw
+	pieceCounts[WQUEEN] = 1; pieceCounts[BROOK] = 1;  pieceCounts[BBISHOP] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = Value(0);
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	pieceCounts[WQUEEN] = 0; pieceCounts[BROOK] = 0;  pieceCounts[BBISHOP] = 0;
+	pieceCounts[BQUEEN] = 1; pieceCounts[WROOK] = 1;  pieceCounts[WBISHOP] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = Value(0);
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	pieceCounts[BQUEEN] = 0; pieceCounts[WROOK] = 0;  pieceCounts[WBISHOP] = 0;
+	//KQKRN => drawisch but slight advantage for Queen
+	pieceCounts[WQUEEN] = 1; pieceCounts[BROOK] = 1;  pieceCounts[BKNIGHT] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = Value(25);
+	pieceCounts[WQUEEN] = 0; pieceCounts[BROOK] = 0;  pieceCounts[BKNIGHT] = 0;
+	pieceCounts[BQUEEN] = 1; pieceCounts[WROOK] = 1;  pieceCounts[WKNIGHT] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = Value(-25);
+	pieceCounts[BQUEEN] = 0; pieceCounts[WROOK] = 0;  pieceCounts[WKNIGHT] = 0;
+	//KRKBN => drawish
+	pieceCounts[WROOK] = 1; pieceCounts[BBISHOP] = 1; pieceCounts[BKNIGHT] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = Value(-25);
+	pieceCounts[WROOK] = 0; pieceCounts[BBISHOP] = 0; pieceCounts[BKNIGHT] = 0;
+	pieceCounts[BROOK] = 1; pieceCounts[WBISHOP] = 1; pieceCounts[WKNIGHT] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = Value(25);
+	pieceCounts[BROOK] = 0; pieceCounts[WBISHOP] = 0; pieceCounts[WKNIGHT] = 0;
+	//KRRKRB => draw
+	pieceCounts[WROOK] = 2; pieceCounts[BBISHOP] = 1; pieceCounts[BROOK] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	MaterialTable[key].Score = Value(0);
+	pieceCounts[WROOK] = 0; pieceCounts[BBISHOP] = 0; pieceCounts[BROOK] = 0;
+	pieceCounts[BROOK] = 2; pieceCounts[WBISHOP] = 1; pieceCounts[WROOK] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].EvaluationFunction = &evaluateDraw;
+	MaterialTable[key].Score = Value(0);
+	pieceCounts[BROOK] = 0; pieceCounts[WBISHOP] = 0; pieceCounts[WROOK] = 0;
+	//KRRKRN => drawish
+	pieceCounts[WROOK] = 2; pieceCounts[BKNIGHT] = 1; pieceCounts[BROOK] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = Value(20);
+	pieceCounts[WROOK] = 0; pieceCounts[BKNIGHT] = 0; pieceCounts[BROOK] = 0;
+	pieceCounts[BROOK] = 2; pieceCounts[WKNIGHT] = 1; pieceCounts[WROOK] = 1;
+	key = calculateMaterialKey(&pieceCounts[0]);
+	MaterialTable[key].Score = Value(-20);
+	pieceCounts[BROOK] = 0; pieceCounts[WKNIGHT] = 0; pieceCounts[WROOK] = 0;
 	//KRNKR and KRBKR are also drawish
 	pieceCounts[WROOK] = pieceCounts[BROOK] = pieceCounts[WBISHOP] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);

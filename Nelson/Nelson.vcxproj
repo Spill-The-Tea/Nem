@@ -485,7 +485,8 @@ copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\T
       <AdditionalLibraryDirectories>%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Link>
     <PostBuildEvent>
-      <Command>copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nemorino-no-popcount.exe</Command>
+      <Command>if "%APPVEYOR%" == "True" EXIT
+copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nemorino-no-popcount.exe</Command>
     </PostBuildEvent>
     <PostBuildEvent>
       <Message>Copy Exe to Test Server</Message>

@@ -18,7 +18,7 @@
 #endif
 
 const int MAJOR_VERSION = 1;
-const int MINOR_VERSION = 23;
+const int MINOR_VERSION = 24;
 
 
 static bool popcountSupport();
@@ -38,7 +38,8 @@ int main(int argc, const char* argv[]) {
 		if (!arg1.compare("bench")) {
 			Initialize();
 			int depth = 11;
-			test::benchmark(depth);
+			if (argc > 2) depth = std::atoi(argv[2]);
+			if (argc > 3) test::benchmark(argv[3], depth); else test::benchmark(depth);
 			return 0;
 		}
 	}
