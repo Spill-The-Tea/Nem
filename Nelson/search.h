@@ -25,6 +25,17 @@ static inline void Initialize_Capture_Stat() { std::memset(Capture_Stat, int64_t
 void printCaptureStat();
 #endif
 
+#ifdef MOVE_STAT
+struct MoveOrderStatEntry {
+public: 
+	std::string fen;
+	std::vector<Move> moves;
+	Move cutoffMove;
+	int depth;
+	uint64_t wastedNodes;
+  };
+#endif
+
 
 enum ThreadType { SINGLE, MASTER, SLAVE };
 enum SearchResultType { EXACT_RESULT, FAIL_LOW, FAIL_HIGH, TABLEBASE_MOVE, UNIQUE_MOVE, BOOK_MOVE };
@@ -101,6 +112,9 @@ public:
 	void info(position &pos, int pvIndx, SearchResultType srt = EXACT_RESULT);
 
 	void debugInfo(std::string info);
+#ifdef MOVE_STAT
+	std::vector<MoveOrderStatEntry> MoveOrderStat;
+#endif
 
 protected:
 	//Mutex to synchronize access to analysis output
@@ -706,6 +720,10 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	//bool singularExtensionNode = depth >= 8  && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
 	// 	&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
+#ifdef MOVE_STAT
+	MoveOrderStatEntry moveOrderStatEntry;
+	int64_t nodeCountbefore = NodeCount;
+#endif
 	while ((move = pos.NextMove())) {
 		if (move == excludeMove) continue;
 		int reducedDepth = lmr ? depth - settings::LMRReduction(depth, moveIndex) : depth;
@@ -726,6 +744,10 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
+#ifdef MOVE_STAT
+			moveOrderStatEntry.moves.push_back(move);
+			moveOrderStatEntry.wastedNodes = NodeCount - nodeCountbefore;
+#endif
 			//critical = critical || GetPieceType(pos.GetPieceOnSquare(from(move))) == PAWN && ((pos.GetSideToMove() == WHITE && from(move) > H5) || (pos.GetSideToMove() == BLACK && from(move) < A4));
 		   //Check extension
 			int extension;
@@ -778,6 +800,15 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			}
 #endif
 			if (score >= beta) {
+#ifdef MOVE_STAT
+				if (!PVNode && moveIndex > 9 && moveOrderStatEntry.wastedNodes > 20000) {
+					moveOrderStatEntry.fen = pos.fen();
+					moveOrderStatEntry.cutoffMove = move;
+					moveOrderStatEntry.depth = depth;
+					moveOrderStatEntry.moves.pop_back();
+					MoveOrderStat.push_back(moveOrderStatEntry);
+				}
+#endif
 				updateCutoffStats(move, depth, pos, moveIndex);
 				//Update transposition table
 				if (T != SINGLE)  ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);

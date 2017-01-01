@@ -63,7 +63,7 @@ public:
 	//Applies a pseudo-legal move and returns true if move is legal
 	bool ApplyMove(Move move); 
 	//"Undo move" by returning pointer to previous position
-	inline position * Previous() { return previous; }
+	inline position * Previous() const { return previous; }
 	//Generate moves and store it in moves array
 	template<MoveGenerationType MGT> ValuatedMove * GenerateMoves();
 	//returns Zobrist Hash key of position
@@ -260,6 +260,7 @@ private:
 	Move counterMove = MOVE_NONE;
 	ValuatedMove * firstNegative;
 	bool canPromote = false;
+	uint32_t processedMoveGenerationPhases;
 	//Place a piece on Squarre square and update bitboards and Hash key
 	template<bool SquareIsEmpty> void set(const Piece piece, const Square square);
 	void remove(const Square square);
@@ -990,6 +991,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 
 
 template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryManager * historyStats, MoveSequenceHistoryManager * counterHistoryStats, MoveSequenceHistoryManager * followupHistoryStats, killer::manager * km, Move counter, Move hashmove, Value limit) {
+	processedMoveGenerationPhases = 0;
 	if (SMGT == REPETITION) {
 		moveIterationPointer = 0;
 		generationPhase = generationPhaseOffset[SMGT];
@@ -1009,7 +1011,7 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 	history = historyStats;
 	cmHistory = counterHistoryStats;
 	followupHistory = followupHistoryStats;
-	hashmove ? hashMove = hashmove : hashMove = MOVE_NONE;
+	hashMove = hashmove;
 	if (Checked()) generationPhase = generationPhaseOffset[CHECK] + (hashMove == MOVE_NONE);
 	else generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);
 }

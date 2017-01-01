@@ -202,6 +202,7 @@ Move position::NextMove() {
 	if (generationPhases[generationPhase] == NONE) return MOVE_NONE;
 	Move move;
 	do {
+		processedMoveGenerationPhases |= 1 << (int)generationPhases[generationPhase];
 		if (moveIterationPointer < 0) {
 			phaseStartIndex = movepointer - (movepointer != 0);
 			switch (generationPhases[generationPhase]) {
@@ -281,7 +282,8 @@ Move position::NextMove() {
 			while (moveIterationPointer < killer::NB_KILLER) {
 				Move killerMove = killerManager->getMove(*this, moveIterationPointer);
 				++moveIterationPointer;
-				if (killerMove != MOVE_NONE && validateMove(killerMove))  return killerMove;
+				//if (killerMove != MOVE_NONE && validateMove(killerMove))  return killerMove;
+				if (killerMove != MOVE_NONE && killerMove != hashMove && validateMove(killerMove)) return killerMove;
 			}
 			++generationPhase;
 			moveIterationPointer = -1;
@@ -341,18 +343,18 @@ Move position::NextMove() {
 			move = moves[phaseStartIndex + moveIterationPointer].move;
 			++moveIterationPointer;
 			generationPhase += (phaseStartIndex + moveIterationPointer >= movepointer);
-			goto end_post_killer;
+			goto end_post_hash;
 		default:
 			assert(true);
 		}
 	} while (generationPhases[generationPhase] != NONE);
 	return MOVE_NONE;
 end_post_killer:
-	if (killerManager != nullptr) {
+	if (killerManager != nullptr && (processedMoveGenerationPhases & (1<<(int)MoveGenerationType::KILLER)) != 0) {
 		if (killerManager->isKiller(*this, move)) return NextMove();
 	}
 end_post_hash:
-	if (hashMove && move == hashMove) return NextMove(); else return move;
+	if (hashMove && move == hashMove) return NextMove(); 
 end:
 	return move;
 }
@@ -1290,6 +1292,7 @@ std::string position::toSan(Move move) {
 			dMove = legalMoves->move;
 			break;
 		}
+		legalMoves++;
 	}
 	char ch[6];
 	ch[0] = "QRBN"[pt];

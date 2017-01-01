@@ -122,25 +122,8 @@ const Value PROBCUT_MARGIN = Value(90);
 
 const int FULTILITY_PRUNING_DEPTH = 3;
 const Value FUTILITY_PRUNING_LIMIT[FULTILITY_PRUNING_DEPTH + 1] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
-enum CAPTURES {             
-	QxP, BxP, NxP, RxP, QxN,
-	QxR, RxN, QxB, BxN, RxB,
-	KxP, EP, PxP, KxN, PxB,
-	BxR, PxN, NxR, NxN, NxB,
-	RxR, BxB, PxR, KxB, KxR,
-	QxQ, 
-	RxQ, BxQ, NxQ, PxQ, KxQ //Winning Captures of Queen
-};
+extern const Value CAPTURE_SCORES[6][7];
 
-const Value CAPTURE_SCORES[6][7] = {
-	// Captured:  QUEEN, ROOK,   BISHOP,   KNIGHT,    PAWN,   King,   EP-Capture/Promotion
-		{ Value(QxQ), Value(QxR),  Value(QxB),  Value(QxN),  Value(QxP),  Value(0),  Value(0) },   // QUEEN
-		{ Value(RxQ), Value(RxR), Value(RxB), Value(RxN),  Value(RxP),  Value(0),  Value(0) },   // ROOK
-		{ Value(BxQ), Value(BxR), Value(BxB), Value(BxN),  Value(BxP),  Value(0),  Value(0) },   // BISHOP
-		{ Value(NxQ), Value(NxR), Value(NxB), Value(NxN), Value(NxP),  Value(0),  Value(0) },   // KNIGHT
-		{ Value(PxQ), Value(PxR), Value(PxB), Value(PxN), Value(PxP),  Value(0), Value(EP)},   // PAWN
-		{ Value(KxQ), Value(KxR), Value(KxB), Value(KxN), Value(KxP), Value(0),  Value(0) }    // KING
-};
 
 const int LMPMoveCount[16] = { 3, 5, 8, 12, 18, 25, 33, 42, 52, 62, 74, 87, 101, 115, 131, 147 };
 namespace settings {

@@ -22,6 +22,36 @@ eval PASSED_PAWN_BONUS[6] = { eval(22), eval(18), eval(23), eval(39), eval(81), 
 eval BONUS_PROTECTED_PASSED_PAWN[6] = { eval(0), eval(0), eval(0), eval(30), eval(30), eval(30) };
 #endif
 
+enum CAPTURES {
+	QxP, BxP, NxP, RxP, QxN,
+	QxR, RxN, QxB, BxN, RxB,
+	KxP, EP, PxP, KxN, PxB,
+	BxR, PxN, NxR, NxN, NxB,
+	RxR, BxB, PxR, KxB, KxR,
+	QxQ,
+	RxQ, BxQ, NxQ, PxQ, KxQ //Winning Captures of Queen
+};
+
+//enum CAPTURES {
+//	QxP, NxP, BxP, RxP, QxN,
+//	QxR, RxN, QxB, BxN,
+//	KxP, RxB, EP, PxP, KxN, PxB,
+//	BxR, PxN, NxR, NxN, NxB,
+//	BxB, RxR, PxR, KxB,
+//	QxQ, KxR,
+//	RxQ, NxQ, BxQ, PxQ, KxQ //Winning Captures of Queen
+//};
+
+const Value CAPTURE_SCORES[6][7] = {
+	// Captured:  QUEEN, ROOK,   BISHOP,   KNIGHT,    PAWN,   King,   EP-Capture/Promotion
+	{ Value(QxQ), Value(QxR),  Value(QxB),  Value(QxN),  Value(QxP),  Value(0),  Value(0) },   // QUEEN
+	{ Value(RxQ), Value(RxR), Value(RxB), Value(RxN),  Value(RxP),  Value(0),  Value(0) },   // ROOK
+	{ Value(BxQ), Value(BxR), Value(BxB), Value(BxN),  Value(BxP),  Value(0),  Value(0) },   // BISHOP
+	{ Value(NxQ), Value(NxR), Value(NxB), Value(NxN), Value(NxP),  Value(0),  Value(0) },   // KNIGHT
+	{ Value(PxQ), Value(PxR), Value(PxB), Value(PxN), Value(PxP),  Value(0), Value(EP) },   // PAWN
+	{ Value(KxQ), Value(KxR), Value(KxB), Value(KxN), Value(KxP), Value(0),  Value(0) }    // KING
+};
+
 
 namespace settings {
 

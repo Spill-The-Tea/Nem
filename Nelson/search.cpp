@@ -59,6 +59,9 @@ void baseSearch::NewGame() {
 	for (int i = 0; i < 12; ++i) {
 		for (int j = 0; j < 64; ++j)counterMove[i][j] = MOVE_NONE;
 	}
+	cmHistory.initialize();
+	History.initialize();
+	followupHistory.initialize();
 }
 
 std::string baseSearch::PrincipalVariation(position & pos, int depth) {

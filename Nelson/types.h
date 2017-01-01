@@ -325,7 +325,7 @@ struct eval {
 		egScore = value;
 	}
 
-	inline Value getScore(Phase_t phase) {
+	inline Value getScore(Phase_t phase) const {
 		return Value(((((int)mgScore) * (256 - phase)) + (phase * (int)egScore)) / 256);
 	}
 
