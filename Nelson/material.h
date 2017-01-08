@@ -13,11 +13,12 @@ enum MaterialSearchFlags : uint8_t {
 	MSF_DEFAULT = 0,
 	MSF_SKIP_PRUNING = 1,
 	MSF_THEORETICAL_DRAW = 2,
-	MSF_TABLEBASE_ENTRY = 4
+	MSF_TABLEBASE_ENTRY = 4,
+	MSF_SCALE = 8
 };
 
 struct MaterialTableEntry {
-	Value Score;
+	eval Evaluation;
 	Phase_t Phase;
 	EvalFunction EvaluationFunction;
 	uint8_t Flags;
@@ -27,6 +28,8 @@ struct MaterialTableEntry {
 	inline bool IsPawnEnding() { return Phase == 256; }
 	inline bool SkipPruning() { return (Flags & MSF_SKIP_PRUNING) != 0; }
 	inline bool IsTheoreticalDraw() { return (Flags & MSF_THEORETICAL_DRAW) != 0; }
+	inline bool NeedsScaling() { return (Flags & MSF_SCALE) != 0; }
+	inline Value Score() { return Evaluation.getScore(Phase); }
 #ifdef TB
 	inline bool IsTablebaseEntry() { return (Flags & MSF_TABLEBASE_ENTRY) != 0; }
 #endif
@@ -51,6 +54,8 @@ inline const Phase_t Phase(int nWQ, int nBQ, int nWR, int nBR, int nWB, int nBB,
 void InitializeMaterialTable();
 
 inline MaterialTableEntry * probe(MaterialKey_t key) { return &MaterialTable[key]; }
+
+eval calculateMaterialEval(position &pos);
 
 Value calculateMaterialScore(position &pos);
 

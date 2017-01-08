@@ -91,7 +91,7 @@ bool position::ApplyMove(Move move) {
 		//Adjust material key
 		if (capturedInLastMove != BLANK) {
 			if (MaterialKey == MATERIAL_KEY_UNUSUAL) {
-				if (checkMaterialIsUnusual()) material->Score = calculateMaterialScore(*this);
+				if (checkMaterialIsUnusual()) material->Evaluation = calculateMaterialEval(*this);
 				else MaterialKey = calculateMaterialKey();
 			}
 			else MaterialKey -= materialKeyFactors[capturedInLastMove];
@@ -104,7 +104,7 @@ bool position::ApplyMove(Move move) {
 		remove(Square(toSquare - PawnStep()));
 		capturedInLastMove = Piece(BPAWN - SideToMove);
 		if (MaterialKey == MATERIAL_KEY_UNUSUAL) {
-			material->Score = calculateMaterialScore(*this);
+			material->Evaluation = calculateMaterialEval(*this);
 		}
 		else {
 			MaterialKey -= materialKeyFactors[BPAWN - SideToMove];
@@ -127,7 +127,7 @@ bool position::ApplyMove(Move move) {
 		if (checkMaterialIsUnusual()) {
 			MaterialKey = MATERIAL_KEY_UNUSUAL;
 			material = &MaterialTable[MaterialKey];
-			material->Score = calculateMaterialScore(*this);
+			material->Evaluation = calculateMaterialEval(*this);
 		}
 		else {
 			if (MaterialKey == MATERIAL_KEY_UNUSUAL) MaterialKey = calculateMaterialKey();
@@ -885,7 +885,7 @@ void position::setFromFEN(const std::string& fen) {
 	if (checkMaterialIsUnusual()) {
 		MaterialKey = MATERIAL_KEY_UNUSUAL;
 		material = &MaterialTable[MaterialKey];
-		material->Score = calculateMaterialScore(*this);
+		material->Evaluation = calculateMaterialEval(*this);
 	}
 	else {
 		MaterialKey = calculateMaterialKey();
@@ -1185,7 +1185,13 @@ bool position::givesCheck(Move move)
 	return false;
 }
 
+bool position::oppositeColoredBishops() const
+{
+	return popcount(PieceBB(BISHOP, WHITE)) == 1 && popcount(PieceBB(BISHOP, BLACK)) == 1 && popcount(PieceTypeBB(BISHOP) & DARKSQUARES) == 1;
+}
+
 #ifdef TRACE
+
 std::string position::printPath() const
 {
 	std::vector<Move> move_list;

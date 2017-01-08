@@ -5,11 +5,12 @@
 #include "position.h"
 #include "bbEndings.h"
 
+int scaleEG(const position& pos);
 
 struct evaluation
 {
 public:
-	Value Material = VALUE_ZERO;
+	eval Material = EVAL_ZERO;
 	eval Mobility = EVAL_ZERO;
 	eval Threats = EVAL_ZERO;
 	eval KingSafety = EVAL_ZERO;
@@ -18,8 +19,10 @@ public:
 	//eval Space = EVAL_ZERO;
 	eval PawnStructure = EVAL_ZERO;
 
-	inline Value GetScore(const Phase_t phase, const Color sideToMove) {
-		return (Material + (Mobility + KingSafety + Threats + Pieces + PawnStructure + PsqEval).getScore(phase)) * (1 - 2 * sideToMove);
+	inline Value GetScore(const position & pos) {
+		eval total = Material + Mobility + KingSafety + Threats + Pieces + PawnStructure + PsqEval;
+		total.egScore = Value((scaleEG(pos) * int(total.egScore)) / 128);
+		return total.getScore(pos.GetMaterialTableEntry()->Phase) * (1 - 2 * pos.GetSideToMove());
 	}
 };
 

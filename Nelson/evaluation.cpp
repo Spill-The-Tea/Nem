@@ -7,7 +7,7 @@
 
 Value evaluateDefault(const position& pos) {
 	evaluation result;
-	result.Material = pos.GetMaterialScore();
+	result.Material = pos.GetMaterialTableEntry()->Evaluation;
 	result.Mobility = evaluateMobility(pos);
 	result.KingSafety = evaluateKingSafety(pos);
 	result.PawnStructure = pos.PawnStructureScore();
@@ -15,19 +15,19 @@ Value evaluateDefault(const position& pos) {
 	result.Pieces = evaluatePieces<WHITE>(pos) - evaluatePieces<BLACK>(pos);
 	result.PsqEval = pos.GetPsqEval();
 	//result.Space = evaluateSpace<WHITE>(pos) -evaluateSpace<BLACK>(pos);
-	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
+	return result.GetScore(pos);
 }
 
 std::string printDefaultEvaluation(const position& pos) {
 	std::stringstream ss;
 	evaluation result;
-	result.Material = pos.GetMaterialScore();
+	result.Material = pos.GetMaterialTableEntry()->Evaluation;
 	result.Mobility = evaluateMobility(pos);
 	result.KingSafety = evaluateKingSafety(pos);
 	result.PawnStructure = pos.PawnStructureScore();
 	result.Threats = evaluateThreats<WHITE>(pos) - evaluateThreats<BLACK>(pos);
 	result.Pieces = evaluatePieces<WHITE>(pos) - evaluatePieces<BLACK>(pos);
-	ss << "       Material: " << std::setw(6) << result.Material << std::endl;
+	ss << "       Material: " << result.Material.print() << std::endl;
 	ss << "       Mobility: " << result.Mobility.print() << std::endl;
 	ss << "    King Safety: " << result.KingSafety.print() << std::endl;
 	ss << " Pawn Structure: " << result.PawnStructure.print() << std::endl;
@@ -244,20 +244,29 @@ eval evaluateMobility(const position& pos) {
 Value evaluateFromScratch(const position& pos) {
 	evaluation result;
 	MaterialTableEntry * material = pos.GetMaterialTableEntry();
-	material->Score = VALUE_ZERO;
-	eval materialEvaluation;
 	for (PieceType pt = QUEEN; pt <= PAWN; ++pt) {
 		int diff = popcount(pos.PieceBB(pt, WHITE)) - popcount(pos.PieceBB(pt, BLACK));
-		materialEvaluation += diff * PieceValues[pt];
+		material->Evaluation += diff * PieceValues[pt];
 	}
 	Phase_t phase = Phase(popcount(pos.PieceBB(QUEEN, WHITE)), popcount(pos.PieceBB(QUEEN, BLACK)),
 		popcount(pos.PieceBB(ROOK, WHITE)), popcount(pos.PieceBB(ROOK, BLACK)),
 		popcount(pos.PieceBB(BISHOP, WHITE)), popcount(pos.PieceBB(BISHOP, BLACK)),
 		popcount(pos.PieceBB(KNIGHT, WHITE)), popcount(pos.PieceBB(KNIGHT, BLACK)));
 	material->Phase = phase;
-	result.Material = material->Score = materialEvaluation.getScore(phase);
+	result.Material = material->Evaluation;
 	material->EvaluationFunction = &evaluateDefault;
-	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
+	return result.GetScore(pos);
+}
+
+int scaleEG(const position & pos)
+{
+	if (pos.GetMaterialTableEntry()->NeedsScaling() && pos.oppositeColoredBishops()) {
+		if (pos.PieceTypeBB(ROOK) == EMPTY) {
+			if (popcount(pos.PieceTypeBB(PAWN)) <= 1) return 18; return 62;
+		}
+		else return 92;
+	}
+	return 128;
 }
 
 Value evaluatePawnEnding(const position& pos) {
@@ -290,16 +299,16 @@ Value evaluatePawnEnding(const position& pos) {
 
 Value evaluateKBPxKBPx(const position& pos) {
 	evaluation result;
-	result.Material = pos.GetMaterialScore();
+	result.Material = pos.GetMaterialTableEntry()->Evaluation;
 	result.Mobility = evaluateMobility(pos);
 	result.PawnStructure = pos.PawnStructureScore();
 	//result.Space = evaluateSpace<WHITE>(pos) -evaluateSpace<BLACK>(pos);
 	Bitboard darkSquareBishops = pos.PieceTypeBB(BISHOP) & DARKSQUARES;
 	if (darkSquareBishops != 0 && (darkSquareBishops & (darkSquareBishops - 1)) == 0) {
 		//oposite colored bishops
-		result.Material -= result.Material > 0 ? PieceValues[PAWN].mgScore : -PieceValues[PAWN].mgScore;
+		result.Material.egScore -= result.Material.egScore > 0 ? PieceValues[PAWN].egScore : -PieceValues[PAWN].egScore;
 	}
-	return result.GetScore(pos.GetMaterialTableEntry()->Phase, pos.GetSideToMove());
+	return result.GetScore(pos);
 }
 
 

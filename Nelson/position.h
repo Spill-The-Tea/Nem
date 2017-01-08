@@ -102,7 +102,7 @@ public:
 	//Within staged move generation this method returns the index of the current move within the current stage. This is needed for
 	//updating the history table
 	inline int GetMoveNumberInPhase() const { return moveIterationPointer; }
-	inline Value GetMaterialScore() const { return material->Score; }
+	inline Value GetMaterialScore() const { return material->Score(); }
 	inline MaterialTableEntry * GetMaterialTableEntry() const { return material; }
 	inline pawn::Entry * GetPawnEntry() const { return pawn; }
 	inline Value GetPawnScore() const { return pawn->Score.getScore(material->Phase); }
@@ -192,6 +192,8 @@ public:
 	//Get Pinned Pieces
 	Bitboard PinnedPieces(Color colorOfKing) const;
 	inline Square KingSquare(Color color) const { return kingSquares[color]; }
+	//Check for opposite colored bishops
+	bool oppositeColoredBishops() const;
 #ifdef TRACE
 	std::string printPath() const;
 #endif
