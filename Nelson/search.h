@@ -186,7 +186,7 @@ public:
 
 private:
 	//Main recursive search method
-	Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune = true, Move excludeMove = MOVE_NONE);
+	Value Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool cutNode, bool prune = true, Move excludeMove = MOVE_NONE);
 	//At root level there is a different search method (as there is some special logic requested)
 	Value SearchRoot(Value alpha, Value beta, position &pos, int depth, Move * pv, int startWithMove = 0);
 	//Quiescence Search (different implementations for positions in check and not in check)
@@ -506,17 +506,17 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 			if (lmr && i >= startWithMove + 5 && pos.IsQuietAndNoCastles(rootMoves[i].move) && !next.Checked()) {
 				++reduction;
 			}
-			score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 - reduction, subpv);
+			score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 - reduction, subpv, true);
 			if (reduction > 0 && score > alpha && score < beta) {
-				score = -Search(Value(-alpha - 1), -alpha, next, depth - 1, subpv);
+				score = -Search(Value(-alpha - 1), -alpha, next, depth - 1, subpv, true);
 			}
 			if (score > alpha && score < beta) {
 				//Research without reduction and with full alpha-beta window
-				score = -Search(-beta, -alpha, next, depth - 1, subpv);
+				score = -Search(-beta, -alpha, next, depth - 1, subpv, false);
 			}
 		}
 		else {
-			score = -Search(-beta, -alpha, next, depth - 1, subpv);
+			score = -Search(-beta, -alpha, next, depth - 1, subpv, false);
 		}
 		if (Stopped()) break;
 		rootMoves[i].score = score;
@@ -550,7 +550,7 @@ template<ThreadType T> Value search<T>::SearchRoot(Value alpha, Value beta, posi
 }
 
 //This is the main alpha-beta search routine
-template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool prune, Move excludeMove) {
+template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position &pos, int depth, Move * pv, bool cutNode, bool prune, Move excludeMove) {
 	if (depth > 0) {
 		++NodeCount;
 	}
@@ -652,13 +652,13 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 #ifdef STAT_LMR
 			nullMoveCount++;
 #endif
-			Value nullscore = -Search(-beta, -beta + 1, pos, depth - reduction, subpv);
+			Value nullscore = -Search(-beta, -beta + 1, pos, depth - reduction, subpv, !cutNode);
 			pos.NullMove(epsquare, lastApplied);
 			if (nullscore >= beta) {
 				if (nullscore >= VALUE_MATE_THRESHOLD) nullscore = beta;
 				if (depth < 9 && beta < VALUE_KNOWN_WIN) return SCORE_NMP(nullscore);
 				// Do verification search at high depths
-				Value verificationScore = Search(beta - 1, beta, pos, depth - reduction, subpv, false);
+				Value verificationScore = Search(beta - 1, beta, pos, depth - reduction, subpv, false, false);
 				if (verificationScore >= beta) return SCORE_NMP(nullscore);
 			}
 #ifdef STAT_LMR
@@ -684,7 +684,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			while ((move = cpos.NextMove())) {
 				position next(cpos);
 				if (next.ApplyMove(move)) {
-					Value score = -Search(-rbeta, Value(-rbeta + 1), next, rdepth, subpv);
+					Value score = -Search(-rbeta, Value(-rbeta + 1), next, rdepth, subpv, !cutNode);
 					if (score >= rbeta)
 						return SCORE_PC(score);
 				}
@@ -697,7 +697,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 		position next(pos);
 		next.copy(pos);
 		//If there is no hash move, we are looking for a move => therefore search should is called with prune = false
-		Search(alpha, beta, next, iidDepth, subpv, ttMove != MOVE_NONE);
+		Search(alpha, beta, next, iidDepth, subpv, cutNode, ttMove != MOVE_NONE);
 		if (Stopped()) return VALUE_ZERO;
 		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
@@ -718,8 +718,8 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	int moveIndex = 0;
 	bool ZWS = !PVNode;
 	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
-	//bool singularExtensionNode = depth >= 8  && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
-	// 	&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
+	bool trySE = depth >= 8  && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
+	 && excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
 #ifdef MOVE_STAT
 	MoveOrderStatEntry moveOrderStatEntry;
 	int64_t nodeCountbefore = NodeCount;
@@ -757,11 +757,11 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			if (!extension && to(move) == recaptureSquare) {
 				++extension;
 			}
-			//if (singularExtensionNode &&  move == ttMove && !extension)
-			//{
-			//	Value rBeta = ttValue - 2 * depth;
-			//	if (Search(rBeta - 1, rBeta, pos, depth / 2, subpv, true, move) < rBeta) ++extension;
-			//}
+			if (trySE &&  move == ttMove && !extension)
+			{
+				Value rBeta = ttValue - 2 * depth;
+				if (Search(rBeta - 1, rBeta, pos, depth / 2, subpv, cutNode, true, move) < rBeta) ++extension;
+			}
 			if (!extension && moveIndex == 0 && pos.GeneratedMoveCount() == 1 && (pos.GetMoveGenerationPhase() == MoveGenerationType::CHECK_EVASION || pos.QuietMoveGenerationPhaseStarted())) {
 				++extension;
 			}
@@ -769,26 +769,27 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			//LMR: Late move reduction
 			if (lmr && extension == 0 && moveIndex != 0 && move != counter && pos.QuietMoveGenerationPhaseStarted() && !next.Checked()) {
 				reduction = settings::LMRReduction(depth, moveIndex);
-				if (PVNode && reduction > 0) --reduction;
+				if (cutNode) ++reduction;
+				if (PVNode && reduction > 0) --reduction;				
 #ifdef STAT_LMR
 				lmrCount += reduction > 0;
 #endif
 			}
 			if (ZWS) {
-				score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, subpv);
+				score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, subpv, !cutNode);
 				if (score > alpha && reduction)
-					score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 + extension, subpv);
+					score = -Search(Value(-alpha - 1), -alpha, next, depth - 1 + extension, subpv, !cutNode);
 				if (score > alpha && score < beta) {
-					score = -Search(-beta, -alpha, next, depth - 1 + extension, subpv);
+					score = -Search(-beta, -alpha, next, depth - 1 + extension, subpv, false);
 #ifdef STAT_LMR
 					failedLmrCount += reduction > 0;
 #endif
 				}
 			}
 			else {
-				score = -Search(-beta, -alpha, next, depth - 1 - reduction + extension, subpv);
+				score = -Search(-beta, -alpha, next, depth - 1 - reduction + extension, subpv, (PVNode ? false : !cutNode));
 				if (score > alpha && reduction > 0) {
-					score = -Search(-beta, -alpha, next, depth - 1 + extension, subpv);
+					score = -Search(-beta, -alpha, next, depth - 1 + extension, subpv, (PVNode ? false : !cutNode));
 #ifdef STAT_LMR
 					failedLmrCount++;
 #endif
