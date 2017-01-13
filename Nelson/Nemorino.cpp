@@ -18,7 +18,7 @@
 #endif
 
 const int MAJOR_VERSION = 1;
-const int MINOR_VERSION = 26;
+const int MINOR_VERSION = 27;
 
 
 static bool popcountSupport();
@@ -62,7 +62,11 @@ int main(int argc, const char* argv[]) {
 			return 0;
 		}
 		else if (!input.compare(0, 7, "version")) {
+#ifdef NO_POPCOUNT
+			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << " (No Popcount)" << std::endl;
+#else
 			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << std::endl;
+#endif
 		}
 		else if (!input.compare(0, 8, "position")) {
 			Initialize();
