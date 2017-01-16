@@ -58,6 +58,15 @@ The engine requires 64-bit Windows.
 *          New Parameters: SyzygyProbeDepth and MoveOverhead
 *          Bugfix: Handling of EP-Squares in TB probing code
 
+**2.00:**
+
+*          Several Improvements in Search: Singular Extensions, Cut Node Extensions, improved IID,..
+*          Improved SEE (consider promotions and pinned pieces)
+*          Improved King Safety Evaluation
+*          Scale down endgame values if there are opposite colored bishops
+*          Several minor improvements and clean-ups
+
+
 
 ### License ###
 
