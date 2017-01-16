@@ -273,6 +273,27 @@ namespace settings {
 		return ss.str();
 	}
 
+	std::string Option::printInfo() const
+	{
+		std::stringstream ss;
+		ss << "info string " << name << " ";
+		switch (otype)
+		{
+		case OptionType::CHECK:
+			ss << ((OptionCheck *)this)->getValue();
+			return ss.str();
+		case OptionType::STRING:
+			ss << ((OptionString *)this)->getValue();
+			return ss.str();
+		case OptionType::SPIN:
+			ss << ((OptionSpin *)this)->getValue();
+			return ss.str();
+		default:
+			break;
+		}
+		return ss.str();
+	}
+
 	void OptionThread::set(std::string value)
 	{
 		_value = stoi(value);
@@ -297,8 +318,16 @@ namespace settings {
 		}
 	}
 
+	void Options::printInfo()
+	{
+		for (auto it = begin(); it != end(); ++it) {
+				sync_cout << it->second->printInfo() << sync_endl;
+		}
+	}
+
 	void Options::read(std::vector<std::string> &tokens)
 	{
+		if (find(tokens[2]) == end()) return;
 		at(tokens[2])->read(tokens);
 	}
 
@@ -340,6 +369,7 @@ namespace settings {
 		(*this)[OPTION_CHESS960] = (Option *)(new Option960());
 		(*this)[OPTION_HASH] = (Option *)(new OptionHash());
 		(*this)[OPTION_CLEAR_HASH] = (Option *)(new OptionButton(OPTION_CLEAR_HASH));
+		(*this)[OPTION_PRINT_OPTIONS] = (Option *)(new OptionButton(OPTION_PRINT_OPTIONS, true));
 		(*this)[OPTION_MULTIPV] = (Option *)(new OptionSpin(OPTION_MULTIPV, 1, 1, 216));
 		(*this)[OPTION_THREADS] = (Option *)(new OptionThread());
 		(*this)[OPTION_PONDER] = (Option *)(new OptionCheck(OPTION_PONDER, false));
@@ -368,31 +398,6 @@ namespace settings {
 		(*this)[OPTION_SYZYGY_PATH] = (Option *)(new OptionString(OPTION_SYZYGY_PATH));
 		(*this)[OPTION_SYZYGY_PROBE_DEPTH] = (Option *)(new OptionSpin(OPTION_SYZYGY_PROBE_DEPTH, TBProbeDepth, 0, MAX_DEPTH + 1));
 #endif 
-		//read ini file (if exists)
-		std::ifstream inifile("nemorino.ini");
-		if (inifile) {
-			for (std::string line; std::getline(inifile, line); )
-			{
-				std::size_t found = line.find("=");
-				if (found != std::string::npos) {
-					std::string key = line.substr(0, found);
-					std::string value = line.substr(found + 1);
-					if (find(key) != end()) {
-						switch (at(key)->getType()) {
-						case OptionType::STRING:
-							set(key, value);
-							break;
-						case OptionType::SPIN:
-							set(key, stoi(value));
-							break;
-						case OptionType::CHECK:
-							set(key, !value.compare("true"));
-							break;
-						}
-					}
-				}
-			}
-		}
 	}
 
 	OptionCheck::OptionCheck(std::string Name, bool value, bool Technical)

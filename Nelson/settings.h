@@ -144,6 +144,7 @@ namespace settings {
 	const std::string OPTION_HASH = "Hash";
 	const std::string OPTION_CHESS960 = "UCI_Chess960";
 	const std::string OPTION_CLEAR_HASH = "Clear Hash";
+	const std::string OPTION_PRINT_OPTIONS = "Print Options";
 	const std::string OPTION_CONTEMPT = "Contempt";
 	const std::string OPTION_MULTIPV = "MultiPV";
 	const std::string OPTION_THREADS = "Threads";
@@ -189,6 +190,7 @@ namespace settings {
 		void virtual set(std::string value) = 0;
 		void virtual read(std::vector<std::string> &tokens) = 0;
 		std::string printUCI();
+		std::string printInfo() const;
 		inline std::string getName() { return name; }
 		inline bool isTechnical() { return technical; }
 		inline OptionType getType() { return otype; }
@@ -284,6 +286,7 @@ namespace settings {
 	public:
 		Options();
 		void printUCI();
+		void printInfo();
 		void read(std::vector<std::string> &tokens);
 		int getInt(std::string key);
 		bool getBool(std::string key);

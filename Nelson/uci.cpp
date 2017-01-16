@@ -105,10 +105,27 @@ void UCIInterface::dispatch(std::string line) {
 }
 
 void UCIInterface::uci() {
-	updateFromOptions();
 	Engine->UciOutput = true;
 	sync_cout << "id name Nemorino" << sync_endl;
 	sync_cout << "id author Christian Guenther" << sync_endl;
+	//read ini file (if exists)
+	std::ifstream inifile("nemorino.ini");
+	if (inifile) {
+		for (std::string line; std::getline(inifile, line); )
+		{
+			if (line.size() == 0) continue;
+			if (line[0] == ';') continue;
+			std::size_t found = line.find("=");
+			if (found != std::string::npos) {
+				std::string key = line.substr(0, found);
+				std::string value = line.substr(found + 1);
+				if (settings::options.find(key) != settings::options.end()) {
+					std::vector<std::string> tokens{ "setoption", "name", key, "value", value };
+					setoption(tokens);
+				}
+			}
+		}
+	}
 	settings::options.printUCI();
 	sync_cout << "uciok" << sync_endl;
 }
@@ -175,6 +192,9 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 		tt::clear();
 		pawn::clear();
 		Engine->Reset();
+	}
+	else if (!tokens[2].compare("Print") && !tokens[3].compare("Options")) {
+		settings::options.printInfo();
 	}
 	else if (!tokens[2].compare(settings::OPTION_EMERGENCY_TIME)) {
 		EmergencyTime = settings::options.getInt(settings::OPTION_EMERGENCY_TIME);

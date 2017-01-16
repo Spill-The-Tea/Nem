@@ -35,8 +35,8 @@ Nemorino doesn't bring it's own UI. So for running it, you need a GUI supporting
 The engine requires 64-bit Windows.</p>
 There are 2 executables:
 <ul>
-<li><b>Nemorino_1.02_win64.exe</b> is the default and should work on most PCs</li>
-<li><b>Nemorino_1.02_win64-no-popcount.exe</b> should only be used on older PCs with CPUs without POPCNT instruction</li>
+<li><b>Nemorino_2.00_win64.exe</b> is the default and should work on most PCs</li>
+<li><b>Nemorino_2.00_win64-no-popcount.exe</b> should only be used on older PCs with CPUs without POPCNT instruction</li>
 </ul>
 <h3>Internals</h3>
 <ul>
@@ -59,6 +59,15 @@ There are 2 executables:
 		<ul>
 		    <li>New Parameters: SyzygyProbeDepth and MoveOverhead</li>
 			<li>Bugfix: Handling of EP-Squares in TB probing code</li>
+		</ul>
+	</li>
+	<li><b>2.00:</b> 
+		<ul>
+		    <li>Several Improvements in Search: Singular Extensions, Cut Node Extensions, improved IID,..</li>
+			<li>Improved SEE (consider promotions and pinned pieces)</li>
+			<li>Improved King Safety Evaluation</li>
+			<li>Scale down endgame values if there are opposite colored bishops</li>
+			<li>Several minor improvements and clean-ups</li>
 		</ul>
 	</li>
 </ul>
