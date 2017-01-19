@@ -428,6 +428,7 @@ void position::evaluateByHistory(int startIndex) {
 			lastMovingPieces[1] = Previous()->Board[to(lastMoves[1])];
 		}
 	}
+	Bitboard bbNewlyAttacked = lastAppliedMove == MOVE_NONE ? EMPTY : (~(Previous()->attackedByUs)) & AttackedByThem();
 	for (int i = startIndex; i < movepointer - 1; ++i) {
 		if (moves[i].move == counterMove) {
 			moves[i].score = VALUE_MATE;
@@ -437,12 +438,13 @@ void position::evaluateByHistory(int startIndex) {
 				Move fixedMove = FixCastlingMove(moves[i].move);
 				Square toSquare = to(fixedMove);
 				Piece p = Board[from(fixedMove)];
-				moves[i].score = history->getValue(p, fixedMove);
+				moves[i].score = Value(history->getValue(p, fixedMove) - ChebishevDistance(toSquare, KingSquare(Color(SideToMove ^1)))); //History + king tropism if equal
 				if (lastMoves[0] && cmHistory) {
 					moves[i].score += 2 * cmHistory->getValue(lastMovingPieces[0], to(lastMoves[0]), p, toSquare);
 					if (lastMoves[1]) moves[i].score += 2 * followupHistory->getValue(lastMovingPieces[1], to(lastMoves[1]), p, toSquare);
 				}
 				Bitboard toBB = ToBitboard(toSquare);
+				if (ToBitboard(from(moves[i].move)) & bbNewlyAttacked) moves[i].score = Value(moves[i].score + 100);
 				if (toBB & safeSquaresForPiece(p))
 					moves[i].score = Value(moves[i].score + 500);
 				else if ((p < WPAWN) && (toBB & AttacksByPieceType(Color(SideToMove ^ 1), PAWN)) != 0)

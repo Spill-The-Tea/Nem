@@ -215,6 +215,7 @@ inline int popcount(Bitboard bb) {
 #endif
 
 inline Square lsb(Bitboard bb) {
+	assert(bb != 0);
 	unsigned long  index;
 #ifdef _WIN64
 	_BitScanForward64(&index, bb);
@@ -230,6 +231,7 @@ inline Square lsb(Bitboard bb) {
 }
 
 inline int msb(int n) {
+	assert(n != 0);
 	unsigned long result;
 #ifdef _WIN64
 	_BitScanReverse64(&result, n);
@@ -241,6 +243,7 @@ inline int msb(int n) {
 }
 
 inline Square msb(Bitboard b) {
+	assert(b != 0);
 	unsigned long result;
 #ifdef _WIN64
 	_BitScanReverse64(&result, b);
