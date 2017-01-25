@@ -350,11 +350,11 @@ Move position::NextMove() {
 	} while (generationPhases[generationPhase] != NONE);
 	return MOVE_NONE;
 end_post_killer:
-	if (killerManager != nullptr && (processedMoveGenerationPhases & (1<<(int)MoveGenerationType::KILLER)) != 0) {
+	if (killerManager != nullptr && (processedMoveGenerationPhases & (1 << (int)MoveGenerationType::KILLER)) != 0) {
 		if (killerManager->isKiller(*this, move)) return NextMove();
 	}
 end_post_hash:
-	if (hashMove && move == hashMove) return NextMove(); 
+	if (hashMove && move == hashMove) return NextMove();
 end:
 	return move;
 }
@@ -438,17 +438,18 @@ void position::evaluateByHistory(int startIndex) {
 				Move fixedMove = FixCastlingMove(moves[i].move);
 				Square toSquare = to(fixedMove);
 				Piece p = Board[from(fixedMove)];
-				moves[i].score = Value(history->getValue(p, fixedMove) - ChebishevDistance(toSquare, KingSquare(Color(SideToMove ^1)))); //History + king tropism if equal
+				moves[i].score = Value(history->getValue(p, fixedMove) - ChebishevDistance(toSquare, KingSquare(Color(SideToMove ^ 1)))); //History + king tropism if equal
 				if (lastMoves[0] && cmHistory) {
 					moves[i].score += 2 * cmHistory->getValue(lastMovingPieces[0], to(lastMoves[0]), p, toSquare);
 					if (lastMoves[1]) moves[i].score += 2 * followupHistory->getValue(lastMovingPieces[1], to(lastMoves[1]), p, toSquare);
 				}
 				Bitboard toBB = ToBitboard(toSquare);
-				if (ToBitboard(from(moves[i].move)) & bbNewlyAttacked) moves[i].score = Value(moves[i].score + 100);
-				if (toBB & safeSquaresForPiece(p))
+				if (ToBitboard(from(moves[i].move)) & bbNewlyAttacked) moves[i].score = Value(moves[i].score + 100); 
+				if ((toBB & (attackedByUs | ~attackedByThem)) != EMPTY)
 					moves[i].score = Value(moves[i].score + 500);
-				else if ((p < WPAWN) && (toBB & AttacksByPieceType(Color(SideToMove ^ 1), PAWN)) != 0)
+				else if ((p < WPAWN) && (toBB & AttacksByPieceType(Color(SideToMove ^ 1), PAWN)) != 0) {
 					moves[i].score = Value(moves[i].score - 500);
+				}
 				assert(moves[i].score < VALUE_MATE);
 			}
 			else moves[i].score = VALUE_DRAW;
@@ -666,7 +667,7 @@ const Value position::SEE(Move move) const
 
 	if (type(move) == ENPASSANT)
 	{
-		occ ^= toSquare - 8 * (1 - 2 *side); 
+		occ ^= toSquare - 8 * (1 - 2 * side);
 		gain[0] = PieceValues[PAWN].mgScore;
 	}
 
@@ -679,11 +680,11 @@ const Value position::SEE(Move move) const
 	mayXRay &= ~attadef;
 
 	// If there are no attackers we are done (we had a simple capture of a hanging piece)
-	side = Color(side ^1);
+	side = Color(side ^ 1);
 	Bitboard attackers = attadef & OccupiedByColor[side];
 
 	//Consider pinned pieces
-	if ((attackers & PinnedPieces(side)) != EMPTY && (bbPinner[side] & occ) != EMPTY) 
+	if ((attackers & PinnedPieces(side)) != EMPTY && (bbPinner[side] & occ) != EMPTY)
 		attackers &= ~PinnedPieces(side);
 
 	if (!attackers) return gain[0];
@@ -708,7 +709,7 @@ const Value position::SEE(Move move) const
 	} while (attackers && (capturingPiece != KING || (--d, false))); // Stop before a king capture
 
 	if (capturingPiece == PAWN && (toSquare <= H1 || toSquare >= A8)) {
-		gain[d-1] += PieceValues[QUEEN].mgScore - PieceValues[PAWN].mgScore;
+		gain[d - 1] += PieceValues[QUEEN].mgScore - PieceValues[PAWN].mgScore;
 	}
 
 	// find the best achievable score by minimaxing
@@ -1170,7 +1171,7 @@ bool position::givesCheck(Move move)
 		break;
 	}
 	//now check for discovered check
-	Bitboard dc = PinnedPieces(Color(SideToMove ^1));
+	Bitboard dc = PinnedPieces(Color(SideToMove ^ 1));
 	if (moveType == MoveType::ENPASSANT) {
 		//in EP-captures 2 "from"-Moves have to be checked for discovered (from-square and square of captured pawn)
 		if ((ToBitboard(fromSquare) & dc) != EMPTY) { //capturing pawn was pinned
@@ -1327,36 +1328,6 @@ Move position::parseSan(std::string move) {
 		if (move.find(toSan(legalMoves->move)) != std::string::npos) return legalMoves->move;
 	}
 	return MOVE_NONE;
-}
-
-const Bitboard position::safeSquaresForPiece(Piece piece) const {
-	Bitboard result, protectedBB;
-	if (GetColor(piece) == SideToMove) {
-		result = ~attackedByThem;
-		protectedBB = attackedByUs;
-	}
-	else {
-		result = ~attackedByUs;
-		protectedBB = attackedByThem;
-	}
-	switch (GetPieceType(piece)) {
-	case QUEEN:
-		result |= protectedBB & (AttacksByPieceType(GetColor(piece), QUEEN) | AttacksByPieceType(GetColor(piece), KING));
-		break;
-	case ROOK:
-		result |= protectedBB & (AttacksByPieceType(GetColor(piece), QUEEN) | AttacksByPieceType(GetColor(piece), KING) | AttacksByPieceType(GetColor(piece), ROOK));
-		break;
-	case BISHOP: case KNIGHT:
-		result |= protectedBB & (AttacksByPieceType(GetColor(piece), QUEEN) | AttacksByPieceType(GetColor(piece), KING) | AttacksByPieceType(GetColor(piece), ROOK)
-			| AttacksByPieceType(GetColor(piece), KNIGHT) | AttacksByPieceType(GetColor(piece), BISHOP));
-		break;
-	case PAWN:
-		result |= protectedBB;
-		break;
-	default:
-		break;
-	}
-	return result;
 }
 
 std::string position::printEvaluation() {

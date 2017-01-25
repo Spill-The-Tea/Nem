@@ -323,8 +323,6 @@ private:
 	template<bool CHECKED> bool CheckValidMoveExists();
 	//Checks for unusual Material (this means one side has more than one Queen or more than 2 rooks, knights or bishop)
 	bool checkMaterialIsUnusual() const;
-	//Returns a bitboard indicating all squares where a piece can move to, because it's either not attacked by the opponent or protected and not attacked by less valued pieces
-	const Bitboard safeSquaresForPiece(Piece piece) const;
 
 #ifdef TRACE
 	bool nullMovePosition = false;
