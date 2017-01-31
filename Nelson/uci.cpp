@@ -484,7 +484,7 @@ void UCIInterface::go(std::vector<std::string> &tokens) {
 	//	increment = pincrement;
 	//}
 	if (mode == UNDEF && moveTime == 0 && increment == 0 && nodes < INT64_MAX) mode = NODES;
-	Engine->timeManager.initialize(mode, moveTime, depth, nodes, moveTime, increment, movestogo, tnow, ponder);
+	Engine->timeManager.initialize(mode, moveTime, depth, nodes, moveTime, increment, movestogo, tnow, ponder, settings::options.getInt(settings::OPTION_NODES_TIME));
 
 	deleteThread();
 	Engine->PonderMode.store(ponder);

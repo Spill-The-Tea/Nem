@@ -25,7 +25,6 @@ struct MaterialTableEntry {
 	uint8_t MostValuedPiece; //high bits for black piece type
 
 	inline bool IsLateEndgame() { return EvaluationFunction != &evaluateDefault || Phase > 200; }
-	inline bool IsPawnEnding() { return Phase == 256; }
 	inline bool SkipPruning() { return (Flags & MSF_SKIP_PRUNING) != 0; }
 	inline bool IsTheoreticalDraw() { return (Flags & MSF_THEORETICAL_DRAW) != 0; }
 	inline bool NeedsScaling() { return (Flags & MSF_SCALE) != 0; }

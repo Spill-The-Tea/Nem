@@ -153,6 +153,7 @@ namespace settings {
 	const std::string OPTION_OWN_BOOK = "OwnBook";
 	const std::string OPTION_OPPONENT = "UCI_Opponent";
 	const std::string OPTION_EMERGENCY_TIME = "MoveOverhead";
+	const std::string OPTION_NODES_TIME = "Nodestime"; //Nodes per millisecond
 	const std::string OPTION_TEXEL_TUNING_WINS = "TTWin"; //Path to file containing EPD records of won positions
 	const std::string OPTION_TEXEL_TUNING_DRAWS = "TTDraw"; //Path to file containing EPD records of drawn positions
 	const std::string OPTION_TEXEL_TUNING_LOSSES = "TTLoss"; //Path to file containing EPD records of lost positions

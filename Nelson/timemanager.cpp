@@ -46,19 +46,21 @@ void timemanager::initialize(int time, int inc, int movestogo) {
 	_maxNodes = INT64_MAX;
     _hardStopTime = INT64_MAX;
 	_stopTime = INT64_MAX;
+	_nodestime = 0;
 	init();
 }
 
-void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nodes, int time, int inc, int movestogo, Time_t starttime, bool ponder) {
+void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nodes, int time, int inc, int movestogo, Time_t starttime, bool ponder, int nodestime) {
 	_starttime = starttime;
 	_time = time;
 	_inc = inc;
 	_movestogo = movestogo;
-	_maxNodes = nodes & (~MASK_TIME_CHECK);
+	_maxNodes = nodes;
 	_mode = UNDEF;
 	_maxDepth = std::min(MAX_DEPTH, depth);
 	_hardStopTime = INT64_MAX;
 	_stopTime = INT64_MAX;
+	_nodestime = nodestime;
 	if (mode == FIXED_TIME_PER_MOVE) {
 		_mode = mode;
 		_hardStopTime = _starttime + _time - EmergencyTime;
@@ -104,6 +106,7 @@ void timemanager::init() {
 		//_hardStopTime = std::min(_starttime + _time - EmergencyTime, _starttime + _time - emergencySpareTime);
 		//Give at least 10 ms
 		_hardStopTime = std::max(_starttime + _time - EmergencyTime, _starttime + 10);
+
 		if (_movestogo > 1)
 		_stopTime = std::min(int64_t(_starttime + remainingTime / remainingMoves), Time_t((_hardStopTime + _starttime)/2));
 		else _stopTime.store(_hardStopTime.load());
@@ -115,6 +118,7 @@ void timemanager::init() {
 			_hardStopTime -= spareTime;
 			//_hardStopTime.store(std::min(_hardStopTime.load(), _starttime + 4 * (_stopTime - _starttime)));
 		}
+		if (_nodestime) _maxNodes = (_hardStopTime - _starttime) * _nodestime;
 	}
 }
 
@@ -139,6 +143,7 @@ void timemanager::PonderHit() {
 			}
 		}
 	}
+	if (_nodestime) _maxNodes = (_hardStopTime - _starttime) * _nodestime;
 	//utils::debugInfo(print());
 }
 
@@ -150,7 +155,7 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 	_nodeCounts[currentDepth - 1] = nodecount;
 	_iterationTimes[currentDepth - 1] = tnow - _starttime;
 	//if (ponderMode) return true;
-	if (ExitSearch(tnow)) return false;
+	if (ExitSearch(nodecount, tnow)) return false;
 	switch (_mode)
 	{
 	case INFINIT:
@@ -158,7 +163,8 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 	case FIXED_DEPTH:
 		return currentDepth < _maxDepth;
 	case FIXED_TIME_PER_MOVE:
-		return _hardStopTime > tnow;
+		if (_nodestime) return nodecount < (_hardStopTime - _starttime) * _nodestime;
+		else return _hardStopTime > tnow;
 	default:
 
 		bool stable = currentDepth > 3 && _bestMoves[currentDepth - 1].move == _bestMoves[currentDepth - 2].move && _bestMoves[currentDepth - 1].move == _bestMoves[currentDepth - 3].move
@@ -167,7 +173,10 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 		double factor = stable ? 3 : 2;
 		//If a fail low has occurred assign even more time
 		if (_failLowDepth > 0) factor = factor / 2;
-		return tnow < _stopTime && (_starttime + Time_t(factor * (tnow - _starttime))) <= _stopTime;
+		if (_nodestime > 0) {
+			return (nodecount < (_stopTime - _starttime) * _nodestime)
+				&& ((factor * (tnow - _starttime)) * _nodestime) >= nodecount;
+		} else return tnow < _stopTime && (_starttime + Time_t(factor * (tnow - _starttime))) <= _stopTime;
 	}
 
 }

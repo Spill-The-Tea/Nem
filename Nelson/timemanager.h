@@ -35,7 +35,7 @@ enum TimeMode  { UNDEF,                   //Not yet defined
 		/* Timemanager initialization with full information
 		Initialization is done before every move
 		*/
-		void initialize(TimeMode mode, int movetime = 0, int depth = MAX_DEPTH, int64_t nodes = INT64_MAX, int time = 0, int inc = 0, int movestogo = 0, Time_t starttime = now(), bool ponder = false);
+		void initialize(TimeMode mode, int movetime = 0, int depth = MAX_DEPTH, int64_t nodes = INT64_MAX, int time = 0, int inc = 0, int movestogo = 0, Time_t starttime = now(), bool ponder = false, int nodestime = 0);
 		//Checks whether Search has to be exited even within an iteration
 		inline bool ExitSearch(int64_t nodes = 0, Time_t tnow = now()) const { return tnow >= _hardStopTime || nodes >= _maxNodes; }
 		//Checks whether a new iteration at next higher depth shall be started
@@ -69,9 +69,10 @@ enum TimeMode  { UNDEF,                   //Not yet defined
 		int _movestogo;
 		Time_t _starttime = 0;
 		int _maxDepth = MAX_DEPTH;
-		Time_t _maxNodes = INT64_MAX;
+		int64_t _maxNodes = INT64_MAX;
 		int _completedDepth = 0;
 		Time_t _completionTimeOfLastIteration = 0;
+		int _nodestime = 0;
 
 		//The time when search has to be aborted to avoid time loss
 		std::atomic<long long> _hardStopTime;
