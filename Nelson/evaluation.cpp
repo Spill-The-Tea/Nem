@@ -238,6 +238,13 @@ eval evaluateMobility(const position& pos) {
 		result -= MOBILITY_BONUS_KNIGHT[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
+	//Pawn mobility
+	Bitboard pawnTargets = abbWPawn & pos.ColorBB(BLACK);
+	pawnTargets |= (pos.PieceBB(PAWN, WHITE) << 8) & ~pos.OccupiedBB();
+	result += eval(10, 10) * popcount(pawnTargets);
+	pawnTargets = abbBPawn & pos.ColorBB(WHITE);
+	pawnTargets |= (pos.PieceBB(PAWN, BLACK) >> 8) & ~pos.OccupiedBB();
+	result -= eval(10, 10) * popcount(pawnTargets);
 	return result;
 }
 
