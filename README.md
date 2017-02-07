@@ -81,12 +81,12 @@ Nemorino 2.00
 * [CCRL 40/40 **Elo 2960 #30**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%202.00%2064-bit#Nemorino_2_00_64-bit)
 * [CCRL 40/4 ` `**Elo 2984 #28**](http://www.computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%202.00%2064-bit#Nemorino_2_00_64-bit)
 * [CEGT 40/20 **Elo 2854 #27**](http://www.husvankempen.de/nunn/40_40%20Rating%20List/40_40%20SingleVersion/rangliste.html)
+* [CEGT 40/4 ` `**Elo 2853 #11**](http://www.husvankempen.de/nunn/40_4_Ratinglist/40_4_single/rangliste.html)
 * [FastGM Bullet **Elo 2941 #28**](http://www.fastgm.de/60-0.60.html)
 * [Owl Chess **Elo 3013 #26**](http://chessowl.blogspot.de/p/rating-list_27.html)
 
 Nemorino 1.0x
 
-* [CEGT 40/4 ` `**Elo 2763 #41**](http://www.husvankempen.de/nunn/40_4_Ratinglist/40_4_single/497.html)
 * [FCP 40/10 ` `**Elo 2797 #29**](http://www.amateurschach.de/fcp-rating-list.txt)
 
 ### Remarks ###
