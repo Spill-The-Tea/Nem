@@ -19,6 +19,8 @@ const Bitboard F_FILE = E_FILE << 1;
 const Bitboard G_FILE = F_FILE << 1;
 const Bitboard H_FILE = G_FILE << 1;
 const Bitboard FILES[] = { A_FILE, B_FILE, C_FILE, D_FILE, E_FILE, F_FILE, G_FILE, H_FILE };
+const Bitboard KingAttackFiles[8] = { A_FILE | B_FILE, A_FILE | B_FILE | C_FILE, B_FILE | C_FILE | D_FILE, C_FILE | D_FILE | E_FILE,
+                                      D_FILE | E_FILE | F_FILE, E_FILE | F_FILE | G_FILE, F_FILE | G_FILE | H_FILE, G_FILE | H_FILE };
 const Bitboard RANK1 = 0xFF;
 const Bitboard RANK2 = 0xFF00;
 const Bitboard RANK3 = 0xFF0000;

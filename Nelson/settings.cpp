@@ -378,7 +378,7 @@ namespace settings {
 		(*this)[OPTION_OWN_BOOK] = (Option *)(new OptionCheck(OPTION_OWN_BOOK, false));
 		(*this)[OPTION_OPPONENT] = (Option *)(new OptionString(OPTION_OPPONENT));
 		(*this)[OPTION_EMERGENCY_TIME] = (Option *)(new OptionSpin(OPTION_EMERGENCY_TIME, 100, 0, 60000));
-		(*this)[OPTION_NODES_TIME] = (Option *)(new OptionSpin(OPTION_NODES_TIME, 0, 0, INT_MAX));
+		(*this)[OPTION_NODES_TIME] = (Option *)(new OptionSpin(OPTION_NODES_TIME, 0, 0, INT_MAX, true));
 		(*this)[OPTION_TEXEL_TUNING_WINS] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_WINS, "", true));
 		(*this)[OPTION_TEXEL_TUNING_DRAWS] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_DRAWS, "", true));
 		(*this)[OPTION_TEXEL_TUNING_LOSSES] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_LOSSES, "", true));
