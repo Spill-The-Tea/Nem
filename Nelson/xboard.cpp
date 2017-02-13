@@ -377,7 +377,7 @@ namespace cecp {
 		protocolVersion = stoi(tokens[1]);
 		sync_cout << "feature ping=1 setboard=1 usermove=1 time=1 draw=1 sigint=0 sigterm=0 reuse=0 myname=\"Nemorino\""
 			<< " variants=\"normal,fischerrandom\" colors=0 ics=1 name=1 include=1"
-			<< " memory=1 smp=1 ics=1 name=1"
+			<< " memory=1 smp=1 name=1"
 #ifdef TB
 			<< " egt = \"syzygy\""
 #endif

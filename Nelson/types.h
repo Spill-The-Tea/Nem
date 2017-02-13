@@ -176,6 +176,7 @@ inline Move createMove(int from, int to) { return Move(to | (from << 6)); }
 inline Square from(Move move) { return Square((move >> 6) & 0x3F); }
 
 inline Square to(Move move) { return Square(move & 0x3F); }
+inline Move invert(Move m) { return Move((m & 0xF000) | from(m) | (to(m) << 6)); }
 
 inline Square flip(Square s) { return Square(s ^ 56); }
 

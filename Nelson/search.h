@@ -27,13 +27,13 @@ void printCaptureStat();
 
 #ifdef MOVE_STAT
 struct MoveOrderStatEntry {
-public: 
+public:
 	std::string fen;
 	std::vector<Move> moves;
 	Move cutoffMove;
 	int depth;
 	uint64_t wastedNodes;
-  };
+};
 #endif
 
 
@@ -679,7 +679,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			Value limit = PieceValues[GetPieceType(pos.getCapturedInLastMove())].mgScore;
 			Move ttm = ttMove;
 			if (ttm != MOVE_NONE && cpos.SEE(ttMove) < limit) ttm = MOVE_NONE;
-			cpos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, &followupHistory, nullptr, MOVE_NONE, ttm, limit);
+			cpos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, &followupHistory, nullptr, MOVE_NONE, ttm);
 			Move move;
 			while ((move = cpos.NextMove())) {
 				position next(cpos);
@@ -718,8 +718,8 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	int moveIndex = 0;
 	bool ZWS = !PVNode;
 	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
-	bool trySE = depth >= 8  && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
-	 && excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
+	bool trySE = depth >= 8 && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
+		&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
 #ifdef MOVE_STAT
 	MoveOrderStatEntry moveOrderStatEntry;
 	int64_t nodeCountbefore = NodeCount;
@@ -727,7 +727,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	while ((move = pos.NextMove())) {
 		if (move == excludeMove) continue;
 		int reducedDepth = lmr ? depth - settings::LMRReduction(depth, moveIndex) : depth;
-		bool prunable = !PVNode && reducedDepth <= 3 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
+		bool prunable = !PVNode && reducedDepth <= 4 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
 			&& !killerManager.isKiller(pos, move) && (pos.IsQuietAndNoCastles(move) || pos.GetMoveGenerationPhase() == MoveGenerationType::LOOSING_CAPTURES) && !pos.givesCheck(move);
 		if (prunable) {
 			//assert(type(move) == MoveType::NORMAL && pos.GetPieceOnSquare(to(move)) == Piece::BLANK);
