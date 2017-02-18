@@ -744,6 +744,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 		}
 		position next(pos);
 		if (next.ApplyMove(move)) {
+			killerManager.enterLevel(next);
 #ifdef MOVE_STAT
 			moveOrderStatEntry.moves.push_back(move);
 			moveOrderStatEntry.wastedNodes = NodeCount - nodeCountbefore;
