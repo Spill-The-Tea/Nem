@@ -80,8 +80,9 @@ Nemorino 2.00
 
 * [CCRL 40/40 **Elo 2960 #30**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%202.00%2064-bit#Nemorino_2_00_64-bit)
 * [CCRL 40/4 ` `**Elo 2984 #28**](http://www.computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%202.00%2064-bit#Nemorino_2_00_64-bit)
-* [CEGT 40/20 **Elo 2854 #27**](http://www.husvankempen.de/nunn/40_40%20Rating%20List/40_40%20SingleVersion/rangliste.html)
-* [CEGT 40/4 ` `**Elo 2853 #11**](http://www.husvankempen.de/nunn/40_4_Ratinglist/40_4_single/rangliste.html)
+* [CEGT 40/20 **Elo 2856 #27**](http://www.husvankempen.de/nunn/40_40%20Rating%20List/40_40%20SingleVersion/rangliste.html)
+* [CEGT 40/4 ` `**Elo 2851 #32**](http://www.husvankempen.de/nunn/40_4_Ratinglist/40_4_single/rangliste.html)
+* [CEGT 5+3 PB=ON **Elo 2795 #29**](http://www.husvankempen.de/nunn/5Plus3Rating/Purelist/rangliste.html)
 * [FastGM Bullet **Elo 2941 #28**](http://www.fastgm.de/60-0.60.html)
 * [Owl Chess **Elo 3013 #26**](http://chessowl.blogspot.de/p/rating-list_27.html)
 
