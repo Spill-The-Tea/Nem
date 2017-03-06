@@ -65,8 +65,6 @@ public:
 	int MaxDepth = 0;
 	//Flag, indicating that search shall stop as soon as possible 
 	std::atomic<bool> Stop;
-	//Flag indicating that search shall be exited (will be called from destructor to stop engine threads)
-	std::atomic<bool> Exit;
 	//Polyglot bookfile if provided
 	std::string * BookFile = nullptr;
 	int rootMoveCount = 0;
@@ -160,7 +158,7 @@ protected:
 
 template<ThreadType T> struct search : public baseSearch {
 public:
-	//Reference to the Master Thread (only set when T == SLAVE
+	//Reference to the Master Thread (only set when T == SLAVE)
 	baseSearch * master = nullptr;
 
 	search();
@@ -173,7 +171,7 @@ public:
 	void initializeSlave(baseSearch * masterSearch, int id);
 	ThreadType GetType() { return T; }
 	std::condition_variable cvStart;
-	std::mutex mtxStart;
+	std::mutex mtxSearch; //Ensures that only one search is running
 	//reference to slave objects (only set when T == MASTER)
 	search<SLAVE> * slaves = nullptr;
 	//slave threads
@@ -195,7 +193,6 @@ private:
 	void updateCutoffStats(const Move cutoffMove, int depth, position &pos, int moveIndex);
 	//Thread id (0: MASTER or SINGLE, SLAVES are sequentially numbered starting with 1
 	int id = 0;
-
 };
 
 //This method is a in theory useless indirection to start the slave threads as it only calls slave.startHelper(), which is the worker method of the slave thread.
@@ -204,6 +201,8 @@ private:
 void startThread(search<SLAVE> & slave);
 
 template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
+	assert(T != SLAVE);
+	std::lock_guard<std::mutex> lgStart(mtxSearch);
 #ifdef TRACE
 	//pos.move_history->clear();
 	utils::clearSearchTree();
@@ -295,15 +294,12 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		//SMP active => start helper threads (if not yet done)
 		if (slaves == nullptr) {
 			slaves = new search<SLAVE>[HelperThreads];
-			for (int i = 0; i < HelperThreads; ++i) subThreads.push_back(std::thread(&startThread, std::ref(slaves[i])));
 		}
 		//Initialize slaves and wake them up
 		for (int i = 0; i < HelperThreads; ++i) {
 			//slaves[i].initializeSlave(this);			
-			slaves[i].mtxStart.lock();
 			slaves[i].initializeSlave(this, i + 1);
-			slaves[i].mtxStart.unlock();
-			slaves[i].cvStart.notify_one();
+			subThreads.push_back(std::thread(&startThread, std::ref(slaves[i])));
 		}
 	}
 	//Special logic to get static evaluation via UCI: if go depth 0 is requested simply return static evaluation
@@ -383,7 +379,9 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	}
 	if (T == MASTER) {
 		//search is done, send helper threads to sleep
-		for (int i = 0; i < HelperThreads; ++i) slaves[i].StopThinking();
+		for (int i = 0; i < HelperThreads; ++i) {
+			slaves[i].StopThinking();
+		}
 	}
 
 END://when pondering engine must not return a best move before opponent moved => therefore let main thread wait	
@@ -413,6 +411,10 @@ END://when pondering engine must not return a best move before opponent moved =>
 #endif
 	//If for some reason search did not find a best move return the  first one (to avoid loss and it's anyway the best guess then)
 	if (BestMove.move == MOVE_NONE) BestMove = rootMoves[0];
+	if (T == MASTER && rootMoveCount > 1) {
+		for (int i = 0; i < HelperThreads; ++i) subThreads[i].join();
+		subThreads.clear();
+	}
 	if (rootMoves) delete[] rootMoves;
 	rootMoves = nullptr;
 	return BestMove;
@@ -436,20 +438,16 @@ template<ThreadType T> void search<T>::initializeSlave(baseSearch * masterSearch
 //slave thread: slave threads are searching until stopped and then send to sleep. When a new position is searched, then they are
 //woke up again. As guard against spurious wake-ups the pointer to the master search is used (this is of course strange and should be replaced by some atomic flag)
 template<ThreadType T> void search<T>::startHelper() {
-	while (!Exit.load()) {
-		std::unique_lock<std::mutex> lckStart(mtxStart);
-		while (master == nullptr) cvStart.wait(lckStart); //Sleep
-		int depth = 1;
-		std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
-		//Iterative Deepening Loop
-		while (!Stop && depth <= MAX_DEPTH) {
-			Value alpha = -VALUE_MATE;
-			Value beta = VALUE_MATE;
-			SearchRoot(alpha, beta, rootPosition, depth, &PVMoves[0]);
-			std::stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
-			++depth;
-		}
-		master = nullptr;
+	assert(T == SLAVE);
+	int depth = 1;
+	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
+	//Iterative Deepening Loop
+	while (!Stop.load() && depth <= MAX_DEPTH) {
+		Value alpha = -VALUE_MATE;
+		Value beta = VALUE_MATE;
+		SearchRoot(alpha, beta, rootPosition, depth, &PVMoves[0]);
+		std::stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
+		++depth;
 	}
 	delete[] rootMoves;
 }
@@ -460,11 +458,8 @@ template<ThreadType T> search<T>::~search() {
 	//stop and delete Slave Threads
 	if (T == MASTER && slaves != nullptr) {
 		for (int i = 0; i < HelperThreads; ++i) {
-			slaves[i].Exit.store(true);
-			slaves[i].master = this;
-			slaves[i].cvStart.notify_one();
 			slaves[i].StopThinking();
-			subThreads[i].join();
+			if (subThreads[i].joinable()) subThreads[i].join();
 		}
 		delete[] slaves;
 	}
@@ -771,7 +766,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			if (lmr && extension == 0 && moveIndex != 0 && move != counter && pos.QuietMoveGenerationPhaseStarted() && !next.Checked()) {
 				reduction = settings::LMRReduction(depth, moveIndex);
 				if (cutNode) ++reduction;
-				if (PVNode && reduction > 0) --reduction;				
+				if (PVNode && reduction > 0) --reduction;
 #ifdef STAT_LMR
 				lmrCount += reduction > 0;
 #endif

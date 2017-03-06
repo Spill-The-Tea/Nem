@@ -1,9 +1,11 @@
 #include <iostream>
+#include <mutex>
 #include "tablebase.h"
 
 namespace Tablebases {
 
 	int MaxCardinality = 0;
+	std::mutex mtx;
 
 	void init(const std::string& path) {
 		tb_init(path.c_str());
@@ -11,6 +13,7 @@ namespace Tablebases {
 	}
 
 	int probe_wdl(position& pos, int *success) {
+		std::lock_guard<std::mutex> lck(mtx);
 		unsigned int result = tb_probe_wdl(
 			pos.ColorBB(WHITE),
 			pos.ColorBB(BLACK),

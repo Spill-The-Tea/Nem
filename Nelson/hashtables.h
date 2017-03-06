@@ -1,7 +1,6 @@
 #pragma once
 
 #include <thread>
-#include <mutex>
 #include <atomic>
 #include <ios>
 #include "types.h"

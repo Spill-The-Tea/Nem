@@ -1052,7 +1052,7 @@ static uint64 calc_factors_piece(int *factor, int num, int order, ubyte *norm, u
   f = 1;
   for (i = norm[0], k = 0; i < num || k == order; k++) {
     if (k == order) {
-      factor[0] = f;
+      factor[0] = (int)f;
 #ifndef CONNECTED_KINGS
       f *= pivfac[enc_type];
 #else
@@ -1062,7 +1062,7 @@ static uint64 calc_factors_piece(int *factor, int num, int order, ubyte *norm, u
 	f *= mfactor[enc_type - 2];
 #endif
     } else {
-      factor[i] = f;
+      factor[i] = (int)f;
       f *= subfactor(norm[i], n);
       n -= norm[i];
       i += norm[i];
@@ -1084,13 +1084,13 @@ static uint64 calc_factors_pawn(int *factor, int num, int order, int order2, uby
   f = 1;
   for (k = 0; i < num || k == order || k == order2; k++) {
     if (k == order) {
-      factor[0] = f;
+      factor[0] = (int)f;
       f *= pfactor[norm[0] - 1][file];
     } else if (k == order2) {
-      factor[norm[0]] = f;
+      factor[norm[0]] = (int)f;
       f *= subfactor(norm[norm[0]], 48 - norm[0]);
     } else {
-      factor[i] = f;
+      factor[i] = (int)f;
       f *= subfactor(norm[i], n);
       n -= norm[i];
       i += norm[i];
@@ -1256,7 +1256,7 @@ static struct PairsData *setup_pairs(unsigned char *data, uint64 tb_size, uint64
   d->min_len = min_len;
   *next = &data[12 + 2 * h + 3 * num_syms + (num_syms & 1)];
 
-  int num_indices = (tb_size + (1ULL << idxbits) - 1) >> idxbits;
+  int num_indices = (int)((tb_size + (1ULL << idxbits) - 1) >> idxbits);
   size[0] = 6ULL * num_indices;
   size[1] = 2ULL * num_blocks;
   size[2] = (1ULL << blocksize) * real_num_blocks;
@@ -1433,7 +1433,7 @@ static int init_table_dtz(struct TBEntry *entry)
     if (ptr->flags & 2) {
       int i;
       for (i = 0; i < 4; i++) {
-	ptr->map_idx[i] = (data + 1 - ptr->map);
+	ptr->map_idx[i] = (ushort)(data + 1 - ptr->map);
 	data += 1 + data[0];
       }
       data += ((uintptr_t)data) & 0x01;
@@ -1467,7 +1467,7 @@ static int init_table_dtz(struct TBEntry *entry)
       if (ptr->flags[f] & 2) {
 	int i;
 	for (i = 0; i < 4; i++) {
-	  ptr->map_idx[f][i] = (data + 1 - ptr->map);
+	  ptr->map_idx[f][i] = (ushort)(data + 1 - ptr->map);
 	  data += 1 + data[0];
 	}
       }
@@ -1499,8 +1499,8 @@ static ubyte decompress_pairs(struct PairsData *d, uint64 idx)
   if (!d->idxbits)
     return d->min_len;
 
-  uint32 mainidx = idx >> d->idxbits;
-  int litidx = (idx & ((1 << d->idxbits) - 1)) - (1 << (d->idxbits - 1));
+  uint32 mainidx = (uint32)(idx >> d->idxbits);
+  int litidx = (int)(idx & (((uint64)1 << d->idxbits) - 1)) - ((uint64)1 << (d->idxbits - 1));
   uint32 block = *(uint32 *)(d->indextable + 6 * mainidx);
   litidx += *(ushort *)(d->indextable + 6 * mainidx + 4);
   if (litidx < 0) {
