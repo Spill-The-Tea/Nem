@@ -5,6 +5,7 @@
 #include <cstring>
 #include <cstdlib>
 #include <vector>
+#include <queue>
 #include "uci.h"
 #include "utils.h"
 #include "position.h"
@@ -28,7 +29,14 @@ void UCIInterface::copySettings(baseSearch * source, baseSearch * destination) {
 void UCIInterface::loop() {
 	uci();
 	std::string line;
+#ifdef CRASH
+	std::queue<std::string> cmds;
+#endif
 	while (std::getline(std::cin, line)) {
+#ifdef CRASH
+		if (cmds.size() > 100) cmds.pop();
+		cmds.emplace(line);
+#endif
 		dispatch(line);
 	}
 }

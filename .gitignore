@@ -205,3 +205,9 @@ ModelManifest.xml
 Nelson/Nelson.vcxproj.filters
 /Nelson/nemorino
 /Nemorino_last.zip
+/.vs/Nemorino/v15/Solution.VC.db-shm
+/.vs/Nemorino/v15/Solution.VC.db-wal
+*.db-shm
+*.db-wal
+/.vs/Nemorino/v15
+/.vs/Nemorino/v15/Solution.VC.db-shm

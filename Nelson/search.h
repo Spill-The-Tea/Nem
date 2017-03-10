@@ -6,7 +6,6 @@
 #include <vector>
 #include <atomic>
 #include <mutex>
-#include <condition_variable>
 #include "types.h"
 #include "book.h"
 #include "board.h"
@@ -27,13 +26,13 @@ void printCaptureStat();
 
 #ifdef MOVE_STAT
 struct MoveOrderStatEntry {
-public: 
+public:
 	std::string fen;
 	std::vector<Move> moves;
 	Move cutoffMove;
 	int depth;
 	uint64_t wastedNodes;
-  };
+};
 #endif
 
 
@@ -65,12 +64,10 @@ public:
 	int MaxDepth = 0;
 	//Flag, indicating that search shall stop as soon as possible 
 	std::atomic<bool> Stop;
-	//Flag indicating that search shall be exited (will be called from destructor to stop engine threads)
-	std::atomic<bool> Exit;
 	//Polyglot bookfile if provided
 	std::string * BookFile = nullptr;
 	int rootMoveCount = 0;
-	ValuatedMove * rootMoves = nullptr;
+	ValuatedMove rootMoves[MAX_MOVE_COUNT];
 	position rootPosition;
 	//For analysis purposes, list of root moves which shall be considered
 	std::vector<Move> searchMoves;
@@ -172,8 +169,7 @@ public:
 	//Initialize slave threads (once per move)
 	void initializeSlave(baseSearch * masterSearch, int id);
 	ThreadType GetType() { return T; }
-	std::condition_variable cvStart;
-	std::mutex mtxStart;
+	std::mutex mtxSearch;
 	//reference to slave objects (only set when T == MASTER)
 	search<SLAVE> * slaves = nullptr;
 	//slave threads
@@ -204,6 +200,7 @@ private:
 void startThread(search<SLAVE> & slave);
 
 template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
+	std::lock_guard<std::mutex> lgStart(mtxSearch);
 #ifdef TRACE
 	//pos.move_history->clear();
 	utils::clearSearchTree();
@@ -255,12 +252,10 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	//If a search move list is provided replace root moves by search moves
 	if (searchMoves.size()) {
 		rootMoveCount = int(searchMoves.size());
-		rootMoves = new ValuatedMove[rootMoveCount];
 		for (int i = 0; i < rootMoveCount; ++i) rootMoves[i].move = searchMoves[i];
 		searchMoves.clear();
 	}
 	else {
-		rootMoves = new ValuatedMove[rootMoveCount];
 		memcpy(rootMoves, generatedMoves, rootMoveCount * sizeof(ValuatedMove));
 	}
 #ifdef TB
@@ -275,9 +270,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		if (tbHit) {
 			tbHits++;
 			probeTB = false;
-			delete[] rootMoves;
 			rootMoveCount = (int)tbMoves.size();
-			rootMoves = new ValuatedMove[rootMoveCount];
 			std::copy(tbMoves.begin(), tbMoves.end(), rootMoves);
 			if (rootMoveCount == 1) {
 				rootMoves[0].score = score;
@@ -295,16 +288,12 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		//SMP active => start helper threads (if not yet done)
 		if (slaves == nullptr) {
 			slaves = new search<SLAVE>[HelperThreads];
-			for (int i = 0; i < HelperThreads; ++i) subThreads.push_back(std::thread(&startThread, std::ref(slaves[i])));
 		}
 		//Initialize slaves and wake them up
 		for (int i = 0; i < HelperThreads; ++i) {
-			//slaves[i].initializeSlave(this);			
-			slaves[i].mtxStart.lock();
 			slaves[i].initializeSlave(this, i + 1);
-			slaves[i].mtxStart.unlock();
-			slaves[i].cvStart.notify_one();
 		}
+		for (int i = 0; i < HelperThreads; ++i) subThreads.push_back(std::thread(&startThread, std::ref(slaves[i])));
 	}
 	//Special logic to get static evaluation via UCI: if go depth 0 is requested simply return static evaluation
 	if (timeManager.GetMaxDepth() == 0) {
@@ -413,8 +402,10 @@ END://when pondering engine must not return a best move before opponent moved =>
 #endif
 	//If for some reason search did not find a best move return the  first one (to avoid loss and it's anyway the best guess then)
 	if (BestMove.move == MOVE_NONE) BestMove = rootMoves[0];
-	if (rootMoves) delete[] rootMoves;
-	rootMoves = nullptr;
+	if (T == MASTER && rootMoveCount > 1) {
+		for (int i = 0; i < HelperThreads; ++i) subThreads[i].join();
+		subThreads.clear();
+	}
 	return BestMove;
 }
 
@@ -424,7 +415,6 @@ template<ThreadType T> void search<T>::initializeSlave(baseSearch * masterSearch
 		master = masterSearch;
 		id = Id;
 		rootMoveCount = masterSearch->rootMoveCount;
-		rootMoves = new ValuatedMove[rootMoveCount];
 		memcpy(rootMoves, masterSearch->rootMoves, rootMoveCount * sizeof(ValuatedMove));
 		rootPosition = position(masterSearch->rootPosition);
 		rootPosition.copy(masterSearch->rootPosition);
@@ -433,25 +423,23 @@ template<ThreadType T> void search<T>::initializeSlave(baseSearch * masterSearch
 	}
 }
 
-//slave thread: slave threads are searching until stopped and then send to sleep. When a new position is searched, then they are
-//woke up again. As guard against spurious wake-ups the pointer to the master search is used (this is of course strange and should be replaced by some atomic flag)
+//slave thread
 template<ThreadType T> void search<T>::startHelper() {
-	while (!Exit.load()) {
-		std::unique_lock<std::mutex> lckStart(mtxStart);
-		while (master == nullptr) cvStart.wait(lckStart); //Sleep
+	assert(T == SLAVE);
+	try {
 		int depth = 1;
 		std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
 		//Iterative Deepening Loop
-		while (!Stop && depth <= MAX_DEPTH) {
+		while (!Stop.load() && depth <= MAX_DEPTH) {
 			Value alpha = -VALUE_MATE;
 			Value beta = VALUE_MATE;
 			SearchRoot(alpha, beta, rootPosition, depth, &PVMoves[0]);
-			std::stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
 			++depth;
 		}
-		master = nullptr;
 	}
-	delete[] rootMoves;
+	catch (std::exception) {
+		return;
+	}
 }
 
 template<ThreadType T> search<T>::search() {  }
@@ -460,11 +448,8 @@ template<ThreadType T> search<T>::~search() {
 	//stop and delete Slave Threads
 	if (T == MASTER && slaves != nullptr) {
 		for (int i = 0; i < HelperThreads; ++i) {
-			slaves[i].Exit.store(true);
-			slaves[i].master = this;
-			slaves[i].cvStart.notify_one();
 			slaves[i].StopThinking();
-			subThreads[i].join();
+			if (subThreads[i].joinable()) subThreads[i].join();
 		}
 		delete[] slaves;
 	}
@@ -718,8 +703,8 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	int moveIndex = 0;
 	bool ZWS = !PVNode;
 	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
-	bool trySE = depth >= 8  && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
-	 && excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
+	bool trySE = depth >= 8 && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
+		&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
 #ifdef MOVE_STAT
 	MoveOrderStatEntry moveOrderStatEntry;
 	int64_t nodeCountbefore = NodeCount;
@@ -770,7 +755,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			if (lmr && extension == 0 && moveIndex != 0 && move != counter && pos.QuietMoveGenerationPhaseStarted() && !next.Checked()) {
 				reduction = settings::LMRReduction(depth, moveIndex);
 				if (cutNode) ++reduction;
-				if (PVNode && reduction > 0) --reduction;				
+				if (PVNode && reduction > 0) --reduction;
 #ifdef STAT_LMR
 				lmrCount += reduction > 0;
 #endif

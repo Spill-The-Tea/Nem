@@ -17,8 +17,84 @@
 #include "tablebase.h"
 #endif
 
+#ifdef CRASH
+#include <Windows.h>
+#include <Dbghelp.h>
+#include <tchar.h>
+#include <strsafe.h>
+#include <shlobj.h>
+
+#pragma comment(lib, "DbgHelp")
+#define MAX_BUFF_SIZE 1024
+
+//Create dump coding copied from https://www.codeproject.com/Articles/708670/Part-Windows-Debugging-Techniques-Debugging-Appl
+void make_minidump(EXCEPTION_POINTERS* e)
+{
+	TCHAR tszFileName[MAX_BUFF_SIZE] = { 0 };
+	TCHAR tszPath[MAX_BUFF_SIZE] = { 0 };
+	SYSTEMTIME stTime = { 0 };
+	GetSystemTime(&stTime);
+	SHGetSpecialFolderPath(NULL, tszPath, CSIDL_APPDATA, FALSE);
+	StringCbPrintf(tszFileName,
+		_countof(tszFileName),
+		_T("%s\\%s__%4d%02d%02d_%02d%02d%02d.dmp"),
+		tszPath, _T("CrashDump"),
+		stTime.wYear,
+		stTime.wMonth,
+		stTime.wDay,
+		stTime.wHour,
+		stTime.wMinute,
+		stTime.wSecond);
+
+	HANDLE hFile = CreateFile(tszFileName, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
+	if (hFile == INVALID_HANDLE_VALUE)
+		return;
+
+	MINIDUMP_EXCEPTION_INFORMATION exceptionInfo;
+	exceptionInfo.ThreadId = GetCurrentThreadId();
+	exceptionInfo.ExceptionPointers = e;
+	exceptionInfo.ClientPointers = FALSE;
+
+	MiniDumpWriteDump(
+		GetCurrentProcess(),
+		GetCurrentProcessId(),
+		hFile,
+		MINIDUMP_TYPE(MiniDumpWithIndirectlyReferencedMemory | MiniDumpScanMemory | MiniDumpWithFullMemory),
+		e ? &exceptionInfo : NULL,
+		NULL,
+		NULL);
+
+	if (hFile)
+	{
+		CloseHandle(hFile);
+		hFile = NULL;
+	}
+	return;
+}
+
+LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
+{
+	make_minidump(e);
+	return EXCEPTION_CONTINUE_SEARCH;
+}
+#endif
+
+#ifdef _WIN64
+#pragma unmanaged  
+std::exception seExc("Windows Exception");
+
+void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
+{
+	throw seExc;
+}
+
+#endif 
+
+
+
 const int MAJOR_VERSION = 2;
 const int MINOR_VERSION = 0;
+const char PATCH_VERSION = 'a';
 
 
 static bool popcountSupport();
@@ -27,6 +103,12 @@ static bool popcountSupport();
 #include "nomad.h"
 #else
 int main(int argc, const char* argv[]) {
+#ifdef CRASH
+	SetUnhandledExceptionFilter(unhandled_handler);
+#endif
+#ifdef _WIN64
+	_set_se_translator(exc_transl);
+#endif
 #ifndef NO_POPCOUNT
 	if (!popcountSupport()) {
 		std::cout << "No Popcount support - Engine does't work on this hardware!" << std::endl;
@@ -63,9 +145,9 @@ int main(int argc, const char* argv[]) {
 		}
 		else if (!input.compare(0, 7, "version")) {
 #ifdef NO_POPCOUNT
-			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << " (No Popcount)" << std::setfill(' ') << std::endl;
+			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << PATCH_VERSION << " (No Popcount)" << std::setfill(' ') << std::endl;
 #else
-			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << std::setfill(' ') << std::endl;
+			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << PATCH_VERSION << std::setfill(' ') << std::endl;
 #endif
 		}
 		else if (!input.compare(0, 8, "position")) {

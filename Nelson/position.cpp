@@ -95,7 +95,7 @@ bool position::ApplyMove(Move move) {
 				else MaterialKey = calculateMaterialKey();
 			}
 			else MaterialKey -= materialKeyFactors[capturedInLastMove];
-			material = &MaterialTable[MaterialKey];
+			material = probe(MaterialKey);
 		}
 		if (kingSquares[SideToMove] == fromSquare) kingSquares[SideToMove] = toSquare;
 		break;
@@ -108,7 +108,7 @@ bool position::ApplyMove(Move move) {
 		}
 		else {
 			MaterialKey -= materialKeyFactors[BPAWN - SideToMove];
-			material = &MaterialTable[MaterialKey];
+			material = probe(MaterialKey);
 		}
 		SetEPSquare(OUTSIDE);
 		DrawPlyCount = 0;
@@ -126,14 +126,13 @@ bool position::ApplyMove(Move move) {
 		//Adjust Material Key
 		if (checkMaterialIsUnusual()) {
 			MaterialKey = MATERIAL_KEY_UNUSUAL;
-			material = &MaterialTable[MaterialKey];
-			material->Evaluation = calculateMaterialEval(*this);
+			material = initUnusual(*this);
 		}
 		else {
 			if (MaterialKey == MATERIAL_KEY_UNUSUAL) MaterialKey = calculateMaterialKey();
 			else
 				MaterialKey = MaterialKey - materialKeyFactors[WPAWN + SideToMove] - materialKeyFactors[capturedInLastMove] + materialKeyFactors[convertedTo];
-			material = &MaterialTable[MaterialKey];
+			material = probe(MaterialKey);
 		}
 		break;
 	case CASTLING:
@@ -884,12 +883,11 @@ void position::setFromFEN(const std::string& fen) {
 	pawn = pawn::probe(*this);
 	if (checkMaterialIsUnusual()) {
 		MaterialKey = MATERIAL_KEY_UNUSUAL;
-		material = &MaterialTable[MaterialKey];
-		material->Evaluation = calculateMaterialEval(*this);
+		material = initUnusual(*this);
 	}
 	else {
 		MaterialKey = calculateMaterialKey();
-		material = &MaterialTable[MaterialKey];
+		material = probe(MaterialKey);
 	}
 	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	attackedByUs = calculateAttacks(SideToMove);

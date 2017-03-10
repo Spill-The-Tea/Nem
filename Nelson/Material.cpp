@@ -10,6 +10,7 @@
 
 
 MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 2];
+thread_local MaterialTableEntry UnusualMaterial;
 
 MaterialKey_t calculateMaterialKey(int * pieceCounts) {
 	MaterialKey_t key = MATERIAL_KEY_OFFSET;
@@ -18,7 +19,17 @@ MaterialKey_t calculateMaterialKey(int * pieceCounts) {
 	return key;
 }
 
-eval calculateMaterialEval(position &pos) {
+MaterialTableEntry * initUnusual(const position & pos)
+{
+	UnusualMaterial.Evaluation = calculateMaterialEval(pos);
+	UnusualMaterial.EvaluationFunction = &evaluateDefault;
+	UnusualMaterial.Phase = 128;
+	UnusualMaterial.MostValuedPiece = 0;
+	UnusualMaterial.Flags = MSF_DEFAULT;
+	return &UnusualMaterial;
+}
+
+eval calculateMaterialEval(const position &pos) {
 	int diffQ = popcount(pos.PieceBB(QUEEN, WHITE)) - popcount(pos.PieceBB(QUEEN, BLACK));
 	int diffR = popcount(pos.PieceBB(ROOK, WHITE)) - popcount(pos.PieceBB(ROOK, BLACK));
 	int diffB = popcount(pos.PieceBB(BISHOP, WHITE)) - popcount(pos.PieceBB(BISHOP, BLACK));
@@ -28,7 +39,7 @@ eval calculateMaterialEval(position &pos) {
 }
 
 //Calculation (only used for special situations like 3 Queens, ...)
-Value calculateMaterialScore(position &pos) {
+Value calculateMaterialScore(const position &pos) {
 	return calculateMaterialEval(pos).mgScore;
 
 }

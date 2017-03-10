@@ -20,7 +20,7 @@ enum MaterialSearchFlags : uint8_t {
 struct MaterialTableEntry {
 	eval Evaluation;
 	Phase_t Phase;
-	EvalFunction EvaluationFunction;
+	EvalFunction EvaluationFunction = &evaluateDefault;
 	uint8_t Flags;
 	uint8_t MostValuedPiece; //high bits for black piece type
 
@@ -41,6 +41,7 @@ struct MaterialTableEntry {
 };
 
 extern MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 2];
+extern thread_local MaterialTableEntry UnusualMaterial;
 
 //Phase is 0 in starting position and grows up to 256 when only kings are left
 inline const Phase_t Phase(int nWQ, int nBQ, int nWR, int nBR, int nWB, int nBB, int nWN, int nBN) {
@@ -53,10 +54,12 @@ inline const Phase_t Phase(int nWQ, int nBQ, int nWR, int nBR, int nWB, int nBB,
 
 void InitializeMaterialTable();
 
-inline MaterialTableEntry * probe(MaterialKey_t key) { return &MaterialTable[key]; }
+inline MaterialTableEntry * probe(MaterialKey_t key) { if (key == MATERIAL_KEY_UNUSUAL) return &UnusualMaterial; else return &MaterialTable[key]; }
 
-eval calculateMaterialEval(position &pos);
+MaterialTableEntry * initUnusual(const position &pos);
 
-Value calculateMaterialScore(position &pos);
+eval calculateMaterialEval(const position &pos);
+
+Value calculateMaterialScore(const position &pos);
 
 MaterialKey_t calculateMaterialKey(int * pieceCounts);
