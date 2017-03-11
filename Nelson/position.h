@@ -106,7 +106,7 @@ public:
 	inline MaterialTableEntry * GetMaterialTableEntry() const { return material; }
 	inline pawn::Entry * GetPawnEntry() const { return pawn; }
 	inline Value GetPawnScore() const { return pawn->Score.getScore(material->Phase); }
-	inline void InitMaterialPointer() { material = &MaterialTable[MaterialKey]; }
+	inline void InitMaterialPointer() { material = probe(MaterialKey); }
 	inline eval PawnStructureScore() const { return pawn->Score; }
 	//checks if the position is final and returns the result
 	Result GetResult();

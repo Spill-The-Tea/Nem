@@ -79,8 +79,22 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 }
 #endif
 
+#ifdef _WIN64
+#pragma unmanaged  
+std::exception seExc("Windows Exception");
+
+void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
+{
+	throw seExc;
+}
+
+#endif 
+
+
+
 const int MAJOR_VERSION = 2;
-const int MINOR_VERSION = 8;
+const int MINOR_VERSION = 0;
+const char PATCH_VERSION = 'a';
 
 
 static bool popcountSupport();
@@ -91,6 +105,9 @@ static bool popcountSupport();
 int main(int argc, const char* argv[]) {
 #ifdef CRASH
 	SetUnhandledExceptionFilter(unhandled_handler);
+#endif
+#ifdef _WIN64
+	_set_se_translator(exc_transl);
 #endif
 #ifndef NO_POPCOUNT
 	if (!popcountSupport()) {
@@ -128,9 +145,9 @@ int main(int argc, const char* argv[]) {
 		}
 		else if (!input.compare(0, 7, "version")) {
 #ifdef NO_POPCOUNT
-			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << " (No Popcount)" << std::setfill(' ') << std::endl;
+			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << PATCH_VERSION << " (No Popcount)" << std::setfill(' ') << std::endl;
 #else
-			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << std::setfill(' ') << std::endl;
+			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << PATCH_VERSION << std::setfill(' ') << std::endl;
 #endif
 		}
 		else if (!input.compare(0, 8, "position")) {
