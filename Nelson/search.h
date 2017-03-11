@@ -6,7 +6,6 @@
 #include <vector>
 #include <atomic>
 #include <mutex>
-#include <condition_variable>
 #include "types.h"
 #include "book.h"
 #include "board.h"
@@ -41,9 +40,9 @@ enum ThreadType { SINGLE, MASTER, SLAVE };
 enum SearchResultType { EXACT_RESULT, FAIL_LOW, FAIL_HIGH, TABLEBASE_MOVE, UNIQUE_MOVE, BOOK_MOVE };
 
 /* The baseSearch and search structs represent basically the engine. The "design" shows what happens when and experienced developer coming from "real" OO languages
-   (like Java or C# - with interfaces, ...) meets C++. I don't like it, but it works and there is no need to refactor it!
-   We have a baseSearch, which acts as the engine interface to the outside and a templated derived class, which represents the engine threads. The engine is using Lazy SMP,
-   currently all inter-thread communication is done via the transposition table.
+(like Java or C# - with interfaces, ...) meets C++. I don't like it, but it works and there is no need to refactor it!
+We have a baseSearch, which acts as the engine interface to the outside and a templated derived class, which represents the engine threads. The engine is using Lazy SMP,
+currently all inter-thread communication is done via the transposition table.
 */
 struct baseSearch {
 public:
@@ -68,7 +67,7 @@ public:
 	//Polyglot bookfile if provided
 	std::string * BookFile = nullptr;
 	int rootMoveCount = 0;
-	ValuatedMove * rootMoves = nullptr;
+	ValuatedMove rootMoves[MAX_MOVE_COUNT];
 	position rootPosition;
 	//For analysis purposes, list of root moves which shall be considered
 	std::vector<Move> searchMoves;
@@ -170,8 +169,7 @@ public:
 	//Initialize slave threads (once per move)
 	void initializeSlave(baseSearch * masterSearch, int id);
 	ThreadType GetType() { return T; }
-	std::condition_variable cvStart;
-	std::mutex mtxSearch; //Ensures that only one search is running
+	std::mutex mtxSearch;
 	//reference to slave objects (only set when T == MASTER)
 	search<SLAVE> * slaves = nullptr;
 	//slave threads
@@ -201,7 +199,6 @@ private:
 void startThread(search<SLAVE> & slave);
 
 template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
-	assert(T != SLAVE);
 	std::lock_guard<std::mutex> lgStart(mtxSearch);
 #ifdef TRACE
 	//pos.move_history->clear();
@@ -254,12 +251,10 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	//If a search move list is provided replace root moves by search moves
 	if (searchMoves.size()) {
 		rootMoveCount = int(searchMoves.size());
-		rootMoves = new ValuatedMove[rootMoveCount];
 		for (int i = 0; i < rootMoveCount; ++i) rootMoves[i].move = searchMoves[i];
 		searchMoves.clear();
 	}
 	else {
-		rootMoves = new ValuatedMove[rootMoveCount];
 		memcpy(rootMoves, generatedMoves, rootMoveCount * sizeof(ValuatedMove));
 	}
 #ifdef TB
@@ -274,9 +269,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		if (tbHit) {
 			tbHits++;
 			probeTB = false;
-			delete[] rootMoves;
 			rootMoveCount = (int)tbMoves.size();
-			rootMoves = new ValuatedMove[rootMoveCount];
 			std::copy(tbMoves.begin(), tbMoves.end(), rootMoves);
 			if (rootMoveCount == 1) {
 				rootMoves[0].score = score;
@@ -297,10 +290,9 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 		}
 		//Initialize slaves and wake them up
 		for (int i = 0; i < HelperThreads; ++i) {
-			//slaves[i].initializeSlave(this);			
 			slaves[i].initializeSlave(this, i + 1);
-			subThreads.push_back(std::thread(&startThread, std::ref(slaves[i])));
 		}
+		for (int i = 0; i < HelperThreads; ++i) subThreads.push_back(std::thread(&startThread, std::ref(slaves[i])));
 	}
 	//Special logic to get static evaluation via UCI: if go depth 0 is requested simply return static evaluation
 	if (timeManager.GetMaxDepth() == 0) {
@@ -415,8 +407,6 @@ END://when pondering engine must not return a best move before opponent moved =>
 		for (int i = 0; i < HelperThreads; ++i) subThreads[i].join();
 		subThreads.clear();
 	}
-	if (rootMoves) delete[] rootMoves;
-	rootMoves = nullptr;
 	return BestMove;
 }
 
@@ -426,7 +416,6 @@ template<ThreadType T> void search<T>::initializeSlave(baseSearch * masterSearch
 		master = masterSearch;
 		id = Id;
 		rootMoveCount = masterSearch->rootMoveCount;
-		rootMoves = new ValuatedMove[rootMoveCount];
 		memcpy(rootMoves, masterSearch->rootMoves, rootMoveCount * sizeof(ValuatedMove));
 		rootPosition = position(masterSearch->rootPosition);
 		rootPosition.copy(masterSearch->rootPosition);
@@ -435,21 +424,23 @@ template<ThreadType T> void search<T>::initializeSlave(baseSearch * masterSearch
 	}
 }
 
-//slave thread: slave threads are searching until stopped and then send to sleep. When a new position is searched, then they are
-//woke up again. As guard against spurious wake-ups the pointer to the master search is used (this is of course strange and should be replaced by some atomic flag)
+//slave thread
 template<ThreadType T> void search<T>::startHelper() {
 	assert(T == SLAVE);
-	int depth = 1;
-	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
-	//Iterative Deepening Loop
-	while (!Stop.load() && depth <= MAX_DEPTH) {
-		Value alpha = -VALUE_MATE;
-		Value beta = VALUE_MATE;
-		SearchRoot(alpha, beta, rootPosition, depth, &PVMoves[0]);
-		std::stable_sort(rootMoves, &rootMoves[rootMoveCount], sortByScore);
-		++depth;
+	try {
+		int depth = 1;
+		std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
+		//Iterative Deepening Loop
+		while (!Stop.load() && depth <= MAX_DEPTH) {
+			Value alpha = -VALUE_MATE;
+			Value beta = VALUE_MATE;
+			SearchRoot(alpha, beta, rootPosition, depth, &PVMoves[0]);
+			++depth;
+		}
 	}
-	delete[] rootMoves;
+	catch (std::exception) {
+		return;
+	}
 }
 
 template<ThreadType T> search<T>::search() {  }
@@ -701,7 +692,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	Move counter = pos.GetCounterMove(counterMove);
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
 	bool futilityPruning = pos.GetLastAppliedMove() != MOVE_NONE && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
-	if (futilityPruning && alpha > (staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
+	if (futilityPruning && alpha >(staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, &followupHistory, nullptr, counter, ttMove);
 	else
 		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &cmHistory, &followupHistory, &killerManager, counter, ttMove);
@@ -745,7 +736,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			moveOrderStatEntry.wastedNodes = NodeCount - nodeCountbefore;
 #endif
 			//critical = critical || GetPieceType(pos.GetPieceOnSquare(from(move))) == PAWN && ((pos.GetSideToMove() == WHITE && from(move) > H5) || (pos.GetSideToMove() == BLACK && from(move) < A4));
-		   //Check extension
+			//Check extension
 			int extension;
 			if (next.GetMaterialTableEntry()->Phase == 256 && pos.GetMaterialTableEntry()->Phase < 256 && next.GetMaterialScore() >= -PieceValues[PAWN].egScore && next.GetMaterialScore() <= PieceValues[PAWN].egScore)
 				extension = 3;
