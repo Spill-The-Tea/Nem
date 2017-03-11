@@ -66,6 +66,12 @@ The engine requires 64-bit Windows.
 *          Scale down endgame values if there are opposite colored bishops
 *          Several minor improvements and clean-ups
 
+**2.00a (only bugfixes relevant when running with more than one thread):**
+
+*          Fix for known issue with tablebase access (see https://github.com/basil00/Fathom/issues/15
+*          Fix for other (rare) crashes
+
+
 
 
 ### License ###
