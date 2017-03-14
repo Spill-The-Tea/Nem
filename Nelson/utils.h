@@ -32,6 +32,8 @@ namespace utils {
 		return 0.5 + ((result - 0.5) * ply) / totalPlies;
 	}
 
+	std::string mirrorFenVertical(std::string fen);
+
 	class logger {
 	public:
 		logger();

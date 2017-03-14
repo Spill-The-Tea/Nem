@@ -986,6 +986,36 @@ namespace test {
 		return true;
 	}
 
+	bool testVerticalSymmetry()
+	{
+		Initialize();
+		std::vector<std::string> fens(benchFens1());
+		for (int i = 0; i < int(fens.size()); i++) {
+			position * p = new position(fens[i]);
+			bool castles = p->GetCastles() != 0;
+			delete p;
+			if (castles) continue;
+			ValuatedMove m[2];
+			for (int j = 0; j < 2; ++j) {
+				tt::clear();
+				std::string fen = fens[i];
+				if (j > 0) fen = utils::mirrorFenVertical(fen);
+				position * pos = new position(fen);
+				search < SINGLE > * srch = new search < SINGLE >();
+				srch->PrintCurrmove = false;
+				srch->UciOutput = false;
+				srch->NewGame();
+				srch->timeManager.initialize(FIXED_DEPTH, 0, 8);
+				m[j] = srch->Think(*pos);
+				std::cout << toString(m[j].move) << " " << m[j].score << "  " << fen << std::endl;
+				delete srch;
+				delete pos;
+			}
+			std::cout << std::endl;
+		}
+		return true;
+	}
+
 	void testResult() {
 		int64_t begin = now();
 		testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/stalemate.epd", DRAW);

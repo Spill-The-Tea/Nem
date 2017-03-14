@@ -12,6 +12,7 @@
 #include "uci.h"
 #include "utils.h"
 #include "xboard.h"
+#include "test.h"
 
 #ifdef TB
 #include "tablebase.h"
@@ -93,7 +94,7 @@ void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
 
 
 const int MAJOR_VERSION = 2;
-const int MINOR_VERSION = 9;
+const int MINOR_VERSION = 10;
 
 
 static bool popcountSupport();

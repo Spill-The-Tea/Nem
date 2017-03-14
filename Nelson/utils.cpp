@@ -3,6 +3,7 @@
 #include <exception>
 #include <mutex>
 #include <map>
+#include <algorithm>
 
 #include "types.h"
 #include "uci.h"
@@ -71,6 +72,31 @@ namespace utils {
 		h ^= h >> r;
 
 		return h;
+	}
+
+	std::string mirrorFenVertical(std::string fen)
+	{
+		std::vector<std::string> token = split(fen);
+		if (token.size() < 4) return std::string();
+		std::vector<std::string> rows = split(token[0], '/');
+		if (rows.size() != 8) return std::string();
+		std::stringstream ss;
+		bool first = true;
+		for (auto row : rows) {
+			if (!first) ss << '/';
+			first = false;
+			std::reverse(row.begin(), row.end());
+			ss << row;
+		}
+		ss << ' ' << token[1] << " - ";
+		if (token[3].compare("-") == 0) ss << '-'; 
+		else {
+			char file = (char)((int)'h' - ((int)token[3][0] - (int)'a'));
+			ss << file << token[3][1];
+		}
+		if (token.size() > 4) ss << ' ' << token[4];
+		if (token.size() > 5) ss << ' ' << token[5];
+		return ss.str();
 	}
 
 	void replaceExt(std::string& s, const std::string& newExt) {

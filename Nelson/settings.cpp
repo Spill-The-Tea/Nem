@@ -158,7 +158,7 @@ namespace settings {
 			eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0)  // Rank 8
 		},
 		{  // White King
-			eval(16,-20), eval(17,-15), eval(16,-9), eval(14,-4), eval(14,-4), eval(14,-9), eval(17,-15), eval(16,-20),  // Rank 1
+			eval(16,-20), eval(17,-15), eval(16,-9), eval(14,-4), eval(14,-4), eval(16,-9), eval(17,-15), eval(16,-20),  // Rank 1
 			eval(16,-15), eval(16,-9), eval(14,-4), eval(11,7), eval(11,7), eval(14,-4), eval(16,-9), eval(16,-15),  // Rank 2
 			eval(11,-9), eval(11,-4), eval(11,7), eval(8,23), eval(8,23), eval(11,7), eval(11,-4), eval(11,-9),  // Rank 3
 			eval(8,-4), eval(8,7), eval(3,23), eval(-2,28), eval(-2,28), eval(3,23), eval(8,7), eval(8,-4),  // Rank 4
@@ -175,7 +175,7 @@ namespace settings {
 			eval(-8,4), eval(-8,-7), eval(-3,-23), eval(2,-28), eval(2,-28), eval(-3,-23), eval(-8,-7), eval(-8,4),  // Rank 5
 			eval(-11,9), eval(-11,4), eval(-11,-7), eval(-8,-23), eval(-8,-23), eval(-11,-7), eval(-11,4), eval(-11,9),  // Rank 6
 			eval(-16,15), eval(-16,9), eval(-14,4), eval(-11,-7), eval(-11,-7), eval(-14,4), eval(-16,9), eval(-16,15),  // Rank 7
-			eval(-16,20), eval(-17,15), eval(-16,9), eval(-14,4), eval(-14,4), eval(-14,9), eval(-17,15), eval(-16,20)  // Rank 8
+			eval(-16,20), eval(-17,15), eval(-16,9), eval(-14,4), eval(-14,4), eval(-16,9), eval(-17,15), eval(-16,20)  // Rank 8
 		}
 	};
 

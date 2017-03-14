@@ -96,8 +96,8 @@ void InitializeMaterialTable() {
 											}
 											if (nWB == 1 && nBB == 1 && nWN == 0 && nBN == 0 && nWQ == 0 && nBQ == 0) MaterialTable[key].Flags |= MSF_SCALE;
 											if (imbalance[ROOK] != 0 && ((imbalance[ROOK] + imbalance[KNIGHT] + imbalance[BISHOP]) == 0)) {
-												evaluation += imbalance[ROOK] * ((3-nWQ-nBQ-nWR-nBR) * settings::SCALE_EXCHANGE_WITH_MAJORS
-													                + (8-nWP-nBP)*settings::SCALE_EXCHANGE_WITH_PAWNS);
+												evaluation += imbalance[ROOK] * ((3 - nWQ - nBQ - nWR - nBR) * settings::SCALE_EXCHANGE_WITH_MAJORS
+													+ (8 - nWP - nBP)*settings::SCALE_EXCHANGE_WITH_PAWNS);
 											}
 											assert(MaterialTable[key].Evaluation.mgScore == VALUE_NOTYETDETERMINED);
 											MaterialTable[key].Evaluation = evaluation;
@@ -119,22 +119,21 @@ void InitializeMaterialTable() {
 											else if (nBP > 0) MaterialTable[key].setMostValuedPiece(BLACK, PAWN);
 											else MaterialTable[key].setMostValuedPiece(BLACK, KING);
 											if (MaterialTable[key].EvaluationFunction == &evaluateDefault) {
-												if (MaterialTable[key].GetMostExpensivePiece(BLACK) != KING && nWQ == 0 && nWR == 0 && nWB == 1 && nWN == 0 && nWP == 1) 
+												if (MaterialTable[key].GetMostExpensivePiece(BLACK) != KING && nWQ == 0 && nWR == 0 && nWB == 1 && nWN == 0 && nWP == 1)
 													MaterialTable[key].EvaluationFunction = &evaluateKBPKx<WHITE>;
-												else if (MaterialTable[key].GetMostExpensivePiece(WHITE) != KING && nBQ == 0 && nBR == 0 && nBB == 1 && nBN == 0 && nBP == 1) 
+												else if (MaterialTable[key].GetMostExpensivePiece(WHITE) != KING && nBQ == 0 && nBR == 0 && nBB == 1 && nBN == 0 && nBP == 1)
 													MaterialTable[key].EvaluationFunction = &evaluateKBPKx<BLACK>;
 											}
 #ifdef TB
 											if (Tablebases::MaxCardinality > 0) {
 												int totalPieceCount = 2;
 												for (int i = 0; i < 10; ++i) totalPieceCount += pieceCounts[i];
-												if (totalPieceCount <= Tablebases::MaxCardinality) 
+												if (totalPieceCount <= Tablebases::MaxCardinality)
 													MaterialTable[key].Flags |= MSF_TABLEBASE_ENTRY;
 											}
 #endif
 											assert(nWQ == (MaterialTable[key].GetMostExpensivePiece(WHITE) == QUEEN));
 											assert(nBQ == (MaterialTable[key].GetMostExpensivePiece(BLACK) == QUEEN));
-											}
 										}
 									}
 								}
@@ -144,6 +143,7 @@ void InitializeMaterialTable() {
 				}
 			}
 		}
+	}
 	for (int i = 0; i < MATERIAL_KEY_MAX + 1; ++i) {
 		if (MaterialTable[i].EvaluationFunction == nullptr) MaterialTable[i].EvaluationFunction = &evaluateFromScratch;
 	}
@@ -480,4 +480,4 @@ void InitializeMaterialTable() {
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].EvaluationFunction = &evaluateKQKRP<BLACK>;
 	pieceCounts[BQUEEN] = pieceCounts[WROOK] = pieceCounts[WPAWN] = 0;
-	}
+}

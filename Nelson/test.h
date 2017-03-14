@@ -47,4 +47,6 @@ namespace test {
 	bool testLSB();
 	bool testMSB();
 	bool testGivesCheck();
+
+	bool testVerticalSymmetry();
 }
