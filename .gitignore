@@ -211,3 +211,5 @@ Nelson/Nelson.vcxproj.filters
 *.db-wal
 /.vs/Nemorino/v15
 /.vs/Nemorino/v15/Solution.VC.db-shm
+*.diagsession
+*.diagsession

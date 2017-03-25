@@ -94,7 +94,7 @@ void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
 
 
 const int MAJOR_VERSION = 2;
-const int MINOR_VERSION = 12;
+const int MINOR_VERSION = 13;
 
 
 static bool popcountSupport();

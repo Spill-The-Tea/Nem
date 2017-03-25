@@ -91,6 +91,7 @@ extern Bitboard ShadowedFields[64][64];
 extern Bitboard KnightAttacks[64];
 extern Bitboard KingAttacks[64];
 extern Bitboard PawnAttacks[2][64];
+extern byte Distance[64][64];
 
 inline Bitboard mirrorHorizontal(Bitboard bb) {
 	const Bitboard k1 = Bitboard(0x5555555555555555);
@@ -231,7 +232,7 @@ inline uint8_t IsolatedFiles(uint8_t fileset) {
 }
 
 inline int ChebishevDistance(Square sq1, Square sq2) {
-	return (std::max)(abs((sq1>>3) - (sq2>>3)), abs((sq1 & 7) - (sq2 & 7)));
+	return Distance[sq1][sq2];
 }
 
 inline int ManhattanDistance(Square sq1, Square sq2) {
