@@ -80,7 +80,7 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 }
 #endif
 
-#ifdef _WIN64
+#if defined(_WIN64) && defined(_MSC_VER)
 #pragma unmanaged  
 std::exception seExc("Windows Exception");
 
@@ -94,7 +94,7 @@ void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
 
 
 const int MAJOR_VERSION = 2;
-const int MINOR_VERSION = 11;
+const int MINOR_VERSION = 12;
 
 
 static bool popcountSupport();
@@ -106,7 +106,7 @@ int main(int argc, const char* argv[]) {
 #ifdef CRASH
 	SetUnhandledExceptionFilter(unhandled_handler);
 #endif
-#ifdef _WIN64
+#if defined(_WIN64) && defined(_MSC_VER)
 	_set_se_translator(exc_transl);
 #endif
 #ifndef NO_POPCOUNT

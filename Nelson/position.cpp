@@ -208,16 +208,6 @@ Move position::NextMove() {
 			case KILLER:
 				moveIterationPointer = 0;
 				break;
-			case WINNING_CAPTURES:
-				GenerateMoves<WINNING_CAPTURES>();
-				evaluateByMVVLVA();
-				moveIterationPointer = 0;
-				break;
-			case EQUAL_CAPTURES:
-				GenerateMoves<EQUAL_CAPTURES>();
-				evaluateByMVVLVA(phaseStartIndex);
-				moveIterationPointer = 0;
-				break;
 			case NON_LOOSING_CAPTURES:
 				GenerateMoves<NON_LOOSING_CAPTURES>();
 				evaluateByCaptureScore();
@@ -287,7 +277,7 @@ Move position::NextMove() {
 			++generationPhase;
 			moveIterationPointer = -1;
 			break;
-		case WINNING_CAPTURES: case NON_LOOSING_CAPTURES:
+		case NON_LOOSING_CAPTURES:
 			move = getBestMove(phaseStartIndex + moveIterationPointer);
 			if (move) {
 				++moveIterationPointer;
@@ -298,7 +288,7 @@ Move position::NextMove() {
 				moveIterationPointer = -1;
 			}
 			break;
-		case EQUAL_CAPTURES: case LOOSING_CAPTURES: case QUIETS_NEGATIVE:
+		case LOOSING_CAPTURES: case QUIETS_NEGATIVE:
 			move = getBestMove(phaseStartIndex + moveIterationPointer);
 			if (move) {
 				++moveIterationPointer;
