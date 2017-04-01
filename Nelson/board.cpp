@@ -20,7 +20,8 @@ Bitboard SquaresToBeUnattacked[4];
 Bitboard SquaresToBeEmpty[4];
 
 Bitboard InBetweenFields[64][64];
-byte Distance[64][64];
+uint8_t Distance[64][64];
+Bitboard SquareBB[64];
 
 void InitializeDistance() {
 	for (int sq1 = 0; sq1 < 64; sq1++) {
@@ -29,6 +30,10 @@ void InitializeDistance() {
 		}
 	}
 }
+
+void InitializeSquareBB() {
+	for (int sq1 = 0; sq1 < 64; sq1++) SquareBB[sq1] = 1ull << sq1;
+};
 
 void InitializeInBetweenFields() {
 	for (int from = 0; from < 64; from++) {
@@ -705,6 +710,7 @@ void InitializeMagic() {
 void Initialize() {
 	Chess960 = false;
 	int64_t begin = now();
+	InitializeSquareBB();
 	InitializeDistance();
 	InitializeInBetweenFields();
 	InitializeKingAttacks();

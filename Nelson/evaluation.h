@@ -481,18 +481,12 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	Bitboard passedPawns = pos.GetPawnEntry()->passedPawns & pos.ColorBB(COL);
 	while (passedPawns) {
 		Square pawnSquare = lsb(passedPawns);
-		Square nextSquare = COL == WHITE ? Square(pawnSquare + 8) : Square(pawnSquare - 8);
+		Square blockSquare = COL == WHITE ? Square(pawnSquare + 8) : Square(pawnSquare - 8);
 		uint8_t dtc = MovesToConversion<COL>(pawnSquare);
-		bonusPassedPawns.egScore += Value(2 * (6 - dtc) * (6 - dtc) * ChebishevDistance(opponentKingSquare, nextSquare));
-		bonusPassedPawns.egScore -= Value((6 - dtc) * (6 - dtc) * ChebishevDistance(ownKingSquare, nextSquare));
-		//	Bitboard rearspan = COL == WHITE ? FrontFillSouth(passedPawns) : FrontFillNorth(passedPawns);
-		//	bonusPassedPawns = BONUS_PASSED_PAWN_BACKED * popcount(rearspan & pos.PieceBB(ROOK, COL));
-		//	Bitboard passedPawnBlocker = COL == WHITE ? (passedPawns << 8) & pos.ColorBB(OTHER) : (passedPawns >> 8) & pos.ColorBB(OTHER);
-		//	while (passedPawnBlocker) {
-		//		Square blockSquare = lsb(passedPawnBlocker);
-		//		bonusPassedPawns -= MALUS_PASSED_PAWN_BLOCKED[GetPieceType(pos.GetPieceOnSquare(blockSquare))];
-		//		passedPawnBlocker &= passedPawnBlocker - 1;
-		//	}
+		int dtcSquare = (6 - dtc) * (6 - dtc);
+		bonusPassedPawns.egScore += Value(2 * dtcSquare * ChebishevDistance(opponentKingSquare, blockSquare));
+		bonusPassedPawns.egScore -= Value(1 * dtcSquare * ChebishevDistance(ownKingSquare, blockSquare));
+		if ((pos.ColorBB(OTHER) & ToBitboard(blockSquare))!= EMPTY) bonusPassedPawns -= MALUS_BLOCKED[dtc-1];
 		passedPawns &= passedPawns - 1;
 	}
 	return bonusPassedPawns + bonusRook + bonusBishop + eval(bonusKnightOutpost, 0);

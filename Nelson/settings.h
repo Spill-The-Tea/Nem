@@ -91,6 +91,7 @@ extern eval PASSED_PAWN_BONUS[6];
 extern eval BONUS_PROTECTED_PASSED_PAWN[6];
 #else
 const eval PASSED_PAWN_BONUS[6] = { eval(0), eval(0), eval(23), eval(39), eval(81), eval(101) };
+const eval MALUS_BLOCKED[6] = { eval(30), eval(20), eval(10), eval(5), eval(0), eval(0) }; //indexed by distance to conversion
 const eval BONUS_PROTECTED_PASSED_PAWN[6] = { eval(0), eval(0), eval(0), eval(30), eval(30), eval(30) };
 #endif
 const eval MALUS_ISOLATED_PAWN = eval(5);

@@ -294,9 +294,6 @@ inline Square pop_lsb(Bitboard* bb) {
 
 //inline Square lsb(Bitboard bb) { return Square(popcount((bb & (0 - bb)) - 1)); }
 
-inline Bitboard ToBitboard(Square square) { return 1ull << square; }
-inline Bitboard ToBitboard(int square) { return 1ull << square; }
-
 inline Square frontmostSquare(Color c, Bitboard b) { return c == WHITE ? msb(b) : lsb(b); }
 inline Square backmostSquare(Color c, Bitboard b) { return c == WHITE ? lsb(b) : msb(b); }
 

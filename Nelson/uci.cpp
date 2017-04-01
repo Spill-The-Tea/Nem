@@ -299,7 +299,7 @@ void UCIInterface::qscore(std::vector<std::string>& tokens)
 	for (auto it = positions.rbegin(); it != positions.rend(); ++it)
 	{
 		--plies;
-		position * pos = *it;
+		pos = *it;
 		if (pos->Checked()) continue;
 		Value score = (dynamic_cast<search<SINGLE>*>(Engine))->qscore(pos);
 		if (std::abs(int(score - pos->evaluate())) > 100) continue;

@@ -377,6 +377,7 @@ copy /Y  "$(SolutionDir)\Nelson\syzygy\*.cpp"  "$(USERPROFILE)\workspace\Nelson\
 copy /Y  "$(SolutionDir)\Nelson\syzygy\*.c"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
 copy /Y  "$(SolutionDir)\Nelson\syzygy\*.h"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
 "C:\Program Files\7-Zip\7z" a C:\Users\chrgu_000\Dropbox\aws\nemorino.zip *.h *.cpp syzygy\*.h syzygy\*.cpp syzygy\*.c
+robocopy "$(SolutionDir)Nelson" "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson" Makefile
 copy /Y  "$(SolutionDir)\Nelson\*.cpp" "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\*.*"
 copy /Y  "$(SolutionDir)\Nelson\*.h" "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\*.*"
 copy /Y  "$(SolutionDir)\Nelson\syzygy\*.cpp"  "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\syzygy\*.*"

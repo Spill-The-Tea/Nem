@@ -58,7 +58,7 @@ extern Bitboard SquaresToBeUnattacked[4];
 extern Bitboard SquaresToBeEmpty[4];
 extern Bitboard SlidingAttacksRookTo[64];
 extern Bitboard SlidingAttacksBishopTo[64];
-const Bitboard RookSquareAfterCastling[4] = { ToBitboard(F1), ToBitboard(D1), ToBitboard(F8), ToBitboard(D8) };
+const Bitboard RookSquareAfterCastling[4] = { 1ull << F1, 1ull << D1, 1ull << F8, 1ull << D8 };
 
 const Bitboard SaveSquaresForKing = 0xe7c300000000c3e7;
 const Bitboard SaveSquaresForKingA[2] = { SaveSquaresForKing & HALF_OF_WHITE, SaveSquaresForKing & HALF_OF_BLACK }; //Index Color
@@ -91,7 +91,7 @@ extern Bitboard ShadowedFields[64][64];
 extern Bitboard KnightAttacks[64];
 extern Bitboard KingAttacks[64];
 extern Bitboard PawnAttacks[2][64];
-extern byte Distance[64][64];
+extern uint8_t Distance[64][64];
 
 inline Bitboard mirrorHorizontal(Bitboard bb) {
 	const Bitboard k1 = Bitboard(0x5555555555555555);
@@ -117,6 +117,11 @@ inline Bitboard flipVertical(Bitboard bb) {
 	return bb;
 #endif
 }
+
+extern Bitboard SquareBB[64];
+
+inline Bitboard ToBitboard(Square square) { return SquareBB[square]; }
+inline Bitboard ToBitboard(int square) { return SquareBB[square]; }
 
 void Initialize();
 
@@ -233,10 +238,6 @@ inline uint8_t IsolatedFiles(uint8_t fileset) {
 
 inline int ChebishevDistance(Square sq1, Square sq2) {
 	return Distance[sq1][sq2];
-}
-
-inline int ManhattanDistance(Square sq1, Square sq2) {
-	return abs((sq1 >> 3) - (sq2 >> 3)) + abs((sq1 & 7) - (sq2 & 7));
 }
 
 template<Color COLOR_OF_PAWN> inline Square ConversionSquare(Square pawnSquare) { if (COLOR_OF_PAWN == WHITE) return Square(56 + (pawnSquare & 7)); else return Square(pawnSquare & 7); }
