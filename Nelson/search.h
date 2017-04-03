@@ -714,7 +714,8 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 		if (move == excludeMove) continue;
 		int reducedDepth = lmr ? depth - settings::LMRReduction(depth, moveIndex) : depth;
 		bool prunable = !PVNode && reducedDepth <= 4 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
-			&& !killerManager.isKiller(pos, move) && (pos.IsQuietAndNoCastles(move) || pos.GetMoveGenerationPhase() == MoveGenerationType::LOOSING_CAPTURES) && !pos.givesCheck(move);
+			&& !killerManager.isKiller(pos, move) && (pos.IsQuietAndNoCastles(move) || pos.GetMoveGenerationPhase() == MoveGenerationType::LOOSING_CAPTURES) 
+			&& !pos.IsAdvancedPawnPush(move) && !pos.givesCheck(move);
 		if (prunable) {
 			//assert(type(move) == MoveType::NORMAL && pos.GetPieceOnSquare(to(move)) == Piece::BLANK);
 			// late-move pruning II

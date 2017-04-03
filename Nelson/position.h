@@ -154,7 +154,7 @@ public:
 	inline PieceType GetMostValuablePieceType(Color col) const;
 	inline PieceType GetMostValuableAttackedPieceType() const;
 	inline bool PawnOn7thRank() { return (PieceBB(PAWN, SideToMove) & RANKS[6 - 5 * SideToMove]) != 0; } //Side to Move has pawn on 7th Rank
-	inline bool IsAdvancedPawnPush(Move move) const { return GetPieceType(Board[from(move)]) == PAWN && (SideToMove == WHITE ? to(move) >= A6 : to(move) <= H3) && SEE_Sign(move) >= 0; }
+	inline bool IsAdvancedPawnPush(Move move) const { return GetPieceType(Board[from(move)]) == PAWN && (SideToMove == WHITE ? to(move) >= A5 : to(move) <= H4); }
 	/*Make a full copy of the current position. To get a full copy first the copy constructor has to be called and then method copy has to be called:
 		position copiedPosition(pos);
 		copiedPosition.copy(pos);
