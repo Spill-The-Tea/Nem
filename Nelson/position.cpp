@@ -362,19 +362,19 @@ void position::insertionSort(ValuatedMove* first, ValuatedMove* last)
 
 void position::evaluateByCaptureScore(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
-		moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 2 * (type(moves[i].move) == PROMOTION);
+		moves[i].score = settings::parameter.CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 2 * (type(moves[i].move) == PROMOTION);
 	}
 }
 
 void position::evaluateByMVVLVA(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
-		moves[i].score = PieceValues[GetPieceType(Board[to(moves[i].move)])].mgScore - 150 * relativeRank(GetSideToMove(), Rank(to(moves[i].move) >> 3));
+		moves[i].score = settings::parameter.PieceValues[GetPieceType(Board[to(moves[i].move)])].mgScore - 150 * relativeRank(GetSideToMove(), Rank(to(moves[i].move) >> 3));
 	}
 }
 
 void position::evaluateBySEE(int startIndex) {
 	if (movepointer - 2 == startIndex)
-		moves[startIndex].score = PieceValues[QUEEN].mgScore; //No need for SEE if there is only one move to be evaluated
+		moves[startIndex].score = settings::parameter.PieceValues[QUEEN].mgScore; //No need for SEE if there is only one move to be evaluated
 	else
 		for (int i = startIndex; i < movepointer - 1; ++i) moves[i].score = SEE(moves[i].move);
 }
@@ -390,7 +390,7 @@ void position::evaluateCheckEvasions(int startIndex) {
 			moves[i].score = history->getValue(p, moves[i].move);
 		}
 		else {
-			moves[i].score = CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 2 * (type(moves[i].move) == PROMOTION);
+			moves[i].score = settings::parameter.CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 2 * (type(moves[i].move) == PROMOTION);
 			quietsIndex++;
 		}
 	}
@@ -464,12 +464,12 @@ template<bool SquareIsEmpty> void position::set(const Piece piece, const Square 
 		OccupiedByPieceType[GetPieceType(captured)] &= ~squareBB;
 		OccupiedByColor[GetColor(captured)] &= ~squareBB;
 		Hash ^= ZobristKeys[captured][square];
-		PsqEval -= settings::PSQT[captured][square];
+		PsqEval -= settings::parameter.PSQT[captured][square];
 	}
 	OccupiedByPieceType[GetPieceType(piece)] |= squareBB;
 	OccupiedByColor[GetColor(piece)] |= squareBB;
 	Board[square] = piece;
-	PsqEval += settings::PSQT[piece][square];
+	PsqEval += settings::parameter.PSQT[piece][square];
 	Hash ^= ZobristKeys[piece][square];
 }
 
@@ -477,7 +477,7 @@ void position::remove(const Square square) {
 	Bitboard NotSquareBB = ~(1ull << square);
 	Piece piece = Board[square];
 	Board[square] = BLANK;
-	PsqEval -= settings::PSQT[piece][square];
+	PsqEval -= settings::parameter.PSQT[piece][square];
 	OccupiedByPieceType[GetPieceType(piece)] &= NotSquareBB;
 	OccupiedByColor[GetColor(piece)] &= NotSquareBB;
 	Hash ^= ZobristKeys[piece][square];
@@ -634,7 +634,7 @@ const PieceType position::getAndResetLeastValuableAttacker(Square toSquare, Bitb
 Value position::SEE_Sign(Move move) const {
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
-	if (PieceValues[GetPieceType(Board[fromSquare])].mgScore <= PieceValues[GetPieceType(Board[toSquare])].mgScore && type(move) != PROMOTION) return VALUE_KNOWN_WIN;
+	if (settings::parameter.PieceValues[GetPieceType(Board[fromSquare])].mgScore <= settings::parameter.PieceValues[GetPieceType(Board[toSquare])].mgScore && type(move) != PROMOTION) return VALUE_KNOWN_WIN;
 	return SEE(move);
 }
 
@@ -649,7 +649,7 @@ const Value position::SEE(Move move) const
 
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
-	gain[0] = PieceValues[GetPieceType(Board[toSquare])].mgScore;
+	gain[0] = settings::parameter.PieceValues[GetPieceType(Board[toSquare])].mgScore;
 	Color side = GetColor(Board[fromSquare]);
 	Bitboard fromBB = ToBitboard(fromSquare);
 	Bitboard occ = OccupiedBB() & (~fromBB) &(~ToBitboard(toSquare));
@@ -657,7 +657,7 @@ const Value position::SEE(Move move) const
 	if (type(move) == ENPASSANT)
 	{
 		occ ^= toSquare - 8 * (1 - 2 * side);
-		gain[0] = PieceValues[PAWN].mgScore;
+		gain[0] = settings::parameter.PieceValues[PAWN].mgScore;
 	}
 
 	// Get Attackers ofto Square
@@ -684,7 +684,7 @@ const Value position::SEE(Move move) const
 		assert(d < 32);
 
 		// Add the new entry to the swap list
-		gain[d] = -gain[d - 1] + PieceValues[capturingPiece].mgScore;
+		gain[d] = -gain[d - 1] + settings::parameter.PieceValues[capturingPiece].mgScore;
 
 		// Locate and remove the next least valuable attacker
 		capturingPiece = getAndResetLeastValuableAttacker(toSquare, attackers, occ, attadef, mayXRay);
@@ -698,7 +698,7 @@ const Value position::SEE(Move move) const
 	} while (attackers && (capturingPiece != KING || (--d, false))); // Stop before a king capture
 
 	if (capturingPiece == PAWN && (toSquare <= H1 || toSquare >= A8)) {
-		gain[d - 1] += PieceValues[QUEEN].mgScore - PieceValues[PAWN].mgScore;
+		gain[d - 1] += settings::parameter.PieceValues[QUEEN].mgScore - settings::parameter.PieceValues[PAWN].mgScore;
 	}
 
 	// find the best achievable score by minimaxing

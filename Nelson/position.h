@@ -343,7 +343,7 @@ inline Bitboard position::NonPawnMaterial(const Color c) const { return Occupied
 inline Bitboard position::PieceTypeBB(const PieceType pt) const { return OccupiedByPieceType[pt]; }
 
 inline bool position::IsWinningCapture(const ValuatedMove& move) const {
-	return (Board[to(move.move)] != BLANK && (PieceValues[GetPieceType(Board[from(move.move)])].mgScore - PieceValues[GetPieceType(Board[to(move.move)])].mgScore) < PieceValues[PAWN].mgScore)
+	return (Board[to(move.move)] != BLANK && (settings::parameter.PieceValues[GetPieceType(Board[from(move.move)])].mgScore - settings::parameter.PieceValues[GetPieceType(Board[to(move.move)])].mgScore) < settings::parameter.PieceValues[PAWN].mgScore)
 		|| type(move.move) == ENPASSANT || type(move.move) == PROMOTION;
 }
 
@@ -375,12 +375,12 @@ inline Value position::evaluate() {
 	if (GetResult() == OPEN) {
 		return StaticEval = material->EvaluationFunction(*this);
 	}
-	else if (result == DRAW) return StaticEval = SideToMove == EngineSide ? -Contempt : Contempt;
+	else if (result == DRAW) return StaticEval = SideToMove == settings::parameter.EngineSide ? -settings::parameter.Contempt : settings::parameter.Contempt;
 	else return StaticEval = Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 
 inline Value position::evaluateFinalPosition() {
-	if (result == DRAW) return SideToMove == EngineSide ? -Contempt : Contempt;
+	if (result == DRAW) return SideToMove == settings::parameter.EngineSide ? -settings::parameter.Contempt : settings::parameter.Contempt;
 	else return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 

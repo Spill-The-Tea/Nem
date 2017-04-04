@@ -94,7 +94,7 @@ void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
 
 
 const int MAJOR_VERSION = 2;
-const int MINOR_VERSION = 15;
+const int MINOR_VERSION = 16;
 
 
 static bool popcountSupport();
@@ -131,14 +131,14 @@ int main(int argc, const char* argv[]) {
 		std::getline(std::cin, input);
 		if (!input.compare(0, 3, "uci")) {
 			Initialize();
-			protocol = UCI;
+			settings::parameter.protocol = UCI;
 			UCIInterface uciInterface;
 			uciInterface.loop();
 			return 0;
 		}
 		else if (!input.compare(0, 6, "xboard")) {
 			Initialize();
-			protocol = XBOARD;
+			settings::parameter.protocol = XBOARD;
 			cecp::xboard xb;
 			xb.loop();
 			return 0;

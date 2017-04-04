@@ -88,11 +88,11 @@ template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 	int relativeRank = pawnSq >> 3;
 	if (WinningSide == WHITE) relativeRank = 7 - relativeRank;
 	if ((pawnBB & (A_FILE | C_FILE | F_FILE | H_FILE)) == 0)
-		result = VALUE_KNOWN_WIN + PieceValues[QUEEN].egScore - PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
+		result = VALUE_KNOWN_WIN + settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
 	else {
 
 		if (relativeRank != Rank7)
-			result = VALUE_KNOWN_WIN + PieceValues[QUEEN].egScore - PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
+			result = VALUE_KNOWN_WIN + settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
 		else {
 			//Now we need to probe the bitbase => therefore normalize position (White is winning and pawn is on left hals of board)
 			Square wKingSquare, bKingSquare, wQueenSquare;
@@ -118,7 +118,7 @@ template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 				wQueenSquare = Square(wQueenSquare ^ 7);
 			}
 			bool isWin = pawnSq == A2 ? kqkp::probeA2(wKingSquare, wQueenSquare, bKingSquare, stm) : kqkp::probeC2(wKingSquare, wQueenSquare, bKingSquare, stm);
-			if (isWin) result = VALUE_KNOWN_WIN + PieceValues[QUEEN].egScore - PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
+			if (isWin) result = VALUE_KNOWN_WIN + settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
 			else return evaluateDraw(pos);
 		}
 	}
@@ -293,7 +293,7 @@ template <Color SideWithoutPawns> Value evaluateKNKPx(const position& pos) {
 	//2 pawns => Knight counts half => total Material value = 0.5 Bishop - 2 Pawns = -40
 	//3 pawns => Knight counts 2/3  => total Material Value = -80
 	//4 pawns => Knight counts 3/4  => total Material Value = -160
-	Value result = Value(int(int(PieceValues[KNIGHT].egScore)*(1.0 - 1.0 / pawnCount))) - pawnCount * PieceValues[PAWN].egScore; //from Side without Pawns POV
+	Value result = Value(int(int(settings::parameter.PieceValues[KNIGHT].egScore)*(1.0 - 1.0 / pawnCount))) - pawnCount * settings::parameter.PieceValues[PAWN].egScore; //from Side without Pawns POV
 	//King and Knight should try to control or block the pawns frontfill
 	Bitboard frontspan = SideWithoutPawns == WHITE ? FrontFillSouth(pawns) : FrontFillNorth(pawns);
 	//result += Value(5 * popcount(frontspan & (pos.AttacksByPieceType(SideWithoutPawns, KNIGHT) | pos.PieceTypeBB(KNIGHT)))
@@ -320,7 +320,7 @@ template <Color SideWithoutPawns> Value evaluateKBKPx(const position& pos) {
 	//2 pawns => Bishop counts half => total Material value = 0.5 Bishop - 2 Pawns = -40
 	//3 pawns => Bishop counts 2/3  => total Material Value = -80
 	//4 pawns => Bishop counts 3/4  => total Material Value = -160
-	Value result = Value(int(int(PieceValues[BISHOP].egScore)*(1.0 - 1.0 / pawnCount))) - pawnCount * PieceValues[PAWN].egScore; //from Side without Pawns POV
+	Value result = Value(int(int(settings::parameter.PieceValues[BISHOP].egScore)*(1.0 - 1.0 / pawnCount))) - pawnCount * settings::parameter.PieceValues[PAWN].egScore; //from Side without Pawns POV
 	Bitboard frontspan = SideWithoutPawns == WHITE ? FrontFillSouth(pawns) : FrontFillNorth(pawns);
 	result += Value(popcount(frontspan & (pos.AttacksByPieceType(SideWithoutPawns, BISHOP) | pos.PieceTypeBB(BISHOP) | pos.AttacksByPieceType(SideWithoutPawns, KING) | pos.PieceBB(KING, SideWithoutPawns))));
 	result -= Value(2 * popcount(pos.PieceTypeBB(PAWN) & pos.AttacksByPieceType(Color(SideWithoutPawns ^ 1), KING)));
@@ -338,7 +338,7 @@ template <Color StrongerSide> Value evaluateKRKP(const position& pos) {
 	int dtc = StrongerSide == WHITE ? pawnSquare >> 3 : 7 - (pawnSquare >> 3);
 	Bitboard pfront = StrongerSide == WHITE ? FrontFillSouth(pos.PieceTypeBB(PAWN)) : FrontFillNorth(pos.PieceTypeBB(PAWN));
 	if (pfront & pos.PieceBB(KING, StrongerSide)) {
-		result = VALUE_KNOWN_WIN + PieceValues[ROOK].egScore - PieceValues[PAWN].egScore + Value(dtc - ChebishevDistance(strongerKingSquare, pawnSquare));
+		result = VALUE_KNOWN_WIN + settings::parameter.PieceValues[ROOK].egScore - settings::parameter.PieceValues[PAWN].egScore + Value(dtc - ChebishevDistance(strongerKingSquare, pawnSquare));
 		return StrongerSide == pos.GetSideToMove() ? result : -result;
 	}
 	Color WeakerSide = Color(StrongerSide ^ 1);
@@ -350,7 +350,7 @@ template <Color StrongerSide> Value evaluateKRKP(const position& pos) {
 	Square rookSquare = lsb(pos.PieceTypeBB(ROOK));
 	if (ChebishevDistance(weakKingSquare, pawnSquare) > (3 + (pos.GetSideToMove() == WeakerSide))
 		&& ChebishevDistance(weakKingSquare, rookSquare) >= 3) {
-		result = VALUE_KNOWN_WIN + PieceValues[ROOK].egScore - PieceValues[PAWN].egScore + Value(dtc - ChebishevDistance(strongerKingSquare, pawnSquare));
+		result = VALUE_KNOWN_WIN + settings::parameter.PieceValues[ROOK].egScore - settings::parameter.PieceValues[PAWN].egScore + Value(dtc - ChebishevDistance(strongerKingSquare, pawnSquare));
 		return StrongerSide == pos.GetSideToMove() ? result : -result;
 	}
 	// If the pawn is far advanced and supported by the defending king,
@@ -405,12 +405,12 @@ template <Color COL> eval evaluateThreats(const position& pos) {
 	{
 		b = defended & (pos.AttacksByPieceType(COL, KNIGHT) | pos.AttacksByPieceType(COL, BISHOP));
 		while (b) {
-			result += Threat[Defended][Minor][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
+			result += settings::parameter.Threat[Defended][Minor][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
 			b &= b - 1;
 		}
 		b = defended & pos.AttacksByPieceType(COL, ROOK);
 		while (b) {
-			result += Threat[Defended][Major][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
+			result += settings::parameter.Threat[Defended][Major][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
 			b &= b - 1;
 		}
 	}
@@ -423,18 +423,18 @@ template <Color COL> eval evaluateThreats(const position& pos) {
 	{
 		b = weak & (pos.AttacksByPieceType(COL, KNIGHT) | pos.AttacksByPieceType(COL, BISHOP));
 		while (b) {
-			result += Threat[Weak][Minor][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
+			result += settings::parameter.Threat[Weak][Minor][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
 			b &= b - 1;
 		}
 		b = weak & (pos.AttacksByPieceType(COL, ROOK) | pos.AttacksByPieceType(COL, QUEEN));
 		while (b) {
-			result += Threat[Weak][Major][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
+			result += settings::parameter.Threat[Weak][Major][GetPieceType(pos.GetPieceOnSquare(lsb(b)))];
 			b &= b - 1;
 		}
 		b = weak & ~pos.AttacksByColor(OTHER);
-		if (b) result += Hanging * popcount(b);
+		if (b) result += settings::parameter.HANGING * popcount(b);
 		b = weak & pos.AttacksByPieceType(COL, KING);
-		if (b) result += (b & (b - 1)) ? KingOnMany : KingOnOne;
+		if (b) result += (b & (b - 1)) ? settings::parameter.KING_ON_MANY : settings::parameter.KING_ON_ONE;
 	}
 	return result;
 }
@@ -444,7 +444,7 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	//Knights
 	Bitboard outpostArea = COL == WHITE ? 0x3c3c00000000 : 0x3c3c0000;
 	Bitboard outposts = pos.PieceBB(KNIGHT, COL) & outpostArea & pos.AttacksByPieceType(COL, PAWN);
-	Value bonusKnightOutpost = BONUS_KNIGHT_OUTPOST * popcount(outposts);
+	Value bonusKnightOutpost = settings::parameter.BONUS_KNIGHT_OUTPOST * popcount(outposts);
 	//Value bonus = VALUE_ZERO;
 	//Value ptBonus = BONUS_BISHOP_OUTPOST;
 	//for (PieceType pt = BISHOP; pt <= KNIGHT; ++pt) {
@@ -470,8 +470,8 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 		//bonusRook = popcount(rooks & seventhRank) * ROOK_ON_7TH;
 		Bitboard bbHalfOpen = COL == WHITE ? FileFill(pos.GetPawnEntry()->halfOpenFilesWhite) : FileFill(pos.GetPawnEntry()->halfOpenFilesBlack);
 		Bitboard rooksOnSemiOpen = bbHalfOpen & rooks;
-		bonusRook += popcount(rooksOnSemiOpen) * ROOK_ON_SEMIOPENFILE;
-		bonusRook += 2 * popcount(FileFill(pos.GetPawnEntry()->openFiles) & rooks) * ROOK_ON_OPENFILE;
+		bonusRook += popcount(rooksOnSemiOpen) * settings::parameter.ROOK_ON_SEMIOPENFILE;
+		bonusRook += 2 * popcount(FileFill(pos.GetPawnEntry()->openFiles) & rooks) * settings::parameter.ROOK_ON_OPENFILE;
 	}
 	//Passed Pawns (passed pawn bonus is already assigned statically in pawn::probe. Nevertheless all aspects related to position of other pieces have to be 
 	//evaluated here) dynamically 
@@ -486,7 +486,7 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 		int dtcSquare = (6 - dtc) * (6 - dtc);
 		bonusPassedPawns.egScore += Value(2 * dtcSquare * ChebishevDistance(opponentKingSquare, blockSquare));
 		bonusPassedPawns.egScore -= Value(1 * dtcSquare * ChebishevDistance(ownKingSquare, blockSquare));
-		if ((pos.ColorBB(OTHER) & ToBitboard(blockSquare))!= EMPTY) bonusPassedPawns -= MALUS_BLOCKED[dtc-1];
+		if ((pos.ColorBB(OTHER) & ToBitboard(blockSquare))!= EMPTY) bonusPassedPawns -= settings::parameter.MALUS_BLOCKED[dtc-1];
 		passedPawns &= passedPawns - 1;
 	}
 	return bonusPassedPawns + bonusRook + bonusBishop + eval(bonusKnightOutpost, 0);

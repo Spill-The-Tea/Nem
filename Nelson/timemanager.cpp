@@ -63,7 +63,7 @@ void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nod
 	_nodestime = nodestime;
 	if (mode == FIXED_TIME_PER_MOVE) {
 		_mode = mode;
-		_hardStopTime = _starttime + _time - EmergencyTime;
+		_hardStopTime = _starttime + _time - settings::parameter.EmergencyTime;
 	}
 	else if (mode == FIXED_DEPTH) {
 		_mode = mode;
@@ -105,7 +105,7 @@ void timemanager::init() {
 		//int64_t emergencySpareTime = _movestogo > 1 ? remainingTime / 3 : EmergencyTime;
 		//_hardStopTime = std::min(_starttime + _time - EmergencyTime, _starttime + _time - emergencySpareTime);
 		//Give at least 10 ms
-		_hardStopTime = std::max(_starttime + _time - EmergencyTime, _starttime + 10);
+		_hardStopTime = std::max(_starttime + _time - settings::parameter.EmergencyTime, _starttime + 10);
 
 		if (_movestogo > 1)
 		_stopTime = std::min(int64_t(_starttime + remainingTime / remainingMoves), Time_t((_hardStopTime + _starttime)/2));
@@ -125,7 +125,7 @@ void timemanager::init() {
 void timemanager::PonderHit() {
 	int64_t tnow = now();
 	int64_t pondertime = tnow - _starttime;
-	_hardStopTime.store(std::min(Time_t(_hardStopTimeSave + pondertime - EmergencyTime), Time_t(_hardStopTime.load())));
+	_hardStopTime.store(std::min(Time_t(_hardStopTimeSave + pondertime - settings::parameter.EmergencyTime), Time_t(_hardStopTime.load())));
 	_stopTime.store(_stopTimeSave);
 	//check if current iteration will be finished 
 	if (_mode != FIXED_TIME_PER_MOVE) {
@@ -197,7 +197,7 @@ int timemanager::estimatedDepth()
 
 void timemanager::updateTime(int64_t time) {
 	Time_t tnow = now();
-	_hardStopTime.store(std::min(int64_t(_hardStopTime.load()), tnow + Time_t(time - EmergencyTime)));
+	_hardStopTime.store(std::min(int64_t(_hardStopTime.load()), tnow + Time_t(time - settings::parameter.EmergencyTime)));
 	//std::cout << "Hardstop time updated: " << _hardStopTime - _starttime;
 }
 

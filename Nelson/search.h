@@ -210,7 +210,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	Value score = VALUE_ZERO;
 	rootPosition = pos;
 	pos.ResetPliesFromRoot();
-	EngineSide = pos.GetSideToMove();
+	settings::parameter.EngineSide = pos.GetSideToMove();
 	tt::newSearch();
 	//Get all root moves
 	ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
@@ -286,13 +286,13 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	if (T == MASTER) {
 		//SMP active => start helper threads (if not yet done)
 		if (slaves == nullptr) {
-			slaves = new search<SLAVE>[HelperThreads];
+			slaves = new search<SLAVE>[settings::parameter.HelperThreads];
 		}
 		//Initialize slaves and wake them up
-		for (int i = 0; i < HelperThreads; ++i) {
+		for (int i = 0; i < settings::parameter.HelperThreads; ++i) {
 			slaves[i].initializeSlave(this, i + 1);
 		}
-		for (int i = 0; i < HelperThreads; ++i) subThreads.push_back(std::thread(&startThread, std::ref(slaves[i])));
+		for (int i = 0; i < settings::parameter.HelperThreads; ++i) subThreads.push_back(std::thread(&startThread, std::ref(slaves[i])));
 	}
 	//Special logic to get static evaluation via UCI: if go depth 0 is requested simply return static evaluation
 	if (timeManager.GetMaxDepth() == 0) {
@@ -371,7 +371,7 @@ template<ThreadType T> inline ValuatedMove search<T>::Think(position &pos) {
 	}
 	if (T == MASTER) {
 		//search is done, send helper threads to sleep
-		for (int i = 0; i < HelperThreads; ++i) {
+		for (int i = 0; i < settings::parameter.HelperThreads; ++i) {
 			slaves[i].StopThinking();
 		}
 	}
@@ -404,7 +404,7 @@ END://when pondering engine must not return a best move before opponent moved =>
 	//If for some reason search did not find a best move return the  first one (to avoid loss and it's anyway the best guess then)
 	if (BestMove.move == MOVE_NONE) BestMove = rootMoves[0];
 	if (T == MASTER && rootMoveCount > 1) {
-		for (int i = 0; i < HelperThreads; ++i) subThreads[i].join();
+		for (int i = 0; i < settings::parameter.HelperThreads; ++i) subThreads[i].join();
 		subThreads.clear();
 	}
 	return BestMove;
@@ -448,7 +448,7 @@ template<ThreadType T> search<T>::search() {  }
 template<ThreadType T> search<T>::~search() {
 	//stop and delete Slave Threads
 	if (T == MASTER && slaves != nullptr) {
-		for (int i = 0; i < HelperThreads; ++i) {
+		for (int i = 0; i < settings::parameter.HelperThreads; ++i) {
 			slaves[i].StopThinking();
 			if (subThreads[i].joinable()) subThreads[i].join();
 		}
@@ -576,7 +576,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	// Tablebase probe
 	// Probing is only done if root position was no tablebase position (probeTB is true) and if drawPlyCount = 0 (in that case we get the necessary WDL information) to return
 	// immediately
-	if (probeTB && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry() && depth >= settings::TBProbeDepth)
+	if (probeTB && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry() && depth >= settings::parameter.TBProbeDepth)
 	{
 		int found;
 		int v = Tablebases::probe_wdl(pos, &found);
@@ -597,16 +597,16 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 	pv[0] = MOVE_NONE;
 	bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
-		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + BONUS_TEMPO;
+		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + settings::parameter.BONUS_TEMPO;
 	prune = prune && !PVNode && !checked && (pos.GetLastAppliedMove() != MOVE_NONE) && (!pos.GetMaterialTableEntry()->SkipPruning());
 	if (prune) {
 		//Check if Value from TT is better
 		// Beta Pruning
 		if (depth < 7
 			&& staticEvaluation < VALUE_KNOWN_WIN
-			&& (staticEvaluation - settings::BetaPruningMargin(depth)) >= beta
+			&& (staticEvaluation - settings::parameter.BetaPruningMargin(depth)) >= beta
 			&& pos.NonPawnMaterial(pos.GetSideToMove()))
-			return SCORE_BP(staticEvaluation - settings::BetaPruningMargin(depth));
+			return SCORE_BP(staticEvaluation - settings::parameter.BetaPruningMargin(depth));
 		Value effectiveEvaluation = staticEvaluation;
 		if (ttFound &&
 			((ttValue > staticEvaluation && ttEntry.type() == tt::LOWER_BOUND)
@@ -614,12 +614,12 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 
 		//Razoring
 		if (depth < 4
-			&& (staticEvaluation + settings::RazoringMargin(depth)) <= alpha
+			&& (staticEvaluation + settings::parameter.RazoringMargin(depth)) <= alpha
 			&& ttMove == MOVE_NONE
 			&& !pos.PawnOn7thRank())
 		{
 			//if (depth <= 1 && (effectiveEvaluation + settings::RazoringMargin(depth)) <= alpha) return QSearch(alpha, beta, pos, 0);
-			Value razorAlpha = alpha - settings::RazoringMargin(depth);
+			Value razorAlpha = alpha - settings::parameter.RazoringMargin(depth);
 			Value razorScore = QSearch(razorAlpha, Value(razorAlpha + 1), pos, 0);
 			if (razorScore <= razorAlpha) return SCORE_RAZ(razorScore);
 		}
@@ -631,7 +631,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			&& excludeMove == MOVE_NONE
 			) {
 			int reduction = (depth + 14) / 5;
-			if (int(effectiveEvaluation - beta) > int(PieceValues[PAWN].egScore)) ++reduction;
+			if (int(effectiveEvaluation - beta) > int(settings::parameter.PieceValues[PAWN].egScore)) ++reduction;
 			Square epsquare = pos.GetEPSquare();
 			Move lastApplied = pos.GetLastAppliedMove();
 			pos.NullMove();
@@ -662,7 +662,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 
 			position cpos(pos);
 			cpos.copy(pos);
-			Value limit = PieceValues[GetPieceType(pos.getCapturedInLastMove())].mgScore;
+			Value limit = settings::parameter.PieceValues[GetPieceType(pos.getCapturedInLastMove())].mgScore;
 			Move ttm = ttMove;
 			if (ttm != MOVE_NONE && cpos.SEE(ttMove) < limit) ttm = MOVE_NONE;
 			cpos.InitializeMoveIterator<QSEARCH>(&History, &cmHistory, &followupHistory, nullptr, MOVE_NONE, ttm);
@@ -688,11 +688,11 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	}
-	if (!checked && ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED && pos.GetStaticEval() == VALUE_NOTYETDETERMINED) pos.SetStaticEval(ttEntry.evalValue() - BONUS_TEMPO);
+	if (!checked && ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED && pos.GetStaticEval() == VALUE_NOTYETDETERMINED) pos.SetStaticEval(ttEntry.evalValue() - settings::parameter.BONUS_TEMPO);
 	Move counter = pos.GetCounterMove(counterMove);
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
-	bool futilityPruning = pos.GetLastAppliedMove() != MOVE_NONE && !checked && depth <= FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
-	if (futilityPruning && alpha >(staticEvaluation + FUTILITY_PRUNING_LIMIT[depth]))
+	bool futilityPruning = pos.GetLastAppliedMove() != MOVE_NONE && !checked && depth <= settings::parameter.FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
+	if (futilityPruning && alpha >(staticEvaluation + settings::parameter.FUTILITY_PRUNING_LIMIT[depth]))
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&History, &cmHistory, &followupHistory, nullptr, counter, ttMove);
 	else
 		pos.InitializeMoveIterator<MAIN_SEARCH>(&History, &cmHistory, &followupHistory, &killerManager, counter, ttMove);
@@ -712,7 +712,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 #endif
 	while ((move = pos.NextMove())) {
 		if (move == excludeMove) continue;
-		int reducedDepth = lmr ? depth - settings::LMRReduction(depth, moveIndex) : depth;
+		int reducedDepth = lmr ? depth - settings::parameter.LMRReduction(depth, moveIndex) : depth;
 		bool prunable = !PVNode && reducedDepth <= 4 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
 			&& !killerManager.isKiller(pos, move) && (pos.IsQuietAndNoCastles(move) || pos.GetMoveGenerationPhase() == MoveGenerationType::LOOSING_CAPTURES) 
 			&& !pos.IsAdvancedPawnPush(move) && !pos.givesCheck(move);
@@ -739,7 +739,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			//critical = critical || GetPieceType(pos.GetPieceOnSquare(from(move))) == PAWN && ((pos.GetSideToMove() == WHITE && from(move) > H5) || (pos.GetSideToMove() == BLACK && from(move) < A4));
 			//Check extension
 			int extension;
-			if (next.GetMaterialTableEntry()->Phase == 256 && pos.GetMaterialTableEntry()->Phase < 256 && next.GetMaterialScore() >= -PieceValues[PAWN].egScore && next.GetMaterialScore() <= PieceValues[PAWN].egScore)
+			if (next.GetMaterialTableEntry()->Phase == 256 && pos.GetMaterialTableEntry()->Phase < 256 && next.GetMaterialScore() >= -settings::parameter.PieceValues[PAWN].egScore && next.GetMaterialScore() <= settings::parameter.PieceValues[PAWN].egScore)
 				extension = 3;
 			else extension = (next.Checked() && pos.SEE_Sign(move) >= VALUE_ZERO) ? 1 : 0;
 			if (!extension && to(move) == recaptureSquare) {
@@ -756,7 +756,7 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			int reduction = 0;
 			//LMR: Late move reduction
 			if (lmr && extension == 0 && moveIndex != 0 && move != counter && pos.QuietMoveGenerationPhaseStarted() && !next.Checked()) {
-				reduction = settings::LMRReduction(depth, moveIndex);
+				reduction = settings::parameter.LMRReduction(depth, moveIndex);
 				if (cutNode) ++reduction;
 				if (PVNode && reduction > 0) --reduction;
 #ifdef STAT_LMR
@@ -847,7 +847,7 @@ template<ThreadType T> Value search<T>::QSearch(Value alpha, Value beta, positio
 	bool ttFound = false;
 	Value ttValue = VALUE_NOTYETDETERMINED;
 	tt::Entry* ttPointer;
-	if (depth >= settings::LIMIT_QSEARCH_TT) {
+	if (depth >= settings::parameter.LIMIT_QSEARCH_TT) {
 		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		if (ttFound) ttValue = tt::fromTT(ttEntry.value(), pos.GetPliesFromRoot());
 		if (ttFound
@@ -869,11 +869,11 @@ template<ThreadType T> Value search<T>::QSearch(Value alpha, Value beta, positio
 #ifdef TUNE
 		standPat = pos.evaluate() + BONUS_TEMPO;
 #else
-		standPat = ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + BONUS_TEMPO;
+		standPat = ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + settings::parameter.BONUS_TEMPO;
 		//check if ttValue is better
 		if (ttFound && ttValue != VALUE_NOTYETDETERMINED && ((ttValue > standPat && ttEntry.type() == tt::LOWER_BOUND) || (ttValue < standPat && ttEntry.type() == tt::UPPER_BOUND))) standPat = ttValue;
 		if (standPat >= beta) {
-			if (depth >= settings::LIMIT_QSEARCH_TT) {
+			if (depth >= settings::parameter.LIMIT_QSEARCH_TT) {
 				if (T == SINGLE) ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
 				else ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
 			}
@@ -882,7 +882,7 @@ template<ThreadType T> Value search<T>::QSearch(Value alpha, Value beta, positio
 #endif
 		//Delta Pruning
 		if (!checked && !pos.GetMaterialTableEntry()->IsLateEndgame()) {
-			Value delta = PieceValues[pos.GetMostValuableAttackedPieceType()].egScore + int(pos.PawnOn7thRank()) * (PieceValues[QUEEN].egScore - PieceValues[PAWN].egScore) + DELTA_PRUNING_SAFETY_MARGIN;
+			Value delta = settings::parameter.PieceValues[pos.GetMostValuableAttackedPieceType()].egScore + int(pos.PawnOn7thRank()) * (settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore) + settings::parameter.DELTA_PRUNING_SAFETY_MARGIN;
 			if (standPat + delta < alpha) return SCORE_DP(alpha);
 		}
 		if (alpha < standPat) alpha = standPat;
@@ -895,7 +895,7 @@ template<ThreadType T> Value search<T>::QSearch(Value alpha, Value beta, positio
 	Move bestMove = MOVE_NONE;
 	while ((move = pos.NextMove())) {
 		if (!checked) {
-			if (depth > settings::LIMIT_QSEARCH) {
+			if (depth > settings::parameter.LIMIT_QSEARCH) {
 				if (pos.SEE_Sign(move) < VALUE_ZERO) continue;
 			}
 			else return standPat + pos.SEE(move);
@@ -905,7 +905,7 @@ template<ThreadType T> Value search<T>::QSearch(Value alpha, Value beta, positio
 			score = -QSearch(-beta, -alpha, next, depth - 1);
 			if (score >= beta) {
 #ifndef TUNE
-				if (depth >= settings::LIMIT_QSEARCH_TT) {
+				if (depth >= settings::parameter.LIMIT_QSEARCH_TT) {
 					if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, move, standPat);
 					else ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, move, standPat);
 				}
@@ -920,7 +920,7 @@ template<ThreadType T> Value search<T>::QSearch(Value alpha, Value beta, positio
 		}
 	}
 #ifndef TUNE
-	if (depth >= settings::LIMIT_QSEARCH_TT) {
+	if (depth >= settings::parameter.LIMIT_QSEARCH_TT) {
 		if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), alpha, nt, depth, bestMove, standPat);
 		else ttPointer->update<tt::UNSAFE>(pos.GetHash(), alpha, nt, depth, bestMove, standPat);
 	}

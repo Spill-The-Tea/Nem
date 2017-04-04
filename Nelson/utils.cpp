@@ -135,7 +135,7 @@ namespace utils {
 
 	void debugInfo(std::string info)
 	{
-		switch (protocol) {
+		switch (settings::parameter.protocol) {
 		case UCI: sync_cout << "info string " << info << sync_endl; break;
 		case XBOARD: sync_cout << "# " << info << sync_endl; break;
 		case NO_PROTOCOL: sync_cout << info << sync_endl; break;
@@ -145,7 +145,7 @@ namespace utils {
 
 	void debugInfo(std::string info1, std::string info2)
 	{
-		switch (protocol) {
+		switch (settings::parameter.protocol) {
 		case UCI: sync_cout << "info string " << info1 << " " << info2 << sync_endl; break;
 		case XBOARD: sync_cout << "# " << info1 << " " << info2 << sync_endl; break;
 		case NO_PROTOCOL: sync_cout << info1 << " " << info2 << sync_endl; break;

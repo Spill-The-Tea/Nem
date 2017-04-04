@@ -82,7 +82,7 @@ std::string baseSearch::PrincipalVariation(position & pos, int depth) {
 	}
 	//...then continue with moves from transposition table
 	for (; i < depth; ++i) {
-		Move hashmove = HelperThreads == 0 ? tt::hashmove<tt::UNSAFE>(pos.GetHash()) : tt::hashmove<tt::THREAD_SAFE>(pos.GetHash());
+		Move hashmove = settings::parameter.HelperThreads == 0 ? tt::hashmove<tt::UNSAFE>(pos.GetHash()) : tt::hashmove<tt::THREAD_SAFE>(pos.GetHash());
 		if (hashmove == MOVE_NONE || !pos.validateMove(hashmove)) break;
 		position next(pos);
 		if (!next.ApplyMove(hashmove)) break;

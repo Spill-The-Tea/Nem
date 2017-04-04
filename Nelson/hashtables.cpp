@@ -43,14 +43,14 @@ namespace pawn {
 		result->halfOpenFilesBlack = Fileset(bbFilesWhite & ~bbFilesBlack);
 		while (ppW) {
 			int rank = (lsb(ppW) >> 3) - 1;
-			result->Score += PASSED_PAWN_BONUS[rank];
-			if (rank > 0 && (isolateLSB(ppW) & attacksWhite) != 0) result->Score += BONUS_PROTECTED_PASSED_PAWN[rank];
+			result->Score += settings::parameter.PASSED_PAWN_BONUS[rank];
+			if (rank > 0 && (isolateLSB(ppW) & attacksWhite) != 0) result->Score += settings::parameter.BONUS_PROTECTED_PASSED_PAWN[rank];
 			ppW &= ppW - 1;
 		}
 		while (ppB) {
 			int rank = 6 - (lsb(ppB) >> 3);
-			result->Score -= PASSED_PAWN_BONUS[rank];
-			if (rank > 0 && (isolateLSB(ppB) & attacksBlack) != 0) result->Score -= BONUS_PROTECTED_PASSED_PAWN[rank];
+			result->Score -= settings::parameter.PASSED_PAWN_BONUS[rank];
+			if (rank > 0 && (isolateLSB(ppB) & attacksBlack) != 0) result->Score -= settings::parameter.BONUS_PROTECTED_PASSED_PAWN[rank];
 			ppB &= ppB - 1;
 		}
 		//Candidate passed pawns
@@ -60,7 +60,7 @@ namespace pawn {
 			Bitboard sentries = FrontFillNorth(((candidateBB << 17) & NOT_A_FILE) | ((candidateBB << 15) & NOT_H_FILE)) & bbBlack;
 			Bitboard helper = FrontFillSouth(sentries >> 16) & bbWhite;
 			if (popcount(helper) >= popcount(sentries)) {
-				result->Score += BONUS_CANDIDATE * (lsb(candidateBB) >> 3);
+				result->Score += settings::parameter.BONUS_CANDIDATE * (lsb(candidateBB) >> 3);
 			}
 			potentialCandidates &= potentialCandidates - 1;
 		}
@@ -70,7 +70,7 @@ namespace pawn {
 			Bitboard sentries = FrontFillSouth(((candidateBB >> 15) & NOT_A_FILE) | ((candidateBB >> 17) & NOT_H_FILE)) & bbWhite;
 			Bitboard helper = FrontFillNorth(sentries << 16) & bbBlack;
 			if (popcount(helper) >= popcount(sentries)) {
-				result->Score -= BONUS_CANDIDATE * (7 - (lsb(candidateBB) >> 3));
+				result->Score -= settings::parameter.BONUS_CANDIDATE * (7 - (lsb(candidateBB) >> 3));
 			}
 			potentialCandidates &= potentialCandidates - 1;
 		}
@@ -79,20 +79,20 @@ namespace pawn {
 		while (levers) {
 			int leverRank = int(lsb(levers) >> 3) - 3;
 			assert(leverRank == 1 || leverRank == 2);
-			result->Score += leverRank * BONUS_LEVER;
+			result->Score += leverRank * settings::parameter.BONUS_LEVER;
 			levers &= levers - 1;
 		}
 		levers = bbBlack & (RANK4 | RANK3) & attacksWhite;
 		while (levers) {
 			int leverRank = 4 - int(lsb(levers) >> 3);
 			assert(leverRank == 1 || leverRank == 2);
-			result->Score -= leverRank * BONUS_LEVER;
+			result->Score -= leverRank * settings::parameter.BONUS_LEVER;
 			levers &= levers - 1;
 		}
 		//isolated pawns
-		result->Score -= (popcount(IsolatedFiles(bbFilesWhite)) - popcount(IsolatedFiles(bbFilesBlack))) * MALUS_ISOLATED_PAWN;
+		result->Score -= (popcount(IsolatedFiles(bbFilesWhite)) - popcount(IsolatedFiles(bbFilesBlack))) * settings::parameter.MALUS_ISOLATED_PAWN;
 		//pawn islands
-		result->Score += MALUS_ISLAND_COUNT*(popcount(IslandsEastFiles(bbBlack)) - popcount(IslandsEastFiles(bbWhite)));
+		result->Score += settings::parameter.MALUS_ISLAND_COUNT*(popcount(IslandsEastFiles(bbBlack)) - popcount(IslandsEastFiles(bbWhite)));
 		//backward pawns
 		Bitboard bbWBackward = bbWhite & ~bbBFrontspan; //Backward pawns are open pawns
 		Bitboard frontspan = FrontFillNorth(bbWBackward << 8);
@@ -104,12 +104,12 @@ namespace pawn {
 		stopSquares = frontspan & attacksWhite; //Where the advancement is stopped by an opposite pawn
 		stopSquares &= ~bbBAttackset; //and the stop square isn't part of the own pawn attack
 		bbBBackward &= FrontFillNorth(stopSquares);
-		result->Score -= (popcount(bbWBackward) - popcount(bbBBackward)) * MALUS_BACKWARD_PAWN;
+		result->Score -= (popcount(bbWBackward) - popcount(bbBBackward)) * settings::parameter.MALUS_BACKWARD_PAWN;
 		//doubled pawns
 		Bitboard doubled = FrontFillNorth(bbWhite << 8) & bbWhite;
-		result->Score -= popcount(doubled) * MALUS_DOUBLED_PAWN;
+		result->Score -= popcount(doubled) * settings::parameter.MALUS_DOUBLED_PAWN;
 		doubled = FrontFillSouth(bbBlack >> 8) & bbBlack;
-		result->Score += popcount(doubled) * MALUS_DOUBLED_PAWN;
+		result->Score += popcount(doubled) * settings::parameter.MALUS_DOUBLED_PAWN;
 		result->Key = pos.GetPawnKey();
 		return result;
 	}

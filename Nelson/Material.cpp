@@ -35,7 +35,8 @@ eval calculateMaterialEval(const position &pos) {
 	int diffB = popcount(pos.PieceBB(BISHOP, WHITE)) - popcount(pos.PieceBB(BISHOP, BLACK));
 	int diffN = popcount(pos.PieceBB(KNIGHT, WHITE)) - popcount(pos.PieceBB(KNIGHT, BLACK));
 	int diffP = popcount(pos.PieceBB(PAWN, WHITE)) - popcount(pos.PieceBB(PAWN, BLACK));
-	return diffQ*PieceValues[QUEEN] + diffR*PieceValues[ROOK] + diffB*PieceValues[BISHOP] + diffN * PieceValues[KNIGHT] + diffP * PieceValues[PAWN];
+	return diffQ*settings::parameter.PieceValues[QUEEN] + diffR*settings::parameter.PieceValues[ROOK] + diffB*settings::parameter.PieceValues[BISHOP] 
+		+ diffN * settings::parameter.PieceValues[KNIGHT] + diffP * settings::parameter.PieceValues[PAWN];
 }
 
 //Calculation (only used for special situations like 3 Queens, ...)
@@ -81,23 +82,23 @@ void InitializeMaterialTable() {
 											eval evaluation(0);
 											for (int i = 0; i < 5; ++i) {
 												imbalance[i] = pieceCounts[2 * i] - pieceCounts[2 * i + 1];
-												evaluation += imbalance[i] * PieceValues[i];
+												evaluation += imbalance[i] * settings::parameter.PieceValues[i];
 											}
 											if ((nWB == 2 || nBB == 2) && imbalance[BISHOP] != 0) {
 												//Bonus for bishop pair
 												if (nWB == 2) {//White has Bishop pair
-													evaluation += BONUS_BISHOP_PAIR + (9 - nWP - nBP)*settings::SCALE_BISHOP_PAIR_WITH_PAWNS;
-													if (nBN == 0 && nBB == 0) evaluation += settings::BONUS_BISHOP_PAIR_NO_OPP_MINOR;
+													evaluation += settings::parameter.BONUS_BISHOP_PAIR + (9 - nWP - nBP)*settings::parameter.SCALE_BISHOP_PAIR_WITH_PAWNS;
+													if (nBN == 0 && nBB == 0) evaluation += settings::parameter.BONUS_BISHOP_PAIR_NO_OPP_MINOR;
 												}
 												else {
-													evaluation -= BONUS_BISHOP_PAIR + (9 - nWP - nBP)*settings::SCALE_BISHOP_PAIR_WITH_PAWNS;
-													if (nWN == 0 && nWB == 0) evaluation -= settings::BONUS_BISHOP_PAIR_NO_OPP_MINOR;
+													evaluation -= settings::parameter.BONUS_BISHOP_PAIR + (9 - nWP - nBP)*settings::parameter.SCALE_BISHOP_PAIR_WITH_PAWNS;
+													if (nWN == 0 && nWB == 0) evaluation -= settings::parameter.BONUS_BISHOP_PAIR_NO_OPP_MINOR;
 												}
 											}
 											if (nWB == 1 && nBB == 1 && nWN == 0 && nBN == 0 && nWQ == 0 && nBQ == 0) MaterialTable[key].Flags |= MSF_SCALE;
 											if (imbalance[ROOK] != 0 && ((imbalance[ROOK] + imbalance[KNIGHT] + imbalance[BISHOP]) == 0)) {
-												evaluation += imbalance[ROOK] * ((3 - nWQ - nBQ - nWR - nBR) * settings::SCALE_EXCHANGE_WITH_MAJORS
-													+ (8 - nWP - nBP)*settings::SCALE_EXCHANGE_WITH_PAWNS);
+												evaluation += imbalance[ROOK] * ((3 - nWQ - nBQ - nWR - nBR) * settings::parameter.SCALE_EXCHANGE_WITH_MAJORS
+													+ (8 - nWP - nBP)*settings::parameter.SCALE_EXCHANGE_WITH_PAWNS);
 											}
 											assert(MaterialTable[key].Evaluation.mgScore == VALUE_NOTYETDETERMINED);
 											MaterialTable[key].Evaluation = evaluation;

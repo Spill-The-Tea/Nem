@@ -34,10 +34,10 @@ namespace kpk
 			bKingSquare = Square(bKingSquare ^ 7);
 		}
 		if (probe(wKingSquare, pawnSquare, bKingSquare, stm)) {
-			result = VALUE_KNOWN_WIN + PieceValues[PAWN].egScore + Value(pawnSquare >> 3);						
+			result = VALUE_KNOWN_WIN + settings::parameter.PieceValues[PAWN].egScore + Value(pawnSquare >> 3);
 		}
 		else {
-			return pos.GetSideToMove() == EngineSide ? -Contempt : Contempt;  //To force taking of the pawn (if possible)
+			return pos.GetSideToMove() == settings::parameter.EngineSide ? -settings::parameter.Contempt : settings::parameter.Contempt;  //To force taking of the pawn (if possible)
 		}
 		return StrongerSide == pos.GetSideToMove() ? result : -result;
 	}

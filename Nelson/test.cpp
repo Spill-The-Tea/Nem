@@ -455,12 +455,12 @@ namespace test {
 		for (int i = 0; i < int(fens.size()); i++) {
 			position* pos = new position(fens[i]);
 			baseSearch * srch;
-			if (HelperThreads) srch = new search < MASTER >; else srch = new search < SINGLE >;
+			if (settings::parameter.HelperThreads) srch = new search < MASTER >; else srch = new search < SINGLE >;
 			srch->PrintCurrmove = false;
 			//srch.uciOutput = false;
 			srch->NewGame();
 			srch->timeManager.initialize(FIXED_DEPTH, 0, depth);
-			if (HelperThreads) (dynamic_cast<search<MASTER>*>(srch))->Think(*pos); else (dynamic_cast<search<SINGLE>*>(srch))->Think(*pos);
+			if (settings::parameter.HelperThreads) (dynamic_cast<search<MASTER>*>(srch))->Think(*pos); else (dynamic_cast<search<SINGLE>*>(srch))->Think(*pos);
 			int64_t endTime = now();
 			totalTime += endTime - srch->timeManager.GetStartTime();
 			totalNodes += srch->NodeCount;

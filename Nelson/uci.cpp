@@ -145,7 +145,7 @@ void UCIInterface::isready() {
 
 void UCIInterface::updateFromOptions() {
 	ponderActive = settings::options.getBool(settings::OPTION_PONDER);
-	EmergencyTime = settings::options.getInt(settings::OPTION_EMERGENCY_TIME);
+	settings::parameter.EmergencyTime = settings::options.getInt(settings::OPTION_EMERGENCY_TIME);
 #ifdef TUNE
 	PieceValues[QUEEN] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_EG));
 	PieceValues[ROOK] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_EG));
@@ -154,7 +154,7 @@ void UCIInterface::updateFromOptions() {
 	PieceValues[PAWN] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_EG));
 #endif
 #ifdef TB
-	settings::TBProbeDepth = settings::options.getInt(settings::OPTION_SYZYGY_PROBE_DEPTH);
+	settings::parameter.TBProbeDepth = settings::options.getInt(settings::OPTION_SYZYGY_PROBE_DEPTH);
 #endif
 }
 
@@ -169,13 +169,13 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 	else if (!tokens[2].compare(settings::OPTION_PONDER)) 
 		ponderActive = settings::options.getBool(settings::OPTION_PONDER);
 	else if (!tokens[2].compare(settings::OPTION_THREADS)) {
-		if (HelperThreads && Engine->GetType() == SINGLE) {
+		if (settings::parameter.HelperThreads && Engine->GetType() == SINGLE) {
 			baseSearch * newEngine = new search < MASTER >;
 			copySettings(Engine, newEngine);
 			delete Engine;
 			Engine = newEngine;
 		}
-		else if (!HelperThreads && Engine->GetType() == MASTER) {
+		else if (!settings::parameter.HelperThreads && Engine->GetType() == MASTER) {
 			baseSearch * newEngine = new search < SINGLE >;
 			copySettings(Engine, newEngine);
 			delete Engine;
@@ -190,7 +190,7 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 			int rating = stoi(tokens[5]);
 			int ownRating = 2800;
 			settings::options.set(settings::OPTION_CONTEMPT, (ownRating - rating) / 10);
-			sync_cout << "info string Contempt set to " << Contempt << sync_endl;
+			sync_cout << "info string Contempt set to " << settings::parameter.Contempt << sync_endl;
 		}
 		catch (...) {
 
@@ -205,7 +205,7 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 		settings::options.printInfo();
 	}
 	else if (!tokens[2].compare(settings::OPTION_EMERGENCY_TIME)) {
-		EmergencyTime = settings::options.getInt(settings::OPTION_EMERGENCY_TIME);
+		settings::parameter.EmergencyTime = settings::options.getInt(settings::OPTION_EMERGENCY_TIME);
 	}
 #ifdef TB
 	else if (!tokens[2].compare(settings::OPTION_SYZYGY_PATH)) {
@@ -219,7 +219,7 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 		}
 	}
 	else if (!tokens[2].compare(settings::OPTION_SYZYGY_PROBE_DEPTH)) {
-		settings::TBProbeDepth = settings::options.getInt(settings::OPTION_SYZYGY_PROBE_DEPTH);
+		settings::parameter.TBProbeDepth = settings::options.getInt(settings::OPTION_SYZYGY_PROBE_DEPTH);
 	}
 #endif
 }

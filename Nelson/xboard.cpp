@@ -53,7 +53,7 @@ namespace cecp {
 				if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*pos);
 				else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*pos);
 				//Search is done => check for draw offer
-				if (drawOffered.load() && BestMove.score < -Contempt) {
+				if (drawOffered.load() && BestMove.score < -settings::parameter.Contempt) {
 					//Accept it if we are worse than Contempt
 					sync_cout << "offer draw" << sync_endl;
 					drawOffered.store(false);
@@ -105,7 +105,7 @@ namespace cecp {
 				if (engineState.load() == Thinking) {
 					//We had a ponder hit => the search result is our next move
 					//check for draw offer
-					if (drawOffered.load() && BestMove.score < -Contempt) {
+					if (drawOffered.load() && BestMove.score < -settings::parameter.Contempt) {
 						//Accept it if we are worse than Contempt
 						sync_cout << "offer draw" << sync_endl;
 						drawOffered.store(false);
@@ -158,7 +158,7 @@ namespace cecp {
 			sync_cout << "0-1 {Black mates}" << sync_endl;
 			return false;
 		case DRAW_50_MOVES:
-			if (score < -Contempt) {
+			if (score < -settings::parameter.Contempt) {
 				sync_cout << "1/2-1/2 {50-move rule}" << sync_endl;
 				return false;
 			}
@@ -167,7 +167,7 @@ namespace cecp {
 			sync_cout << "1/2-1/2 {Stalemate}" << sync_endl;
 			return false;
 		case DRAW_REPETITION:
-			if (score < -Contempt) {
+			if (score < -settings::parameter.Contempt) {
 				sync_cout << "1/2-1/2 {3-fold Repetition}" << sync_endl;
 				return false;
 			}
@@ -360,13 +360,13 @@ namespace cecp {
 	}
 
 	void xboard::cores(std::vector<std::string> tokens) {
-		HelperThreads = stoi(tokens[1]) - 1;
-		if (HelperThreads && Engine->GetType() == SINGLE) {
+		settings::parameter.HelperThreads = stoi(tokens[1]) - 1;
+		if (settings::parameter.HelperThreads && Engine->GetType() == SINGLE) {
 			delete Engine;
 			Engine = new search < MASTER >;
 			//Todo timemanagement settings are lost when engine is reinitialized
 		}
-		else if (!HelperThreads && Engine->GetType() == MASTER) {
+		else if (!settings::parameter.HelperThreads && Engine->GetType() == MASTER) {
 			delete Engine;
 			Engine = new search < SINGLE >;
 			//Todo timemanagement settings are lost when engine is reinitialized
@@ -501,7 +501,7 @@ namespace cecp {
 		int ownRating = stoi(tokens[1]);
 		if (ownRating == 0) ownRating = 2700;
 		if (ratingOpponent == 0) ratingOpponent = 2000;
-		Contempt = Value((ownRating - ratingOpponent) / 10);
+		settings::parameter.Contempt = Value((ownRating - ratingOpponent) / 10);
 	}
 
 #ifdef TB
@@ -536,7 +536,7 @@ namespace cecp {
 			Engine->MultiPv = stoi(value);
 		}
 		else if (!name.compare(settings::OPTION_CONTEMPT)) {
-			Contempt = Value(stoi(value));
+			settings::parameter.Contempt = Value(stoi(value));
 		}
 		else if (!name.compare(settings::OPTION_BOOK_FILE)) {
 			((settings::OptionString *)settings::options[settings::OPTION_BOOK_FILE])->set(value);
@@ -546,11 +546,11 @@ namespace cecp {
 			((settings::OptionCheck *)settings::options[settings::OPTION_OWN_BOOK])->set(!value.compare("1"));
 		}
 		else if (!name.compare(settings::OPTION_EMERGENCY_TIME)) {
-			EmergencyTime = stoi(value);
+			settings::parameter.EmergencyTime = stoi(value);
 		}
 #ifdef TB
 		else if (!name.compare(settings::OPTION_SYZYGY_PROBE_DEPTH)) {
-			settings::TBProbeDepth = stoi(value);
+			settings::parameter.TBProbeDepth = stoi(value);
 		}
 #endif 
 	}
