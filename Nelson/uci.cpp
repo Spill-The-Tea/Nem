@@ -147,11 +147,11 @@ void UCIInterface::updateFromOptions() {
 	ponderActive = settings::options.getBool(settings::OPTION_PONDER);
 	settings::parameter.EmergencyTime = settings::options.getInt(settings::OPTION_EMERGENCY_TIME);
 #ifdef TUNE
-	PieceValues[QUEEN] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_EG));
-	PieceValues[ROOK] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_EG));
-	PieceValues[BISHOP] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_BISHOP_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_BISHOP_EG));
-	PieceValues[KNIGHT] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_EG));
-	PieceValues[PAWN] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_EG));
+	settings::parameter.PieceValues[QUEEN] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_EG));
+	settings::parameter.PieceValues[ROOK] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_EG));
+	settings::parameter.PieceValues[BISHOP] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_BISHOP_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_BISHOP_EG));
+	settings::parameter.PieceValues[KNIGHT] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_EG));
+	settings::parameter.PieceValues[PAWN] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_EG));
 #endif
 #ifdef TB
 	settings::parameter.TBProbeDepth = settings::options.getInt(settings::OPTION_SYZYGY_PROBE_DEPTH);

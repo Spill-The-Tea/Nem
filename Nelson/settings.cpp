@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <algorithm>
+#include <regex>
 #include "settings.h"
 #include "utils.h"
 #include "hashtables.h"
@@ -31,6 +32,111 @@ namespace settings {
 	}
 
 #ifdef TUNE
+	bool Parameters::parse(std::string input)
+	{
+		static std::regex rgxKV("(\\w+)(?:\\[(\\d+)\\])?\\s*=\\s*(\\S.*)");
+		//static std::regex rgx("(-?\\d+)[\\s,]*");
+		std::smatch m;
+		std::string key;
+		int index = -1;
+		std::string value;
+		if (std::regex_search(input, m, rgxKV)) {
+			key = m[1].str();
+			int index = -1;
+			if (m[2].length() > 0) index = std::stoi(m[2].str());
+			value = m[3].str();
+			std::vector<int> values = parseValue(value);
+			if (!key.compare("SCALE_BISHOP_PAIR_WITH_PAWNS"))
+				setEval(parameter.SCALE_BISHOP_PAIR_WITH_PAWNS, values, index);
+			else if (!key.compare("BONUS_BISHOP_PAIR_NO_OPP_MINOR"))
+				setEval(parameter.BONUS_BISHOP_PAIR_NO_OPP_MINOR, values, index);
+			else if (!key.compare("SCALE_EXCHANGE_WITH_PAWNS"))
+				setEval(parameter.SCALE_EXCHANGE_WITH_PAWNS, values, index);
+			else if (!key.compare("SCALE_BISHOP_PAIR_WITH_PAWNS"))
+				setEval(parameter.SCALE_EXCHANGE_WITH_MAJORS, values, index);
+			else if (!key.compare("SCALE_EXCHANGE_WITH_MAJORS"))
+				setEval(parameter.HANGING, values, index);
+			else if (!key.compare("HANGING"))
+				setEval(parameter.KING_ON_ONE, values, index);
+			else if (!key.compare("KING_ON_ONE"))
+				setEval(parameter.KING_ON_MANY, values, index);
+			else if (!key.compare("KING_ON_MANY"))
+				setEval(parameter.ROOK_ON_OPENFILE, values, index);
+			else if (!key.compare("ROOK_ON_OPENFILE"))
+				setEval(parameter.SCALE_BISHOP_PAIR_WITH_PAWNS, values, index);
+			else if (!key.compare("ROOK_ON_SEMIOPENFILE"))
+				setEval(parameter.ROOK_ON_SEMIOPENFILE, values, index);
+			else if (!key.compare("ROOK_ON_SEMIOPENFILE_WITH_KQ"))
+				setEval(parameter.ROOK_ON_SEMIOPENFILE_WITH_KQ, values, index);
+			else if (!key.compare("BONUS_BISHOP_PAIR"))
+				setEval(parameter.BONUS_BISHOP_PAIR, values, index);
+			else if (!key.compare("PAWN_SHELTER_2ND_RANK"))
+				setEval(parameter.PAWN_SHELTER_2ND_RANK, values, index);
+			else if (!key.compare("PAWN_SHELTER_3RD_RANK"))
+				setEval(parameter.PAWN_SHELTER_3RD_RANK, values, index);
+			else if (!key.compare("PAWN_SHELTER_4TH_RANK"))
+				setEval(parameter.PAWN_SHELTER_4TH_RANK, values, index);
+			else if (!key.compare("MALUS_ISOLATED_PAWN"))
+				setEval(parameter.MALUS_ISOLATED_PAWN, values, index);
+			else if (!key.compare("MALUS_BACKWARD_PAWN"))
+				setEval(parameter.MALUS_BACKWARD_PAWN, values, index);
+			else if (!key.compare("MALUS_ISOLATED_PAWN"))
+				setEval(parameter.MALUS_ISOLATED_PAWN, values, index);
+			else if (!key.compare("MALUS_ISLAND_COUNT"))
+				setEval(parameter.MALUS_ISLAND_COUNT, values, index);
+			else if (!key.compare("BONUS_CANDIDATE"))
+				setEval(parameter.BONUS_CANDIDATE, values, index);
+			else if (!key.compare("BONUS_LEVER"))
+				setEval(parameter.BONUS_LEVER, values, index);
+			else if (!key.compare("MALUS_DOUBLED_PAWN"))
+				setEval(parameter.MALUS_DOUBLED_PAWN, values, index);
+			else if (!key.compare("BETA_PRUNING_FACTOR"))
+				setValue(parameter.BETA_PRUNING_FACTOR, values);
+			else if (!key.compare("RAZORING_FACTOR"))
+				setValue(parameter.RAZORING_FACTOR, values);
+			else if (!key.compare("RAZORING_OFFSET"))
+				setValue(parameter.RAZORING_OFFSET, values);
+			else if (!key.compare("BONUS_CASTLING"))
+				setValue(parameter.BONUS_CASTLING, values);
+			else if (!key.compare("BONUS_TEMPO"))
+				setValue(parameter.BONUS_TEMPO, values);
+			else if (!key.compare("DELTA_PRUNING_SAFETY_MARGIN"))
+				setValue(parameter.DELTA_PRUNING_SAFETY_MARGIN, values);
+			else if (!key.compare("PROBCUT_MARGIN"))
+				setValue(parameter.PROBCUT_MARGIN, values);
+			else if (!key.compare("BONUS_KNIGHT_OUTPOST"))
+				setValue(parameter.BONUS_KNIGHT_OUTPOST, values);
+			else if (!key.compare("BONUS_BISHOP_OUTPOST"))
+				setValue(parameter.BONUS_BISHOP_OUTPOST, values);
+		}
+		else return false;
+		return true;
+	}
+
+	std::vector<int> Parameters::parseValue(std::string input)
+	{
+		std::vector<int> result;
+		static std::regex rgx("(-?\\d+)[\\s,]*");
+		std::smatch m;
+		int index = -1;
+		while (std::regex_search(input, m, rgx)) {
+			int value = m[1].length() > 0 ? std::stoi(m[1].str()) : 0;
+			result.push_back(value);
+			input = m.suffix().str();
+		}
+	}
+
+	void Parameters::setEval(eval & e, std::vector<int>& v, int index)
+	{
+		if (index = -1 && v.size() == 1) e.mgScore = e.egScore = Value(v[0]);
+		else if (index = -1 && v.size() == 2) {
+			e.mgScore = Value(v[0]);
+			e.egScore = Value(v[1]);
+		}
+		else if (index == 0)  e.mgScore = Value(v[0]);
+		else if (index == 1) e.egScore = Value(v[0]);
+	}
+
 	void processParameter(std::vector<std::string> parameters)
 	{
 		for (int i = 1; i < parameters.size(); ++i) {
@@ -216,16 +322,16 @@ namespace settings {
 		(*this)[OPTION_TEXEL_TUNING_LOSSES] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_LOSSES, "", true));
 		(*this)[OPTION_TEXEL_TUNING_LABELLED] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_LABELLED, "", true));
 #ifdef TUNE
-		(*this)[OPTION_PIECE_VALUES_QUEEN_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_QUEEN_MG, PieceValues[QUEEN].mgScore, 0, 2 * PieceValues[QUEEN].mgScore, false));
-		(*this)[OPTION_PIECE_VALUES_QUEEN_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_QUEEN_EG, PieceValues[QUEEN].egScore, 0, 2 * PieceValues[QUEEN].egScore, false));
-		(*this)[OPTION_PIECE_VALUES_ROOK_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_ROOK_MG, PieceValues[ROOK].mgScore, 0, 2 * PieceValues[ROOK].mgScore, false));
-		(*this)[OPTION_PIECE_VALUES_ROOK_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_ROOK_EG, PieceValues[ROOK].egScore, 0, 2 * PieceValues[ROOK].egScore, false));
-		(*this)[OPTION_PIECE_VALUES_BISHOP_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_BISHOP_MG, PieceValues[BISHOP].mgScore, 0, 2 * PieceValues[BISHOP].mgScore, false));
-		(*this)[OPTION_PIECE_VALUES_BISHOP_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_BISHOP_EG, PieceValues[BISHOP].egScore, 0, 2 * PieceValues[BISHOP].egScore, false));
-		(*this)[OPTION_PIECE_VALUES_KNIGHT_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_KNIGHT_MG, PieceValues[KNIGHT].mgScore, 0, 2 * PieceValues[KNIGHT].mgScore, false));
-		(*this)[OPTION_PIECE_VALUES_KNIGHT_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_KNIGHT_EG, PieceValues[KNIGHT].egScore, 0, 2 * PieceValues[KNIGHT].egScore, false));
-		(*this)[OPTION_PIECE_VALUES_PAWN_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_PAWN_MG, PieceValues[PAWN].mgScore, 0, 2 * PieceValues[PAWN].mgScore, false));
-		(*this)[OPTION_PIECE_VALUES_PAWN_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_PAWN_EG, PieceValues[PAWN].egScore, 0, 2 * PieceValues[PAWN].egScore, false));
+		(*this)[OPTION_PIECE_VALUES_QUEEN_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_QUEEN_MG, settings::parameter.PieceValues[QUEEN].mgScore, 0, 2 * settings::parameter.PieceValues[QUEEN].mgScore, false));
+		(*this)[OPTION_PIECE_VALUES_QUEEN_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_QUEEN_EG, settings::parameter.PieceValues[QUEEN].egScore, 0, 2 * settings::parameter.PieceValues[QUEEN].egScore, false));
+		(*this)[OPTION_PIECE_VALUES_ROOK_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_ROOK_MG, settings::parameter.PieceValues[ROOK].mgScore, 0, 2 * settings::parameter.PieceValues[ROOK].mgScore, false));
+		(*this)[OPTION_PIECE_VALUES_ROOK_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_ROOK_EG, settings::parameter.PieceValues[ROOK].egScore, 0, 2 * settings::parameter.PieceValues[ROOK].egScore, false));
+		(*this)[OPTION_PIECE_VALUES_BISHOP_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_BISHOP_MG, settings::parameter.PieceValues[BISHOP].mgScore, 0, 2 * settings::parameter.PieceValues[BISHOP].mgScore, false));
+		(*this)[OPTION_PIECE_VALUES_BISHOP_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_BISHOP_EG, settings::parameter.PieceValues[BISHOP].egScore, 0, 2 * settings::parameter.PieceValues[BISHOP].egScore, false));
+		(*this)[OPTION_PIECE_VALUES_KNIGHT_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_KNIGHT_MG, settings::parameter.PieceValues[KNIGHT].mgScore, 0, 2 * settings::parameter.PieceValues[KNIGHT].mgScore, false));
+		(*this)[OPTION_PIECE_VALUES_KNIGHT_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_KNIGHT_EG, settings::parameter.PieceValues[KNIGHT].egScore, 0, 2 * settings::parameter.PieceValues[KNIGHT].egScore, false));
+		(*this)[OPTION_PIECE_VALUES_PAWN_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_PAWN_MG, settings::parameter.PieceValues[PAWN].mgScore, 0, 2 * settings::parameter.PieceValues[PAWN].mgScore, false));
+		(*this)[OPTION_PIECE_VALUES_PAWN_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_PAWN_EG, settings::parameter.PieceValues[PAWN].egScore, 0, 2 * settings::parameter.PieceValues[PAWN].egScore, false));
 #endif
 #ifdef TB
 		(*this)[OPTION_SYZYGY_PATH] = (Option *)(new OptionString(OPTION_SYZYGY_PATH));

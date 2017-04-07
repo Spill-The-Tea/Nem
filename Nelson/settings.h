@@ -44,8 +44,6 @@ namespace settings {
 		double KING_SAFETY_LINEAR = 0.5;
 		int ATTACK_UNITS_SAFE_CONTACT_CHECK = 5;
 		Value KING_SAFETY[100];
-		eval CENTER_CONTROL = eval(3, 0);
-		eval EXTENDED_CENTER_CONTROL = eval(3, 0);
 		eval SCALE_BISHOP_PAIR_WITH_PAWNS = EVAL_ZERO; //Reduce Bonus Bishop Pair by this value for each pawn on the board
 		eval BONUS_BISHOP_PAIR_NO_OPP_MINOR = EVAL_ZERO; //Bonus for Bishop pair, if opponent has no minor piece for exchange
 		eval SCALE_EXCHANGE_WITH_PAWNS = EVAL_ZERO; //Decrease Value of Exchange with number of pawns
@@ -238,6 +236,12 @@ namespace settings {
 		eval MALUS_DOUBLED_PAWN = eval(0, 20);
 #ifdef TB
 		int TBProbeDepth = 8;
+#endif
+#ifdef TUNE
+		bool parse(std::string input);
+		std::vector<int> parseValue(std::string input);
+		void setEval(eval & e, std::vector<int> & v, int index);
+		inline void setValue(Value & val, std::vector<int> & v) { val = Value(v[0]); };
 #endif
 	private:
 		int LMR_REDUCTION[64][64];

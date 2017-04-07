@@ -755,10 +755,10 @@ template<ThreadType T> Value search<T>::Search(Value alpha, Value beta, position
 			}
 			int reduction = 0;
 			//LMR: Late move reduction
-			if (lmr && extension == 0 && moveIndex != 0 && move != counter && pos.QuietMoveGenerationPhaseStarted() && !next.Checked()) {
+			if (lmr && moveIndex != 0 && move != counter && pos.QuietMoveGenerationPhaseStarted()) {
 				reduction = settings::parameter.LMRReduction(depth, moveIndex);
 				if (cutNode) ++reduction;
-				if (PVNode && reduction > 0) --reduction;
+				if ((PVNode || extension) && reduction > 0) --reduction;
 #ifdef STAT_LMR
 				lmrCount += reduction > 0;
 #endif
@@ -867,7 +867,7 @@ template<ThreadType T> Value search<T>::QSearch(Value alpha, Value beta, positio
 	}
 	else {
 #ifdef TUNE
-		standPat = pos.evaluate() + BONUS_TEMPO;
+		standPat = pos.evaluate() + settings::parameter.BONUS_TEMPO;
 #else
 		standPat = ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate() + settings::parameter.BONUS_TEMPO;
 		//check if ttValue is better
