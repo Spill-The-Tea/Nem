@@ -218,6 +218,12 @@ Move position::NextMove() {
 				evaluateByCaptureScore(phaseStartIndex);
 				moveIterationPointer = 0;
 				break;
+			case QUIETS:
+				GenerateMoves<QUIETS>();
+				evaluateByHistory(phaseStartIndex);
+				shellSort(moves + phaseStartIndex, movepointer - phaseStartIndex - 1);
+				moveIterationPointer = 0;
+				break;
 			case QUIETS_POSITIVE:
 				GenerateMoves<QUIETS>();
 				evaluateByHistory(phaseStartIndex);
@@ -299,6 +305,17 @@ Move position::NextMove() {
 				moveIterationPointer = -1;
 			}
 			break;
+		case QUIETS:
+			move = moves[phaseStartIndex + moveIterationPointer].move;
+			if (move) {
+				++moveIterationPointer;
+				goto end_post_killer;
+			}
+			else {
+				++generationPhase;
+				moveIterationPointer = -1;
+			}
+			break;
 		case CHECK_EVASION: case QUIET_CHECKS:
 #pragma warning(suppress: 6385)
 			move = moves[phaseStartIndex + moveIterationPointer].move;
@@ -357,6 +374,21 @@ void position::insertionSort(ValuatedMove* first, ValuatedMove* last)
 		tmp = *p;
 		for (q = p; q != first && *(q - 1) < tmp; --q) *q = *(q - 1);
 		*q = tmp;
+	}
+}
+
+void position::shellSort(ValuatedMove* vm, int count) {
+	const int gaps[] = { 57, 23, 10, 4, 1 };
+	for (int gap : gaps) {
+		for (int i = 0; i < count - gap; i++) {
+			int j = i + gap;
+			ValuatedMove tmp = vm[j];
+			while (j >= gap && tmp.score > vm[j - gap].score) {
+				vm[j] = vm[j - gap];
+				j -= gap;
+			}
+			vm[j] = tmp;
+		}
 	}
 }
 
@@ -433,7 +465,7 @@ void position::evaluateByHistory(int startIndex) {
 					if (lastMoves[1]) moves[i].score += 2 * followupHistory->getValue(lastMovingPieces[1], to(lastMoves[1]), p, toSquare);
 				}
 				Bitboard toBB = ToBitboard(toSquare);
-				if (ToBitboard(from(moves[i].move)) & bbNewlyAttacked) moves[i].score = Value(moves[i].score + 100); 
+				if (ToBitboard(from(moves[i].move)) & bbNewlyAttacked) moves[i].score = Value(moves[i].score + 100);
 				if ((toBB & (attackedByUs | ~attackedByThem)) != EMPTY)
 					moves[i].score = Value(moves[i].score + 500);
 				else if ((p < WPAWN) && (toBB & AttacksByPieceType(Color(SideToMove ^ 1), PAWN)) != 0) {

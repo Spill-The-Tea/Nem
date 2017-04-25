@@ -31,6 +31,7 @@ namespace utils {
 	inline double interpolatedResult(double result, int ply, int totalPlies) {
 		return 0.5 + ((result - 0.5) * ply) / totalPlies;
 	}
+	inline double winExpectation(Value score, double scale = 1.305) { return 1 / (1 + std::pow(10, -scale / 400 * (int)score)); }
 
 	std::string mirrorFenVertical(std::string fen);
 

@@ -94,7 +94,7 @@ void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
 
 
 const int MAJOR_VERSION = 2;
-const int MINOR_VERSION = 16;
+const int MINOR_VERSION = 17;
 
 
 static bool popcountSupport();
@@ -214,20 +214,30 @@ int main(int argc, const char* argv[]) {
 
 #ifdef _MSC_VER
 static bool popcountSupport() {
+#ifdef _M_ARM
+	return false;
+#else
 	int cpuInfo[4];
 	int functionId = 0x00000001;
 	__cpuid(cpuInfo, functionId);
 	return (cpuInfo[2] & (1 << 23)) != 0;
+#endif
 }
 #endif // _MSC_VER
 #ifdef __GNUC__
+#ifndef __arm__
 #define cpuid(func,ax,bx,cx,dx)\
 	__asm__ __volatile__ ("cpuid":\
 	"=a" (ax), "=b" (bx), "=c" (cx), "=d" (dx) : "a" (func));
+#endif
 static bool popcountSupport() {
+#ifdef __arm__
+	return false;
+#else
 	int cpuInfo[4];
 	cpuid(0x00000001, cpuInfo[0], cpuInfo[1], cpuInfo[2], cpuInfo[3]);
 	return (cpuInfo[2] & (1 << 23)) != 0;
+#endif
 }
 #endif // __GNUC__
 

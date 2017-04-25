@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26228.9
+VisualStudioVersion = 15.0.26403.3
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nemorino", "Nelson\Nelson.vcxproj", "{B23D2DB6-4387-478B-A153-4C34596B8C7E}"
 EndProject
@@ -13,38 +13,51 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 	EndProjectSection
 EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|ARM = Debug|ARM
 		Debug|Win32 = Debug|Win32
 		Debug|x64 = Debug|x64
+		Nomad|ARM = Nomad|ARM
 		Nomad|Win32 = Nomad|Win32
 		Nomad|x64 = Nomad|x64
+		Release|ARM = Release|ARM
 		Release|Win32 = Release|Win32
 		Release|x64 = Release|x64
+		ReleaseNoPopcount|ARM = ReleaseNoPopcount|ARM
 		ReleaseNoPopcount|Win32 = ReleaseNoPopcount|Win32
 		ReleaseNoPopcount|x64 = ReleaseNoPopcount|x64
+		Tune|ARM = Tune|ARM
 		Tune|Win32 = Tune|Win32
 		Tune|x64 = Tune|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Debug|ARM.ActiveCfg = Debug|ARM
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Debug|ARM.Build.0 = Debug|ARM
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Debug|Win32.ActiveCfg = Debug|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Debug|Win32.Build.0 = Debug|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Debug|x64.ActiveCfg = Debug|x64
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Debug|x64.Build.0 = Debug|x64
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Nomad|ARM.ActiveCfg = Nomad|ARM
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Nomad|ARM.Build.0 = Nomad|ARM
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Nomad|Win32.ActiveCfg = Nomad|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Nomad|Win32.Build.0 = Nomad|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Nomad|x64.ActiveCfg = Nomad|x64
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Nomad|x64.Build.0 = Nomad|x64
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release|ARM.ActiveCfg = Release|ARM
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release|ARM.Build.0 = Release|ARM
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release|Win32.ActiveCfg = Release|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release|Win32.Build.0 = Release|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release|x64.ActiveCfg = Release|x64
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Release|x64.Build.0 = Release|x64
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|ARM.ActiveCfg = ReleaseNoPopcount|ARM
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|ARM.Build.0 = ReleaseNoPopcount|ARM
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|ARM.Deploy.0 = ReleaseNoPopcount|ARM
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|Win32.ActiveCfg = ReleaseNoPopcount|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|Win32.Build.0 = ReleaseNoPopcount|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|x64.ActiveCfg = ReleaseNoPopcount|x64
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|x64.Build.0 = ReleaseNoPopcount|x64
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Tune|ARM.ActiveCfg = Tune|ARM
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Tune|ARM.Build.0 = Tune|ARM
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Tune|Win32.ActiveCfg = Tune|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Tune|Win32.Build.0 = Tune|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Tune|x64.ActiveCfg = Tune|x64
@@ -52,6 +65,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

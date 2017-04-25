@@ -184,6 +184,7 @@ public:
 	bool validateMove(Move move);
 	//For pruning decisions it's necessary to identify whether or not all special movee (like killer,..) are already returned
 	inline bool QuietMoveGenerationPhaseStarted() const { return generationPhases[generationPhase] >= QUIETS_POSITIVE; }
+	inline bool MoveGeneratioPhasePassed(MoveGenerationType phase) const { return (processedMoveGenerationPhases & (1 << (int)phase)) != 0; }
 	inline MoveGenerationType GetMoveGenerationPhase() const { return generationPhases[generationPhase]; }
 	//Validate a move and return it if validated, else return another valid move
 	Move validMove(Move proposedMove);
@@ -311,6 +312,7 @@ private:
 	//Get's the best evaluated move from the move list starting at start Index
 	Move getBestMove(int startIndex);
 	void insertionSort(ValuatedMove* begin, ValuatedMove* end);
+	void shellSort(ValuatedMove* vm, int count);
 	const PieceType getAndResetLeastValuableAttacker(Square toSquare, Bitboard stmAttackers, Bitboard& occupied, Bitboard& attackers, Bitboard& mayXray) const;
 	//return a bitboard of squares with pieces attacking the targetField
 	const Bitboard AttacksOfField(const Square targetField, const Bitboard occupied) const;

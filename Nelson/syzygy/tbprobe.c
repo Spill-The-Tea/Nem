@@ -29,8 +29,10 @@
 
 #include "tbprobe.h"
 
+#ifndef __arm__
 #ifdef __GNUC__
 #include <x86intrin.h>
+#endif
 #endif
 
 #define WHITE_KING              (TB_WPAWN + 5)
@@ -132,12 +134,25 @@ unsigned TB_LARGEST = 0;
 #define lsb(b) TB_CUSTOM_LSB(b)
 #else
 #ifdef _MSC_VER
+#ifdef _WIN64
 static inline unsigned lsb(uint64_t b)
 {
 	unsigned long  index;
 	_BitScanForward64(&index, b);
-    return index;
+	return index;
 }
+#else
+static inline unsigned lsb(uint64_t bb)
+{
+	unsigned long  index;
+	if ((unsigned long)bb != 0) _BitScanForward(&index, (unsigned long)bb);
+	else {
+		_BitScanForward(&index, (unsigned long)(bb >> 32));
+		index += 32;
+	}
+	return index;
+}
+#endif
 #elif __GNUC__
 static inline unsigned lsb(uint64_t b) { return __builtin_ctzll(b); }
 #endif

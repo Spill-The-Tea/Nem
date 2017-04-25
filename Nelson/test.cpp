@@ -1016,6 +1016,35 @@ namespace test {
 		return true;
 	}
 
+
+	bool testingPlatformSpecifics()
+	{
+		bool resultPopcount = true;
+		for (Bitboard bb : RANKS) {
+			resultPopcount = resultPopcount && popcount(bb) == 8;
+			resultPopcount = resultPopcount && popcount(~bb) == 56;
+		}
+		for (Bitboard bb : FILES) {
+			resultPopcount = resultPopcount && popcount(bb) == 8;
+			resultPopcount = resultPopcount && popcount(~bb) == 56;
+		}
+		resultPopcount = resultPopcount && popcount(ALL_SQUARES) == 64;
+		resultPopcount = resultPopcount && popcount(EMPTY) == 0;
+		if (resultPopcount) std::cout << "Popcount ok!" << std::endl; else std::cout << "Error with Popcount!" << std::endl;
+		bool resultLsb = true;
+		for (int i = 0; i < 8; ++i) resultLsb = resultLsb && lsb(RANKS[i]) == 8 * i;
+		for (int i = 0; i < 8; ++i) resultLsb = resultLsb && lsb(FILES[i]) == i;
+		resultLsb = resultLsb && lsb(ALL_SQUARES) == 0;
+		if (resultLsb) std::cout << "LSB ok!" << std::endl; else std::cout << "Error with LSB!" << std::endl;
+		bool resultMsb = true;
+		for (int i = 0; i < 8; ++i) resultMsb = resultMsb && msb(RANKS[i]) == 8 * i + 7;
+		for (int i = 0; i < 8; ++i) resultMsb = resultMsb && msb(FILES[i]) == 56 + i;
+		resultMsb = resultMsb && msb(ALL_SQUARES) == 63;
+		resultMsb = resultMsb && msbInt(100) == 6;
+		if (resultMsb) std::cout << "MSB ok!" << std::endl; else std::cout << "Error with MSB!" << std::endl;
+		return resultPopcount && resultLsb && resultMsb;
+	}
+
 	void testResult() {
 		int64_t begin = now();
 		testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/stalemate.epd", DRAW);

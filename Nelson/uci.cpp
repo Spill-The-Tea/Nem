@@ -84,12 +84,14 @@ void UCIInterface::dispatch(std::string line) {
 	else if (!command.compare("qscore")) {
 		qscore(tokens);
 	}
+#ifdef TUNE
 	else if (!command.compare("tt1")) {
 		ttlabeled();
 	}
 	else if (!command.compare("tt2")) {
 		ttWDL();
 	}
+#endif
 	else if (!command.compare("see")) {
 		see(tokens);
 	}
@@ -312,6 +314,7 @@ void UCIInterface::qscore(std::vector<std::string>& tokens)
 	sync_cout << "info string error " << totalError << " count " << count << sync_endl;
 }
 
+#ifdef TUNE
 double UCIInterface::ttlabeled()
 {
 	std::string filename = settings::options.getString(settings::OPTION_TEXEL_TUNING_LABELLED);
@@ -388,7 +391,7 @@ double UCIInterface::ttWDL() {
 	sync_cout << "info string error " << totalError << " count " << count << sync_endl;
 	return totalError;
 }
-
+#endif
 //bool validatePonderMove(Move bestmove, Move pondermove) {
 //	position next(*_position);
 //	if (next.ApplyMove(bestmove)) {

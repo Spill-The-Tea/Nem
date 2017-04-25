@@ -39,10 +39,6 @@ namespace settings {
 		Protocol protocol = NO_PROTOCOL;
 		int EmergencyTime = 100;
 		//King safety parameters
-		int KING_SAFETY_MAXVAL = 500;
-		int KING_SAFETY_MAXINDEX = 61;
-		double KING_SAFETY_LINEAR = 0.5;
-		int ATTACK_UNITS_SAFE_CONTACT_CHECK = 5;
 		Value KING_SAFETY[100];
 		eval SCALE_BISHOP_PAIR_WITH_PAWNS = EVAL_ZERO; //Reduce Bonus Bishop Pair by this value for each pawn on the board
 		eval BONUS_BISHOP_PAIR_NO_OPP_MINOR = EVAL_ZERO; //Bonus for Bishop pair, if opponent has no minor piece for exchange
@@ -75,6 +71,12 @@ namespace settings {
 		Value BONUS_KNIGHT_OUTPOST = Value(5);
 		Value BONUS_BISHOP_OUTPOST = Value(0);
 		eval PieceValues[7]{ eval(1025), eval(490, 550), eval(325), eval(325), eval(80, 100), eval(VALUE_KNOWN_WIN), eval(0) };
+		int KING_SAFETY_MAXVAL = 500;
+		int KING_SAFETY_MAXINDEX = 61;
+		double KING_SAFETY_LINEAR = 0.5;
+		int ATTACK_UNITS_SAFE_CONTACT_CHECK = 40;
+		int AttackWeight[4]{ 40, 24, 16, 16 }; //AttackWeight by Piece Type
+		int AttackScale = 8; //Scale Factor for Attack weights to enable finer resolution
 		int FULTILITY_PRUNING_DEPTH = 3;
 		Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
 		eval PSQT[12][64]{
@@ -242,6 +244,7 @@ namespace settings {
 		std::vector<int> parseValue(std::string input);
 		void setEval(eval & e, std::vector<int> & v, int index);
 		inline void setValue(Value & val, std::vector<int> & v) { val = Value(v[0]); };
+		inline void setValue(int & val, std::vector<int> & v) { val = Value(v[0]); };
 #endif
 	private:
 		int LMR_REDUCTION[64][64];
@@ -269,10 +272,12 @@ namespace settings {
 	const std::string OPTION_OPPONENT = "UCI_Opponent";
 	const std::string OPTION_EMERGENCY_TIME = "MoveOverhead";
 	const std::string OPTION_NODES_TIME = "Nodestime"; //Nodes per millisecond
+#ifdef TUNE
 	const std::string OPTION_TEXEL_TUNING_WINS = "TTWin"; //Path to file containing EPD records of won positions
 	const std::string OPTION_TEXEL_TUNING_DRAWS = "TTDraw"; //Path to file containing EPD records of drawn positions
 	const std::string OPTION_TEXEL_TUNING_LOSSES = "TTLoss"; //Path to file containing EPD records of lost positions
 	const std::string OPTION_TEXEL_TUNING_LABELLED = "TTLabeled"; //Path to file containing EPD records with WDL label
+#endif
 	const std::string OPTION_PIECE_VALUES_QUEEN_MG = "PVQM";
 	const std::string OPTION_PIECE_VALUES_QUEEN_EG = "PVQE";
 	const std::string OPTION_PIECE_VALUES_ROOK_MG = "PVRM";

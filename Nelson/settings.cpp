@@ -34,16 +34,26 @@ namespace settings {
 #ifdef TUNE
 	bool Parameters::parse(std::string input)
 	{
-		static std::regex rgxKV("(\\w+)(?:\\[(\\d+)\\])?\\s*=\\s*(\\S.*)");
+		static std::regex rgxKV("(\\w+)(\\[\\d+\\])?\\s*=\\s*(\\S.*)");
+		static std::regex rgxIndx("\\[(\\d+)\\]");
 		//static std::regex rgx("(-?\\d+)[\\s,]*");
 		std::smatch m;
 		std::string key;
 		int index = -1;
 		std::string value;
+		std::vector<int> indices;
 		if (std::regex_search(input, m, rgxKV)) {
 			key = m[1].str();
-			int index = -1;
-			if (m[2].length() > 0) index = std::stoi(m[2].str());
+			if (m[2].length() > 0) {
+				std::string vi = m[2].str();
+				std::smatch mi;
+				while (std::regex_search(vi, mi, rgxIndx)) {
+					int ind = std::stoi(m[1].str());
+					indices.push_back(ind);
+					vi = mi.suffix().str();
+				}
+				index = indices[0];
+			}
 			value = m[3].str();
 			std::vector<int> values = parseValue(value);
 			if (!key.compare("SCALE_BISHOP_PAIR_WITH_PAWNS"))
@@ -108,6 +118,18 @@ namespace settings {
 				setValue(parameter.BONUS_KNIGHT_OUTPOST, values);
 			else if (!key.compare("BONUS_BISHOP_OUTPOST"))
 				setValue(parameter.BONUS_BISHOP_OUTPOST, values);
+			else if (!key.compare("KING_SAFETY_MAXVAL"))
+				setValue(parameter.KING_SAFETY_MAXVAL, values);
+			else if (!key.compare("KING_SAFETY_MAXINDEX"))
+				setValue(parameter.KING_SAFETY_MAXINDEX, values);
+			else if (!key.compare("ATTACK_UNITS_SAFE_CONTACT_CHECK"))
+				setValue(parameter.ATTACK_UNITS_SAFE_CONTACT_CHECK, values);
+			else if (!key.compare("LIMIT_QSEARCH"))
+				setValue(parameter.LIMIT_QSEARCH, values);
+			else if (!key.compare("LIMIT_QSEARCH_TT"))
+				setValue(parameter.LIMIT_QSEARCH_TT, values);
+			else if (!key.compare("FULTILITY_PRUNING_DEPTH "))
+				setValue(parameter.FULTILITY_PRUNING_DEPTH, values);
 		}
 		else return false;
 		return true;
@@ -317,11 +339,11 @@ namespace settings {
 		(*this)[OPTION_OPPONENT] = (Option *)(new OptionString(OPTION_OPPONENT));
 		(*this)[OPTION_EMERGENCY_TIME] = (Option *)(new OptionSpin(OPTION_EMERGENCY_TIME, 100, 0, 60000));
 		(*this)[OPTION_NODES_TIME] = (Option *)(new OptionSpin(OPTION_NODES_TIME, 0, 0, INT_MAX, true));
+#ifdef TUNE
 		(*this)[OPTION_TEXEL_TUNING_WINS] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_WINS, "", true));
 		(*this)[OPTION_TEXEL_TUNING_DRAWS] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_DRAWS, "", true));
 		(*this)[OPTION_TEXEL_TUNING_LOSSES] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_LOSSES, "", true));
 		(*this)[OPTION_TEXEL_TUNING_LABELLED] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_LABELLED, "", true));
-#ifdef TUNE
 		(*this)[OPTION_PIECE_VALUES_QUEEN_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_QUEEN_MG, settings::parameter.PieceValues[QUEEN].mgScore, 0, 2 * settings::parameter.PieceValues[QUEEN].mgScore, false));
 		(*this)[OPTION_PIECE_VALUES_QUEEN_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_QUEEN_EG, settings::parameter.PieceValues[QUEEN].egScore, 0, 2 * settings::parameter.PieceValues[QUEEN].egScore, false));
 		(*this)[OPTION_PIECE_VALUES_ROOK_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_ROOK_MG, settings::parameter.PieceValues[ROOK].mgScore, 0, 2 * settings::parameter.PieceValues[ROOK].mgScore, false));

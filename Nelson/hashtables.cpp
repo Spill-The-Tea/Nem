@@ -1,8 +1,10 @@
 #include "hashtables.h"
 #include "position.h"
 #include <iostream>
+#ifndef _M_ARM
 #ifdef _MSC_VER
 #include <mmintrin.h>
+#endif
 #endif
 #include "stdlib.h"
 #include "search.h"
@@ -136,9 +138,9 @@ namespace tt {
 
 	//Calculates the number of clusters in the transposition table if the table size should use
 	//sizeMB Megabytes (which is treated as upper limit)
-	uint64_t CalculateClusterCount(int SizeMB) {
-		uint64_t clusterCount = SizeMB * 1024ull * 1024 / sizeof(Cluster);
-		clusterCount = 1ull << msb(clusterCount);
+	int CalculateClusterCount(int SizeMB) {
+		int clusterCount = SizeMB * 1024 * 1024 / sizeof(Cluster);
+		clusterCount = 1 << msbInt(clusterCount);
 		if (clusterCount < 1024) clusterCount = 1024;
 		return clusterCount;
 	}
@@ -147,7 +149,7 @@ namespace tt {
 		int newHashSize = settings::options.getInt(settings::OPTION_HASH);
 		if (initializedSizeInMB != newHashSize) {
 			FreeTranspositionTable();
-			uint64_t clusterCount = CalculateClusterCount(newHashSize);
+			size_t clusterCount = CalculateClusterCount(newHashSize);
 			Table = static_cast<Cluster *>(calloc(clusterCount, sizeof(Cluster)));
 			MASK = clusterCount - 1;
 			ResetCounter();
@@ -156,7 +158,7 @@ namespace tt {
 	}
 
 	void clear() {
-		std::memset(Table, 0, (MASK + 1) * sizeof(Cluster));
+		std::memset(Table, 0, (size_t)((MASK + 1) * sizeof(Cluster)));
 	}
 
 	void FreeTranspositionTable() {
@@ -177,12 +179,14 @@ namespace tt {
 	}
 
 	void prefetch(uint64_t hash) {
+#ifndef _M_ARM
 #ifdef _MSC_VER
 		_mm_prefetch((char*)&Table[hash & MASK], _MM_HINT_T0);
 #endif // _MSC_VER
 #ifdef __GNUC__
 		__builtin_prefetch((char*)&Table[hash & MASK]);
 #endif // __GNUC__
+#endif
 	}
 
 	uint64_t GetClusterCount() {

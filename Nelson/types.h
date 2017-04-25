@@ -15,6 +15,10 @@
 #include <sstream>
 #include <iomanip>
 
+#ifdef __arm__
+#define NO_POPCOUNT 1
+#endif
+
 #ifdef _MSC_VER
 #ifdef _WIN64
 #pragma intrinsic(_BitScanForward64)
@@ -90,7 +94,7 @@ enum CastleFlag {
 const int CastlesbyColor[] = { W0_0 | W0_0_0, B0_0 | B0_0_0 };
 
 enum MoveGenerationType {
-	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NON_LOOSING_CAPTURES, TACTICAL, QUIETS, CHECK_EVASION, QUIET_CHECKS, ALL, LEGAL, FIND_ANY, FIND_ANY_CHECKED, HASHMOVE, KILLER, REPEAT_ALL, UNDERPROMOTION, QUIETS_POSITIVE, QUIETS_NEGATIVE, NONE
+	WINNING_CAPTURES, EQUAL_CAPTURES, LOOSING_CAPTURES, NON_LOOSING_CAPTURES, TACTICAL, CHECK_EVASION, QUIET_CHECKS, ALL, LEGAL, FIND_ANY, FIND_ANY_CHECKED, HASHMOVE, KILLER, REPEAT_ALL, UNDERPROMOTION, QUIETS_POSITIVE, QUIETS_NEGATIVE, QUIETS, NONE
 };
 
 enum StagedMoveGenerationType {
@@ -231,7 +235,7 @@ inline Square lsb(Bitboard bb) {
 	return Square(index);
 }
 
-inline int msb(int n) {
+inline unsigned long msbInt(int n) {
 	assert(n != 0);
 	unsigned long result;
 #ifdef _WIN64
@@ -274,13 +278,9 @@ inline int popcount(Bitboard bb) { return __builtin_popcountll(bb); }
 
 inline Square lsb(Bitboard b) {  return Square(__builtin_ctzll(b)); }
 
-inline Square msb(int n) { return Square(31 - __builtin_clz(n)); }
+inline Square msbInt(int n) { return Square(31 - __builtin_clz(n)); }
 
-inline Square msb(Bitboard b) {
-	Bitboard idx;
-	__asm__("bsrq %1, %0": "=r"(idx) : "rm"(b));
-	return (Square)idx;
-}
+inline Square msb(Bitboard b) { return Square(63 - __builtin_clzll(b)); }
 //#define offsetof(type, member)  __builtin_offsetof (type, member)
 #endif // __GNUC__
 

@@ -34,8 +34,10 @@ private:
 	void deleteThread();
 	void see(std::vector<std::string> &tokens);
 	void qscore(std::vector<std::string> &tokens);
+#ifdef TUNE
 	double ttlabeled(); //Calculates the Loss function for Texel tuning with labelled input file
 	double ttWDL(); //Calculates the  Loss function for Texel tuning with 3 different input files containing wins, draws and losses
+#endif
 	void dumpTT(std::vector<std::string> &tokens);
 	void updateFromOptions();
 #ifdef TB

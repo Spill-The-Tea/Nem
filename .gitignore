@@ -213,3 +213,8 @@ Nelson/Nelson.vcxproj.filters
 /.vs/Nemorino/v15/Solution.VC.db-shm
 *.diagsession
 *.diagsession
+*.tlog
+/Nelson/ARM/ReleaseNoPopcount/Nemorino.tlog
+*.tlog
+*.iobj
+*.ipdb

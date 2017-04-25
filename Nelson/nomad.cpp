@@ -113,22 +113,43 @@ namespace nomad {
 		}
 		return totalResult / totalCount;
 	}
-
+	
 }
 
 int main(int argc, const char* argv[]) {
+	double scale = 1.305;
 	if (argc > 1 && argv[1]) {
 		std::ifstream in(argv[1]);
-		int p[10];
-		for (int i = 0; i < 6; i++) {
+		int p[5];
+		for (int i = 0; i < 4; i++) {
 			in >> p[i];
-			PASSED_PAWN_BONUS[i] = eval(p[i]);
+			settings::parameter.AttackWeight[i] = p[i];
 		}
-		Initialize();
-		std::cout << nomad::calculateError() << std::endl;
-		exit(0);
+		in >> p[4];
+		settings::parameter.ATTACK_UNITS_SAFE_CONTACT_CHECK = p[4];
 	}
-	else exit(1);
+	Initialize();
+	std::ifstream data("result_cleaned.fen");
+	std::string str;
+	double error = 0;
+	int count = 0;
+	while (std::getline(data, str))
+	{
+		std::size_t found = str.find(';');
+		if (found != std::string::npos) {
+			std::string fen = str.substr(0, found);
+			double score = std::stod(str.substr(found + 1));
+			position pos(fen);
+			Value engineScore = pos.evaluate();
+			if (pos.GetSideToMove() == BLACK) engineScore = -engineScore;
+			double we = utils::winExpectation(engineScore, scale);
+			error += (score - we) * (score - we);
+			++count;
+		}
+	}
+	error = std::sqrt(error) / count;
+	std::cout << error << std::endl;
+	exit(0);
 }
 
 #endif

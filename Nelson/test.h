@@ -49,4 +49,7 @@ namespace test {
 	bool testGivesCheck();
 
 	bool testVerticalSymmetry();
+
+	bool testingPlatformSpecifics();
+
 }
