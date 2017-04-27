@@ -47,37 +47,80 @@ Value evaluateDraw(const position& pos) {
 eval evaluateKingSafety(const position& pos) {
 	eval result;
 	//Areas around the king
-	Bitboard kingRing[2] = { pos.PieceBB(KING, WHITE) | KingAttacks[pos.KingSquare(WHITE)], pos.PieceBB(KING, BLACK) | KingAttacks[pos.KingSquare(BLACK)] };
-	Bitboard kingZone[2] = { kingRing[0] | (kingRing[0] << 8), kingRing[1] | (kingRing[1] >> 8) };
-	for (Color col = WHITE; col <= BLACK; col = Color(col + 1)) {
-		int attackUnits = 0;
-		int attackerCount = 0;
-		for (PieceType pt = QUEEN; pt <= KNIGHT; ++pt) {
-			Bitboard pieceBB = pos.PieceBB(pt, col);
-			while (pieceBB) {
-				Bitboard bbAttacked = pos.GetAttacksFrom(lsb(pieceBB))&kingZone[col ^ 1];
-				int attackCount = popcount(bbAttacked);
-				if (attackCount > 0) {
-					attackUnits += settings::parameter.AttackWeight[pt] * attackCount;
-					++attackerCount;
-				}
-				pieceBB &= pieceBB - 1;
-			}
+	Bitboard kingRingWhite = pos.PieceBB(KING, WHITE) | KingAttacks[pos.KingSquare(WHITE)];
+	Bitboard kingRingBlack = pos.PieceBB(KING, BLACK) | KingAttacks[pos.KingSquare(BLACK)];
+	Bitboard kingZoneWhite = kingRingWhite | (kingRingWhite << 8);
+	Bitboard kingZoneBlack = kingRingBlack | (kingRingBlack >> 8);
+	int attackUnits = 0;
+	int attackerCount = 0;
+	int attackCount;
+	Bitboard pieceBB = pos.PieceBB(BISHOP, WHITE) | pos.PieceBB(KNIGHT, WHITE);
+	while (pieceBB) {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack))) {
+			attackUnits += 2 * attackCount;
+			++attackerCount;
 		}
-		//safe queen contact checks
-		Bitboard safeContactChecks = pos.AttacksByPieceType(col, QUEEN) & kingRing[col ^ 1]
-			& (pos.AttacksByPieceType(col, KING) | pos.AttacksByPieceType(col, PAWN) | pos.AttacksByPieceType(col, KNIGHT) | pos.AttacksByPieceType(col, ROOK) | pos.AttacksByPieceType(col, BISHOP));
-		if (safeContactChecks) attackUnits += settings::parameter.ATTACK_UNITS_SAFE_CONTACT_CHECK * popcount(safeContactChecks);
-		if (attackerCount > 1) result.mgScore += (1 - 2 * col) * settings::parameter.KING_SAFETY[std::min(attackUnits / settings::parameter.AttackScale, 99)];
+		pieceBB &= pieceBB - 1;
 	}
+	pieceBB = pos.PieceBB(ROOK, WHITE);
+	while (pieceBB) {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack))) {
+			attackUnits += 3 * attackCount;
+			++attackerCount;
+		}
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(QUEEN, WHITE);
+	while (pieceBB) {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneBlack))) {
+			attackUnits += 5 * attackCount;
+			++attackerCount;
+		}
+		pieceBB &= pieceBB - 1;
+	}
+	//safe queen contact checks
+	Bitboard safeContactChecks = pos.AttacksByPieceType(WHITE, QUEEN) & kingRingBlack
+		& (pos.AttacksByPieceType(WHITE, KING) | pos.AttacksByPieceType(WHITE, PAWN) | pos.AttacksByPieceType(WHITE, KNIGHT) | pos.AttacksByPieceType(WHITE, ROOK) | pos.AttacksByPieceType(WHITE, BISHOP));
+	if (safeContactChecks) attackUnits += settings::parameter.ATTACK_UNITS_SAFE_CONTACT_CHECK * popcount(safeContactChecks);
+	if (attackerCount > 1) result.mgScore = settings::parameter.KING_SAFETY[std::min(attackUnits, 99)];
+	attackUnits = 0;
+	attackerCount = 0;
+	pieceBB = pos.PieceBB(BISHOP, BLACK) | pos.PieceBB(KNIGHT, BLACK);
+	while (pieceBB) {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite))) {
+			attackUnits += 2 * attackCount;
+			++attackerCount;
+		}
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(ROOK, BLACK);
+	while (pieceBB) {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite))) {
+			attackUnits += 3 * attackCount;
+			++attackerCount;
+		}
+		pieceBB &= pieceBB - 1;
+	}
+	pieceBB = pos.PieceBB(QUEEN, BLACK);
+	while (pieceBB) {
+		if ((attackCount = popcount(pos.GetAttacksFrom(lsb(pieceBB))&kingZoneWhite))) {
+			attackUnits += 5 * attackCount;
+			++attackerCount;
+		}
+		pieceBB &= pieceBB - 1;
+	}
+	safeContactChecks = pos.AttacksByPieceType(BLACK, QUEEN) & kingRingWhite 
+		& (pos.AttacksByPieceType(BLACK, KING) | pos.AttacksByPieceType(BLACK, PAWN) | pos.AttacksByPieceType(BLACK, KNIGHT) | pos.AttacksByPieceType(BLACK, ROOK) | pos.AttacksByPieceType(BLACK, BISHOP));
+	if (safeContactChecks) attackUnits += settings::parameter.ATTACK_UNITS_SAFE_CONTACT_CHECK * popcount(safeContactChecks);
+	if (attackerCount > 1) result.mgScore -= settings::parameter.KING_SAFETY[std::min(attackUnits, 99)];
 	Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
 	Bitboard bbBlack = pos.PieceBB(PAWN, BLACK);
 	//Pawn shelter/storm
 	eval pawnStorm;
 	if (pos.PieceBB(KING, WHITE) & SaveSquaresForKing & HALF_OF_WHITE) { //Bonus only for castled king
-		pawnStorm += settings::parameter.PAWN_SHELTER_2ND_RANK * popcount(bbWhite & kingRing[WHITE] & ShelterPawns2ndRank);
-		pawnStorm += settings::parameter.PAWN_SHELTER_3RD_RANK * popcount(bbWhite & kingZone[WHITE] & ShelterPawns3rdRank);
-		pawnStorm += settings::parameter.PAWN_SHELTER_4TH_RANK * popcount(bbWhite & (kingZone[WHITE] << 8) & ShelterPawns4thRank);
+		pawnStorm += settings::parameter.PAWN_SHELTER_2ND_RANK * popcount(bbWhite & kingRingWhite & ShelterPawns2ndRank);
+		pawnStorm += settings::parameter.PAWN_SHELTER_3RD_RANK * popcount(bbWhite & kingZoneWhite & ShelterPawns3rdRank);
+		pawnStorm += settings::parameter.PAWN_SHELTER_4TH_RANK * popcount(bbWhite & (kingZoneWhite << 8) & ShelterPawns4thRank);
 		bool kingSide = (pos.KingSquare(WHITE) & 7) > 3;
 		Bitboard pawnStormArea = kingSide ? bbKINGSIDE : bbQUEENSIDE;
 		Bitboard stormPawns = pos.PieceBB(PAWN, BLACK) & pawnStormArea & (HALF_OF_WHITE | RANK5);
@@ -85,15 +128,15 @@ eval evaluateKingSafety(const position& pos) {
 			Square sq = lsb(stormPawns);
 			stormPawns &= stormPawns - 1;
 			Piece blocker = pos.GetPieceOnSquare(Square(sq - 8));
-			if ((blocker == WKING || GetPieceType(blocker) == PAWN) && (pos.GetAttacksFrom(sq) & pos.ColorBB(WHITE)) == EMPTY)
+			if ((blocker == WKING || GetPieceType(blocker) == PAWN) && (pos.GetAttacksFrom(sq) & pos.ColorBB(WHITE)) == EMPTY) 
 				continue;//blocked
 			pawnStorm -= settings::parameter.PAWN_STORM[(sq >> 3) - 1];
 		}
 	}
 	if (pos.PieceBB(KING, BLACK) & SaveSquaresForKing & HALF_OF_BLACK) {
-		pawnStorm -= settings::parameter.PAWN_SHELTER_2ND_RANK * popcount(bbBlack & kingRing[BLACK] & ShelterPawns2ndRank);
-		pawnStorm -= settings::parameter.PAWN_SHELTER_3RD_RANK * popcount(bbBlack & kingZone[BLACK] & ShelterPawns3rdRank);
-		pawnStorm -= settings::parameter.PAWN_SHELTER_4TH_RANK * popcount(bbBlack & (kingZone[BLACK] >> 8) & ShelterPawns4thRank);
+		pawnStorm -= settings::parameter.PAWN_SHELTER_2ND_RANK * popcount(bbBlack & kingRingBlack & ShelterPawns2ndRank);
+		pawnStorm -= settings::parameter.PAWN_SHELTER_3RD_RANK * popcount(bbBlack & kingZoneBlack & ShelterPawns3rdRank);
+		pawnStorm -= settings::parameter.PAWN_SHELTER_4TH_RANK * popcount(bbBlack & (kingZoneBlack >> 8) & ShelterPawns4thRank);
 		bool kingSide = (pos.KingSquare(BLACK) & 7) > 3;
 		Bitboard pawnStormArea = kingSide ? bbKINGSIDE : bbQUEENSIDE;
 		Bitboard stormPawns = pos.PieceBB(PAWN, WHITE) & pawnStormArea & (HALF_OF_BLACK | RANK4);
@@ -101,7 +144,7 @@ eval evaluateKingSafety(const position& pos) {
 			Square sq = lsb(stormPawns);
 			stormPawns &= stormPawns - 1;
 			Piece blocker = pos.GetPieceOnSquare(Square(sq + 8));
-			if ((blocker == BKING || GetPieceType(blocker) == PAWN) && (pos.GetAttacksFrom(sq) & pos.ColorBB(BLACK)) == EMPTY)
+			if ((blocker == BKING || GetPieceType(blocker) == PAWN) && (pos.GetAttacksFrom(sq) & pos.ColorBB(BLACK)) == EMPTY) 
 				continue; //blocked
 			pawnStorm += settings::parameter.PAWN_STORM[6 - (sq >> 3)];
 		}
@@ -228,8 +271,7 @@ int scaleEG(const position & pos)
 {
 	if (pos.GetMaterialTableEntry()->NeedsScaling() && pos.oppositeColoredBishops()) {
 		if (pos.PieceTypeBB(ROOK) == EMPTY) {
-			if (popcount(pos.PieceTypeBB(PAWN)) <= 1) return 18; 
-			return 62;
+			if (popcount(pos.PieceTypeBB(PAWN)) <= 1) return 18; return 62;
 		}
 		else return 92;
 	}

@@ -39,6 +39,10 @@ namespace settings {
 		Protocol protocol = NO_PROTOCOL;
 		int EmergencyTime = 100;
 		//King safety parameters
+		int KING_SAFETY_MAXVAL = 500;
+		int KING_SAFETY_MAXINDEX = 61;
+		double KING_SAFETY_LINEAR = 0.5;
+		int ATTACK_UNITS_SAFE_CONTACT_CHECK = 5;
 		Value KING_SAFETY[100];
 		eval SCALE_BISHOP_PAIR_WITH_PAWNS = EVAL_ZERO; //Reduce Bonus Bishop Pair by this value for each pawn on the board
 		eval BONUS_BISHOP_PAIR_NO_OPP_MINOR = EVAL_ZERO; //Bonus for Bishop pair, if opponent has no minor piece for exchange
@@ -71,12 +75,6 @@ namespace settings {
 		Value BONUS_KNIGHT_OUTPOST = Value(5);
 		Value BONUS_BISHOP_OUTPOST = Value(0);
 		eval PieceValues[7]{ eval(1025), eval(490, 550), eval(325), eval(325), eval(80, 100), eval(VALUE_KNOWN_WIN), eval(0) };
-		int KING_SAFETY_MAXVAL = 500;
-		int KING_SAFETY_MAXINDEX = 61;
-		double KING_SAFETY_LINEAR = 0.5;
-		int ATTACK_UNITS_SAFE_CONTACT_CHECK = 40;
-		int AttackWeight[4]{ 40, 24, 16, 16 }; //AttackWeight by Piece Type
-		int AttackScale = 8; //Scale Factor for Attack weights to enable finer resolution
 		int FULTILITY_PRUNING_DEPTH = 3;
 		Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
 		eval PSQT[12][64]{

@@ -218,12 +218,12 @@ Move position::NextMove() {
 				evaluateByCaptureScore(phaseStartIndex);
 				moveIterationPointer = 0;
 				break;
-			case QUIETS:
-				GenerateMoves<QUIETS>();
-				evaluateByHistory(phaseStartIndex);
-				shellSort(moves + phaseStartIndex, movepointer - phaseStartIndex - 1);
-				moveIterationPointer = 0;
-				break;
+			//case QUIETS:
+			//	GenerateMoves<QUIETS>();
+			//	evaluateByHistory(phaseStartIndex);
+			//	shellSort(moves + phaseStartIndex, movepointer - phaseStartIndex - 1);
+			//	moveIterationPointer = 0;
+			//	break;
 			case QUIETS_POSITIVE:
 				GenerateMoves<QUIETS>();
 				evaluateByHistory(phaseStartIndex);
@@ -238,6 +238,8 @@ Move position::NextMove() {
 				break;
 			case QUIET_CHECKS:
 				GenerateMoves<QUIET_CHECKS>();
+				//evaluateBySEE(phaseStartIndex);
+				//insertionSort(moves + phaseStartIndex, moves + (movepointer - 1));
 				moveIterationPointer = 0;
 				break;
 			case UNDERPROMOTION:
@@ -305,17 +307,17 @@ Move position::NextMove() {
 				moveIterationPointer = -1;
 			}
 			break;
-		case QUIETS:
-			move = moves[phaseStartIndex + moveIterationPointer].move;
-			if (move) {
-				++moveIterationPointer;
-				goto end_post_killer;
-			}
-			else {
-				++generationPhase;
-				moveIterationPointer = -1;
-			}
-			break;
+		//case QUIETS:
+		//	move = moves[phaseStartIndex + moveIterationPointer].move;
+		//	if (move) {
+		//		++moveIterationPointer;
+		//		goto end_post_killer;
+		//	}
+		//	else {
+		//		++generationPhase;
+		//		moveIterationPointer = -1;
+		//	}
+		//	break;
 		case CHECK_EVASION: case QUIET_CHECKS:
 #pragma warning(suppress: 6385)
 			move = moves[phaseStartIndex + moveIterationPointer].move;
@@ -426,8 +428,8 @@ void position::evaluateCheckEvasions(int startIndex) {
 			quietsIndex++;
 		}
 	}
-	if (quietsIndex > startIndex + 1) std::sort(moves + startIndex, moves + quietsIndex - 1, sortByScore);
-	if (movepointer - 2 > quietsIndex) std::sort(moves + quietsIndex, &moves[movepointer - 1], sortByScore);
+	if (quietsIndex > startIndex + 1) insertionSort(moves + startIndex, moves + quietsIndex - 1);
+	if (movepointer - 2 > quietsIndex) insertionSort(moves + quietsIndex, &moves[movepointer - 1]);
 }
 
 Move position::GetCounterMove(Move(&counterMoves)[12][64]) {
