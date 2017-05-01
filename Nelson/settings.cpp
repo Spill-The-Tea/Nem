@@ -355,10 +355,8 @@ namespace settings {
 		(*this)[OPTION_PIECE_VALUES_PAWN_MG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_PAWN_MG, settings::parameter.PieceValues[PAWN].mgScore, 0, 2 * settings::parameter.PieceValues[PAWN].mgScore, false));
 		(*this)[OPTION_PIECE_VALUES_PAWN_EG] = (Option *)(new OptionSpin(OPTION_PIECE_VALUES_PAWN_EG, settings::parameter.PieceValues[PAWN].egScore, 0, 2 * settings::parameter.PieceValues[PAWN].egScore, false));
 #endif
-#ifdef TB
 		(*this)[OPTION_SYZYGY_PATH] = (Option *)(new OptionString(OPTION_SYZYGY_PATH));
 		(*this)[OPTION_SYZYGY_PROBE_DEPTH] = (Option *)(new OptionSpin(OPTION_SYZYGY_PROBE_DEPTH, parameter.TBProbeDepth, 0, MAX_DEPTH + 1));
-#endif 
 	}
 
 	OptionCheck::OptionCheck(std::string Name, bool value, bool Technical)

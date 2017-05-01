@@ -8,7 +8,7 @@ public:
 	void loop();
 
 private:
-	baseSearch * Engine = new search < SINGLE >;
+	search * Engine = new search;
 	position * _position = nullptr;
 	std::thread * Mainthread = nullptr;
 	int64_t ponderStartTime = 0;
@@ -40,9 +40,7 @@ private:
 #endif
 	void dumpTT(std::vector<std::string> &tokens);
 	void updateFromOptions();
-#ifdef TB
 	void tb();
-#endif
-	void copySettings(baseSearch * source, baseSearch * destination);
+	void copySettings(search * source, search * destination);
 };
 

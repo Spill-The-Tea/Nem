@@ -58,9 +58,7 @@ namespace cecp {
 		void rating(std::vector<std::string> tokens);
 		void includeMoves(std::vector<std::string> tokens);
 		void analyze();
-#ifdef TB
 		void egtpath(std::vector<std::string> tokens);
-#endif
 		void moveNow();
 		void newGame();
 		//Wake up the engine and let it start thinking
@@ -77,7 +75,7 @@ namespace cecp {
 		static Move parseMoveInXBoardNotation(const std::string& xboardMove, const position& pos);
 
 		//The Engine
-		baseSearch * Engine = new search < SINGLE >;
+		search * Engine = new search;
 		//The current position of the game
 		position * pos = new position;
 		//While pondering the position to ponder on

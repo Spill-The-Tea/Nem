@@ -234,9 +234,7 @@ namespace settings {
 		eval BONUS_CANDIDATE = eval(5);
 		eval BONUS_LEVER = eval(5);
 		eval MALUS_DOUBLED_PAWN = eval(0, 20);
-#ifdef TB
 		int TBProbeDepth = 8;
-#endif
 #ifdef TUNE
 		bool parse(std::string input);
 		std::vector<int> parseValue(std::string input);
@@ -286,10 +284,8 @@ namespace settings {
 	const std::string OPTION_PIECE_VALUES_KNIGHT_EG = "PVNE";
 	const std::string OPTION_PIECE_VALUES_PAWN_MG = "PVPM";
 	const std::string OPTION_PIECE_VALUES_PAWN_EG = "PVPE";
-#ifdef TB
 	const std::string OPTION_SYZYGY_PATH = "SyzygyPath";
 	const std::string OPTION_SYZYGY_PROBE_DEPTH = "SyzygyProbeDepth";
-#endif
 
 	class Option {
 	public:

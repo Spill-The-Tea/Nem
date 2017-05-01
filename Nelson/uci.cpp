@@ -14,12 +14,9 @@
 #include "test.h"
 #include "settings.h"
 #include "timemanager.h"
-
-#ifdef TB
 #include "tablebase.h"
-#endif
 
-void UCIInterface::copySettings(baseSearch * source, baseSearch * destination) {
+void UCIInterface::copySettings(search * source, search * destination) {
 	destination->UciOutput = source->UciOutput;
 	if (source->BookFile) destination->BookFile = new std::string(*source->BookFile);
 	destination->PonderMode.store(source->PonderMode.load());
@@ -98,11 +95,9 @@ void UCIInterface::dispatch(std::string line) {
 	else if (!command.compare("dumpTT")) {
 		dumpTT(tokens);
 	}
-#ifdef TB
 	else if (!command.compare("tb")) {
 		tb();
 	}
-#endif
 	//else if (!strcmp(token, "eval"))
 	//	cout << printEvaluation(pos);
 	//else if (!strcmp(token, "qeval"))
@@ -155,9 +150,7 @@ void UCIInterface::updateFromOptions() {
 	settings::parameter.PieceValues[KNIGHT] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_EG));
 	settings::parameter.PieceValues[PAWN] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_EG));
 #endif
-#ifdef TB
 	settings::parameter.TBProbeDepth = settings::options.getInt(settings::OPTION_SYZYGY_PROBE_DEPTH);
-#endif
 }
 
 void UCIInterface::setoption(std::vector<std::string> &tokens) {
@@ -171,18 +164,6 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 	else if (!tokens[2].compare(settings::OPTION_PONDER)) 
 		ponderActive = settings::options.getBool(settings::OPTION_PONDER);
 	else if (!tokens[2].compare(settings::OPTION_THREADS)) {
-		if (settings::parameter.HelperThreads && Engine->GetType() == SINGLE) {
-			baseSearch * newEngine = new search < MASTER >;
-			copySettings(Engine, newEngine);
-			delete Engine;
-			Engine = newEngine;
-		}
-		else if (!settings::parameter.HelperThreads && Engine->GetType() == MASTER) {
-			baseSearch * newEngine = new search < SINGLE >;
-			copySettings(Engine, newEngine);
-			delete Engine;
-			Engine = newEngine;
-		}
 	}
 	else if (!tokens[2].compare(settings::OPTION_MULTIPV)) {
 		Engine->MultiPv = settings::options.getInt(settings::OPTION_MULTIPV);
@@ -209,7 +190,6 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 	else if (!tokens[2].compare(settings::OPTION_EMERGENCY_TIME)) {
 		settings::parameter.EmergencyTime = settings::options.getInt(settings::OPTION_EMERGENCY_TIME);
 	}
-#ifdef TB
 	else if (!tokens[2].compare(settings::OPTION_SYZYGY_PATH)) {
 		if (settings::options.getString(settings::OPTION_SYZYGY_PATH).size() > 1) {
 			Tablebases::init(settings::options.getString(settings::OPTION_SYZYGY_PATH));
@@ -223,7 +203,6 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 	else if (!tokens[2].compare(settings::OPTION_SYZYGY_PROBE_DEPTH)) {
 		settings::parameter.TBProbeDepth = settings::options.getInt(settings::OPTION_SYZYGY_PROBE_DEPTH);
 	}
-#endif
 }
 
 void UCIInterface::ucinewgame() {
@@ -303,7 +282,7 @@ void UCIInterface::qscore(std::vector<std::string>& tokens)
 		--plies;
 		pos = *it;
 		if (pos->Checked()) continue;
-		Value score = (dynamic_cast<search<SINGLE>*>(Engine))->qscore(pos);
+		Value score = Engine->qscore(pos);
 		if (std::abs(int(score - pos->evaluate())) > 100) continue;
 		if (pos->GetSideToMove() == BLACK) score = -score;
 		double error = result - utils::sigmoid(score);
@@ -404,8 +383,7 @@ double UCIInterface::ttWDL() {
 void UCIInterface::thinkAsync() {
 	ValuatedMove BestMove;
 	if (Engine == NULL) return;
-	if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*_position);
-	else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*_position);
+	BestMove = Engine->Think(*_position);
 	if (!ponderActive) sync_cout << "bestmove " << toString(BestMove.move) << sync_endl;
 	else {
 		//First try move from principal variation
@@ -587,7 +565,6 @@ void UCIInterface::dumpTT(std::vector<std::string>& tokens)
 	of.close();
 }
 
-#ifdef TB
 void UCIInterface::tb() {
 	if (_position == nullptr) {
 		std::cout << "No position provided!" << std::endl;
@@ -599,4 +576,3 @@ void UCIInterface::tb() {
 	}
 	Tablebases::probe(*_position);
 }
-#endif

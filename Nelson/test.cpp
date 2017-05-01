@@ -30,23 +30,6 @@ namespace test {
 		return totalNodes;
 	}
 
-//	int64_t benchmark(int depth) {
-//#ifdef STAT
-//		Initialize_Capture_Stat();
-//#endif
-//		int64_t runtime = 0;
-//		int64_t totalTime = 0;
-//		int64_t totalNodes = bench3(depth, runtime);
-//		totalTime += runtime;
-//		std::cerr << "\n==========================="
-//			<< "\nTotal time (ms) : " << totalTime
-//			<< "\nNodes searched  : " << totalNodes
-//			<< "\nNodes/second    : " << 1000 * totalNodes / totalTime << std::endl;
-//#ifdef STAT
-//		printCaptureStat();
-//#endif
-//		return totalNodes;
-//	}
 
 	int64_t benchmark(std::string filename, int depth) {
 		std::string line;
@@ -454,13 +437,12 @@ namespace test {
 			<< std::setw(6) << "C1st" << std::setw(6) << "CIndx" << std::setw(40) << "PV" << std::endl;
 		for (int i = 0; i < int(fens.size()); i++) {
 			position* pos = new position(fens[i]);
-			baseSearch * srch;
-			if (settings::parameter.HelperThreads) srch = new search < MASTER >; else srch = new search < SINGLE >;
+			search * srch = new search;
 			srch->PrintCurrmove = false;
 			//srch.uciOutput = false;
 			srch->NewGame();
 			srch->timeManager.initialize(FIXED_DEPTH, 0, depth);
-			if (settings::parameter.HelperThreads) (dynamic_cast<search<MASTER>*>(srch))->Think(*pos); else (dynamic_cast<search<SINGLE>*>(srch))->Think(*pos);
+			srch->Think(*pos);
 			int64_t endTime = now();
 			totalTime += endTime - srch->timeManager.GetStartTime();
 			totalNodes += srch->NodeCount;
@@ -641,7 +623,7 @@ namespace test {
 	}
 
 	void testSearch(position &pos, int depth) {
-		search<SINGLE> * engine = new search < SINGLE >;
+		search * engine = new search;
 		engine->timeManager.initialize(FIXED_DEPTH, 0, depth);
 		ValuatedMove vm = engine->Think(pos);
 		std::cout << "Best Move: " << toString(vm.move) << " " << vm.score << std::endl;
@@ -650,7 +632,7 @@ namespace test {
 
 	void testRepetition() {
 		position pos("5r1k/R7/5p2/4p3/1p1pP3/1npP1P2/rqn1b1R1/7K w - - 0 1");
-		search<SINGLE> * engine = new search < SINGLE >;
+		search * engine = new search;
 		engine->timeManager.initialize(FIXED_DEPTH, 0, 5);
 		ValuatedMove vm = engine->Think(pos);
 		std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << vm.score << std::endl;
@@ -685,7 +667,7 @@ namespace test {
 		//Mate in 5
 		puzzles["5@6r1/p3p1rk/1p1pPp1p/q3n2R/4P3/3BR2P/PPP2QP1/7K w - -"] = createMove(H5, H6);
 		puzzles["5@2q1nk1r/4Rp2/1ppp1P2/6Pp/3p1B2/3P3P/PPP1Q3/6K1 w - - 0 1"] = createMove(E7, E8);
-		search<SINGLE> * engine = new search < SINGLE >;
+		search * engine = new search;
 		std::map<std::string, Move>::iterator iter;
 		int count = 0;
 		for (iter = puzzles.begin(); iter != puzzles.end(); ++iter) {
@@ -1001,7 +983,7 @@ namespace test {
 				std::string fen = fens[i];
 				if (j > 0) fen = utils::mirrorFenVertical(fen);
 				position * pos = new position(fen);
-				search < SINGLE > * srch = new search < SINGLE >();
+				search * srch = new search();
 				srch->PrintCurrmove = false;
 				srch->UciOutput = false;
 				srch->NewGame();

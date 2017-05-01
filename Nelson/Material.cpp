@@ -3,10 +3,8 @@
 #include "evaluation.h"
 #include "bbEndings.h"
 #include "position.h"
-
-#ifdef TB
 #include "tablebase.h"
-#endif
+
 
 
 MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 2];
@@ -125,14 +123,12 @@ void InitializeMaterialTable() {
 												else if (MaterialTable[key].GetMostExpensivePiece(WHITE) != KING && nBQ == 0 && nBR == 0 && nBB == 1 && nBN == 0 && nBP == 1)
 													MaterialTable[key].EvaluationFunction = &evaluateKBPKx<BLACK>;
 											}
-#ifdef TB
 											if (Tablebases::MaxCardinality > 0) {
 												int totalPieceCount = 2;
 												for (int i = 0; i < 10; ++i) totalPieceCount += pieceCounts[i];
 												if (totalPieceCount <= Tablebases::MaxCardinality)
 													MaterialTable[key].Flags |= MSF_TABLEBASE_ENTRY;
 											}
-#endif
 											assert(nWQ == (MaterialTable[key].GetMostExpensivePiece(WHITE) == QUEEN));
 											assert(nBQ == (MaterialTable[key].GetMostExpensivePiece(BLACK) == QUEEN));
 										}

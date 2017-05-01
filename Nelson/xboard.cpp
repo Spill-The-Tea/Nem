@@ -50,8 +50,7 @@ namespace cecp {
 				Engine->PonderMode.store(false);
 				prepareTimeManager(false);
 				Engine->Stop.store(false);
-				if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*pos);
-				else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*pos);
+				BestMove = Engine->Think(*pos);
 				//Search is done => check for draw offer
 				if (drawOffered.load() && BestMove.score < -settings::parameter.Contempt) {
 					//Accept it if we are worse than Contempt
@@ -98,8 +97,7 @@ namespace cecp {
 				prepareTimeManager(true);
 				Engine->Stop.store(false);
 				//start engine to search ponder position
-				if (dynamic_cast<search<MASTER>*>(Engine)) BestMove = (dynamic_cast<search<MASTER>*>(Engine))->Think(*ponderpos);
-				else BestMove = (dynamic_cast<search<SINGLE>*>(Engine))->Think(*ponderpos);
+				BestMove = Engine->Think(*ponderpos);
 				//Search has finished. There are 2 possible states:
 				//Engine is Thinking, this means we had a ponder hit and the engine state was switched to thinking
 				if (engineState.load() == Thinking) {
@@ -319,11 +317,9 @@ namespace cecp {
 		else if (line[0] == '.') {
 			sync_cout << Engine->GetXAnalysisOutput() << sync_endl;
 		}
-#ifdef TB
 		else if (!command.compare("egtpath")) {
 			egtpath(tokens);
 		}
-#endif
 		else if (!command.compare("quit")) {
 			deleteThread();
 			//utils::logger::instance()->flush();
@@ -361,16 +357,6 @@ namespace cecp {
 
 	void xboard::cores(std::vector<std::string> tokens) {
 		settings::parameter.HelperThreads = stoi(tokens[1]) - 1;
-		if (settings::parameter.HelperThreads && Engine->GetType() == SINGLE) {
-			delete Engine;
-			Engine = new search < MASTER >;
-			//Todo timemanagement settings are lost when engine is reinitialized
-		}
-		else if (!settings::parameter.HelperThreads && Engine->GetType() == MASTER) {
-			delete Engine;
-			Engine = new search < SINGLE >;
-			//Todo timemanagement settings are lost when engine is reinitialized
-		}
 	}
 
 	void xboard::protover(std::vector<std::string> tokens) {
@@ -378,9 +364,7 @@ namespace cecp {
 		sync_cout << "feature ping=1 setboard=1 usermove=1 time=1 draw=1 sigint=0 sigterm=0 reuse=0 myname=\"Nemorino\""
 			<< " variants=\"normal,fischerrandom\" colors=0 ics=1 name=1 include=1"
 			<< " memory=1 smp=1 name=1"
-#ifdef TB
 			<< " egt = \"syzygy\""
-#endif
 			<< sync_endl;
 		sync_cout << "feature option=\"Clear Hash -button\"" << sync_endl;
 		sync_cout << "feature option=\"MultiPV -spin " << Engine->MultiPv << " 1 216\"" << sync_endl;
@@ -504,7 +488,6 @@ namespace cecp {
 		settings::parameter.Contempt = Value((ownRating - ratingOpponent) / 10);
 	}
 
-#ifdef TB
 	void xboard::egtpath(std::vector<std::string> tokens) {
 		Tablebases::init(settings::options.getString(settings::OPTION_SYZYGY_PATH));
 		if (Tablebases::MaxCardinality < 3) {
@@ -513,7 +496,6 @@ namespace cecp {
 		}
 		InitializeMaterialTable();
 	}
-#endif
 
 	void xboard::option(std::vector<std::string> tokens) {
 		size_t indx = tokens[1].find('=');
@@ -548,11 +530,9 @@ namespace cecp {
 		else if (!name.compare(settings::OPTION_EMERGENCY_TIME)) {
 			settings::parameter.EmergencyTime = stoi(value);
 		}
-#ifdef TB
 		else if (!name.compare(settings::OPTION_SYZYGY_PROBE_DEPTH)) {
 			settings::parameter.TBProbeDepth = stoi(value);
 		}
-#endif 
 	}
 
 	void xboard::clearPos() {

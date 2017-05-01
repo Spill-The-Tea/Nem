@@ -29,9 +29,7 @@ struct MaterialTableEntry {
 	inline bool IsTheoreticalDraw() { return (Flags & MSF_THEORETICAL_DRAW) != 0; }
 	inline bool NeedsScaling() { return (Flags & MSF_SCALE) != 0; }
 	inline Value Score() { return Evaluation.getScore(Phase); }
-#ifdef TB
 	inline bool IsTablebaseEntry() { return (Flags & MSF_TABLEBASE_ENTRY) != 0; }
-#endif
 	inline PieceType GetMostExpensivePiece(Color color) const { return PieceType((MostValuedPiece >> (4 * (int)color)) & 15); }
 	void setMostValuedPiece(Color color, PieceType pt) { 
 		MostValuedPiece &= color == BLACK ? 15 : 240;
