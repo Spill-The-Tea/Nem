@@ -252,6 +252,7 @@ template<ThreadType T> Value search::Search(Value alpha, Value beta, position &p
 	if (depth <= 0) {
 		return QSearch<T>(alpha, beta, pos, 0, tlData);
 	}
+	depth = std::min(depth, MAX_DEPTH - 1);
 	//TT lookup
 	bool ttFound;
 	tt::Entry ttEntry;
@@ -296,7 +297,7 @@ template<ThreadType T> Value search::Search(Value alpha, Value beta, position &p
 		if (depth < 7
 			&& staticEvaluation < VALUE_KNOWN_WIN
 			&& (staticEvaluation - settings::parameter.BetaPruningMargin(depth)) >= beta
-			&& pos.NonPawnMaterial(pos.GetSideToMove()))
+			&& pos.GetMaterialTableEntry()->DoNullmove(pos.GetSideToMove()))
 			return SCORE_BP(staticEvaluation - settings::parameter.BetaPruningMargin(depth));
 		Value effectiveEvaluation = staticEvaluation;
 		if (ttFound &&
@@ -318,7 +319,7 @@ template<ThreadType T> Value search::Search(Value alpha, Value beta, position &p
 		//Null Move Pruning
 		if (depth > 1 //only if there is available depth to reduce
 			&& effectiveEvaluation >= beta
-			&& pos.NonPawnMaterial(pos.GetSideToMove())
+			&& pos.GetMaterialTableEntry()->DoNullmove(pos.GetSideToMove())
 			&& excludeMove == MOVE_NONE
 			) {
 			int reduction = (depth + 14) / 5;
@@ -376,7 +377,7 @@ template<ThreadType T> Value search::Search(Value alpha, Value beta, position &p
 	if (!checked && ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED && pos.GetStaticEval() == VALUE_NOTYETDETERMINED) pos.SetStaticEval(ttEntry.evalValue() - settings::parameter.BONUS_TEMPO);
 	Move counter = pos.GetCounterMove(counterMove);
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
-	bool futilityPruning = pos.GetLastAppliedMove() != MOVE_NONE && !checked && depth <= settings::parameter.FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.NonPawnMaterial(pos.GetSideToMove());
+	bool futilityPruning = pos.GetLastAppliedMove() != MOVE_NONE && !checked && depth <= settings::parameter.FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.GetMaterialTableEntry()->DoNullmove(pos.GetSideToMove());
 	if (futilityPruning && alpha > (staticEvaluation + settings::parameter.FUTILITY_PRUNING_LIMIT[depth]))
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&tlData.History, &tlData.cmHistory, &tlData.followupHistory, nullptr, counter, ttMove);
 	else

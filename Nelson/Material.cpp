@@ -129,6 +129,8 @@ void InitializeMaterialTable() {
 												if (totalPieceCount <= Tablebases::MaxCardinality)
 													MaterialTable[key].Flags |= MSF_TABLEBASE_ENTRY;
 											}
+											if (nWQ == 0 && nWR == 0 && nWB == 0 && nWN == 0) MaterialTable[key].Flags |= MSF_NO_NULLMOVE_WHITE;
+											if (nBQ == 0 && nBR == 0 && nBB == 0 && nBN == 0) MaterialTable[key].Flags |= MSF_NO_NULLMOVE_BLACK;
 											assert(nWQ == (MaterialTable[key].GetMostExpensivePiece(WHITE) == QUEEN));
 											assert(nBQ == (MaterialTable[key].GetMostExpensivePiece(BLACK) == QUEEN));
 										}

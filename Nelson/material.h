@@ -14,7 +14,9 @@ enum MaterialSearchFlags : uint8_t {
 	MSF_SKIP_PRUNING = 1,
 	MSF_THEORETICAL_DRAW = 2,
 	MSF_TABLEBASE_ENTRY = 4,
-	MSF_SCALE = 8
+	MSF_SCALE = 8,
+	MSF_NO_NULLMOVE_WHITE = 16,
+	MSF_NO_NULLMOVE_BLACK = 32
 };
 
 struct MaterialTableEntry {
@@ -24,12 +26,13 @@ struct MaterialTableEntry {
 	uint8_t Flags;
 	uint8_t MostValuedPiece; //high bits for black piece type
 
-	inline bool IsLateEndgame() { return EvaluationFunction != &evaluateDefault || Phase > 200; }
-	inline bool SkipPruning() { return (Flags & MSF_SKIP_PRUNING) != 0; }
-	inline bool IsTheoreticalDraw() { return (Flags & MSF_THEORETICAL_DRAW) != 0; }
-	inline bool NeedsScaling() { return (Flags & MSF_SCALE) != 0; }
-	inline Value Score() { return Evaluation.getScore(Phase); }
-	inline bool IsTablebaseEntry() { return (Flags & MSF_TABLEBASE_ENTRY) != 0; }
+	inline bool IsLateEndgame() const { return EvaluationFunction != &evaluateDefault || Phase > 200; }
+	inline bool SkipPruning() const { return (Flags & MSF_SKIP_PRUNING) != 0; }
+	inline bool IsTheoreticalDraw() const { return (Flags & MSF_THEORETICAL_DRAW) != 0; }
+	inline bool NeedsScaling() const { return (Flags & MSF_SCALE) != 0; }
+	inline bool DoNullmove(Color col) const { return (Flags & (MSF_NO_NULLMOVE_WHITE << col)) == 0; }
+	inline Value Score() const { return Evaluation.getScore(Phase); }
+	inline bool IsTablebaseEntry() const { return (Flags & MSF_TABLEBASE_ENTRY) != 0; }
 	inline PieceType GetMostExpensivePiece(Color color) const { return PieceType((MostValuedPiece >> (4 * (int)color)) & 15); }
 	void setMostValuedPiece(Color color, PieceType pt) { 
 		MostValuedPiece &= color == BLACK ? 15 : 240;

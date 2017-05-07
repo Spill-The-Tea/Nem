@@ -274,7 +274,7 @@ ValuatedMove search::Think(position &pos) {
 		return BestMove;
 	}
 	//Iterativ Deepening Loop
-	for (_depth = 1; _depth <= timeManager.GetMaxDepth(); ++_depth) {
+	for (_depth = 1; _depth < timeManager.GetMaxDepth(); ++_depth) {
 		Value alpha, beta, delta = Value(20);
 		for (int pvIndx = 0; pvIndx < MultiPv && pvIndx < rootMoveCount; ++pvIndx) {
 			if (_depth >= 5 && MultiPv == 1 && std::abs(int16_t(score)) < VALUE_KNOWN_WIN) {
@@ -369,7 +369,7 @@ void search::startHelper() {
 	memcpy(moves, rootMoves, MAX_MOVE_COUNT * sizeof(ValuatedMove));
 	threadData * h = new threadData;
 	//Iterative Deepening Loop
-	while (!Stop.load() && depth <= MAX_DEPTH) {
+	while (!Stop.load() && depth < MAX_DEPTH) {
 		Value alpha = -VALUE_MATE;
 		Value beta = VALUE_MATE;
 		SearchRoot<SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, *h);

@@ -91,7 +91,7 @@ void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
 
 
 const int MAJOR_VERSION = 2;
-const int MINOR_VERSION = 17;
+const int MINOR_VERSION = 18;
 
 
 static bool popcountSupport();
@@ -116,7 +116,7 @@ int main(int argc, const char* argv[]) {
 		std::string arg1(argv[1]);
 		if (!arg1.compare("bench")) {
 			Initialize();
-			int depth = 11;
+			int depth = 12;
 			if (argc > 2) depth = std::atoi(argv[2]);
 			if (argc > 3) test::benchmark(argv[3], depth); else test::benchmark(depth);
 			return 0;
