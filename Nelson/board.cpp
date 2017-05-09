@@ -61,7 +61,7 @@ void InitializeInBetweenFields() {
 					InBetweenFields[from][to] = InBetweenFields[from][to]
 					| (1ull << i);
 			}
-			else if (((to - from) % 9) == 0 && rowTo > rowFrom) {
+			else if (((to - from) % 9) == 0 && rowTo > rowFrom && colTo > colFrom) {
 				for (int i = from + 9; i < to; i = i + 9)
 					InBetweenFields[from][to] = InBetweenFields[from][to]
 					| (1ull << i);
