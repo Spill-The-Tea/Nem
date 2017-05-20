@@ -391,12 +391,10 @@ Value search::qscore(position * pos)
 }
 
 void search::updateCutoffStats(threadData& tlData, const Move cutoffMove, int depth, position &pos, int moveIndex) {
-	if (moveIndex >= 0) {
-		cutoffMoveIndexSum += moveIndex;
-		cutoffCount++;
-		cutoffAt1stMove += moveIndex == 0;
-	}
-	if (moveIndex < 0 || pos.QuietMoveGenerationPhaseStarted()) {
+	cutoffMoveIndexSum += std::max(0, moveIndex);
+	cutoffCount++;
+	cutoffAt1stMove += moveIndex <= 0;
+	if (moveIndex == -1 || pos.IsQuiet(cutoffMove)) {
 		Piece movingPiece = pos.GetPieceOnSquare(from(cutoffMove));
 		Square toSquare = to(cutoffMove);
 		if (moveIndex >= 0) {
@@ -424,16 +422,20 @@ void search::updateCutoffStats(threadData& tlData, const Move cutoffMove, int de
 			}
 		}
 		if (moveIndex > 0) {
-			ValuatedMove * alreadyProcessedQuiets = pos.GetMovesOfCurrentPhase();
-			for (int i = 0; i < pos.GetMoveNumberInPhase() - 1; ++i) {
-				Move alreadyProcessedMove = FixCastlingMove(alreadyProcessedQuiets->move);
-				movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedMove));
-				toSquare = to(alreadyProcessedMove);
-				tlData.History.update(-v, movingPiece, alreadyProcessedMove);
-				if (pos.GetLastAppliedMove() != MOVE_NONE)
-					tlData.cmHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
-				if (prev2To != Square::OUTSIDE)
-					tlData.followupHistory.update(-v, prev2Piece, prev2To, movingPiece, toSquare);
+			int moveCount;
+			ValuatedMove * alreadyProcessedQuiets = pos.GetMoves(moveCount);
+			moveCount = std::min(moveIndex, moveCount);
+			for (int i = 0; i < moveCount; ++i) {
+				if (alreadyProcessedQuiets->move != cutoffMove && pos.IsQuiet(alreadyProcessedQuiets->move)) {
+					Move alreadyProcessedMove = FixCastlingMove(alreadyProcessedQuiets->move);
+					movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedMove));
+					toSquare = to(alreadyProcessedMove);
+					tlData.History.update(-v, movingPiece, alreadyProcessedMove);
+					if (pos.GetLastAppliedMove() != MOVE_NONE)
+						tlData.cmHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
+					if (prev2To != Square::OUTSIDE)
+						tlData.followupHistory.update(-v, prev2Piece, prev2To, movingPiece, toSquare);
+				}
 				//if (ownPrevTo != OUTSIDE) {
 				//	cmHistory.update(-v, ownPrevPiece, ownPrevTo, movingPiece, toSquare);
 				//}
