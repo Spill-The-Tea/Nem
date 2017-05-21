@@ -387,12 +387,14 @@ template<ThreadType T> Value search::Search(Value alpha, Value beta, position &p
 	tt::NodeType nodeType = tt::UPPER_BOUND;
 	bool lmr = !checked && depth >= 3;
 	Move move;
-	int moveIndex = 0;
+	int moveIndex = -1;
+	int bestMoveIndex = -1;
 	bool ZWS = !PVNode;
 	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	bool trySE = depth >= 8 && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
 		&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
 	while ((move = pos.NextMove())) {
+		++moveIndex;
 		if (move == excludeMove) continue;
 		int reducedDepth = lmr ? depth - settings::parameter.LMRReduction(depth, moveIndex) : depth;
 		bool prunable = !PVNode && reducedDepth <= 4 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
@@ -402,12 +404,10 @@ template<ThreadType T> Value search::Search(Value alpha, Value beta, position &p
 			//assert(type(move) == MoveType::NORMAL && pos.GetPieceOnSquare(to(move)) == Piece::BLANK);
 			// late-move pruning II
 			if (moveIndex >= depth * 4) {
-				moveIndex++;
 				continue;
 			}
 			//SEE pruning 
 			if (pos.SEE_Sign(move) < 0) {
-				moveIndex++;
 				continue;
 			}
 		}
@@ -467,12 +467,13 @@ template<ThreadType T> Value search::Search(Value alpha, Value beta, position &p
 					nodeType = tt::EXACT;
 					alpha = score;
 					pv[0] = move;
+					bestMoveIndex = moveIndex;
 					memcpy(pv + 1, subpv, (PV_MAX_LENGTH - 1) * sizeof(Move));
 				}
 			}
 		}
-		moveIndex++;
 	}
+	if (bestMoveIndex >= 0) updateCutoffStats(tlData, pv[0], depth, pos, bestMoveIndex);
 	//Update transposition table
 	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
 	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
