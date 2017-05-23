@@ -401,6 +401,7 @@ void search::updateCutoffStats(threadData& tlData, const Move cutoffMove, int de
 			tlData.killerManager.store(pos, cutoffMove);
 		}
 		Value v = Value(depth * depth);
+		tlData.History.update(-depth * tlData.History.getValue(movingPiece, cutoffMove) / 64, movingPiece, cutoffMove);
 		tlData.History.update(v, movingPiece, cutoffMove);
 		Piece prevPiece = BLANK;
 		Square prevTo = OUTSIDE;
@@ -413,11 +414,13 @@ void search::updateCutoffStats(threadData& tlData, const Move cutoffMove, int de
 			prevTo = to(lastApplied);
 			prevPiece = pos.GetPieceOnSquare(prevTo);
 			counterMove[int(pos.GetPieceOnSquare(prevTo))][prevTo] = cutoffMove;
+			tlData.cmHistory.update(-depth * tlData.cmHistory.getValue(prevPiece, prevTo, movingPiece, toSquare) / 64, prevPiece, prevTo, movingPiece, toSquare);
 			tlData.cmHistory.update(v, prevPiece, prevTo, movingPiece, toSquare);
 			Move lastApplied2;
 			if (pos.Previous() && (lastApplied2 = FixCastlingMove(pos.Previous()->GetLastAppliedMove())) != MOVE_NONE) {
 				prev2To = to(lastApplied2);
 				prev2Piece = pos.Previous()->GetPieceOnSquare(prev2To);
+				tlData.followupHistory.update(-depth *tlData.followupHistory.getValue(prev2Piece, prev2To, movingPiece, toSquare) / 64, prev2Piece, prev2To, movingPiece, toSquare);
 				tlData.followupHistory.update(v, prev2Piece, prev2To, movingPiece, toSquare);
 			}
 		}
@@ -430,11 +433,16 @@ void search::updateCutoffStats(threadData& tlData, const Move cutoffMove, int de
 					Move alreadyProcessedMove = FixCastlingMove(alreadyProcessedQuiets->move);
 					movingPiece = pos.GetPieceOnSquare(from(alreadyProcessedMove));
 					toSquare = to(alreadyProcessedMove);
+					tlData.History.update(-depth * tlData.History.getValue(movingPiece, alreadyProcessedMove) / 64, movingPiece, alreadyProcessedMove);
 					tlData.History.update(-v, movingPiece, alreadyProcessedMove);
-					if (pos.GetLastAppliedMove() != MOVE_NONE)
+					if (pos.GetLastAppliedMove() != MOVE_NONE) {
+						tlData.cmHistory.update(-depth * tlData.cmHistory.getValue(prevPiece, prevTo, movingPiece, toSquare) / 64, prevPiece, prevTo, movingPiece, toSquare);
 						tlData.cmHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
-					if (prev2To != Square::OUTSIDE)
+					}
+					if (prev2To != Square::OUTSIDE) {
+						tlData.followupHistory.update(-depth *tlData.followupHistory.getValue(prev2Piece, prev2To, movingPiece, toSquare) / 64, prev2Piece, prev2To, movingPiece, toSquare);
 						tlData.followupHistory.update(-v, prev2Piece, prev2To, movingPiece, toSquare);
+					}
 				}
 				//if (ownPrevTo != OUTSIDE) {
 				//	cmHistory.update(-v, ownPrevPiece, ownPrevTo, movingPiece, toSquare);

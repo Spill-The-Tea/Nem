@@ -218,3 +218,4 @@ Nelson/Nelson.vcxproj.filters
 *.tlog
 *.iobj
 *.ipdb
+/Nelson/nemorino.js.bat
