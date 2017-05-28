@@ -184,7 +184,7 @@ public:
 	bool validateMove(Move move);
 	//For pruning decisions it's necessary to identify whether or not all special movee (like killer,..) are already returned
 	inline bool QuietMoveGenerationPhaseStarted() const { return generationPhases[generationPhase] >= QUIETS_POSITIVE; }
-	inline bool MoveGeneratioPhasePassed(MoveGenerationType phase) const { return (processedMoveGenerationPhases & (1 << (int)phase)) != 0; }
+	inline bool MoveGenerationPhasePassed(MoveGenerationType phase) const { return (processedMoveGenerationPhases & (1 << (int)phase)) != 0; }
 	inline MoveGenerationType GetMoveGenerationPhase() const { return generationPhases[generationPhase]; }
 	//Validate a move and return it if validated, else return another valid move
 	Move validMove(Move proposedMove);

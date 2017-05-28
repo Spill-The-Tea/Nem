@@ -317,8 +317,7 @@ template<ThreadType T> Value search::Search(Value alpha, Value beta, position &p
 		}
 
 		//Null Move Pruning
-		if (depth > 1 //only if there is available depth to reduce
-			&& effectiveEvaluation >= beta
+		if ( effectiveEvaluation >= beta
 			&& pos.GetMaterialTableEntry()->DoNullmove(pos.GetSideToMove())
 			&& excludeMove == MOVE_NONE
 			) {
