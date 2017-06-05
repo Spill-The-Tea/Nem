@@ -325,6 +325,8 @@ private:
 	template<bool CHECKED> bool CheckValidMoveExists();
 	//Checks for unusual Material (this means one side has more than one Queen or more than 2 rooks, knights or bishop)
 	bool checkMaterialIsUnusual() const;
+	//Generates quiet and tactical moves like forks
+	ValuatedMove* position::GenerateForks(bool withChecks);
 
 #ifdef TRACE
 	bool nullMovePosition = false;
@@ -333,6 +335,8 @@ private:
 
 template<> inline ValuatedMove* position::GenerateMoves<QUIET_CHECKS>();
 template<> inline ValuatedMove* position::GenerateMoves<LEGAL>();
+template<> inline ValuatedMove* position::GenerateMoves<FORKS>();
+template<> inline ValuatedMove* position::GenerateMoves<FORKS_NO_CHECKS>();
 
 Move parseMoveInUCINotation(const std::string& uciMove, const position& pos);
 
@@ -661,6 +665,14 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 	}
 	AddNullMove();
 	return result;
+}
+
+template<> inline ValuatedMove* position::GenerateMoves<FORKS>() {
+	return GenerateForks(true);
+}
+
+template<> inline ValuatedMove* position::GenerateMoves<FORKS_NO_CHECKS>() {
+	return GenerateForks(false);
 }
 
 template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
@@ -1016,7 +1028,15 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 	followupHistory = followupHistoryStats;
 	hashMove = hashmove;
 	if (Checked()) generationPhase = generationPhaseOffset[CHECK] + (hashMove == MOVE_NONE);
-	else generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);
+	else {
+		if (SMGT == QSEARCH) {
+			if (popcount(GetAttacksFrom(kingSquares[SideToMove ^ 1]) & ~ColorBB(Color(SideToMove ^ 1)) & ~attackedByUs) <= 1)
+				generationPhase = generationPhaseOffset[QSEARCH_WITH_CHECKS] + (hashMove == MOVE_NONE);
+			else generationPhase = generationPhaseOffset[QSEARCH] + (hashMove == MOVE_NONE);
+		}
+		else
+			generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);
+	}
 }
 
 inline Bitboard position::AttacksByPieceType(Color color, PieceType pieceType) const {

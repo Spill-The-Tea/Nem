@@ -88,13 +88,13 @@ template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 	int relativeRank = pawnSq >> 3;
 	if (WinningSide == WHITE) relativeRank = 7 - relativeRank;
 	if ((pawnBB & (A_FILE | C_FILE | F_FILE | H_FILE)) == 0)
-		result = VALUE_KNOWN_WIN + settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
+		result = VALUE_KNOWN_WIN + settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) - Value(relativeRank);
 	else {
 
 		if (relativeRank != Rank7)
-			result = VALUE_KNOWN_WIN + settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) + Value(relativeRank);
+			result = VALUE_KNOWN_WIN + settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore - ChebishevDistance(winningKingSquare, pawnSq) - Value(relativeRank);
 		else {
-			//Now we need to probe the bitbase => therefore normalize position (White is winning and pawn is on left hals of board)
+			//Now we need to probe the bitbase => therefore normalize position (White is winning and pawn is on left half of board)
 			Square wKingSquare, bKingSquare, wQueenSquare;
 			Color stm;
 			if (WinningSide == WHITE) {

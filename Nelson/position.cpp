@@ -260,6 +260,14 @@ Move position::NextMove() {
 					break;
 				}
 				else return MOVE_NONE;
+			case FORKS: 
+				GenerateForks(true);
+				moveIterationPointer = 0;
+				break;
+			case FORKS_NO_CHECKS:
+				GenerateForks(false);
+				moveIterationPointer = 0;
+				break;
 			case ALL:
 				GenerateMoves<ALL>();
 				moveIterationPointer = 0;
@@ -318,7 +326,7 @@ Move position::NextMove() {
 		//		moveIterationPointer = -1;
 		//	}
 		//	break;
-		case CHECK_EVASION: case QUIET_CHECKS:
+		case CHECK_EVASION: case QUIET_CHECKS: case FORKS: case FORKS_NO_CHECKS:
 #pragma warning(suppress: 6385)
 			move = moves[phaseStartIndex + moveIterationPointer].move;
 			if (move) {
@@ -1273,6 +1281,42 @@ bool position::checkMaterialIsUnusual() const {
 		|| popcount(PieceBB(BISHOP, BLACK)) > 2
 		|| popcount(PieceBB(KNIGHT, WHITE)) > 2
 		|| popcount(PieceBB(KNIGHT, BLACK)) > 2;
+}
+
+ValuatedMove * position::GenerateForks(bool withChecks)
+{
+	movepointer -= (movepointer != 0);
+	ValuatedMove * result = &moves[movepointer];
+	Bitboard knights = PieceBB(KNIGHT, SideToMove);
+	Bitboard targets;
+	Bitboard forkTargets;
+	if (withChecks) {
+		targets = ~OccupiedBB() & ~attackedByThem;
+		forkTargets = PieceBB(QUEEN, Color(SideToMove ^ 1)) | PieceBB(ROOK, Color(SideToMove ^ 1)) | PieceBB(KING, Color(SideToMove ^ 1));
+		forkTargets |= ColorBB(Color(SideToMove ^ 1)) & ~attackedByThem;
+	}
+	else {
+		targets = ~OccupiedBB() & ~attackedByThem & ~KnightAttacks[kingSquares[SideToMove ^ 1]];
+		forkTargets = PieceBB(QUEEN, Color(SideToMove ^ 1)) | PieceBB(ROOK, Color(SideToMove ^ 1));
+		forkTargets |= ColorBB(Color(SideToMove ^ 1)) & ~attackedByThem & ~PieceTypeBB(KING);
+	}
+	int forkTargetCount = popcount(forkTargets);
+	if (forkTargetCount > 1) {
+		while (knights) {
+			Square fromSquare = lsb(knights);
+			Bitboard knightTargets = KnightAttacks[fromSquare] & targets;
+			while (knightTargets) {
+				Square toSquare = lsb(knightTargets);
+				if (popcount(KnightAttacks[toSquare] & forkTargets) > 1) {
+					AddMove(createMove(fromSquare, toSquare));
+				}
+				knightTargets &= knightTargets - 1;
+			}
+			knights &= knights - 1;
+		}
+	}
+	AddNullMove();
+	return result;
 }
 
 std::string position::toSan(Move move) {
