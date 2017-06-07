@@ -195,6 +195,8 @@ public:
 	inline Square KingSquare(Color color) const { return kingSquares[color]; }
 	//Check for opposite colored bishops
 	bool oppositeColoredBishops() const;
+	//Check if there is a mate threat (a possibility that there might be a quiet move giving mate)
+	bool mateThread() const;
 #ifdef TRACE
 	std::string printPath() const;
 #endif
@@ -1028,15 +1030,7 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 	followupHistory = followupHistoryStats;
 	hashMove = hashmove;
 	if (Checked()) generationPhase = generationPhaseOffset[CHECK] + (hashMove == MOVE_NONE);
-	else {
-		if (SMGT == QSEARCH) {
-			if (popcount(GetAttacksFrom(kingSquares[SideToMove ^ 1]) & ~ColorBB(Color(SideToMove ^ 1)) & ~attackedByUs) <= 1)
-				generationPhase = generationPhaseOffset[QSEARCH_WITH_CHECKS] + (hashMove == MOVE_NONE);
-			else generationPhase = generationPhaseOffset[QSEARCH] + (hashMove == MOVE_NONE);
-		}
-		else
-			generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);
-	}
+	else generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);
 }
 
 inline Bitboard position::AttacksByPieceType(Color color, PieceType pieceType) const {

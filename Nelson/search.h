@@ -317,7 +317,7 @@ template<ThreadType T> Value search::Search(Value alpha, Value beta, position &p
 		}
 
 		//Null Move Pruning
-		if ( effectiveEvaluation >= beta
+		if (effectiveEvaluation >= beta
 			&& pos.GetMaterialTableEntry()->DoNullmove(pos.GetSideToMove())
 			&& excludeMove == MOVE_NONE
 			) {
@@ -350,7 +350,10 @@ template<ThreadType T> Value search::Search(Value alpha, Value beta, position &p
 			Value limit = settings::parameter.PieceValues[GetPieceType(pos.getCapturedInLastMove())].mgScore;
 			Move ttm = ttMove;
 			if (ttm != MOVE_NONE && cpos.SEE(ttMove) < limit) ttm = MOVE_NONE;
-			cpos.InitializeMoveIterator<QSEARCH>(&tlData.History, &tlData.cmHistory, &tlData.followupHistory, nullptr, MOVE_NONE, ttm);
+			if (pos.mateThread())
+				cpos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&tlData.History, &tlData.cmHistory, &tlData.followupHistory, nullptr, MOVE_NONE, ttm);
+			else
+				cpos.InitializeMoveIterator<QSEARCH>(&tlData.History, &tlData.cmHistory, &tlData.followupHistory, nullptr, MOVE_NONE, ttm);
 			Move move;
 			while ((move = cpos.NextMove())) {
 				position next(cpos);
@@ -488,7 +491,7 @@ template<ThreadType T> Value search::QSearch(Value alpha, Value beta, position &
 #endif
 		MaxDepth = std::max(MaxDepth, pos.GetPliesFromRoot());
 		if (!Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop.store(true);
-	}
+}
 	if (Stopped()) return VALUE_ZERO;
 	if (pos.GetResult() != OPEN)  return SCORE_FINAL(pos.evaluateFinalPosition());
 	//Mate distance pruning
@@ -514,7 +517,7 @@ template<ThreadType T> Value search::QSearch(Value alpha, Value beta, position &
 		if (ttFound && ttEntry.move()) ttMove = ttEntry.move();
 	}
 #endif
-	bool WithChecks = depth == 0;
+	bool WithChecks = depth == 0 || pos.mateThread();
 	bool checked = pos.Checked();
 	Value standPat;
 	if (checked) {
@@ -581,4 +584,4 @@ template<ThreadType T> Value search::QSearch(Value alpha, Value beta, position &
 	}
 #endif
 	return SCORE_EXACT(alpha);
-}
+	}

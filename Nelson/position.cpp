@@ -1319,6 +1319,14 @@ ValuatedMove * position::GenerateForks(bool withChecks)
 	return result;
 }
 
+bool position::mateThread() const
+{
+	Bitboard bbEscapeSquares = GetAttacksFrom(kingSquares[SideToMove ^ 1]) & ~ColorBB(Color(SideToMove ^ 1)) & ~attackedByUs;
+	int countEscapeSquares = popcount(bbEscapeSquares);
+	return (countEscapeSquares <= 1); //At most one escape square
+		//|| (countEscapeSquares == 2  && (bbEscapeSquares & (Rank1 | Rank8)) == bbEscapeSquares); //Backrank mate
+}
+
 std::string position::toSan(Move move) {
 	Square toSquare = to(move);
 	Square fromSquare = from(move);
