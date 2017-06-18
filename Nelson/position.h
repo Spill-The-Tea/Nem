@@ -328,7 +328,7 @@ private:
 	//Checks for unusual Material (this means one side has more than one Queen or more than 2 rooks, knights or bishop)
 	bool checkMaterialIsUnusual() const;
 	//Generates quiet and tactical moves like forks
-	ValuatedMove* position::GenerateForks(bool withChecks);
+	ValuatedMove* GenerateForks(bool withChecks);
 
 #ifdef TRACE
 	bool nullMovePosition = false;
