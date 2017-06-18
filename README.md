@@ -7,7 +7,7 @@ Nemorino is a UCI chess engine.
 * Syzygy Tablebase support
 * Pondering
 * Standard Chess and Chess960
-* Multi Core support (Very Lazy SMP)
+* Multi Core support (Shared Hash Table)
 * Multi PV analysis mode
 * CECP support (experimental - all testing is done using UCI)
 ##### UCI parameters: #####
@@ -70,6 +70,11 @@ The engine requires 64-bit Windows.
 
 *          Fix for known issue with tablebase access (see https://github.com/basil00/Fathom/issues/15
 *          Fix for other (rare) crashes
+
+**3.00:**
+
+*          Refactoring of SMP implementation => Improved stability
+*          Several minor improvements in search and move ordering
 
 
 
