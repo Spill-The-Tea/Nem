@@ -4,7 +4,7 @@ FILES = bbEndings.cpp board.cpp book.cpp evaluation.cpp hashtables.cpp Material.
     Nemorino.cpp position.cpp search.cpp settings.cpp tablebase.cpp test.cpp timemanager.cpp \
     uci.cpp utils.cpp xboard.cpp syzygy/tbprobe.c
 
-FLAGS = -O3 -Wmain -std=c++11 -pthread -DNDEBUG -DTB
+FLAGS = -O3 -Wmain -std=c++11 -pthread -DNDEBUG
 
 make: $(FILES)
 	g++ $(FLAGS) $(FILES) -o $(EXE)

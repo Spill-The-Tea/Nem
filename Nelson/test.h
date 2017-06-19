@@ -3,7 +3,6 @@
 #include "types.h"
 #include "board.h"
 #include "position.h"
-#include "pgn.h"
 
 namespace test {
 

@@ -12,7 +12,6 @@
 #include <unistd.h>
 #endif
 #include "utils.h"
-#include "pgn.h"
 
 
 namespace polyglot {
