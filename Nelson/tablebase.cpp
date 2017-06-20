@@ -2,7 +2,7 @@
 #include <mutex>
 #include "tablebase.h"
 
-namespace Tablebases {
+namespace tablebases {
 
 	int MaxCardinality = 0;
 	std::mutex mtx;
@@ -12,7 +12,7 @@ namespace Tablebases {
 		MaxCardinality = TB_LARGEST;
 	}
 
-	int probe_wdl(position& pos, int *success) {
+	int probe_wdl(Position& pos, int *success) {
 		std::lock_guard<std::mutex> lck(mtx);
 		unsigned int result = tb_probe_wdl(
 			pos.ColorBB(WHITE),
@@ -50,7 +50,7 @@ namespace Tablebases {
 		rootMoves.resize(1);
 	}
 
-	unsigned int getBestTBMove(position& pos, std::vector<ValuatedMove>& rootMoves) {
+	unsigned int getBestTBMove(Position& pos, std::vector<ValuatedMove>& rootMoves) {
 		unsigned int result = tb_probe_root(
 			pos.ColorBB(WHITE),
 			pos.ColorBB(BLACK),
@@ -69,7 +69,7 @@ namespace Tablebases {
 		return result;
 	}
 
-	unsigned int getTBMoves(position& pos, std::vector<ValuatedMove>& rootMoves, bool repeated) {
+	unsigned int getTBMoves(Position& pos, std::vector<ValuatedMove>& rootMoves, bool repeated) {
 		unsigned int moves[TB_MAX_MOVES];
 		unsigned int result = tb_probe_root(
 			pos.ColorBB(WHITE),
@@ -128,7 +128,7 @@ namespace Tablebases {
 		return result;
 	}
 
-	bool root_probe(position& pos, std::vector<ValuatedMove>& rootMoves, Value& score) {
+	bool root_probe(Position& pos, std::vector<ValuatedMove>& rootMoves, Value& score) {
 		//unsigned int result;
 		//if (pos.hasRepetition()) {
 		//	result = getBestTBMove(pos, rootMoves);
@@ -154,7 +154,7 @@ namespace Tablebases {
 		}
 	}
 
-	void probe(position & pos)
+	void probe(Position & pos)
 	{
 		unsigned int moves[TB_MAX_MOVES];
 		unsigned int result = tb_probe_root(

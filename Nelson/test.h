@@ -23,20 +23,20 @@ namespace test {
 	int64_t bench(std::string filename, int depth, int64_t &totalTime);
 
 
-	uint64_t perft(position &pos, int depth);
-	uint64_t perft3(position &pos, int depth);
-	uint64_t perft4(position &pos, int depth);
-	uint64_t perftcomb(position &pos, int depth);
+	uint64_t perft(Position &pos, int depth);
+	uint64_t perft3(Position &pos, int depth);
+	uint64_t perft4(Position &pos, int depth);
+	uint64_t perftcomb(Position &pos, int depth);
 
-	void divide(position &pos, int depth);
-	void divide3(position &pos, int depth);
+	void divide(Position &pos, int depth);
+	void divide3(Position &pos, int depth);
 	bool testPerft(PerftType perftType = BASIC);
 	void testPolyglotKey();
 	bool testSEE();
 	std::vector<std::string> readTextFile(std::string file);
 	void testCheckQuietCheckMoveGeneration();
 	void testTacticalMoveGeneration();
-	void testSearch(position &pos, int depth);
+	void testSearch(Position &pos, int depth);
 	void testFindMate();
 	void testResult();
 	void testRepetition();

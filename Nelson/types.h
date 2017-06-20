@@ -42,7 +42,7 @@ typedef uint16_t Move;
 
 const Move MOVE_NONE = 0;
 
-struct position;
+struct Position;
 
 enum MoveType {
 	NORMAL, PROMOTION = 1 << 14, ENPASSANT = 2 << 14, CASTLING = 3 << 14
@@ -297,31 +297,31 @@ inline Square pop_lsb(Bitboard* bb) {
 inline Square frontmostSquare(Color c, Bitboard b) { return c == WHITE ? msb(b) : lsb(b); }
 inline Square backmostSquare(Color c, Bitboard b) { return c == WHITE ? lsb(b) : msb(b); }
 
-struct eval {
+struct Eval {
 
 	Value mgScore = Value(0);
 	Value egScore = Value(0);
 
-	eval() {
+	Eval() {
 
 	}
 
-	eval(Value mgValue, Value egValue) {
+	Eval(Value mgValue, Value egValue) {
 		mgScore = mgValue;
 		egScore = egValue;
 	}
 
-	eval(int mgValue, int egValue) {
+	Eval(int mgValue, int egValue) {
 		mgScore = Value(mgValue);
 		egScore = Value(egValue);
 	}
 
-	explicit eval(int value) {
+	explicit Eval(int value) {
 		mgScore = Value(value);
 		egScore = Value(value);
 	}
 
-	explicit eval(Value value) {
+	explicit Eval(Value value) {
 		mgScore = value;
 		egScore = value;
 	}
@@ -339,41 +339,41 @@ struct eval {
 	}
 };
 
-const eval EVAL_ZERO;
+const Eval EVAL_ZERO;
 
-inline eval operator-(const eval &e) { return eval(-e.mgScore, -e.egScore); }
-inline eval operator+(const eval &e1, const eval &e2) { return eval(e1.mgScore + e2.mgScore, e1.egScore + e2.egScore); }
-inline eval operator+=(eval& e1, const eval &e2) {
+inline Eval operator-(const Eval &e) { return Eval(-e.mgScore, -e.egScore); }
+inline Eval operator+(const Eval &e1, const Eval &e2) { return Eval(e1.mgScore + e2.mgScore, e1.egScore + e2.egScore); }
+inline Eval operator+=(Eval& e1, const Eval &e2) {
 	e1.mgScore += e2.mgScore;
 	e1.egScore += e2.egScore;
 	return e1;
 }
 
-inline eval operator+=(eval& e1, const Value v) {
+inline Eval operator+=(Eval& e1, const Value v) {
 	e1.mgScore += v;
 	e1.egScore += v;
 	return e1;
 }
 
-inline eval operator-=(eval& e1, const eval& e2) {
+inline Eval operator-=(Eval& e1, const Eval& e2) {
 	e1.mgScore -= e2.mgScore;
 	e1.egScore -= e2.egScore;
 	return e1;
 }
 
-inline eval operator-=(eval& e1, const Value v) {
+inline Eval operator-=(Eval& e1, const Value v) {
 	e1.mgScore -= v;
 	e1.egScore -= v;
 	return e1;
 }
 
-inline eval operator-(const eval& e1, const eval& e2) {
-	return eval(e1.mgScore - e2.mgScore, e1.egScore - e2.egScore);
+inline Eval operator-(const Eval& e1, const Eval& e2) {
+	return Eval(e1.mgScore - e2.mgScore, e1.egScore - e2.egScore);
 }
-inline eval operator*(const eval& e, const int i) { return eval(e.mgScore * i, e.egScore * i); }
-inline eval operator*(const int i, const eval& e) { return eval(e.mgScore * i, e.egScore * i); }
-inline eval operator/(const eval& e, const int i) { return eval(e.mgScore / i, e.egScore / i); }
-inline eval operator*(const float f, const eval& e) { return eval(f * e.mgScore, f * e.egScore); }
+inline Eval operator*(const Eval& e, const int i) { return Eval(e.mgScore * i, e.egScore * i); }
+inline Eval operator*(const int i, const Eval& e) { return Eval(e.mgScore * i, e.egScore * i); }
+inline Eval operator/(const Eval& e, const int i) { return Eval(e.mgScore / i, e.egScore / i); }
+inline Eval operator*(const float f, const Eval& e) { return Eval(f * e.mgScore, f * e.egScore); }
 
 struct ValuatedMove {
 	Move move;
@@ -403,12 +403,12 @@ inline bool sortByScore(const ValuatedMove& m1, const ValuatedMove& m2) { return
 
 const int MAX_DEPTH = 128;
 
-struct position;
+struct Position;
 
-typedef Value(*EvalFunction)(const position&);
+typedef Value(*EvalFunction)(const Position&);
 
-Value evaluateDefault(const position& pos);
-Value evaluatePawnEnding(const position& pos);
+Value evaluateDefault(const Position& pos);
+Value evaluatePawnEnding(const Position& pos);
 
 enum Protocol { NO_PROTOCOL, UCI, XBOARD };
 

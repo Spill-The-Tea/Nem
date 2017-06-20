@@ -3,7 +3,7 @@
 #include "timemanager.h"
 #include "utils.h"
 
-timemanager::timemanager() {
+Timemanager::Timemanager() {
 	_starttime = now();
 	_time = INT_MAX;
 	_inc = 0;
@@ -18,7 +18,7 @@ timemanager::timemanager() {
 	std::memset(_nodeCounts, 0, MAX_DEPTH * sizeof(int64_t));
 }
 
-timemanager::timemanager(const timemanager &tm) {
+Timemanager::Timemanager(const Timemanager &tm) {
 	_starttime = tm._starttime;
 	_mode = tm._mode;
 	_time = tm._time;
@@ -34,9 +34,9 @@ timemanager::timemanager(const timemanager &tm) {
 	std::memcpy(_nodeCounts, tm._nodeCounts, MAX_DEPTH * sizeof(int64_t));
 }
 
-timemanager::~timemanager() { }
+Timemanager::~Timemanager() { }
 
-void timemanager::initialize(int time, int inc, int movestogo) {
+void Timemanager::initialize(int time, int inc, int movestogo) {
 	_starttime = now();
 	_time = time;
 	_inc = inc;
@@ -50,7 +50,7 @@ void timemanager::initialize(int time, int inc, int movestogo) {
 	init();
 }
 
-void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nodes, int time, int inc, int movestogo, Time_t starttime, bool ponder, int nodestime) {
+void Timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nodes, int time, int inc, int movestogo, Time_t starttime, bool ponder, int nodestime) {
 	_starttime = starttime;
 	_time = time;
 	_inc = inc;
@@ -87,7 +87,7 @@ void timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nod
 	//utils::debugInfo(print());
 }
 
-void timemanager::init() {
+void Timemanager::init() {
 	if (_time == 0) _mode = INFINIT;
 	else {
 		_failLowDepth = 0;
@@ -122,7 +122,7 @@ void timemanager::init() {
 	}
 }
 
-void timemanager::PonderHit() {
+void Timemanager::PonderHit() {
 	int64_t tnow = now();
 	int64_t pondertime = tnow - _starttime;
 	_hardStopTime.store(std::min(Time_t(_hardStopTimeSave + pondertime - settings::parameter.EmergencyTime), Time_t(_hardStopTime.load())));
@@ -148,7 +148,7 @@ void timemanager::PonderHit() {
 }
 
 // This method is called from search after the completion of each iteration. It returns true when a new iteration shall be started and false if not
-bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_t nodecount, Time_t tnow, bool ponderMode) {
+bool Timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_t nodecount, Time_t tnow, bool ponderMode) {
 	_completedDepth = currentDepth;
 	_completionTimeOfLastIteration = tnow;
 	_bestMoves[currentDepth - 1] = bestMove;
@@ -181,11 +181,11 @@ bool timemanager::ContinueSearch(int currentDepth, ValuatedMove bestMove, int64_
 
 }
 
-void timemanager::switchToInfinite() {
+void Timemanager::switchToInfinite() {
 	_mode = INFINIT;
 }
 
-int timemanager::estimatedDepth()
+int Timemanager::estimatedDepth()
 {
 	Time_t stime = _stopTime;
 	if (stime == INT64_MAX) stime = _stopTimeSave;
@@ -195,13 +195,13 @@ int timemanager::estimatedDepth()
 	return 0;
 }
 
-void timemanager::updateTime(int64_t time) {
+void Timemanager::updateTime(int64_t time) {
 	Time_t tnow = now();
 	_hardStopTime.store(std::min(int64_t(_hardStopTime.load()), tnow + Time_t(time - settings::parameter.EmergencyTime)));
 	//std::cout << "Hardstop time updated: " << _hardStopTime - _starttime;
 }
 
-double timemanager::GetEBF(int depth) const {
+double Timemanager::GetEBF(int depth) const {
 	int d = 0;
 	double wbf = 0;
 	int64_t n = 0;
@@ -213,7 +213,7 @@ double timemanager::GetEBF(int depth) const {
 	return wbf / n;
 }
 
-std::string timemanager::print() {
+std::string Timemanager::print() {
 	std::ostringstream s;
 	s << "Start: " << _starttime << "  Time: " << _time << "  MTG: " << _movestogo << "  INC: " << _inc;
 	s << " Stop:  " << _stopTime - _starttime << "  Hardstop: " << _hardStopTime - _starttime << "  SavedStop:  " << _stopTimeSave - _starttime << "  SavedHardstop: " << _hardStopTimeSave -_starttime;

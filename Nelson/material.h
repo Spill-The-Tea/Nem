@@ -20,7 +20,7 @@ enum MaterialSearchFlags : uint8_t {
 };
 
 struct MaterialTableEntry {
-	eval Evaluation;
+	Eval Evaluation;
 	Phase_t Phase;
 	EvalFunction EvaluationFunction = &evaluateDefault;
 	uint8_t Flags;
@@ -56,10 +56,10 @@ void InitializeMaterialTable();
 
 inline MaterialTableEntry * probe(MaterialKey_t key) { if (key == MATERIAL_KEY_UNUSUAL) return &UnusualMaterial; else return &MaterialTable[key]; }
 
-MaterialTableEntry * initUnusual(const position &pos);
+MaterialTableEntry * initUnusual(const Position &pos);
 
-eval calculateMaterialEval(const position &pos);
+Eval calculateMaterialEval(const Position &pos);
 
-Value calculateMaterialScore(const position &pos);
+Value calculateMaterialScore(const Position &pos);
 
 MaterialKey_t calculateMaterialKey(int * pieceCounts);

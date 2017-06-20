@@ -16,7 +16,7 @@
 
 namespace polyglot {
 
-	book::book() {
+	Book::Book() {
 		this->open(fileName, std::ifstream::in | std::ifstream::binary);
 		this->seekg(0, std::ios::end);
 		count = size_t(this->tellg() / sizeof(Entry));
@@ -27,7 +27,7 @@ namespace polyglot {
 #endif
 	}
 
-	book::book(const std::string& filename)
+	Book::Book(const std::string& filename)
 	{
 		fileName = filename;
 		this->open(fileName, std::ifstream::in | std::ifstream::binary);
@@ -41,12 +41,12 @@ namespace polyglot {
 	}
 
 
-	book::~book()
+	Book::~Book()
 	{
 		if (is_open()) close();
 	}
 
-	Entry book::read() {
+	Entry Book::read() {
 		Entry result;
 		result.key = 0;
 		result.move = 0;
@@ -57,7 +57,7 @@ namespace polyglot {
 		return result;
 	}
 
-	Move book::probe(position& pos, bool pickBest, ValuatedMove * moves, int moveCount) {
+	Move Book::probe(Position& pos, bool pickBest, ValuatedMove * moves, int moveCount) {
 		if (!is_open()) return MOVE_NONE;
 		//Make a binary search to find the right Entry
 		size_t low = 0;

@@ -9,7 +9,7 @@
 #include "search.h"
 #include "hashtables.h"
 
-void search::Reset() {
+void Search::Reset() {
 	BestMove.move = MOVE_NONE;
 	BestMove.score = VALUE_ZERO;
 	NodeCount = 0;
@@ -28,7 +28,7 @@ void search::Reset() {
 	for (int i = 0; i < PV_MAX_LENGTH; ++i) PVMoves[i] = MOVE_NONE;
 }
 
-void search::NewGame() {
+void Search::NewGame() {
 	Reset();
 	for (int i = 0; i < 12; ++i) {
 		for (int j = 0; j < 64; ++j)counterMove[i][j] = MOVE_NONE;
@@ -38,7 +38,7 @@ void search::NewGame() {
 	threadLocalData.followupHistory.initialize();
 }
 
-std::string search::PrincipalVariation(position & pos, int depth) {
+std::string Search::PrincipalVariation(Position & pos, int depth) {
 	std::stringstream ss;
 	//When pondering start PV with ponder move 
 	if (PonderMode.load() && pos.GetLastAppliedMove() != MOVE_NONE) ss << toString(pos.GetLastAppliedMove()) << " ";
@@ -47,7 +47,7 @@ std::string search::PrincipalVariation(position & pos, int depth) {
 	//First get PV from PV array...
 	for (; i < depth && i < PV_MAX_LENGTH; ++i) {
 		if (PVMoves[i] == MOVE_NONE || !pos.validateMove(PVMoves[i])) break;
-		position next(pos);
+		Position next(pos);
 		if (!next.ApplyMove(PVMoves[i])) break;
 		pos = next;
 		if (i > 0) ss << " ";
@@ -58,7 +58,7 @@ std::string search::PrincipalVariation(position & pos, int depth) {
 	for (; i < depth; ++i) {
 		Move hashmove = settings::parameter.HelperThreads == 0 ? tt::hashmove<tt::UNSAFE>(pos.GetHash()) : tt::hashmove<tt::THREAD_SAFE>(pos.GetHash());
 		if (hashmove == MOVE_NONE || !pos.validateMove(hashmove)) break;
-		position next(pos);
+		Position next(pos);
 		if (!next.ApplyMove(hashmove)) break;
 		pos = next;
 		if (i > 0) ss << " ";
@@ -69,9 +69,9 @@ std::string search::PrincipalVariation(position & pos, int depth) {
 }
 
 //Creates the "thinking output" while running in UCI or XBoard mode
-void search::info(position &pos, int pvIndx, SearchResultType srt) {
+void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 	if ((UciOutput || XBoardOutput)) {
-		position npos(pos);
+		Position npos(pos);
 		npos.copy(pos);
 		if (UciOutput) {
 			std::string srtString;
@@ -113,7 +113,7 @@ void search::info(position &pos, int pvIndx, SearchResultType srt) {
 	}
 }
 
-void search::debugInfo(std::string info)
+void Search::debugInfo(std::string info)
 {
 	if (UciOutput) {
 		sync_cout << "info string " << info << sync_endl;
@@ -127,21 +127,21 @@ void search::debugInfo(std::string info)
 	//}
 }
 
-Move search::GetBestBookMove(position& pos, ValuatedMove * moves, int moveCount) {
+Move Search::GetBestBookMove(Position& pos, ValuatedMove * moves, int moveCount) {
 	if (settings::options.getBool(settings::OPTION_OWN_BOOK) && BookFile != nullptr) {
-		if (book == nullptr) book = new polyglot::book(*BookFile);
+		if (book == nullptr) book = new polyglot::Book(*BookFile);
 		book->probe(pos, true, moves, moveCount);
 	}
 	return MOVE_NONE;
 }
 
-std::string search::GetXAnalysisOutput() {
+std::string Search::GetXAnalysisOutput() {
 	std::lock_guard<std::mutex> lck(mtxXAnalysisOutput);
 	if (XAnalysisOutput == nullptr) XAnalysisOutput = new std::string();
 	return *XAnalysisOutput;
 }
 
-search::search() {
+Search::Search() {
 	PonderMode.store(false);
 	Stop.store(false);
 	for (int i = 0; i < 12; ++i)
@@ -156,7 +156,7 @@ search::search() {
 	for (int i = 0; i < PV_MAX_LENGTH; ++i) PVMoves[i] = MOVE_NONE;
 }
 
-search::~search() {
+Search::~Search() {
 	//stop and delete Slave Threads
 	for (int i = 0; i < settings::parameter.HelperThreads; ++i) {
 		if (subThreads[i].joinable()) subThreads[i].join();
@@ -175,7 +175,7 @@ search::~search() {
 	}
 }
 
-ValuatedMove search::Think(position &pos) {
+ValuatedMove Search::Think(Position &pos) {
 	std::lock_guard<std::mutex> lgStart(mtxSearch);
 #ifdef TRACE
 	//pos.move_history->clear();
@@ -206,7 +206,7 @@ ValuatedMove search::Think(position &pos) {
 	}
 	//check if book is available
 	if (settings::options.getBool(settings::OPTION_OWN_BOOK) && BookFile != nullptr) {
-		if (book == nullptr) book = new polyglot::book(*BookFile);
+		if (book == nullptr) book = new polyglot::Book(*BookFile);
 		//Currently engine isn't looking for the best book move, but selects on of the available bookmoves by random, with entries weight used to define the
 		//probability 
 		Move bookMove = book->probe(pos, false, generatedMoves, rootMoveCount);
@@ -215,7 +215,7 @@ ValuatedMove search::Think(position &pos) {
 			BestMove.score = VALUE_ZERO;
 			utils::debugInfo("Book move");
 			//Try to find a suitable move for pondering
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(bookMove)) {
 				ValuatedMove* replies = next.GenerateMoves<LEGAL>();
 				ponderMove = book->probe(next, true, replies, next.GeneratedMoveCount());
@@ -238,10 +238,10 @@ ValuatedMove search::Think(position &pos) {
 	//and then search normally. This way the engine will play "better" than by simply choosing the "best" tablebase move (which is
 	//the move which minimizes the number until drawPlyCount is reset without changing the result
 	tbHits = 0;
-	probeTB = Tablebases::MaxCardinality > 0;
+	probeTB = tablebases::MaxCardinality > 0;
 	if (pos.GetMaterialTableEntry()->IsTablebaseEntry()) {
 		std::vector<ValuatedMove> tbMoves(rootMoves, rootMoves + rootMoveCount);
-		bool tbHit = Tablebases::root_probe(pos, tbMoves, score);
+		bool tbHit = tablebases::root_probe(pos, tbMoves, score);
 		if (tbHit) {
 			tbHits++;
 			probeTB = false;
@@ -260,7 +260,7 @@ ValuatedMove search::Think(position &pos) {
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
 	//SMP active => start helper threads (if not yet done)
 	for (int i = 0; i < settings::parameter.HelperThreads; ++i)
-		subThreads.push_back(std::thread(&search::startHelper, this));
+		subThreads.push_back(std::thread(&Search::startHelper, this));
 	//Special logic to get static evaluation via UCI: if go depth 0 is requested simply return static evaluation
 	if (timeManager.GetMaxDepth() == 0) {
 		BestMove.move = MOVE_NONE;
@@ -362,12 +362,12 @@ END://when pondering engine must not return a best move before opponent moved =>
 }
 
 //slave thread
-void search::startHelper() {
+void Search::startHelper() {
 	int depth = 1;
 	Move * PVMovesLocal = new Move[PV_MAX_LENGTH];
 	ValuatedMove * moves = new ValuatedMove[MAX_MOVE_COUNT];
 	memcpy(moves, rootMoves, MAX_MOVE_COUNT * sizeof(ValuatedMove));
-	threadData * h = new threadData;
+	ThreadData * h = new ThreadData;
 	//Iterative Deepening Loop
 	while (!Stop.load() && depth < MAX_DEPTH) {
 		Value alpha = -VALUE_MATE;
@@ -380,17 +380,17 @@ void search::startHelper() {
 	delete[] PVMovesLocal;
 }
 
-bool search::isQuiet(position &pos) {
+bool Search::isQuiet(Position &pos) {
 	Value evaluationDiff = pos.GetStaticEval() - QSearch<SINGLE>(-VALUE_MATE, VALUE_MATE, pos, 0, threadLocalData);
 	return std::abs(int16_t(evaluationDiff)) <= 30;
 }
 
-Value search::qscore(position * pos)
+Value Search::qscore(Position * pos)
 {
 	return QSearch<SINGLE>(-VALUE_MATE, VALUE_MATE, *pos, 0, threadLocalData);
 }
 
-void search::updateCutoffStats(threadData& tlData, const Move cutoffMove, int depth, position &pos, int moveIndex) {
+void Search::updateCutoffStats(ThreadData& tlData, const Move cutoffMove, int depth, Position &pos, int moveIndex) {
 	cutoffMoveIndexSum += std::max(0, moveIndex);
 	cutoffCount++;
 	cutoffAt1stMove += moveIndex <= 0;

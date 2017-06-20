@@ -22,12 +22,12 @@ enum TimeMode  { UNDEF,                   //Not yet defined
 	             NODES                    //Nodetime, convert nodes into time and measure based on node count (not yet implemented)
                };
 
-	class timemanager
+	class Timemanager
 	{
 	public:
-		timemanager();
-		timemanager(const timemanager &tm);
-		~timemanager();
+		Timemanager();
+		Timemanager(const Timemanager &tm);
+		~Timemanager();
 		/* Timemanager initialization. Mode is determined based on the values given (movestogo = 0 => Sudden death, ..)
 		Initialization has to be done before every move
 		*/

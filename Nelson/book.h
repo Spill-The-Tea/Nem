@@ -17,14 +17,14 @@ namespace polyglot {
 		uint32_t learn;
 	};
 
-	class book : private std::ifstream
+	class Book : private std::ifstream
 	{
 	public:
-		book();
-		explicit book(const std::string& filename);
-		~book();
+		Book();
+		explicit Book(const std::string& filename);
+		~Book();
 
-		Move probe(position& pos, bool pickBest, ValuatedMove * moves, int moveCount);
+		Move probe(Position& pos, bool pickBest, ValuatedMove * moves, int moveCount);
 
 	private:
 		std::string fileName = "book.bin";

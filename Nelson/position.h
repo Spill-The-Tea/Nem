@@ -7,7 +7,7 @@
 #include "hashtables.h"
 
 
-struct evaluation;
+struct Evaluation;
 
 const MoveGenerationType generationPhases[26] = { HASHMOVE, NON_LOOSING_CAPTURES, KILLER, LOOSING_CAPTURES, QUIETS_POSITIVE, QUIETS_NEGATIVE, UNDERPROMOTION, NONE, //Main Search Phases
 HASHMOVE, NON_LOOSING_CAPTURES, LOOSING_CAPTURES, NONE,                                   //QSearch Phases
@@ -30,18 +30,18 @@ const int generationPhaseOffset[] = { 0, //Main Search
    Each position contains a pointer to the previous position, which is created when copying the position
    Applying a move is done by first copying the position and then calling ApplyMove
 */
-struct position
+struct Position
 {
 public:
 	//Creates the starting position 
-	position();
+	Position();
 	//Creates a position based on the given FEN string
-	explicit position(std::string fen);
+	explicit Position(std::string fen);
 	/*Creates a copy of a position.
 	  ATTENTION: Only parts of the position are copied. To have a full copy a further call to copy() method is needed
 	*/
-	position(position &pos);
-	~position();
+	Position(Position &pos);
+	~Position();
 
 	//Moves already played within a game before searched position is reached
 	static int AppliedMovesBeforeRoot;
@@ -63,18 +63,18 @@ public:
 	//Applies a pseudo-legal move and returns true if move is legal
 	bool ApplyMove(Move move);
 	//"Undo move" by returning pointer to previous position
-	inline position * Previous() const { return previous; }
+	inline Position * Previous() const { return previous; }
 	//Generate moves and store it in moves array
 	template<MoveGenerationType MGT> ValuatedMove * GenerateMoves();
 	//returns Zobrist Hash key of position
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
-	inline eval GetPsqEval() const { return PsqEval; }
+	inline Eval GetPsqEval() const { return PsqEval; }
 	/* The position struct provides staged move generation. To make use of it the staged move generation has to be initialized first by calling InitializeMoveIterator.
 	   Then every call to NextMove() will return the next move until MOVE_NONE is returned */
 	   //Initialize staged move generation, by providing the necessary information for move ordering
-	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryManager *history, MoveSequenceHistoryManager *counterMoveHistory, MoveSequenceHistoryManager *followupHistory, killer::manager * km, Move counter, Move hashmove = MOVE_NONE);
+	template<StagedMoveGenerationType SMGT> void InitializeMoveIterator(HistoryManager *history, MoveSequenceHistoryManager *counterMoveHistory, MoveSequenceHistoryManager *followupHistory, killer::Manager * km, Move counter, Move hashmove = MOVE_NONE);
 	//Get next move. If MOVE_NONE is returned end of move list is reached
 	Move NextMove();
 	//SEE (Static Exchange Evaluation): The implementation is copied from Chess Programming Wiki (https://chessprogramming.wikispaces.com/SEE+-+The+Swap+Algorithm)
@@ -84,7 +84,7 @@ public:
 	//returns true if SideTo Move is in check. Must not be called when it's unclear whether opponent's attack map is already determined
 	inline bool Checked() const { return (attackedByThem & PieceBB(KING, SideToMove)) != EMPTY; }
 	//Static evaluation function for unusual material (no pre-calculated material values available in Material Table)
-	friend evaluation evaluateFromScratch(position &pos);
+	friend Evaluation evaluateFromScratch(Position &pos);
 	//Calls the static evaluation function (it will call the evaluation even, if the StaticEval value is already different from VALUE_NOTYETEVALUATED)
 	inline Value evaluate();
 	//Just for debugging
@@ -107,7 +107,7 @@ public:
 	inline pawn::Entry * GetPawnEntry() const { return pawn; }
 	inline Value GetPawnScore() const { return pawn->Score.getScore(material->Phase); }
 	inline void InitMaterialPointer() { material = probe(MaterialKey); }
-	inline eval PawnStructureScore() const { return pawn->Score; }
+	inline Eval PawnStructureScore() const { return pawn->Score; }
 	//checks if the position is final and returns the result
 	Result GetResult();
 	//for xboard protocol support it's helpful, to not only know that a position is a DRAW but also why it's a draw. Therefore this additional
@@ -115,8 +115,8 @@ public:
 	DetailedResult GetDetailedResult();
 	//returns a bitboard indicating the squares attacked by the piece on the given square 
 	inline Bitboard GetAttacksFrom(Square square) const { return attacks[square]; }
-	inline void SetPrevious(position &pos) { previous = &pos; }
-	inline void SetPrevious(position *pos) { previous = pos; }
+	inline void SetPrevious(Position &pos) { previous = &pos; }
+	inline void SetPrevious(Position *pos) { previous = pos; }
 	//Should be called before search starts
 	inline void ResetPliesFromRoot() { pliesFromRoot = 0; }
 	inline Bitboard AttacksByPieceType(Color color, PieceType pieceType) const;
@@ -159,7 +159,7 @@ public:
 		position copiedPosition(pos);
 		copiedPosition.copy(pos);
 	  This method should always be used when a copy is neede without applying a move */
-	void copy(const position &pos);
+	void copy(const Position &pos);
 	inline bool CastlingAllowed(CastleFlag castling) const { return (CastlingOptions & castling) != 0; }
 	inline unsigned GetCastles() const { return CastlingOptions & 15; }
 	inline CastleFlag GetCastlesForColor(Color color) const { return color == WHITE ? CastleFlag(CastlingOptions & (W0_0 | W0_0_0)) : CastleFlag(CastlingOptions & (B0_0 | B0_0_0)); }
@@ -218,12 +218,12 @@ private:
 	Color SideToMove;
 	int pliesFromRoot;
 	Piece Board[64];
-	eval PsqEval;
+	Eval PsqEval;
 	//King Squares
 	Square kingSquares[2];
 
 	//Pointer to the previous position
-	position * previous = nullptr;
+	Position * previous = nullptr;
 
 	//These members are only calculated when needed
 	//Pointer to the relevant entry in the Material table
@@ -256,7 +256,7 @@ private:
 	Value StaticEval = VALUE_NOTYETDETERMINED;
 	//Information needed for move ordering during staged move generation
 	Move hashMove = MOVE_NONE;
-	killer::manager *killerManager;
+	killer::Manager *killerManager;
 	Move lastAppliedMove = MOVE_NONE;
 	Piece capturedInLastMove = BLANK;
 	HistoryManager * history;
@@ -320,7 +320,7 @@ private:
 	const Bitboard AttacksOfField(const Square targetField, const Bitboard occupied) const;
 	const Bitboard AttacksOfField(const Square targetField, const Color attackingSide) const;
 	//Checks is a oseudo-legal move is valid
-	inline bool isValid(Move move) { position next(*this); return next.ApplyMove(move); }
+	inline bool isValid(Move move) { Position next(*this); return next.ApplyMove(move); }
 	//Checks if a move (e.g. from killer move list) is a valid move
 	bool validateMove(ExtendedMove move);
 	//Checks if at least one valid move exists - ATTENTION must not be called on a newly initialized position where attackedByThem isn't calculated yet!!
@@ -335,26 +335,26 @@ private:
 #endif
 };
 
-template<> inline ValuatedMove* position::GenerateMoves<QUIET_CHECKS>();
-template<> inline ValuatedMove* position::GenerateMoves<LEGAL>();
-template<> inline ValuatedMove* position::GenerateMoves<FORKS>();
-template<> inline ValuatedMove* position::GenerateMoves<FORKS_NO_CHECKS>();
+template<> inline ValuatedMove* Position::GenerateMoves<QUIET_CHECKS>();
+template<> inline ValuatedMove* Position::GenerateMoves<LEGAL>();
+template<> inline ValuatedMove* Position::GenerateMoves<FORKS>();
+template<> inline ValuatedMove* Position::GenerateMoves<FORKS_NO_CHECKS>();
 
-Move parseMoveInUCINotation(const std::string& uciMove, const position& pos);
+Move parseMoveInUCINotation(const std::string& uciMove, const Position& pos);
 
 
-inline Bitboard position::PieceBB(const PieceType pt, const Color c) const { return OccupiedByColor[c] & OccupiedByPieceType[pt]; }
-inline Bitboard position::ColorBB(const Color c) const { return OccupiedByColor[c]; }
-inline Bitboard position::ColorBB(const int c) const { return OccupiedByColor[c]; }
-inline Bitboard position::OccupiedBB() const { return OccupiedByColor[WHITE] | OccupiedByColor[BLACK]; }
-inline Bitboard position::PieceTypeBB(const PieceType pt) const { return OccupiedByPieceType[pt]; }
+inline Bitboard Position::PieceBB(const PieceType pt, const Color c) const { return OccupiedByColor[c] & OccupiedByPieceType[pt]; }
+inline Bitboard Position::ColorBB(const Color c) const { return OccupiedByColor[c]; }
+inline Bitboard Position::ColorBB(const int c) const { return OccupiedByColor[c]; }
+inline Bitboard Position::OccupiedBB() const { return OccupiedByColor[WHITE] | OccupiedByColor[BLACK]; }
+inline Bitboard Position::PieceTypeBB(const PieceType pt) const { return OccupiedByPieceType[pt]; }
 
-inline bool position::IsWinningCapture(const ValuatedMove& move) const {
+inline bool Position::IsWinningCapture(const ValuatedMove& move) const {
 	return (Board[to(move.move)] != BLANK && (settings::parameter.PieceValues[GetPieceType(Board[from(move.move)])].mgScore - settings::parameter.PieceValues[GetPieceType(Board[to(move.move)])].mgScore) < settings::parameter.PieceValues[PAWN].mgScore)
 		|| type(move.move) == ENPASSANT || type(move.move) == PROMOTION;
 }
 
-inline PieceType position::GetMostValuablePieceType(Color color) const {
+inline PieceType Position::GetMostValuablePieceType(Color color) const {
 	if (MaterialKey != MATERIAL_KEY_UNUSUAL) return material->GetMostExpensivePiece(color);
 	else {
 		for (PieceType pt = QUEEN; pt < KING; ++pt) {
@@ -367,7 +367,7 @@ inline PieceType position::GetMostValuablePieceType(Color color) const {
 	}
 }
 
-inline PieceType position::GetMostValuableAttackedPieceType() const {
+inline PieceType Position::GetMostValuableAttackedPieceType() const {
 	Color col = Color(SideToMove ^ 1);
 	PieceType ptstart = MaterialKey != MATERIAL_KEY_UNUSUAL ? material->GetMostExpensivePiece(col) : QUEEN;
 	for (PieceType pt = ptstart; pt < KING; ++pt) {
@@ -376,7 +376,7 @@ inline PieceType position::GetMostValuableAttackedPieceType() const {
 	return KING;
 }
 
-inline Value position::evaluate() {
+inline Value Position::evaluate() {
 	if (StaticEval != VALUE_NOTYETDETERMINED)
 		return StaticEval;
 	if (GetResult() == OPEN) {
@@ -386,13 +386,13 @@ inline Value position::evaluate() {
 	else return StaticEval = Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 
-inline Value position::evaluateFinalPosition() {
+inline Value Position::evaluateFinalPosition() {
 	if (result == DRAW) return SideToMove == settings::parameter.EngineSide ? -settings::parameter.Contempt : settings::parameter.Contempt;
 	else return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 
 //Tries to find one valid move as fast as possible
-template<bool CHECKED> bool position::CheckValidMoveExists() {
+template<bool CHECKED> bool Position::CheckValidMoveExists() {
 	assert(attackedByThem); //should have been already calculated
 	//Start with king (Castling need not be considered - as there is always another legal move available with castling
 	//In Chess960 this might be different)
@@ -497,7 +497,7 @@ template<bool CHECKED> bool position::CheckValidMoveExists() {
 
 // Generates all legal moves (by first generating all pseudo-legal moves and then eliminating all invalid moves
 //Should only be used at the root as implementation is slow!
-template<> ValuatedMove* position::GenerateMoves<LEGAL>() {
+template<> ValuatedMove* Position::GenerateMoves<LEGAL>() {
 	GenerateMoves<ALL>();
 	for (int i = 0; i < movepointer - 1; ++i) {
 		if (!isValid(moves[i].move)) {
@@ -510,7 +510,7 @@ template<> ValuatedMove* position::GenerateMoves<LEGAL>() {
 }
 
 //Generates all quiet moves giving check
-template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
+template<> ValuatedMove* Position::GenerateMoves<QUIET_CHECKS>() {
 	movepointer -= (movepointer != 0);
 	ValuatedMove * result = &moves[movepointer];
 	//There are 2 options to give check: Either give check with the moving piece, or a discovered check by
@@ -669,15 +669,15 @@ template<> ValuatedMove* position::GenerateMoves<QUIET_CHECKS>() {
 	return result;
 }
 
-template<> inline ValuatedMove* position::GenerateMoves<FORKS>() {
+template<> inline ValuatedMove* Position::GenerateMoves<FORKS>() {
 	return GenerateForks(true);
 }
 
-template<> inline ValuatedMove* position::GenerateMoves<FORKS_NO_CHECKS>() {
+template<> inline ValuatedMove* Position::GenerateMoves<FORKS_NO_CHECKS>() {
 	return GenerateForks(false);
 }
 
-template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
+template<MoveGenerationType MGT> ValuatedMove * Position::GenerateMoves() {
 	if (MGT == ALL || MGT == CHECK_EVASION) movepointer = 0; else movepointer -= (movepointer != 0);
 	ValuatedMove * result = &moves[movepointer];
 	//Rooksliders
@@ -1007,7 +1007,7 @@ template<MoveGenerationType MGT> ValuatedMove * position::GenerateMoves() {
 }
 
 
-template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(HistoryManager * historyStats, MoveSequenceHistoryManager * counterHistoryStats, MoveSequenceHistoryManager * followupHistoryStats, killer::manager * km, Move counter, Move hashmove) {
+template<StagedMoveGenerationType SMGT> void Position::InitializeMoveIterator(HistoryManager * historyStats, MoveSequenceHistoryManager * counterHistoryStats, MoveSequenceHistoryManager * followupHistoryStats, killer::Manager * km, Move counter, Move hashmove) {
 	processedMoveGenerationPhases = 0;
 	if (SMGT == REPETITION) {
 		moveIterationPointer = 0;
@@ -1033,11 +1033,11 @@ template<StagedMoveGenerationType SMGT> void position::InitializeMoveIterator(Hi
 	else generationPhase = generationPhaseOffset[SMGT] + (hashMove == MOVE_NONE);
 }
 
-inline Bitboard position::AttacksByPieceType(Color color, PieceType pieceType) const {
+inline Bitboard Position::AttacksByPieceType(Color color, PieceType pieceType) const {
 	return attacksByPt[GetPiece(pieceType, color)];
 }
 
-inline Bitboard position::AttacksExcludingPieceType(Color color, PieceType excludedPieceType) const
+inline Bitboard Position::AttacksExcludingPieceType(Color color, PieceType excludedPieceType) const
 {
 	Bitboard bb = EMPTY;
 	for (PieceType p = QUEEN; p <= KING; ++p) {

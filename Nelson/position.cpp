@@ -17,28 +17,28 @@
 
 static const std::string PieceToChar("QqRrBbNnPpKk ");
 
-position::position()
+Position::Position()
 {
 	setFromFEN("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 }
 
-position::position(std::string fen)
+Position::Position(std::string fen)
 {
 	setFromFEN(fen);
 }
 
-position::position(position &pos) {
-	std::memcpy(this, &pos, offsetof(position, previous));
+Position::Position(Position &pos) {
+	std::memcpy(this, &pos, offsetof(Position, previous));
 	material = pos.GetMaterialTableEntry();
 	pawn = pos.GetPawnEntry();
 	previous = &pos;
 }
 
-position::~position()
+Position::~Position()
 {
 }
 
-void position::copy(const position &pos) {
+void Position::copy(const Position &pos) {
 	memcpy(this->attacks, pos.attacks, 64 * sizeof(Bitboard));
 	memcpy(this->attacksByPt, pos.attacksByPt, 12 * sizeof(Bitboard));
 	this->attackedByUs = pos.attackedByUs;
@@ -51,9 +51,9 @@ void position::copy(const position &pos) {
 	this->bbPinner[Color::BLACK] = pos.bbPinner[Color::BLACK];
 }
 
-int position::AppliedMovesBeforeRoot = 0;
+int Position::AppliedMovesBeforeRoot = 0;
 
-bool position::ApplyMove(Move move) {
+bool Position::ApplyMove(Move move) {
 	pliesFromRoot++;
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
@@ -181,7 +181,7 @@ bool position::ApplyMove(Move move) {
 	//return true;
 }
 
-void position::AddUnderPromotions() {
+void Position::AddUnderPromotions() {
 	if (canPromote) {
 		movepointer--;
 		int moveCount = movepointer;
@@ -197,7 +197,7 @@ void position::AddUnderPromotions() {
 	}
 }
 
-Move position::NextMove() {
+Move Position::NextMove() {
 	if (generationPhases[generationPhase] == NONE) return MOVE_NONE;
 	Move move;
 	do {
@@ -376,7 +376,7 @@ end:
 }
 
 //Insertion Sort (copied from SF)
-void position::insertionSort(ValuatedMove* first, ValuatedMove* last)
+void Position::insertionSort(ValuatedMove* first, ValuatedMove* last)
 {
 	ValuatedMove tmp, *p, *q;
 	for (p = first + 1; p < last; ++p)
@@ -387,7 +387,7 @@ void position::insertionSort(ValuatedMove* first, ValuatedMove* last)
 	}
 }
 
-void position::shellSort(ValuatedMove* vm, int count) {
+void Position::shellSort(ValuatedMove* vm, int count) {
 	const int gaps[] = { 57, 23, 10, 4, 1 };
 	for (int gap : gaps) {
 		for (int i = 0; i < count - gap; i++) {
@@ -402,26 +402,26 @@ void position::shellSort(ValuatedMove* vm, int count) {
 	}
 }
 
-void position::evaluateByCaptureScore(int startIndex) {
+void Position::evaluateByCaptureScore(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
 		moves[i].score = settings::parameter.CAPTURE_SCORES[GetPieceType(Board[from(moves[i].move)])][GetPieceType(Board[to(moves[i].move)])] + 2 * (type(moves[i].move) == PROMOTION);
 	}
 }
 
-void position::evaluateByMVVLVA(int startIndex) {
+void Position::evaluateByMVVLVA(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
 		moves[i].score = settings::parameter.PieceValues[GetPieceType(Board[to(moves[i].move)])].mgScore - 150 * relativeRank(GetSideToMove(), Rank(to(moves[i].move) >> 3));
 	}
 }
 
-void position::evaluateBySEE(int startIndex) {
+void Position::evaluateBySEE(int startIndex) {
 	if (movepointer - 2 == startIndex)
 		moves[startIndex].score = settings::parameter.PieceValues[QUEEN].mgScore; //No need for SEE if there is only one move to be evaluated
 	else
 		for (int i = startIndex; i < movepointer - 1; ++i) moves[i].score = SEE(moves[i].move);
 }
 
-void position::evaluateCheckEvasions(int startIndex) {
+void Position::evaluateCheckEvasions(int startIndex) {
 	ValuatedMove * firstQuiet = std::partition(moves + startIndex, &moves[movepointer - 1], [this](ValuatedMove m) { return IsTactical(m); });
 	bool quiets = false;
 	int quietsIndex = startIndex;
@@ -440,7 +440,7 @@ void position::evaluateCheckEvasions(int startIndex) {
 	if (movepointer - 2 > quietsIndex) insertionSort(moves + quietsIndex, &moves[movepointer - 1]);
 }
 
-Move position::GetCounterMove(Move(&counterMoves)[12][64]) {
+Move Position::GetCounterMove(Move(&counterMoves)[12][64]) {
 	if (lastAppliedMove != MOVE_NONE) {
 		Square lastTo = to(lastAppliedMove);
 		return counterMoves[int(Board[lastTo])][lastTo];
@@ -448,7 +448,7 @@ Move position::GetCounterMove(Move(&counterMoves)[12][64]) {
 	return MOVE_NONE;
 }
 
-void position::evaluateByHistory(int startIndex) {
+void Position::evaluateByHistory(int startIndex) {
 	Move lastMoves[2] = { MOVE_NONE, MOVE_NONE };
 	Piece lastMovingPieces[2] = { Piece::BLANK, Piece::BLANK };
 	if (lastAppliedMove != MOVE_NONE) {
@@ -487,7 +487,7 @@ void position::evaluateByHistory(int startIndex) {
 	}
 }
 
-Move position::getBestMove(int startIndex) {
+Move Position::getBestMove(int startIndex) {
 	ValuatedMove bestmove = moves[startIndex];
 	for (int i = startIndex + 1; i < movepointer - 1; ++i) {
 		if (bestmove < moves[i]) {
@@ -499,7 +499,7 @@ Move position::getBestMove(int startIndex) {
 	return moves[startIndex].score > -VALUE_MATE ? moves[startIndex].move : MOVE_NONE;
 }
 
-template<bool SquareIsEmpty> void position::set(const Piece piece, const Square square) {
+template<bool SquareIsEmpty> void Position::set(const Piece piece, const Square square) {
 	Bitboard squareBB = 1ull << square;
 	Piece captured;
 	if (!SquareIsEmpty && (captured = Board[square]) != BLANK) {
@@ -515,7 +515,7 @@ template<bool SquareIsEmpty> void position::set(const Piece piece, const Square 
 	Hash ^= ZobristKeys[piece][square];
 }
 
-void position::remove(const Square square) {
+void Position::remove(const Square square) {
 	Bitboard NotSquareBB = ~(1ull << square);
 	Piece piece = Board[square];
 	Board[square] = BLANK;
@@ -525,7 +525,7 @@ void position::remove(const Square square) {
 	Hash ^= ZobristKeys[piece][square];
 }
 
-void position::updateCastleFlags(Square fromSquare, Square toSquare) {
+void Position::updateCastleFlags(Square fromSquare, Square toSquare) {
 	if (fromSquare == InitialKingSquare[SideToMove]) {
 		RemoveCastlingOption(CastleFlag(W0_0 << (2 * SideToMove)));
 		RemoveCastlingOption(CastleFlag(W0_0_0 << (2 * SideToMove)));
@@ -538,7 +538,7 @@ void position::updateCastleFlags(Square fromSquare, Square toSquare) {
 	}
 }
 
-Bitboard position::calculateAttacks(Color color) {
+Bitboard Position::calculateAttacks(Color color) {
 	Bitboard occupied = OccupiedBB();
 	attacksByPt[GetPiece(ROOK, color)] = 0ull;
 	Bitboard rookSliders = PieceBB(ROOK, color);
@@ -588,12 +588,12 @@ Bitboard position::calculateAttacks(Color color) {
 		| attacksByPt[GetPiece(KNIGHT, color)] | attacksByPt[GetPiece(PAWN, color)] | attacksByPt[GetPiece(KING, color)];
 }
 
-Bitboard position::checkBlocker(Color colorOfBlocker, Color kingColor) {
+Bitboard Position::checkBlocker(Color colorOfBlocker, Color kingColor) {
 	return (PinnedPieces(kingColor) & OccupiedByColor[colorOfBlocker]);
 }
 
 //Calculates a bitboard of attackers to a given square, but filtering pieces by occupancy mask 
-const Bitboard position::AttacksOfField(const Square targetField, const Bitboard occupanyMask) const
+const Bitboard Position::AttacksOfField(const Square targetField, const Bitboard occupanyMask) const
 {
 	//sliding attacks
 	Bitboard attacks = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
@@ -619,7 +619,7 @@ const Bitboard position::AttacksOfField(const Square targetField, const Bitboard
 	return attacks & occupanyMask;
 }
 
-const Bitboard position::AttacksOfField(const Square targetField, const Color attackingSide) const {
+const Bitboard Position::AttacksOfField(const Square targetField, const Color attackingSide) const {
 	//sliding attacks
 	Bitboard attacks = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
 	attacks |= SlidingAttacksBishopTo[targetField] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
@@ -646,7 +646,7 @@ const Bitboard position::AttacksOfField(const Square targetField, const Color at
 }
 
 
-const PieceType position::getAndResetLeastValuableAttacker(Square toSquare, Bitboard attackers, Bitboard& occupied, Bitboard& attadef, Bitboard& mayXray) const {
+const PieceType Position::getAndResetLeastValuableAttacker(Square toSquare, Bitboard attackers, Bitboard& occupied, Bitboard& attadef, Bitboard& mayXray) const {
 	Bitboard leastAttackers = attackers & PieceTypeBB(PAWN);
 	if (!leastAttackers) leastAttackers = attackers & (PieceTypeBB(KNIGHT) | PieceTypeBB(BISHOP));
 	if (!leastAttackers) leastAttackers = attackers & PieceTypeBB(ROOK);
@@ -673,7 +673,7 @@ const PieceType position::getAndResetLeastValuableAttacker(Square toSquare, Bitb
 }
 
 //SEE method, which returns without exact value, when it's sure that value is positive (then VALUE_KNOWN_WIN is returned)
-Value position::SEE_Sign(Move move) const {
+Value Position::SEE_Sign(Move move) const {
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
 	if (settings::parameter.PieceValues[GetPieceType(Board[fromSquare])].mgScore <= settings::parameter.PieceValues[GetPieceType(Board[toSquare])].mgScore && type(move) != PROMOTION) return VALUE_KNOWN_WIN;
@@ -682,7 +682,7 @@ Value position::SEE_Sign(Move move) const {
 
 //This SEE implementation is a mixture of stockfish and Computer chess sample implementation
 //(see https://chessprogramming.wikispaces.com/SEE+-+The+Swap+Algorithm)
-const Value position::SEE(Move move) const
+const Value Position::SEE(Move move) const
 {
 	if (type(move) == CASTLING) return VALUE_ZERO;
 
@@ -750,7 +750,7 @@ const Value position::SEE(Move move) const
 }
 
 
-void position::setFromFEN(const std::string& fen) {
+void Position::setFromFEN(const std::string& fen) {
 	material = nullptr;
 	std::fill_n(Board, 64, BLANK);
 	OccupiedByColor[WHITE] = OccupiedByColor[BLACK] = 0ull;
@@ -929,7 +929,7 @@ void position::setFromFEN(const std::string& fen) {
 	pliesFromRoot = 0;
 }
 
-std::string position::fen() const {
+std::string Position::fen() const {
 
 	int emptyCnt;
 	std::ostringstream ss;
@@ -996,7 +996,7 @@ std::string position::fen() const {
 	return ss.str();
 }
 
-std::string position::print() {
+std::string Position::print() {
 	std::ostringstream ss;
 
 	ss << "\n +---+---+---+---+---+---+---+---+\n";
@@ -1017,7 +1017,7 @@ std::string position::print() {
 	return ss.str();
 }
 
-std::string position::printGeneratedMoves() {
+std::string Position::printGeneratedMoves() {
 	std::ostringstream ss;
 	for (int i = 0; i < movepointer - 1; ++i) {
 		ss << toString(moves[i].move) << "\t" << moves[i].score << "\n";
@@ -1025,14 +1025,14 @@ std::string position::printGeneratedMoves() {
 	return ss.str();
 }
 
-MaterialKey_t position::calculateMaterialKey() const {
+MaterialKey_t Position::calculateMaterialKey() const {
 	MaterialKey_t key = MATERIAL_KEY_OFFSET;
 	for (int i = WQUEEN; i <= BPAWN; ++i)
 		key += materialKeyFactors[i] * popcount(PieceBB(GetPieceType(Piece(i)), Color(i & 1)));
 	return key;
 }
 
-PawnKey_t position::calculatePawnKey() const {
+PawnKey_t Position::calculatePawnKey() const {
 	PawnKey_t key = 0;
 	Bitboard pawns = PieceBB(PAWN, WHITE);
 	while (pawns) {
@@ -1047,7 +1047,7 @@ PawnKey_t position::calculatePawnKey() const {
 	return key;
 }
 
-Result position::GetResult() {
+Result Position::GetResult() {
 	//if (!result) {
 	//	bool checked = Checked();
 	//	if (checked && !CheckValidMoveExists<true>()) result = MATE;
@@ -1067,7 +1067,7 @@ Result position::GetResult() {
 	return result;
 }
 
-DetailedResult position::GetDetailedResult() {
+DetailedResult Position::GetDetailedResult() {
 	Result result = GetResult();
 	if (result == OPEN) return NO_RESULT;
 	else if (result == MATE) {
@@ -1080,7 +1080,7 @@ DetailedResult position::GetDetailedResult() {
 		else {
 			//Check for 3 fold repetition
 			int repCounter = 0;
-			position * prev = Previous();
+			Position * prev = Previous();
 			for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, int(DrawPlyCount)) >> 1); ++i) {
 				prev = prev->Previous();
 				if (prev->GetHash() == GetHash()) {
@@ -1094,8 +1094,8 @@ DetailedResult position::GetDetailedResult() {
 	return NO_RESULT;
 }
 
-bool position::checkRepetition() {
-	position * prev = Previous();
+bool Position::checkRepetition() {
+	Position * prev = Previous();
 	for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, int(DrawPlyCount)) >> 1); ++i) {
 		prev = prev->Previous();
 		if (prev->GetHash() == GetHash())
@@ -1105,8 +1105,8 @@ bool position::checkRepetition() {
 	return false;
 }
 
-bool position::hasRepetition() {
-	position * pos = this;
+bool Position::hasRepetition() {
+	Position * pos = this;
 	while (pos && pos->GetDrawPlyCount() > 0) {
 		if (pos->checkRepetition()) return true;
 		pos = pos->Previous();
@@ -1115,7 +1115,7 @@ bool position::hasRepetition() {
 }
 
 //Hashmoves, countermoves, ... aren't really reliable => therefore check if it is a valid move
-bool position::validateMove(Move move) {
+bool Position::validateMove(Move move) {
 	Square fromSquare = from(move);
 	Piece movingPiece = Board[fromSquare];
 	Square toSquare = to(move);
@@ -1154,7 +1154,7 @@ bool position::validateMove(Move move) {
 	return result;
 }
 
-Move position::validMove(Move proposedMove)
+Move Position::validMove(Move proposedMove)
 {
 	ValuatedMove * moves = GenerateMoves<LEGAL>();
 	int movecount = GeneratedMoveCount();
@@ -1163,7 +1163,7 @@ Move position::validMove(Move proposedMove)
 	}
 	return movecount > 0 ? moves[0].move : MOVE_NONE;
 }
-bool position::givesCheck(Move move)
+bool Position::givesCheck(Move move)
 {
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
@@ -1218,18 +1218,18 @@ bool position::givesCheck(Move move)
 	return false;
 }
 
-bool position::oppositeColoredBishops() const
+bool Position::oppositeColoredBishops() const
 {
 	return popcount(PieceBB(BISHOP, WHITE)) == 1 && popcount(PieceBB(BISHOP, BLACK)) == 1 && popcount(PieceTypeBB(BISHOP) & DARKSQUARES) == 1;
 }
 
 #ifdef TRACE
 
-std::string position::printPath() const
+std::string Position::printPath() const
 {
 	std::vector<Move> move_list;
-	const position * actPos = this;
-	position * prevPos = previous;
+	const Position * actPos = this;
+	Position * prevPos = previous;
 	if (actPos->nullMovePosition)
 		move_list.push_back(MOVE_NONE);
 	while (prevPos) {
@@ -1248,13 +1248,13 @@ std::string position::printPath() const
 }
 #endif
 
-bool position::validateMove(ExtendedMove move) {
+bool Position::validateMove(ExtendedMove move) {
 	Square fromSquare = from(move.move);
 	return Board[fromSquare] == move.piece && validateMove(move.move);
 }
 
 
-void position::NullMove(Square epsquare, Move lastApplied) {
+void Position::NullMove(Square epsquare, Move lastApplied) {
 #ifdef TRACE
 	nullMovePosition = !nullMovePosition;
 #endif
@@ -1267,12 +1267,12 @@ void position::NullMove(Square epsquare, Move lastApplied) {
 	if (StaticEval != VALUE_NOTYETDETERMINED) StaticEval = -StaticEval;
 }
 
-void position::deleteParents() {
+void Position::deleteParents() {
 	if (previous != nullptr) previous->deleteParents();
 	delete(previous);
 }
 
-bool position::checkMaterialIsUnusual() const {
+bool Position::checkMaterialIsUnusual() const {
 	return popcount(PieceBB(QUEEN, WHITE)) > 1
 		|| popcount(PieceBB(QUEEN, BLACK)) > 1
 		|| popcount(PieceBB(ROOK, WHITE)) > 2
@@ -1283,7 +1283,7 @@ bool position::checkMaterialIsUnusual() const {
 		|| popcount(PieceBB(KNIGHT, BLACK)) > 2;
 }
 
-ValuatedMove * position::GenerateForks(bool withChecks)
+ValuatedMove * Position::GenerateForks(bool withChecks)
 {
 	movepointer -= (movepointer != 0);
 	ValuatedMove * result = &moves[movepointer];
@@ -1319,7 +1319,7 @@ ValuatedMove * position::GenerateForks(bool withChecks)
 	return result;
 }
 
-bool position::mateThread() const
+bool Position::mateThread() const
 {
 	Bitboard bbEscapeSquares = GetAttacksFrom(kingSquares[SideToMove ^ 1]) & ~ColorBB(Color(SideToMove ^ 1)) & ~attackedByUs;
 	int countEscapeSquares = popcount(bbEscapeSquares);
@@ -1327,7 +1327,7 @@ bool position::mateThread() const
 		//|| (countEscapeSquares == 2  && (bbEscapeSquares & (Rank1 | Rank8)) == bbEscapeSquares); //Backrank mate
 }
 
-std::string position::toSan(Move move) {
+std::string Position::toSan(Move move) {
 	Square toSquare = to(move);
 	Square fromSquare = from(move);
 	if (type(move) == CASTLING) {
@@ -1396,7 +1396,7 @@ std::string position::toSan(Move move) {
 	return ch;
 }
 
-Move position::parseSan(std::string move) {
+Move Position::parseSan(std::string move) {
 	ValuatedMove * legalMoves = GenerateMoves<LEGAL>();
 	while (legalMoves->move) {
 		if (move.find(toSan(legalMoves->move)) != std::string::npos) return legalMoves->move;
@@ -1404,7 +1404,7 @@ Move position::parseSan(std::string move) {
 	return MOVE_NONE;
 }
 
-std::string position::printEvaluation() {
+std::string Position::printEvaluation() {
 	if (material->EvaluationFunction == &evaluateDefault) {
 		return printDefaultEvaluation(*this);
 	}
@@ -1413,7 +1413,7 @@ std::string position::printEvaluation() {
 	}
 }
 
-Bitboard position::PinnedPieces(Color colorOfKing) const {
+Bitboard Position::PinnedPieces(Color colorOfKing) const {
 	if (bbPinned[colorOfKing] != ALL_SQUARES) return bbPinned[colorOfKing];
 	bbPinned[colorOfKing] = EMPTY;
 	bbPinner[colorOfKing] = EMPTY;

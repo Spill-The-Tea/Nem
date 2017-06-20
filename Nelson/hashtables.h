@@ -13,7 +13,7 @@ namespace pawn {
 	struct Entry {
 		PawnKey_t Key;
 		Bitboard passedPawns;
-		eval Score;
+		Eval Score;
 		uint8_t openFiles;
 		uint8_t halfOpenFilesWhite;
 		uint8_t halfOpenFilesBlack;
@@ -27,7 +27,7 @@ namespace pawn {
 	void clear();
 
 	//If there is no matching entry the entry is created and the pawn structure evaluation executed
-	Entry * probe(const position &pos);
+	Entry * probe(const Position &pos);
 
 }
 
@@ -56,7 +56,7 @@ namespace tt {
 	void clear();
 
 	//data stored in the transpodition table
-	struct nodeData {
+	struct NodeData {
 		Move move;       //hashmove
 		Value value;     //search value
 		Value evalValue; //static evaluation value
@@ -64,14 +64,14 @@ namespace tt {
 		int8_t depth;    //depth at which entry has been created
 	};
 
-	union dataUnion {
-		nodeData details;
+	union DataUnion {
+		NodeData details;
 		uint64_t dataAsInt;
 	};
 
 	struct Entry {
 		uint64_t key;
-		dataUnion data;
+		DataUnion data;
 
 		NodeType type() const { return (NodeType)(data.details.gentype & 0x03); }
 		uint8_t generation() const { return data.details.gentype & 0xFC; }
@@ -218,21 +218,21 @@ namespace killer {
 	const int NB_SLOTS_KILLER = 2;
 	const int NB_KILLER = 2;
 
-	class manager {
+	class Manager {
 	public:
 		//returns the "index"th killerMove (0 <= index < NB_KILLER) 
-		Move getMove(const position & pos, int index) const;
+		Move getMove(const Position & pos, int index) const;
 		//stores a killer move 
-		void store(const position & pos, Move move);
+		void store(const Position & pos, Move move);
 		//clears all killer moves
 		void clear();
 		//checks if a move is a killer move
-		bool isKiller(const position & pos, Move move) const;
+		bool isKiller(const Position & pos, Move move) const;
 		//Clear killer moves for higher plies
-		void enterLevel(const position & pos);
+		void enterLevel(const Position & pos);
 	private:
 		//index of the first killer relevant for the position
-		int getIndex(const position & pos) const;
+		int getIndex(const Position & pos) const;
 		//killer table has NB_SLOTS_KILLER (Slots) * MAX_DEPTH (maximum search depth) * 2 (SideToMove) entries
 		//Parity: due to null moves there might be entries with same plies from root, with white and with black to move
 		Move plyTable[NB_SLOTS_KILLER * (MAX_DEPTH + 1) * 2];

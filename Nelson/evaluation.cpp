@@ -5,8 +5,8 @@
 #include "position.h"
 #include "settings.h"
 
-Value evaluateDefault(const position& pos) {
-	evaluation result;
+Value evaluateDefault(const Position& pos) {
+	Evaluation result;
 	result.Material = pos.GetMaterialTableEntry()->Evaluation;
 	result.Mobility = evaluateMobility(pos);
 	result.KingSafety = evaluateKingSafety(pos);
@@ -18,9 +18,9 @@ Value evaluateDefault(const position& pos) {
 	return result.GetScore(pos);
 }
 
-std::string printDefaultEvaluation(const position& pos) {
+std::string printDefaultEvaluation(const Position& pos) {
 	std::stringstream ss;
-	evaluation result;
+	Evaluation result;
 	result.Material = pos.GetMaterialTableEntry()->Evaluation;
 	result.Mobility = evaluateMobility(pos);
 	result.KingSafety = evaluateKingSafety(pos);
@@ -40,12 +40,12 @@ std::string printDefaultEvaluation(const position& pos) {
 	return ss.str();
 }
 
-Value evaluateDraw(const position& pos) {
+Value evaluateDraw(const Position& pos) {
 	return pos.GetSideToMove() == settings::parameter.EngineSide ? -settings::parameter.Contempt : settings::parameter.Contempt;
 }
 
-eval evaluateKingSafety(const position& pos) {
-	eval result;
+Eval evaluateKingSafety(const Position& pos) {
+	Eval result;
 	//Areas around the king
 	Bitboard kingRingWhite = pos.PieceBB(KING, WHITE) | KingAttacks[pos.KingSquare(WHITE)];
 	Bitboard kingRingBlack = pos.PieceBB(KING, BLACK) | KingAttacks[pos.KingSquare(BLACK)];
@@ -116,7 +116,7 @@ eval evaluateKingSafety(const position& pos) {
 	Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
 	Bitboard bbBlack = pos.PieceBB(PAWN, BLACK);
 	//Pawn shelter/storm
-	eval pawnStorm;
+	Eval pawnStorm;
 	if (pos.PieceBB(KING, WHITE) & SaveSquaresForKing & HALF_OF_WHITE) { //Bonus only for castled king
 		pawnStorm += settings::parameter.PAWN_SHELTER_2ND_RANK * popcount(bbWhite & kingRingWhite & ShelterPawns2ndRank);
 		pawnStorm += settings::parameter.PAWN_SHELTER_3RD_RANK * popcount(bbWhite & kingZoneWhite & ShelterPawns3rdRank);
@@ -153,8 +153,8 @@ eval evaluateKingSafety(const position& pos) {
 	return result;
 }
 
-eval evaluateMobility(const position& pos) {
-	eval result;
+Eval evaluateMobility(const Position& pos) {
+	Eval result;
 	//Create attack bitboards
 	Bitboard abbWPawn = pos.AttacksByPieceType(WHITE, PAWN);
 	Bitboard abbBPawn = pos.AttacksByPieceType(BLACK, PAWN);
@@ -243,15 +243,15 @@ eval evaluateMobility(const position& pos) {
 	//Pawn mobility
 	Bitboard pawnTargets = abbWPawn & pos.ColorBB(BLACK);
 	pawnTargets |= (pos.PieceBB(PAWN, WHITE) << 8) & ~pos.OccupiedBB();
-	result += eval(10, 10) * popcount(pawnTargets);
+	result += Eval(10, 10) * popcount(pawnTargets);
 	pawnTargets = abbBPawn & pos.ColorBB(WHITE);
 	pawnTargets |= (pos.PieceBB(PAWN, BLACK) >> 8) & ~pos.OccupiedBB();
-	result -= eval(10, 10) * popcount(pawnTargets);
+	result -= Eval(10, 10) * popcount(pawnTargets);
 	return result;
 }
 
-Value evaluateFromScratch(const position& pos) {
-	evaluation result;
+Value evaluateFromScratch(const Position& pos) {
+	Evaluation result;
 	MaterialTableEntry * material = pos.GetMaterialTableEntry();
 	for (PieceType pt = QUEEN; pt <= PAWN; ++pt) {
 		int diff = popcount(pos.PieceBB(pt, WHITE)) - popcount(pos.PieceBB(pt, BLACK));
@@ -267,7 +267,7 @@ Value evaluateFromScratch(const position& pos) {
 	return result.GetScore(pos);
 }
 
-int scaleEG(const position & pos)
+int scaleEG(const Position & pos)
 {
 	if (pos.GetMaterialTableEntry()->NeedsScaling() && pos.oppositeColoredBishops()) {
 		if (pos.PieceTypeBB(ROOK) == EMPTY) {
@@ -278,7 +278,7 @@ int scaleEG(const position & pos)
 	return 128;
 }
 
-Value evaluatePawnEnding(const position& pos) {
+Value evaluatePawnEnding(const Position& pos) {
 	//try to find unstoppable pawns
 	Value unstoppable = VALUE_ZERO;
 	if (pos.GetPawnEntry()->passedPawns) {
@@ -306,8 +306,8 @@ Value evaluatePawnEnding(const position& pos) {
 	return (pos.GetMaterialScore() + pos.GetPawnEntry()->Score.getScore(pos.GetMaterialTableEntry()->Phase) + unstoppable) * (1 - 2 * pos.GetSideToMove());
 }
 
-Value evaluateKBPxKBPx(const position& pos) {
-	evaluation result;
+Value evaluateKBPxKBPx(const Position& pos) {
+	Evaluation result;
 	result.Material = pos.GetMaterialTableEntry()->Evaluation;
 	result.Mobility = evaluateMobility(pos);
 	result.PawnStructure = pos.PawnStructureScore();

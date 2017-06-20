@@ -26,11 +26,11 @@ namespace cecp {
 	enum State { Waiting, Thinking, Pondering, Exiting };
 	enum XState { STANDARD, FORCE, ANALYZE };
 
-	class xboard
+	class XBoard
 	{
 	public:
-		xboard();
-		~xboard();
+		XBoard();
+		~XBoard();
 		//The main thread, which basically is an endless loop listening to STDIN
 		void loop();
 	private:
@@ -72,14 +72,14 @@ namespace cecp {
 		//Converts a move to the string representation defined by xboard protocol
 		static std::string toXboardString(Move move);
 		//Converts a move represented as xboard string to the internal representation
-		static Move parseMoveInXBoardNotation(const std::string& xboardMove, const position& pos);
+		static Move parseMoveInXBoardNotation(const std::string& xboardMove, const Position& pos);
 
 		//The Engine
-		search * Engine = new search;
+		Search * Engine = new Search;
 		//The current position of the game
-		position * pos = new position;
+		Position * pos = new Position;
 		//While pondering the position to ponder on
-		position * ponderpos = nullptr;
+		Position * ponderpos = nullptr;
 		//The move list of the current game
 		std::vector<Move> moves;
 		//The engine thread (executing method run()

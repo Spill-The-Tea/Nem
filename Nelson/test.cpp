@@ -436,8 +436,8 @@ namespace test {
 		std::cout << std::setprecision(3) << std::left << std::setw(4) << "Nr" << std::setw(7) << "Time" << std::setw(10) << "Nodes" << std::setw(6) << "Speed" << std::setw(6) << "BF" << std::setw(6) << "TT[%]"
 			<< std::setw(6) << "C1st" << std::setw(6) << "CIndx" << std::setw(40) << "PV" << std::endl;
 		for (int i = 0; i < int(fens.size()); i++) {
-			position* pos = new position(fens[i]);
-			search * srch = new search;
+			Position* pos = new Position(fens[i]);
+			Search * srch = new Search;
 			srch->PrintCurrmove = false;
 			//srch.uciOutput = false;
 			srch->NewGame();
@@ -473,80 +473,80 @@ namespace test {
 
 	uint64_t nodeCount = 0;
 
-	uint64_t perft(position &pos, int depth) {
+	uint64_t perft(Position &pos, int depth) {
 		nodeCount++;
 		if (depth == 0) return 1;
 		ValuatedMove move;
 		uint64_t result = 0;
 		ValuatedMove * moves = pos.GenerateMoves<ALL>();
 		while ((move = *moves).move) {
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(move.move)) result += perft(next, depth - 1);
 			++moves;
 		}
 		return result;
 	}
 
-	uint64_t perft1(position &pos, int depth) {
+	uint64_t perft1(Position &pos, int depth) {
 		nodeCount++;
 		if (depth == 0) return 1;
 		ValuatedMove move;
 		uint64_t result = 0;
 		ValuatedMove * moves = pos.GenerateMoves<TACTICAL>();
 		while ((move = *moves).move) {
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(move.move)) result += perft1(next, depth - 1);
 			++moves;
 		}
 		moves = pos.GenerateMoves<QUIETS>();
 		while ((move = *moves).move) {
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(move.move)) result += perft1(next, depth - 1);
 			++moves;
 		}
 		return result;
 	}
 
-	uint64_t perft2(position &pos, int depth) {
+	uint64_t perft2(Position &pos, int depth) {
 		nodeCount++;
 		if (depth == 0) return 1;
 		ValuatedMove move;
 		uint64_t result = 0;
 		ValuatedMove * moves = pos.GenerateMoves<WINNING_CAPTURES>();
 		while ((move = *moves).move) {
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(move.move)) result += perft2(next, depth - 1);
 			++moves;
 		}
 		moves = pos.GenerateMoves<EQUAL_CAPTURES>();
 		while ((move = *moves).move) {
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(move.move)) result += perft2(next, depth - 1);
 			++moves;
 		}
 		moves = pos.GenerateMoves<LOOSING_CAPTURES>();
 		while ((move = *moves).move) {
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(move.move)) result += perft2(next, depth - 1);
 			++moves;
 		}
 		moves = pos.GenerateMoves<QUIETS>();
 		while ((move = *moves).move) {
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(move.move)) result += perft2(next, depth - 1);
 			++moves;
 		}
 		return result;
 	}
 
-	uint64_t perft3(position &pos, int depth) {
+	uint64_t perft3(Position &pos, int depth) {
 		nodeCount++;
 		if (depth == 0) return 1;
 		uint64_t result = 0;
 		pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, nullptr, MOVE_NONE);
 		Move move;
 		while ((move = pos.NextMove())) {
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(move)) {
 				result += perft3(next, depth - 1);
 			}
@@ -554,28 +554,28 @@ namespace test {
 		return result;
 	}
 
-	uint64_t perft4(position &pos, int depth) {
+	uint64_t perft4(Position &pos, int depth) {
 		nodeCount++;
 		uint64_t result = 0;
 		ValuatedMove * moves = pos.GenerateMoves<LEGAL>();
 		int movecount = pos.GeneratedMoveCount();
 		if (depth == 1) return movecount;
 		for (int i = 0; i < movecount; ++i) {
-			position next(pos);
+			Position next(pos);
 			next.ApplyMove(moves[i].move);
 			result += perft(next, depth - 1);
 		}
 		return result;
 	}
 
-	uint64_t perftcomb(position &pos, int depth) {
+	uint64_t perftcomb(Position &pos, int depth) {
 		nodeCount++;
 		if (depth == 0) return 1;
 		uint64_t result = 0;
 		pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, nullptr, MOVE_NONE);
 		Move move;
 		while ((move = pos.NextMove())) {
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(move)) {
 				uint64_t result3 = perftcomb(next, depth - 1);
 				uint64_t result1 = perft(next, depth - 1);
@@ -591,12 +591,12 @@ namespace test {
 		return result;
 	}
 
-	void divide(position &pos, int depth) {
+	void divide(Position &pos, int depth) {
 		ValuatedMove * moves = pos.GenerateMoves<ALL>();
 		ValuatedMove move;
 		uint64_t total = 0;
 		while ((move = *moves).move) {
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(move.move)) {
 				uint64_t p = perft(next, depth - 1);
 				std::cout << toString(move.move) << "\t" << p << "\t" << next.fen() << std::endl;
@@ -607,12 +607,12 @@ namespace test {
 		std::cout << "Total: " << total << std::endl;
 	}
 
-	void divide3(position &pos, int depth) {
+	void divide3(Position &pos, int depth) {
 		pos.InitializeMoveIterator<MAIN_SEARCH>(nullptr, nullptr, nullptr, nullptr, MOVE_NONE);
 		Move move;
 		uint64_t total = 0;
 		while ((move = pos.NextMove())) {
-			position next(pos);
+			Position next(pos);
 			if (next.ApplyMove(move)) {
 				uint64_t p = perft3(next, depth - 1);
 				std::cout << toString(move) << "\t" << p << "\t" << next.fen() << std::endl;
@@ -622,8 +622,8 @@ namespace test {
 		std::cout << "Total: " << total << std::endl;
 	}
 
-	void testSearch(position &pos, int depth) {
-		search * engine = new search;
+	void testSearch(Position &pos, int depth) {
+		Search * engine = new Search;
 		engine->timeManager.initialize(FIXED_DEPTH, 0, depth);
 		ValuatedMove vm = engine->Think(pos);
 		std::cout << "Best Move: " << toString(vm.move) << " " << vm.score << std::endl;
@@ -631,8 +631,8 @@ namespace test {
 	}
 
 	void testRepetition() {
-		position pos("5r1k/R7/5p2/4p3/1p1pP3/1npP1P2/rqn1b1R1/7K w - - 0 1");
-		search * engine = new search;
+		Position pos("5r1k/R7/5p2/4p3/1p1pP3/1npP1P2/rqn1b1R1/7K w - - 0 1");
+		Search * engine = new Search;
 		engine->timeManager.initialize(FIXED_DEPTH, 0, 5);
 		ValuatedMove vm = engine->Think(pos);
 		std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << vm.score << std::endl;
@@ -667,7 +667,7 @@ namespace test {
 		//Mate in 5
 		puzzles["5@6r1/p3p1rk/1p1pPp1p/q3n2R/4P3/3BR2P/PPP2QP1/7K w - -"] = createMove(H5, H6);
 		puzzles["5@2q1nk1r/4Rp2/1ppp1P2/6Pp/3p1B2/3P3P/PPP1Q3/6K1 w - - 0 1"] = createMove(E7, E8);
-		search * engine = new search;
+		Search * engine = new Search;
 		std::map<std::string, Move>::iterator iter;
 		int count = 0;
 		for (iter = puzzles.begin(); iter != puzzles.end(); ++iter) {
@@ -675,7 +675,7 @@ namespace test {
 			std::string mateIn = iter->first.substr(0, 1);
 			std::string fen = iter->first.substr(2, std::string::npos);
 			engine->timeManager.initialize(FIXED_DEPTH, 0, 2 * atoi(mateIn.c_str()) - 1);
-			position pos(fen);
+			Position pos(fen);
 			ValuatedMove vm = engine->Think(pos);
 			std::cout << ((vm.move == iter->second) && (vm.score == VALUE_MATE - engine->timeManager.GetMaxDepth()) ? "OK    " : "ERROR ") << "\t" << toString(vm.move) << "/" << toString(iter->second)
 				<< "\t" << vm.score << "/" << VALUE_MATE - engine->timeManager.GetMaxDepth() << "\t" << fen << std::endl;
@@ -706,16 +706,16 @@ namespace test {
 						if (line.length() < 10) continue;
 						size_t indx = line.find(" c0");
 						std::string fen = line.substr(0, indx);
-						position p1(fen);
+						Position p1(fen);
 						ValuatedMove * tacticalMoves = p1.GenerateMoves<TACTICAL>();
-						position p2(fen);
+						Position p2(fen);
 						ValuatedMove * allMoves = p2.GenerateMoves<ALL>();
 						ValuatedMove * tm = tacticalMoves;
 						ValuatedMove * am;
 						Move move;
 						//check move is really tactical
 						while ((move = tm->move)) {
-							position p3(p1);
+							Position p3(p1);
 							if (p3.ApplyMove(move)) {
 								if (p3.GetMaterialKey() == p1.GetMaterialKey()) {
 									std::cout << std::endl << "Move " << toString(move) << " doesn't change Material key: " << fen << std::endl;
@@ -741,7 +741,7 @@ namespace test {
 						//check for completeness
 						am = allMoves;
 						while ((move = am->move)) {
-							position p3(p1);
+							Position p3(p1);
 							if (p3.GetMaterialKey() != p1.GetMaterialKey()) {
 								tm = tacticalMoves;
 								Move tmove;
@@ -796,12 +796,12 @@ namespace test {
 						std::string line = *it;
 						size_t indx = line.find(" c0");
 						std::string fen = line.substr(0, indx);
-						position p1(fen);
+						Position p1(fen);
 						if (count < lines.size()) {
 							if (p1.GetResult() != OPEN) {
 								std::cout << "Expected: Open Actual: " << p1.GetResult() << "\t" << p1.fen() << std::endl;
 								//__debugbreak();
-								position p2(fen);
+								Position p2(fen);
 								p2.GetResult();
 							}
 						}
@@ -809,7 +809,7 @@ namespace test {
 							if (p1.GetResult() != result) {
 								std::cout << "Expected: " << result << " Actual: " << p1.GetResult() << "\t" << p1.fen() << std::endl;
 								//__debugbreak();
-								position p2(fen);
+								Position p2(fen);
 								p2.GetResult();
 							}
 						}
@@ -836,13 +836,13 @@ namespace test {
 		assert(!kpk::probe(A6, A5, A8, BLACK));
 		assert(kpk::probe(A6, B6, B8, WHITE));
 		assert(!kpk::probe(A6, B6, B8, BLACK));
-		position pos("1k6/8/KP6/8/8/8/8/8 w - -0 1");
+		Position pos("1k6/8/KP6/8/8/8/8/8 w - -0 1");
 		assert(pos.evaluate() > VALUE_DRAW);
-		position pos1("1k6/8/KP6/8/8/8/8/8 b - -0 1");
+		Position pos1("1k6/8/KP6/8/8/8/8/8 b - -0 1");
 		assert(pos1.evaluate() == VALUE_DRAW);
-		position pos2("8/8/8/8/8/6pk/8/6K1 w - - 0 1");
+		Position pos2("8/8/8/8/8/6pk/8/6K1 w - - 0 1");
 		assert(pos2.evaluate() == VALUE_DRAW);
-		position pos3("8/8/8/8/8/6pk/8/6K1 b - - 0 1");
+		Position pos3("8/8/8/8/8/6pk/8/6K1 b - - 0 1");
 		assert(pos3.evaluate() > VALUE_DRAW);
 		std::cout << "KPK Tests succesful!" << std::endl;
 	}
@@ -955,12 +955,12 @@ namespace test {
 	{
 		std::vector<std::string> fens = benchFens3();
 		for (auto &fen : fens) {
-			position pos(fen);
+			Position pos(fen);
 			ValuatedMove * moves = pos.GenerateMoves<LEGAL>();
 			int moveCount = pos.GeneratedMoveCount();
 			for (int i = 0; i < moveCount; ++i) {
 				bool givesCheck = pos.givesCheck(moves[i].move);
-				position next(pos);
+				Position next(pos);
 				next.ApplyMove(moves[i].move);
 				assert(next.Checked() == givesCheck);
 			}
@@ -973,7 +973,7 @@ namespace test {
 		Initialize();
 		std::vector<std::string> fens(benchFens1());
 		for (int i = 0; i < int(fens.size()); i++) {
-			position * p = new position(fens[i]);
+			Position * p = new Position(fens[i]);
 			bool castles = p->GetCastles() != 0;
 			delete p;
 			if (castles) continue;
@@ -982,8 +982,8 @@ namespace test {
 				tt::clear();
 				std::string fen = fens[i];
 				if (j > 0) fen = utils::mirrorFenVertical(fen);
-				position * pos = new position(fen);
-				search * srch = new search();
+				Position * pos = new Position(fen);
+				Search * srch = new Search();
 				srch->PrintCurrmove = false;
 				srch->UciOutput = false;
 				srch->NewGame();
@@ -1058,16 +1058,16 @@ namespace test {
 						if (line.length() < 10) continue;
 						size_t indx = line.find(" c0");
 						std::string fen = line.substr(0, indx);
-						position p1(fen);
+						Position p1(fen);
 						ValuatedMove * checkGivingMoves = p1.GenerateMoves<QUIET_CHECKS>();
-						position p2(fen);
+						Position p2(fen);
 						ValuatedMove * quietMoves = p2.GenerateMoves<QUIETS>();
 						ValuatedMove * cgm = checkGivingMoves;
 						ValuatedMove * qm;
 						Move move;
 						//check quiet check move
 						while ((move = cgm->move)) {
-							position p3(p1);
+							Position p3(p1);
 							if (p3.ApplyMove(move)) {
 								if (!p3.Checked()) {
 									std::cout << std::endl << "Move " << toString(move) << " doesn't give check: " << fen << std::endl;
@@ -1093,7 +1093,7 @@ namespace test {
 						//check for completeness
 						qm = quietMoves;
 						while ((move = qm->move)) {
-							position p3(p1);
+							Position p3(p1);
 							if (p3.ApplyMove(move) && p3.Checked()) {
 								cgm = checkGivingMoves;
 								Move tmove;
@@ -1130,7 +1130,7 @@ namespace test {
 
 	void testPolyglotKey() {
 		uint64_t key = 0x463b96181691fc9c;
-		position pos;
+		Position pos;
 		std::cout << pos.GetHash() << " - " << key << " " << (pos.GetHash() == key) << " " << pos.fen() << std::endl;
 		Move move = createMove(E2, E4);
 		pos.ApplyMove(move);
@@ -1163,7 +1163,7 @@ namespace test {
 	int64_t perftRuntime;
 	bool checkPerft(std::string fen, int depth, uint64_t expectedResult, PerftType perftType = BASIC) {
 		testCount++;
-		position pos(fen);
+		Position pos(fen);
 		uint64_t perftResult;
 		int64_t begin = now();
 		switch (perftType) {
@@ -2001,7 +2001,7 @@ namespace test {
 		for (int i = 0; i < int(tests.size()); i++) {
 			auto tokens = utils::split(tests[i], ';');
 			assert(tokens.size() == 3);
-			position pos(tokens[0]);
+			Position pos(tokens[0]);
 			Move move = parseMoveInUCINotation(tokens[1], pos);
 			std::cout << tokens[0] << std::endl;
 			Value vsee = pos.SEE(move);

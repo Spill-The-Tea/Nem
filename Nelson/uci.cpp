@@ -16,7 +16,7 @@
 #include "timemanager.h"
 #include "tablebase.h"
 
-void UCIInterface::copySettings(search * source, search * destination) {
+void UCIInterface::copySettings(Search * source, Search * destination) {
 	destination->UciOutput = source->UciOutput;
 	if (source->BookFile) destination->BookFile = new std::string(*source->BookFile);
 	destination->PonderMode.store(source->PonderMode.load());
@@ -144,11 +144,11 @@ void UCIInterface::updateFromOptions() {
 	ponderActive = settings::options.getBool(settings::OPTION_PONDER);
 	settings::parameter.EmergencyTime = settings::options.getInt(settings::OPTION_EMERGENCY_TIME);
 #ifdef TUNE
-	settings::parameter.PieceValues[QUEEN] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_EG));
-	settings::parameter.PieceValues[ROOK] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_EG));
-	settings::parameter.PieceValues[BISHOP] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_BISHOP_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_BISHOP_EG));
-	settings::parameter.PieceValues[KNIGHT] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_EG));
-	settings::parameter.PieceValues[PAWN] = eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_EG));
+	settings::parameter.PieceValues[QUEEN] = Eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_QUEEN_EG));
+	settings::parameter.PieceValues[ROOK] = Eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_ROOK_EG));
+	settings::parameter.PieceValues[BISHOP] = Eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_BISHOP_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_BISHOP_EG));
+	settings::parameter.PieceValues[KNIGHT] = Eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_KNIGHT_EG));
+	settings::parameter.PieceValues[PAWN] = Eval(settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_MG), settings::options.getInt(settings::OPTION_PIECE_VALUES_PAWN_EG));
 #endif
 	settings::parameter.TBProbeDepth = settings::options.getInt(settings::OPTION_SYZYGY_PROBE_DEPTH);
 }
@@ -192,8 +192,8 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 	}
 	else if (!tokens[2].compare(settings::OPTION_SYZYGY_PATH)) {
 		if (settings::options.getString(settings::OPTION_SYZYGY_PATH).size() > 1) {
-			Tablebases::init(settings::options.getString(settings::OPTION_SYZYGY_PATH));
-			if (Tablebases::MaxCardinality < 3) {
+			tablebases::init(settings::options.getString(settings::OPTION_SYZYGY_PATH));
+			if (tablebases::MaxCardinality < 3) {
 				sync_cout << "Couldn't find any Tablebase files!!" << sync_endl;
 				exit(1);
 			}
@@ -222,9 +222,9 @@ void UCIInterface::setPosition(std::vector<std::string> &tokens) {
 		_position = nullptr;
 	}
 	unsigned int idx = 0;
-	position * startpos = nullptr;
+	Position * startpos = nullptr;
 	if (!tokens[1].compare("startpos")) {
-		startpos = new position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+		startpos = new Position("rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
 		idx = 2;
 	}
 	else if (!tokens[1].compare("fen")) {
@@ -235,14 +235,14 @@ void UCIInterface::setPosition(std::vector<std::string> &tokens) {
 			++idx;
 		}
 		std::string fen = ssFen.str().substr(1);
-		startpos = new position(fen);
+		startpos = new Position(fen);
 	}
 	if (startpos) {
-		position * pp = startpos;
+		Position * pp = startpos;
 		if (tokens.size() > idx && !tokens[idx].compare("moves")) {
 			++idx;
 			while (idx < tokens.size()) {
-				position * next = new position(*pp);
+				Position * next = new Position(*pp);
 				next->ApplyMove(parseMoveInUCINotation(tokens[idx], *next));
 				next->AppliedMovesBeforeRoot++;
 				pp = next;
@@ -269,9 +269,9 @@ void UCIInterface::deleteThread() {
 void UCIInterface::qscore(std::vector<std::string>& tokens)
 {
 	double result = stod(tokens[1]);
-	std::vector<position *> positions;
+	std::vector<Position *> positions;
 	positions.push_back(_position);
-	position * pos = _position;
+	Position * pos = _position;
 	while ((pos = pos->Previous()) != nullptr) positions.push_back(pos);
 	double totalError = 0;
 	int totalPlies = (int)positions.size();
@@ -313,12 +313,12 @@ double UCIInterface::ttlabeled()
 	{
 		std::size_t found = line.find("c9");
 		if (found != std::string::npos) {
-			position pos(line.substr(0, found));
+			Position pos(line.substr(0, found));
 			std::string rs = line.substr(found + 3);
 			double result = 1;
 			if (!rs.compare("\"1/2-1/2\";")) result = 0.5;
 			else if (!rs.compare("\"0-1\";")) result = 0;
-			Value score = (dynamic_cast<search<SINGLE>*>(Engine))->qscore(&pos);
+			Value score = (dynamic_cast<Search<SINGLE>*>(Engine))->qscore(&pos);
 			if (pos.GetSideToMove() == BLACK) score = -score;
 			double error = result - utils::sigmoid(score);
 			totalError += error * error;
@@ -355,8 +355,8 @@ double UCIInterface::ttWDL() {
 		std::ifstream infile(filename);
 		for (std::string line; getline(infile, line); )
 		{
-			position pos(line);
-			Value score = (dynamic_cast<search<SINGLE>*>(Engine))->qscore(&pos);
+			Position pos(line);
+			Value score = (dynamic_cast<Search<SINGLE>*>(Engine))->qscore(&pos);
 			if (pos.GetSideToMove() == BLACK) score = -score;
 			double error = result - utils::sigmoid(score);
 			totalError += error * error;
@@ -389,7 +389,7 @@ void UCIInterface::thinkAsync() {
 		//First try move from principal variation
 		Move ponderMove = Engine->PonderMove();
 		//Validate ponder move
-		position next(*_position);
+		Position next(*_position);
 		next.ApplyMove(BestMove.move);
 		ponderMove = next.validMove(ponderMove);
 		if (ponderMove == MOVE_NONE) sync_cout << "bestmove " << toString(BestMove.move) << sync_endl;
@@ -402,7 +402,7 @@ void UCIInterface::thinkAsync() {
 
 void UCIInterface::go(std::vector<std::string> &tokens) {
 	int64_t tnow = now();
-	if (!_position) _position = new position();
+	if (!_position) _position = new Position();
 	int moveTime = 0;
 	int increment = 0;
 	int movestogo = 30;
@@ -574,5 +574,5 @@ void UCIInterface::tb() {
 		std::cout << "Position " << _position->fen() << " not found in tablebase!" << std::endl;
 		return;
 	}
-	Tablebases::probe(*_position);
+	tablebases::probe(*_position);
 }

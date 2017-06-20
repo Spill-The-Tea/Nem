@@ -4,7 +4,7 @@
 
 namespace cecp {
 
-	xboard::xboard()
+	XBoard::XBoard()
 	{
 		BestMove.move = MOVE_NONE;
 		BestMove.score = VALUE_ZERO;
@@ -14,15 +14,15 @@ namespace cecp {
 		drawOffered.store(false);
 		engineState.store(Waiting);
 		sync_cout << "# Waiting (constructor)" << sync_endl;
-		Enginethread = new std::thread(&xboard::run, this);
+		Enginethread = new std::thread(&XBoard::run, this);
 	}
 
 
-	xboard::~xboard()
+	XBoard::~XBoard()
 	{
 		deleteThread();
 		delete Engine;
-		position * prev;
+		Position * prev;
 		do {
 			prev = pos->Previous();
 			delete pos;
@@ -40,7 +40,7 @@ namespace cecp {
 		Some time later the opponent will move, we will either have a ponderhit, then we will switch the engine to thinking without stopping the search
 		If we have a pondermiss the search is stopped and the engine will set to thinking on the new position
 	*/
-	void xboard::run() {
+	void XBoard::run() {
 		while (engineState.load() != Exiting) {
 			//Check if engine shall sleep
 			std::unique_lock<std::mutex> lckStart(mtxStart);
@@ -60,7 +60,7 @@ namespace cecp {
 				//Now send move to GUI...
 				sync_cout << "move " << toXboardString(BestMove.move) << sync_endl;
 				//...and apply it tour internal board
-				position * next = new position(*pos);
+				Position * next = new Position(*pos);
 				next->ApplyMove(BestMove.move);
 				moves.push_back(BestMove.move);
 				next->AppliedMovesBeforeRoot++;
@@ -83,7 +83,7 @@ namespace cecp {
 					delete ponderpos;
 					ponderpos = nullptr;
 				}
-				ponderpos = new position(*pos);
+				ponderpos = new Position(*pos);
 				ponderMove = ponderpos->validMove(ponderMove);
 				if (ponderMove == MOVE_NONE) {
 					//No pondering => send engine to sleep
@@ -111,7 +111,7 @@ namespace cecp {
 					//Now send move to GUI...
 					sync_cout << "move " << toXboardString(BestMove.move) << sync_endl;
 					//...and apply it tour internal board
-					position * next = new position(*pos);
+					Position * next = new Position(*pos);
 					next->ApplyMove(BestMove.move);
 					moves.push_back(BestMove.move);
 					next->AppliedMovesBeforeRoot++;
@@ -143,7 +143,7 @@ namespace cecp {
 		}
 	}
 
-	bool xboard::processResult(Value score) {
+	bool XBoard::processResult(Value score) {
 		DetailedResult dr = pos->GetDetailedResult();
 		switch (dr)
 		{
@@ -180,7 +180,7 @@ namespace cecp {
 	}
 
 	//Only used when engine has received quit command
-	void xboard::deleteThread() {
+	void XBoard::deleteThread() {
 		engineState.store(Exiting);
 		cvStart.notify_one();
 		Engine->PonderMode.store(false);
@@ -201,7 +201,7 @@ namespace cecp {
 		else sync_cout << "0-1" << sync_endl;
 	}
 
-	void xboard::loop() {
+	void XBoard::loop() {
 		std::string line;
 		Engine->XBoardOutput = true;
 		while (std::getline(std::cin, line)) {
@@ -213,7 +213,7 @@ namespace cecp {
 		}
 	}
 
-	bool xboard::dispatch(std::string line) {
+	bool XBoard::dispatch(std::string line) {
 		std::vector<std::string> tokens = utils::split(line);
 		if (tokens.size() == 0) return true;
 		std::string command = tokens[0];
@@ -328,7 +328,7 @@ namespace cecp {
 		return true;
 	}
 
-	void xboard::go() {
+	void XBoard::go() {
 		if (xstate == FORCE) xstate = STANDARD;
 		EngineSide = pos->GetSideToMove();
 		engineState.store(Thinking);
@@ -336,7 +336,7 @@ namespace cecp {
 		cvStart.notify_one();
 	}
 
-	void xboard::analyze() {
+	void XBoard::analyze() {
 		xstate = ANALYZE;
 		if (engineState.load() == Thinking) {
 			Engine->timeManager.switchToInfinite();
@@ -346,20 +346,20 @@ namespace cecp {
 		go();
 	}
 
-	void xboard::variant(std::vector<std::string> tokens) {
+	void XBoard::variant(std::vector<std::string> tokens) {
 		Chess960 = !tokens[1].compare("fischerandom");
 	}
 
-	void xboard::memory(std::vector<std::string> tokens) {
+	void XBoard::memory(std::vector<std::string> tokens) {
 		settings::options.set(settings::OPTION_HASH, tokens[1]);
 		tt::InitializeTranspositionTable();
 	}
 
-	void xboard::cores(std::vector<std::string> tokens) {
+	void XBoard::cores(std::vector<std::string> tokens) {
 		settings::parameter.HelperThreads = stoi(tokens[1]) - 1;
 	}
 
-	void xboard::protover(std::vector<std::string> tokens) {
+	void XBoard::protover(std::vector<std::string> tokens) {
 		protocolVersion = stoi(tokens[1]);
 		sync_cout << "feature ping=1 setboard=1 usermove=1 time=1 draw=1 sigint=0 sigterm=0 reuse=0 myname=\"Nemorino\""
 			<< " variants=\"normal,fischerrandom\" colors=0 ics=1 name=1 include=1"
@@ -374,31 +374,31 @@ namespace cecp {
 		sync_cout << "feature done=1" << sync_endl;
 	}
 
-	void xboard::newGame() {
+	void XBoard::newGame() {
 		Engine->StopThinking();
 		engineState.store(Waiting);
 		sync_cout << "# Waiting (newGame)" << sync_endl;
 		clearPos();
-		pos = new position();
+		pos = new Position();
 		EngineSide = BLACK;
 	}
 
-	void xboard::moveNow() {
+	void XBoard::moveNow() {
 		Engine->StopThinking();
 	}
 
-	void xboard::sd(std::vector<std::string> tokens) {
+	void XBoard::sd(std::vector<std::string> tokens) {
 		tc_maxDepth = stoi(tokens[1]);
 	}
 
-	void xboard::st(std::vector<std::string> tokens) {
+	void XBoard::st(std::vector<std::string> tokens) {
 		tc_movetime = 1000 * stoi(tokens[1]);
 		tc_time = 0;
 		tc_moves = 0;
 		tc_increment = 0;
 	}
 
-	void xboard::level(std::vector<std::string> tokens) {
+	void XBoard::level(std::vector<std::string> tokens) {
 		tc_movetime = 0;
 		tc_moves = stoi(tokens[1]);
 		try {
@@ -424,9 +424,9 @@ namespace cecp {
 		tc_increment = int(stod(tokens[3]) * 1000);
 	}
 
-	void xboard::setboard(std::string line) {
+	void XBoard::setboard(std::string line) {
 		delete pos;
-		pos = new position(line.substr(9));
+		pos = new Position(line.substr(9));
 		if (xstate == ANALYZE) {
 			Engine->StopThinking();
 			go();
@@ -434,10 +434,10 @@ namespace cecp {
 	}
 
 	//Opponent has played a move
-	void xboard::usermove(std::vector<std::string> tokens) {
+	void XBoard::usermove(std::vector<std::string> tokens) {
 		//Apply move to internal board
 		Move move = parseMoveInXBoardNotation(tokens[1], *pos);
-		position * next = new position(*pos);
+		Position * next = new Position(*pos);
 		if (next->ApplyMove(move)) {
 			moves.push_back(move);
 			next->AppliedMovesBeforeRoot++;
@@ -469,7 +469,7 @@ namespace cecp {
 		Engine->searchMoves.clear();
 	}
 
-	void xboard::includeMoves(std::vector<std::string> tokens) {
+	void XBoard::includeMoves(std::vector<std::string> tokens) {
 		if (!tokens[1].compare("all")) Engine->searchMoves.clear();
 		else {
 			for (int i = 1; i < int(tokens.size()); ++i) {
@@ -480,7 +480,7 @@ namespace cecp {
 
 	//When playing on FICS, the server informs about opponent's rating via the rating command
 	//Contempt is adjusted based on rating difference
-	void xboard::rating(std::vector<std::string> tokens) {
+	void XBoard::rating(std::vector<std::string> tokens) {
 		int ratingOpponent = stoi(tokens[2]);
 		int ownRating = stoi(tokens[1]);
 		if (ownRating == 0) ownRating = 2700;
@@ -488,16 +488,16 @@ namespace cecp {
 		settings::parameter.Contempt = Value((ownRating - ratingOpponent) / 10);
 	}
 
-	void xboard::egtpath(std::vector<std::string> tokens) {
-		Tablebases::init(settings::options.getString(settings::OPTION_SYZYGY_PATH));
-		if (Tablebases::MaxCardinality < 3) {
+	void XBoard::egtpath(std::vector<std::string> tokens) {
+		tablebases::init(settings::options.getString(settings::OPTION_SYZYGY_PATH));
+		if (tablebases::MaxCardinality < 3) {
 			sync_cout << "Couldn't find any Tablebase files!!" << sync_endl;
 			exit(1);
 		}
 		InitializeMaterialTable();
 	}
 
-	void xboard::option(std::vector<std::string> tokens) {
+	void XBoard::option(std::vector<std::string> tokens) {
 		size_t indx = tokens[1].find('=');
 		std::string name;
 		std::string value;
@@ -535,14 +535,14 @@ namespace cecp {
 		}
 	}
 
-	void xboard::clearPos() {
+	void XBoard::clearPos() {
 		if (pos == nullptr) return;
 		pos->deleteParents();
 		delete pos;
-		pos = new position();
+		pos = new Position();
 	}
 
-	void xboard::prepareTimeManager(bool startPonder) {
+	void XBoard::prepareTimeManager(bool startPonder) {
 		int64_t tnow = now();
 		TimeMode mode = xstate == ANALYZE ? INFINIT :
 			tc_movetime > 0 ? FIXED_TIME_PER_MOVE : UNDEF;
@@ -552,12 +552,12 @@ namespace cecp {
 		Engine->timeManager.initialize(mode, tc_movetime, tc_maxDepth, INT64_MAX, int(time[EngineSide]), tc_increment, movestogo, tnow, startPonder);
 	}
 
-	std::string xboard::toXboardString(Move move) {
+	std::string XBoard::toXboardString(Move move) {
 		if (!Chess960 || type(move) != CASTLING) return toString(move);
 		if (to(move) < from(move)) return "O-O-O"; else return "O-O";
 	}
 
-	Move xboard::parseMoveInXBoardNotation(const std::string& xboardMove, const position& pos) {
+	Move XBoard::parseMoveInXBoardNotation(const std::string& xboardMove, const Position& pos) {
 		if (!Chess960 || xboardMove[0] != 'O') return parseMoveInUCINotation(xboardMove, pos);
 		Square kingSquare = pos.KingSquare(pos.GetSideToMove());
 		if (!xboardMove.compare("O-O")) {

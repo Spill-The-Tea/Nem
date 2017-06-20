@@ -13,8 +13,8 @@ const int PAWN_TABLE_SIZE = 1 << 14; //has to be power of 2
 const int KILLER_TABLE_SIZE = 1 << 11; //has to be power of 2
 
 ////Bonus for Passed Pawns (dynamic evaluations)
-//const eval BONUS_PASSED_PAWN_BACKED = eval(0, 15); //Passed pawn with own rook behind
-//const eval MALUS_PASSED_PAWN_BLOCKED[6] = { eval(0, 3), eval(0,10), eval(0,10), eval(0,30), EVAL_ZERO, eval(0,30) }; //Passed pawn with own rook behind
+//const Eval BONUS_PASSED_PAWN_BACKED = Eval(0, 15); //Passed pawn with own rook behind
+//const Eval MALUS_PASSED_PAWN_BLOCKED[6] = { Eval(0, 3), Eval(0,10), Eval(0,10), Eval(0,30), EVAL_ZERO, Eval(0,30) }; //Passed pawn with own rook behind
 
 namespace settings {
 
@@ -44,11 +44,11 @@ namespace settings {
 		double KING_SAFETY_LINEAR = 0.5;
 		int ATTACK_UNITS_SAFE_CONTACT_CHECK = 5;
 		Value KING_SAFETY[100];
-		eval SCALE_BISHOP_PAIR_WITH_PAWNS = EVAL_ZERO; //Reduce Bonus Bishop Pair by this value for each pawn on the board
-		eval BONUS_BISHOP_PAIR_NO_OPP_MINOR = EVAL_ZERO; //Bonus for Bishop pair, if opponent has no minor piece for exchange
-		eval SCALE_EXCHANGE_WITH_PAWNS = EVAL_ZERO; //Decrease Value of Exchange with number of pawns
-		eval SCALE_EXCHANGE_WITH_MAJORS = EVAL_ZERO; //Decrease Value of Exchange with number of majors
-		eval PAWN_STORM[4] = { eval(10, 0), eval(25, 0), eval(15, 0), eval(5, 0) };
+		Eval SCALE_BISHOP_PAIR_WITH_PAWNS = EVAL_ZERO; //Reduce Bonus Bishop Pair by this value for each pawn on the board
+		Eval BONUS_BISHOP_PAIR_NO_OPP_MINOR = EVAL_ZERO; //Bonus for Bishop pair, if opponent has no minor piece for exchange
+		Eval SCALE_EXCHANGE_WITH_PAWNS = EVAL_ZERO; //Decrease Value of Exchange with number of pawns
+		Eval SCALE_EXCHANGE_WITH_MAJORS = EVAL_ZERO; //Decrease Value of Exchange with number of majors
+		Eval PAWN_STORM[4] = { Eval(10, 0), Eval(25, 0), Eval(15, 0), Eval(5, 0) };
 		Value BETA_PRUNING_FACTOR = Value(95);
 		inline Value BetaPruningMargin(int depth) { return Value(depth * BETA_PRUNING_FACTOR); }
 		Value RAZORING_FACTOR = Value(50);
@@ -56,147 +56,147 @@ namespace settings {
 		inline Value RazoringMargin(int depth) { return Value(depth * RAZORING_FACTOR + RAZORING_OFFSET); }
 		int LIMIT_QSEARCH = -3;
 		int LIMIT_QSEARCH_TT = LIMIT_QSEARCH + 1;
-		eval HANGING = eval(16, 13);
-		eval KING_ON_ONE = eval(1, 29);
-		eval KING_ON_MANY = eval(3, 63);
-		eval ROOK_ON_OPENFILE = eval(10, 0);
-		eval ROOK_ON_SEMIOPENFILE = eval(10, 0);
-		eval ROOK_ON_SEMIOPENFILE_WITH_KQ = eval(5, 0);
-		eval ROOK_ON_7TH = eval(20, 0);
+		Eval HANGING = Eval(16, 13);
+		Eval KING_ON_ONE = Eval(1, 29);
+		Eval KING_ON_MANY = Eval(3, 63);
+		Eval ROOK_ON_OPENFILE = Eval(10, 0);
+		Eval ROOK_ON_SEMIOPENFILE = Eval(10, 0);
+		Eval ROOK_ON_SEMIOPENFILE_WITH_KQ = Eval(5, 0);
+		Eval ROOK_ON_7TH = Eval(20, 0);
 
-		eval BONUS_BISHOP_PAIR = eval(50);
+		Eval BONUS_BISHOP_PAIR = Eval(50);
 		Value BONUS_CASTLING = Value(0);
         Value BONUS_TEMPO = Value(5);
         Value DELTA_PRUNING_SAFETY_MARGIN = Value(VALUE_100CP);
-        eval PAWN_SHELTER_2ND_RANK = eval(30, -10);
-		eval PAWN_SHELTER_3RD_RANK = eval(15, -8);
-		eval PAWN_SHELTER_4TH_RANK = eval(8, -4);
+        Eval PAWN_SHELTER_2ND_RANK = Eval(30, -10);
+		Eval PAWN_SHELTER_3RD_RANK = Eval(15, -8);
+		Eval PAWN_SHELTER_4TH_RANK = Eval(8, -4);
         Value PROBCUT_MARGIN = Value(90);
 		Value BONUS_KNIGHT_OUTPOST = Value(5);
 		Value BONUS_BISHOP_OUTPOST = Value(0);
-		eval PieceValues[7]{ eval(1025), eval(490, 550), eval(325), eval(325), eval(80, 100), eval(VALUE_KNOWN_WIN), eval(0) };
+		Eval PieceValues[7]{ Eval(1025), Eval(490, 550), Eval(325), Eval(325), Eval(80, 100), Eval(VALUE_KNOWN_WIN), Eval(0) };
 		int FULTILITY_PRUNING_DEPTH = 3;
 		Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
-		eval PSQT[12][64]{
+		Eval PSQT[12][64]{
 			{  // White Queens
-				eval(-10,-8), eval(-7,-5), eval(-4,-2), eval(-2,0), eval(-2,0), eval(-4,-2), eval(-7,-5), eval(-10,-8),  // Rank 1
-				eval(-4,-5), eval(-2,-2), eval(0,0), eval(3,2), eval(3,2), eval(0,0), eval(-2,-2), eval(-4,-5),  // Rank 2
-				eval(-2,-2), eval(0,0), eval(3,2), eval(5,5), eval(5,5), eval(3,2), eval(0,0), eval(-2,-2),  // Rank 3
-				eval(0,0), eval(3,2), eval(5,5), eval(8,8), eval(8,8), eval(5,5), eval(3,2), eval(0,0),  // Rank 4
-				eval(0,0), eval(3,2), eval(5,5), eval(8,8), eval(8,8), eval(5,5), eval(3,2), eval(0,0),  // Rank 5
-				eval(-2,-2), eval(0,0), eval(3,2), eval(5,5), eval(5,5), eval(3,2), eval(0,0), eval(-2,-2),  // Rank 6
-				eval(-4,-5), eval(-2,-2), eval(0,0), eval(3,2), eval(3,2), eval(0,0), eval(-2,-2), eval(-4,-5),  // Rank 7
-				eval(-7,-8), eval(-4,-5), eval(-2,-2), eval(0,0), eval(0,0), eval(-2,-2), eval(-4,-5), eval(-7,-8)  // Rank 8
+				Eval(-10,-8), Eval(-7,-5), Eval(-4,-2), Eval(-2,0), Eval(-2,0), Eval(-4,-2), Eval(-7,-5), Eval(-10,-8),  // Rank 1
+				Eval(-4,-5), Eval(-2,-2), Eval(0,0), Eval(3,2), Eval(3,2), Eval(0,0), Eval(-2,-2), Eval(-4,-5),  // Rank 2
+				Eval(-2,-2), Eval(0,0), Eval(3,2), Eval(5,5), Eval(5,5), Eval(3,2), Eval(0,0), Eval(-2,-2),  // Rank 3
+				Eval(0,0), Eval(3,2), Eval(5,5), Eval(8,8), Eval(8,8), Eval(5,5), Eval(3,2), Eval(0,0),  // Rank 4
+				Eval(0,0), Eval(3,2), Eval(5,5), Eval(8,8), Eval(8,8), Eval(5,5), Eval(3,2), Eval(0,0),  // Rank 5
+				Eval(-2,-2), Eval(0,0), Eval(3,2), Eval(5,5), Eval(5,5), Eval(3,2), Eval(0,0), Eval(-2,-2),  // Rank 6
+				Eval(-4,-5), Eval(-2,-2), Eval(0,0), Eval(3,2), Eval(3,2), Eval(0,0), Eval(-2,-2), Eval(-4,-5),  // Rank 7
+				Eval(-7,-8), Eval(-4,-5), Eval(-2,-2), Eval(0,0), Eval(0,0), Eval(-2,-2), Eval(-4,-5), Eval(-7,-8)  // Rank 8
 			},
 			{  // Black Queen
-				eval(7,8), eval(4,5), eval(2,2), eval(0,0), eval(0,0), eval(2,2), eval(4,5), eval(7,8),  // Rank 1
-				eval(4,5), eval(2,2), eval(0,0), eval(-3,-2), eval(-3,-2), eval(0,0), eval(2,2), eval(4,5),  // Rank 2
-				eval(2,2), eval(0,0), eval(-3,-2), eval(-5,-5), eval(-5,-5), eval(-3,-2), eval(0,0), eval(2,2),  // Rank 3
-				eval(0,0), eval(-3,-2), eval(-5,-5), eval(-8,-8), eval(-8,-8), eval(-5,-5), eval(-3,-2), eval(0,0),  // Rank 4
-				eval(0,0), eval(-3,-2), eval(-5,-5), eval(-8,-8), eval(-8,-8), eval(-5,-5), eval(-3,-2), eval(0,0),  // Rank 5
-				eval(2,2), eval(0,0), eval(-3,-2), eval(-5,-5), eval(-5,-5), eval(-3,-2), eval(0,0), eval(2,2),  // Rank 6
-				eval(4,5), eval(2,2), eval(0,0), eval(-3,-2), eval(-3,-2), eval(0,0), eval(2,2), eval(4,5),  // Rank 7
-				eval(10,8), eval(7,5), eval(4,2), eval(2,0), eval(2,0), eval(4,2), eval(7,5), eval(10,8)  // Rank 8
+				Eval(7,8), Eval(4,5), Eval(2,2), Eval(0,0), Eval(0,0), Eval(2,2), Eval(4,5), Eval(7,8),  // Rank 1
+				Eval(4,5), Eval(2,2), Eval(0,0), Eval(-3,-2), Eval(-3,-2), Eval(0,0), Eval(2,2), Eval(4,5),  // Rank 2
+				Eval(2,2), Eval(0,0), Eval(-3,-2), Eval(-5,-5), Eval(-5,-5), Eval(-3,-2), Eval(0,0), Eval(2,2),  // Rank 3
+				Eval(0,0), Eval(-3,-2), Eval(-5,-5), Eval(-8,-8), Eval(-8,-8), Eval(-5,-5), Eval(-3,-2), Eval(0,0),  // Rank 4
+				Eval(0,0), Eval(-3,-2), Eval(-5,-5), Eval(-8,-8), Eval(-8,-8), Eval(-5,-5), Eval(-3,-2), Eval(0,0),  // Rank 5
+				Eval(2,2), Eval(0,0), Eval(-3,-2), Eval(-5,-5), Eval(-5,-5), Eval(-3,-2), Eval(0,0), Eval(2,2),  // Rank 6
+				Eval(4,5), Eval(2,2), Eval(0,0), Eval(-3,-2), Eval(-3,-2), Eval(0,0), Eval(2,2), Eval(4,5),  // Rank 7
+				Eval(10,8), Eval(7,5), Eval(4,2), Eval(2,0), Eval(2,0), Eval(4,2), Eval(7,5), Eval(10,8)  // Rank 8
 			},
 			{  // White Rook
-				eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0),  // Rank 1
-				eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0),  // Rank 2
-				eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0),  // Rank 3
-				eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0),  // Rank 4
-				eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0),  // Rank 5
-				eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0),  // Rank 6
-				eval(3,0), eval(3,0), eval(4,0), eval(6,0), eval(6,0), eval(4,0), eval(3,0), eval(3,0),  // Rank 7
-				eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0)  // Rank 8
+				Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0),  // Rank 1
+				Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0),  // Rank 2
+				Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0),  // Rank 3
+				Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0),  // Rank 4
+				Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0),  // Rank 5
+				Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0),  // Rank 6
+				Eval(3,0), Eval(3,0), Eval(4,0), Eval(6,0), Eval(6,0), Eval(4,0), Eval(3,0), Eval(3,0),  // Rank 7
+				Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0)  // Rank 8
 			},
 			{  // Black Rook
-				eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0),  // Rank 1
-				eval(-3,0), eval(-3,0), eval(-4,0), eval(-6,0), eval(-6,0), eval(-4,0), eval(-3,0), eval(-3,0),  // Rank 2
-				eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0),  // Rank 3
-				eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0),  // Rank 4
-				eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0),  // Rank 5
-				eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0),  // Rank 6
-				eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0),  // Rank 7
-				eval(1,0), eval(1,0), eval(0,0), eval(-1,0), eval(-1,0), eval(0,0), eval(1,0), eval(1,0)  // Rank 8
+				Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0),  // Rank 1
+				Eval(-3,0), Eval(-3,0), Eval(-4,0), Eval(-6,0), Eval(-6,0), Eval(-4,0), Eval(-3,0), Eval(-3,0),  // Rank 2
+				Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0),  // Rank 3
+				Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0),  // Rank 4
+				Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0),  // Rank 5
+				Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0),  // Rank 6
+				Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0),  // Rank 7
+				Eval(1,0), Eval(1,0), Eval(0,0), Eval(-1,0), Eval(-1,0), Eval(0,0), Eval(1,0), Eval(1,0)  // Rank 8
 			},
 			{  // White Bishop
-				eval(-12,-8), eval(-10,-5), eval(-7,-2), eval(-4,0), eval(-4,0), eval(-7,-2), eval(-10,-5), eval(-12,-8),  // Rank 1
-				eval(-4,-5), eval(3,-2), eval(0,0), eval(3,2), eval(3,2), eval(0,0), eval(3,-2), eval(-4,-5),  // Rank 2
-				eval(-2,-2), eval(0,0), eval(3,2), eval(5,5), eval(5,5), eval(3,2), eval(0,0), eval(-2,-2),  // Rank 3
-				eval(0,0), eval(3,2), eval(5,5), eval(8,8), eval(8,8), eval(5,5), eval(3,2), eval(0,0),  // Rank 4
-				eval(0,0), eval(5,2), eval(5,5), eval(8,8), eval(8,8), eval(5,5), eval(5,2), eval(0,0),  // Rank 5
-				eval(-2,-2), eval(0,0), eval(3,2), eval(5,5), eval(5,5), eval(3,2), eval(0,0), eval(-2,-2),  // Rank 6
-				eval(-4,-5), eval(-2,-2), eval(0,0), eval(3,2), eval(3,2), eval(0,0), eval(-2,-2), eval(-4,-5),  // Rank 7
-				eval(-7,-8), eval(-4,-5), eval(-2,-2), eval(0,0), eval(0,0), eval(-2,-2), eval(-4,-5), eval(-7,-8)  // Rank 8
+				Eval(-12,-8), Eval(-10,-5), Eval(-7,-2), Eval(-4,0), Eval(-4,0), Eval(-7,-2), Eval(-10,-5), Eval(-12,-8),  // Rank 1
+				Eval(-4,-5), Eval(3,-2), Eval(0,0), Eval(3,2), Eval(3,2), Eval(0,0), Eval(3,-2), Eval(-4,-5),  // Rank 2
+				Eval(-2,-2), Eval(0,0), Eval(3,2), Eval(5,5), Eval(5,5), Eval(3,2), Eval(0,0), Eval(-2,-2),  // Rank 3
+				Eval(0,0), Eval(3,2), Eval(5,5), Eval(8,8), Eval(8,8), Eval(5,5), Eval(3,2), Eval(0,0),  // Rank 4
+				Eval(0,0), Eval(5,2), Eval(5,5), Eval(8,8), Eval(8,8), Eval(5,5), Eval(5,2), Eval(0,0),  // Rank 5
+				Eval(-2,-2), Eval(0,0), Eval(3,2), Eval(5,5), Eval(5,5), Eval(3,2), Eval(0,0), Eval(-2,-2),  // Rank 6
+				Eval(-4,-5), Eval(-2,-2), Eval(0,0), Eval(3,2), Eval(3,2), Eval(0,0), Eval(-2,-2), Eval(-4,-5),  // Rank 7
+				Eval(-7,-8), Eval(-4,-5), Eval(-2,-2), Eval(0,0), Eval(0,0), Eval(-2,-2), Eval(-4,-5), Eval(-7,-8)  // Rank 8
 			},
 			{  // Black Bishop
-				eval(7,8), eval(4,5), eval(2,2), eval(0,0), eval(0,0), eval(2,2), eval(4,5), eval(7,8),  // Rank 1
-				eval(4,5), eval(2,2), eval(0,0), eval(-3,-2), eval(-3,-2), eval(0,0), eval(2,2), eval(4,5),  // Rank 2
-				eval(2,2), eval(0,0), eval(-3,-2), eval(-5,-5), eval(-5,-5), eval(-3,-2), eval(0,0), eval(2,2),  // Rank 3
-				eval(0,0), eval(-5,-2), eval(-5,-5), eval(-8,-8), eval(-8,-8), eval(-5,-5), eval(-5,-2), eval(0,0),  // Rank 4
-				eval(0,0), eval(-3,-2), eval(-5,-5), eval(-8,-8), eval(-8,-8), eval(-5,-5), eval(-3,-2), eval(0,0),  // Rank 5
-				eval(2,2), eval(0,0), eval(-3,-2), eval(-5,-5), eval(-5,-5), eval(-3,-2), eval(0,0), eval(2,2),  // Rank 6
-				eval(4,5), eval(-3,2), eval(0,0), eval(-3,-2), eval(-3,-2), eval(0,0), eval(-3,2), eval(4,5),  // Rank 7
-				eval(12,8), eval(10,5), eval(7,2), eval(4,0), eval(4,0), eval(7,2), eval(10,5), eval(12,8)  // Rank 8
+				Eval(7,8), Eval(4,5), Eval(2,2), Eval(0,0), Eval(0,0), Eval(2,2), Eval(4,5), Eval(7,8),  // Rank 1
+				Eval(4,5), Eval(2,2), Eval(0,0), Eval(-3,-2), Eval(-3,-2), Eval(0,0), Eval(2,2), Eval(4,5),  // Rank 2
+				Eval(2,2), Eval(0,0), Eval(-3,-2), Eval(-5,-5), Eval(-5,-5), Eval(-3,-2), Eval(0,0), Eval(2,2),  // Rank 3
+				Eval(0,0), Eval(-5,-2), Eval(-5,-5), Eval(-8,-8), Eval(-8,-8), Eval(-5,-5), Eval(-5,-2), Eval(0,0),  // Rank 4
+				Eval(0,0), Eval(-3,-2), Eval(-5,-5), Eval(-8,-8), Eval(-8,-8), Eval(-5,-5), Eval(-3,-2), Eval(0,0),  // Rank 5
+				Eval(2,2), Eval(0,0), Eval(-3,-2), Eval(-5,-5), Eval(-5,-5), Eval(-3,-2), Eval(0,0), Eval(2,2),  // Rank 6
+				Eval(4,5), Eval(-3,2), Eval(0,0), Eval(-3,-2), Eval(-3,-2), Eval(0,0), Eval(-3,2), Eval(4,5),  // Rank 7
+				Eval(12,8), Eval(10,5), Eval(7,2), Eval(4,0), Eval(4,0), Eval(7,2), Eval(10,5), Eval(12,8)  // Rank 8
 			},
 			{  // White Knight
-				eval(-19,-18), eval(-14,-12), eval(-8,-7), eval(-3,-2), eval(-3,-2), eval(-8,-7), eval(-14,-12), eval(-19,-18),  // Rank 1
-				eval(-14,-12), eval(-8,-7), eval(-3,-2), eval(4,5), eval(4,5), eval(-3,-2), eval(-8,-7), eval(-14,-12),  // Rank 2
-				eval(-8,-7), eval(-3,-2), eval(4,5), eval(15,16), eval(15,16), eval(4,5), eval(-3,-2), eval(-8,-7),  // Rank 3
-				eval(-3,-2), eval(4,5), eval(15,16), eval(21,22), eval(21,22), eval(15,16), eval(4,5), eval(-3,-2),  // Rank 4
-				eval(-3,-2), eval(4,5), eval(21,16), eval(26,22), eval(26,22), eval(21,16), eval(4,5), eval(-3,-2),  // Rank 5
-				eval(-8,-7), eval(-3,-2), eval(10,5), eval(31,16), eval(31,16), eval(10,5), eval(-3,-2), eval(-8,-7),  // Rank 6
-				eval(-14,-12), eval(-8,-7), eval(-3,-2), eval(4,5), eval(4,5), eval(-3,-2), eval(-8,-7), eval(-14,-12),  // Rank 7
-				eval(-19,-18), eval(-14,-12), eval(-8,-7), eval(-3,-2), eval(-3,-2), eval(-8,-7), eval(-14,-12), eval(-19,-18)  // Rank 8
+				Eval(-19,-18), Eval(-14,-12), Eval(-8,-7), Eval(-3,-2), Eval(-3,-2), Eval(-8,-7), Eval(-14,-12), Eval(-19,-18),  // Rank 1
+				Eval(-14,-12), Eval(-8,-7), Eval(-3,-2), Eval(4,5), Eval(4,5), Eval(-3,-2), Eval(-8,-7), Eval(-14,-12),  // Rank 2
+				Eval(-8,-7), Eval(-3,-2), Eval(4,5), Eval(15,16), Eval(15,16), Eval(4,5), Eval(-3,-2), Eval(-8,-7),  // Rank 3
+				Eval(-3,-2), Eval(4,5), Eval(15,16), Eval(21,22), Eval(21,22), Eval(15,16), Eval(4,5), Eval(-3,-2),  // Rank 4
+				Eval(-3,-2), Eval(4,5), Eval(21,16), Eval(26,22), Eval(26,22), Eval(21,16), Eval(4,5), Eval(-3,-2),  // Rank 5
+				Eval(-8,-7), Eval(-3,-2), Eval(10,5), Eval(31,16), Eval(31,16), Eval(10,5), Eval(-3,-2), Eval(-8,-7),  // Rank 6
+				Eval(-14,-12), Eval(-8,-7), Eval(-3,-2), Eval(4,5), Eval(4,5), Eval(-3,-2), Eval(-8,-7), Eval(-14,-12),  // Rank 7
+				Eval(-19,-18), Eval(-14,-12), Eval(-8,-7), Eval(-3,-2), Eval(-3,-2), Eval(-8,-7), Eval(-14,-12), Eval(-19,-18)  // Rank 8
 			},
 			{  // Black Knight
-				eval(19,18), eval(14,12), eval(8,7), eval(3,2), eval(3,2), eval(8,7), eval(14,12), eval(19,18),  // Rank 1
-				eval(14,12), eval(8,7), eval(3,2), eval(-4,-5), eval(-4,-5), eval(3,2), eval(8,7), eval(14,12),  // Rank 2
-				eval(8,7), eval(3,2), eval(-10,-5), eval(-31,-16), eval(-31,-16), eval(-10,-5), eval(3,2), eval(8,7),  // Rank 3
-				eval(3,2), eval(-4,-5), eval(-21,-16), eval(-26,-22), eval(-26,-22), eval(-21,-16), eval(-4,-5), eval(3,2),  // Rank 4
-				eval(3,2), eval(-4,-5), eval(-15,-16), eval(-21,-22), eval(-21,-22), eval(-15,-16), eval(-4,-5), eval(3,2),  // Rank 5
-				eval(8,7), eval(3,2), eval(-4,-5), eval(-15,-16), eval(-15,-16), eval(-4,-5), eval(3,2), eval(8,7),  // Rank 6
-				eval(14,12), eval(8,7), eval(3,2), eval(-4,-5), eval(-4,-5), eval(3,2), eval(8,7), eval(14,12),  // Rank 7
-				eval(19,18), eval(14,12), eval(8,7), eval(3,2), eval(3,2), eval(8,7), eval(14,12), eval(19,18)  // Rank 8
+				Eval(19,18), Eval(14,12), Eval(8,7), Eval(3,2), Eval(3,2), Eval(8,7), Eval(14,12), Eval(19,18),  // Rank 1
+				Eval(14,12), Eval(8,7), Eval(3,2), Eval(-4,-5), Eval(-4,-5), Eval(3,2), Eval(8,7), Eval(14,12),  // Rank 2
+				Eval(8,7), Eval(3,2), Eval(-10,-5), Eval(-31,-16), Eval(-31,-16), Eval(-10,-5), Eval(3,2), Eval(8,7),  // Rank 3
+				Eval(3,2), Eval(-4,-5), Eval(-21,-16), Eval(-26,-22), Eval(-26,-22), Eval(-21,-16), Eval(-4,-5), Eval(3,2),  // Rank 4
+				Eval(3,2), Eval(-4,-5), Eval(-15,-16), Eval(-21,-22), Eval(-21,-22), Eval(-15,-16), Eval(-4,-5), Eval(3,2),  // Rank 5
+				Eval(8,7), Eval(3,2), Eval(-4,-5), Eval(-15,-16), Eval(-15,-16), Eval(-4,-5), Eval(3,2), Eval(8,7),  // Rank 6
+				Eval(14,12), Eval(8,7), Eval(3,2), Eval(-4,-5), Eval(-4,-5), Eval(3,2), Eval(8,7), Eval(14,12),  // Rank 7
+				Eval(19,18), Eval(14,12), Eval(8,7), Eval(3,2), Eval(3,2), Eval(8,7), Eval(14,12), Eval(19,18)  // Rank 8
 			},
 			{  // White Pawn
-				eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0),  // Rank 1
-				eval(-17,-11), eval(-9,-11), eval(-7,-11), eval(-9,-11), eval(-9,-11), eval(-7,-11), eval(-9,-11), eval(-17,-11),  // Rank 2
-				eval(-15,-9), eval(-12,-9), eval(-7,-9), eval(-1,-9), eval(-1,-9), eval(-7,-9), eval(-12,-9), eval(-15,-9),  // Rank 3
-				eval(-17,-6), eval(-9,-6), eval(-7,-6), eval(6,-6), eval(6,-6), eval(-7,-6), eval(-9,-6), eval(-17,-6),  // Rank 4
-				eval(-9,-3), eval(-7,-3), eval(-4,-3), eval(9,-3), eval(9,-3), eval(-4,-3), eval(-7,-3), eval(-9,-3),  // Rank 5
-				eval(3,9), eval(6,9), eval(9,9), eval(11,9), eval(11,9), eval(9,9), eval(6,9), eval(3,9),  // Rank 6
-				eval(22,20), eval(22,20), eval(22,20), eval(22,20), eval(22,20), eval(22,20), eval(22,20), eval(22,20),  // Rank 7
-				eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0)  // Rank 8
+				Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0),  // Rank 1
+				Eval(-17,-11), Eval(-9,-11), Eval(-7,-11), Eval(-9,-11), Eval(-9,-11), Eval(-7,-11), Eval(-9,-11), Eval(-17,-11),  // Rank 2
+				Eval(-15,-9), Eval(-12,-9), Eval(-7,-9), Eval(-1,-9), Eval(-1,-9), Eval(-7,-9), Eval(-12,-9), Eval(-15,-9),  // Rank 3
+				Eval(-17,-6), Eval(-9,-6), Eval(-7,-6), Eval(6,-6), Eval(6,-6), Eval(-7,-6), Eval(-9,-6), Eval(-17,-6),  // Rank 4
+				Eval(-9,-3), Eval(-7,-3), Eval(-4,-3), Eval(9,-3), Eval(9,-3), Eval(-4,-3), Eval(-7,-3), Eval(-9,-3),  // Rank 5
+				Eval(3,9), Eval(6,9), Eval(9,9), Eval(11,9), Eval(11,9), Eval(9,9), Eval(6,9), Eval(3,9),  // Rank 6
+				Eval(22,20), Eval(22,20), Eval(22,20), Eval(22,20), Eval(22,20), Eval(22,20), Eval(22,20), Eval(22,20),  // Rank 7
+				Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0)  // Rank 8
 			},
 			{  //  Black Pawn
-				eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0),  // Rank 1
-				eval(-22,-20), eval(-22,-20), eval(-22,-20), eval(-22,-20), eval(-22,-20), eval(-22,-20), eval(-22,-20), eval(-22,-20),  // Rank 2
-				eval(-3,-9), eval(-6,-9), eval(-9,-9), eval(-11,-9), eval(-11,-9), eval(-9,-9), eval(-6,-9), eval(-3,-9),  // Rank 3
-				eval(9,3), eval(7,3), eval(4,3), eval(-9,3), eval(-9,3), eval(4,3), eval(7,3), eval(9,3),  // Rank 4
-				eval(17,6), eval(9,6), eval(7,6), eval(-6,6), eval(-6,6), eval(7,6), eval(9,6), eval(17,6),  // Rank 5
-				eval(15,9), eval(12,9), eval(7,9), eval(1,9), eval(1,9), eval(7,9), eval(12,9), eval(15,9),  // Rank 6
-				eval(17,11), eval(9,11), eval(7,11), eval(9,11), eval(9,11), eval(7,11), eval(9,11), eval(17,11),  // Rank 7
-				eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0), eval(0,0)  // Rank 8
+				Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0),  // Rank 1
+				Eval(-22,-20), Eval(-22,-20), Eval(-22,-20), Eval(-22,-20), Eval(-22,-20), Eval(-22,-20), Eval(-22,-20), Eval(-22,-20),  // Rank 2
+				Eval(-3,-9), Eval(-6,-9), Eval(-9,-9), Eval(-11,-9), Eval(-11,-9), Eval(-9,-9), Eval(-6,-9), Eval(-3,-9),  // Rank 3
+				Eval(9,3), Eval(7,3), Eval(4,3), Eval(-9,3), Eval(-9,3), Eval(4,3), Eval(7,3), Eval(9,3),  // Rank 4
+				Eval(17,6), Eval(9,6), Eval(7,6), Eval(-6,6), Eval(-6,6), Eval(7,6), Eval(9,6), Eval(17,6),  // Rank 5
+				Eval(15,9), Eval(12,9), Eval(7,9), Eval(1,9), Eval(1,9), Eval(7,9), Eval(12,9), Eval(15,9),  // Rank 6
+				Eval(17,11), Eval(9,11), Eval(7,11), Eval(9,11), Eval(9,11), Eval(7,11), Eval(9,11), Eval(17,11),  // Rank 7
+				Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0), Eval(0,0)  // Rank 8
 			},
 			{  // White King
-				eval(16,-20), eval(17,-15), eval(16,-9), eval(14,-4), eval(14,-4), eval(16,-9), eval(17,-15), eval(16,-20),  // Rank 1
-				eval(16,-15), eval(16,-9), eval(14,-4), eval(11,7), eval(11,7), eval(14,-4), eval(16,-9), eval(16,-15),  // Rank 2
-				eval(11,-9), eval(11,-4), eval(11,7), eval(8,23), eval(8,23), eval(11,7), eval(11,-4), eval(11,-9),  // Rank 3
-				eval(8,-4), eval(8,7), eval(3,23), eval(-2,28), eval(-2,28), eval(3,23), eval(8,7), eval(8,-4),  // Rank 4
-				eval(3,-4), eval(0,7), eval(-2,23), eval(-7,28), eval(-7,28), eval(-2,23), eval(0,7), eval(3,-4),  // Rank 5
-				eval(-7,-9), eval(-7,-4), eval(-12,7), eval(-18,23), eval(-18,23), eval(-12,7), eval(-7,-4), eval(-7,-9),  // Rank 6
-				eval(-12,-15), eval(-12,-9), eval(-18,-4), eval(-18,7), eval(-18,7), eval(-18,-4), eval(-12,-9), eval(-12,-15),  // Rank 7
-				eval(-18,-20), eval(-18,-15), eval(-18,-9), eval(-18,-4), eval(-18,-4), eval(-18,-9), eval(-18,-15), eval(-18,-20)  // Rank 8
+				Eval(16,-20), Eval(17,-15), Eval(16,-9), Eval(14,-4), Eval(14,-4), Eval(16,-9), Eval(17,-15), Eval(16,-20),  // Rank 1
+				Eval(16,-15), Eval(16,-9), Eval(14,-4), Eval(11,7), Eval(11,7), Eval(14,-4), Eval(16,-9), Eval(16,-15),  // Rank 2
+				Eval(11,-9), Eval(11,-4), Eval(11,7), Eval(8,23), Eval(8,23), Eval(11,7), Eval(11,-4), Eval(11,-9),  // Rank 3
+				Eval(8,-4), Eval(8,7), Eval(3,23), Eval(-2,28), Eval(-2,28), Eval(3,23), Eval(8,7), Eval(8,-4),  // Rank 4
+				Eval(3,-4), Eval(0,7), Eval(-2,23), Eval(-7,28), Eval(-7,28), Eval(-2,23), Eval(0,7), Eval(3,-4),  // Rank 5
+				Eval(-7,-9), Eval(-7,-4), Eval(-12,7), Eval(-18,23), Eval(-18,23), Eval(-12,7), Eval(-7,-4), Eval(-7,-9),  // Rank 6
+				Eval(-12,-15), Eval(-12,-9), Eval(-18,-4), Eval(-18,7), Eval(-18,7), Eval(-18,-4), Eval(-12,-9), Eval(-12,-15),  // Rank 7
+				Eval(-18,-20), Eval(-18,-15), Eval(-18,-9), Eval(-18,-4), Eval(-18,-4), Eval(-18,-9), Eval(-18,-15), Eval(-18,-20)  // Rank 8
 			},
 			{  // Black King
-				eval(18,20), eval(18,15), eval(18,9), eval(18,4), eval(18,4), eval(18,9), eval(18,15), eval(18,20),  // Rank 1
-				eval(12,15), eval(12,9), eval(18,4), eval(18,-7), eval(18,-7), eval(18,4), eval(12,9), eval(12,15),  // Rank 2
-				eval(7,9), eval(7,4), eval(12,-7), eval(18,-23), eval(18,-23), eval(12,-7), eval(7,4), eval(7,9),  // Rank 3
-				eval(-3,4), eval(0,-7), eval(2,-23), eval(7,-28), eval(7,-28), eval(2,-23), eval(0,-7), eval(-3,4),  // Rank 4
-				eval(-8,4), eval(-8,-7), eval(-3,-23), eval(2,-28), eval(2,-28), eval(-3,-23), eval(-8,-7), eval(-8,4),  // Rank 5
-				eval(-11,9), eval(-11,4), eval(-11,-7), eval(-8,-23), eval(-8,-23), eval(-11,-7), eval(-11,4), eval(-11,9),  // Rank 6
-				eval(-16,15), eval(-16,9), eval(-14,4), eval(-11,-7), eval(-11,-7), eval(-14,4), eval(-16,9), eval(-16,15),  // Rank 7
-				eval(-16,20), eval(-17,15), eval(-16,9), eval(-14,4), eval(-14,4), eval(-16,9), eval(-17,15), eval(-16,20)  // Rank 8
+				Eval(18,20), Eval(18,15), Eval(18,9), Eval(18,4), Eval(18,4), Eval(18,9), Eval(18,15), Eval(18,20),  // Rank 1
+				Eval(12,15), Eval(12,9), Eval(18,4), Eval(18,-7), Eval(18,-7), Eval(18,4), Eval(12,9), Eval(12,15),  // Rank 2
+				Eval(7,9), Eval(7,4), Eval(12,-7), Eval(18,-23), Eval(18,-23), Eval(12,-7), Eval(7,4), Eval(7,9),  // Rank 3
+				Eval(-3,4), Eval(0,-7), Eval(2,-23), Eval(7,-28), Eval(7,-28), Eval(2,-23), Eval(0,-7), Eval(-3,4),  // Rank 4
+				Eval(-8,4), Eval(-8,-7), Eval(-3,-23), Eval(2,-28), Eval(2,-28), Eval(-3,-23), Eval(-8,-7), Eval(-8,4),  // Rank 5
+				Eval(-11,9), Eval(-11,4), Eval(-11,-7), Eval(-8,-23), Eval(-8,-23), Eval(-11,-7), Eval(-11,4), Eval(-11,9),  // Rank 6
+				Eval(-16,15), Eval(-16,9), Eval(-14,4), Eval(-11,-7), Eval(-11,-7), Eval(-14,4), Eval(-16,9), Eval(-16,15),  // Rank 7
+				Eval(-16,20), Eval(-17,15), Eval(-16,9), Eval(-14,4), Eval(-14,4), Eval(-16,9), Eval(-17,15), Eval(-16,20)  // Rank 8
 			}
 		};
 		Value CAPTURE_SCORES[6][7] = {
@@ -208,37 +208,37 @@ namespace settings {
 			{ Value(PxQ), Value(PxR), Value(PxB), Value(PxN), Value(PxP),  Value(0), Value(EP) },   // PAWN
 			{ Value(KxQ), Value(KxR), Value(KxB), Value(KxN), Value(KxP), Value(0),  Value(0) }    // KING
 		};
-		eval MOBILITY_BONUS_KNIGHT[9] = { eval(-29, -23), eval(-19, -14), eval(-4, -4), eval(1, 0), eval(7, 4), eval(12, 9), eval(16, 12), eval(19, 14), eval(21, 15) };
-		eval MOBILITY_BONUS_BISHOP[14] = { eval(-23, -22), eval(-12, -11), eval(2, 0), eval(9, 7), eval(15, 14), eval(22, 19), eval(28, 25), eval(32, 29), eval(33, 32),
-			eval(36, 33), eval(37, 35), eval(37, 36), eval(39, 36), eval(40, 37) };
-		eval MOBILITY_BONUS_ROOK[15] = { eval(-22, -25), eval(-14, -12), eval(-2, 0), eval(0, 7), eval(2, 15), eval(5, 22), eval(8, 29), eval(9, 37), eval(12, 44),
-			eval(14, 50), eval(14, 53), eval(15, 56), eval(16, 57), eval(16, 57), eval(16, 58) };
-		eval MOBILITY_BONUS_QUEEN[28] = { eval(-19, -18), eval(-12, -11), eval(-2, -2), eval(0, 0), eval(2, 4), eval(5, 8), eval(5, 14), eval(8, 18), eval(9, 18), eval(9, 19),
-			eval(9, 19), eval(9, 19), eval(9, 19), eval(11, 19), eval(11, 19), eval(11, 19), eval(11, 19), eval(11, 19), eval(11, 19), eval(11, 19),
-			eval(11, 19), eval(11, 19), eval(11, 19), eval(11, 19), eval(11, 19), eval(11, 19), eval(11, 19), eval(11, 19) };
+		Eval MOBILITY_BONUS_KNIGHT[9] = { Eval(-29, -23), Eval(-19, -14), Eval(-4, -4), Eval(1, 0), Eval(7, 4), Eval(12, 9), Eval(16, 12), Eval(19, 14), Eval(21, 15) };
+		Eval MOBILITY_BONUS_BISHOP[14] = { Eval(-23, -22), Eval(-12, -11), Eval(2, 0), Eval(9, 7), Eval(15, 14), Eval(22, 19), Eval(28, 25), Eval(32, 29), Eval(33, 32),
+			Eval(36, 33), Eval(37, 35), Eval(37, 36), Eval(39, 36), Eval(40, 37) };
+		Eval MOBILITY_BONUS_ROOK[15] = { Eval(-22, -25), Eval(-14, -12), Eval(-2, 0), Eval(0, 7), Eval(2, 15), Eval(5, 22), Eval(8, 29), Eval(9, 37), Eval(12, 44),
+			Eval(14, 50), Eval(14, 53), Eval(15, 56), Eval(16, 57), Eval(16, 57), Eval(16, 58) };
+		Eval MOBILITY_BONUS_QUEEN[28] = { Eval(-19, -18), Eval(-12, -11), Eval(-2, -2), Eval(0, 0), Eval(2, 4), Eval(5, 8), Eval(5, 14), Eval(8, 18), Eval(9, 18), Eval(9, 19),
+			Eval(9, 19), Eval(9, 19), Eval(9, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19),
+			Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19) };
 		// Threat[defended/weak][minor/major attacking][attacked PieceType] contains
 		// bonuses according to which piece type attacks which one.
 		// "inspired" by SF
-		eval Threat[2][2][6] = {
-			{ { eval(0, 0), eval(0, 0), eval(10, 18), eval(12, 19), eval(22, 49), eval(18, 53) }, // Defended Minor
-			{ eval(0, 0), eval(0, 0), eval(5, 7), eval(5, 7), eval(4, 7), eval(12, 24) } }, // Defended Major
-			{ { eval(0, 0), eval(0, 16), eval(17, 21), eval(16, 25), eval(21, 50), eval(18, 52) }, // Weak Minor
-			{ eval(0, 0), eval(0, 14), eval(13, 29), eval(13, 29), eval(0, 22), eval(12, 26) } } // Weak Major
+		Eval Threat[2][2][6] = {
+			{ { Eval(0, 0), Eval(0, 0), Eval(10, 18), Eval(12, 19), Eval(22, 49), Eval(18, 53) }, // Defended Minor
+			{ Eval(0, 0), Eval(0, 0), Eval(5, 7), Eval(5, 7), Eval(4, 7), Eval(12, 24) } }, // Defended Major
+			{ { Eval(0, 0), Eval(0, 16), Eval(17, 21), Eval(16, 25), Eval(21, 50), Eval(18, 52) }, // Weak Minor
+			{ Eval(0, 0), Eval(0, 14), Eval(13, 29), Eval(13, 29), Eval(0, 22), Eval(12, 26) } } // Weak Major
 		};
-		eval PASSED_PAWN_BONUS[6] = { eval(0), eval(0), eval(23), eval(39), eval(81), eval(101) };
-		eval MALUS_BLOCKED[6] = { eval(30), eval(20), eval(10), eval(5), eval(0), eval(0) }; //indexed by distance to conversion
-		eval BONUS_PROTECTED_PASSED_PAWN[6] = { eval(0), eval(0), eval(0), eval(30), eval(30), eval(30) };
-        eval MALUS_ISOLATED_PAWN = eval(5);
-		eval MALUS_BACKWARD_PAWN = eval(20);
-		eval MALUS_ISLAND_COUNT = eval(5);
-		eval BONUS_CANDIDATE = eval(5);
-		eval BONUS_LEVER = eval(5);
-		eval MALUS_DOUBLED_PAWN = eval(0, 20);
+		Eval PASSED_PAWN_BONUS[6] = { Eval(0), Eval(0), Eval(23), Eval(39), Eval(81), Eval(101) };
+		Eval MALUS_BLOCKED[6] = { Eval(30), Eval(20), Eval(10), Eval(5), Eval(0), Eval(0) }; //indexed by distance to conversion
+		Eval BONUS_PROTECTED_PASSED_PAWN[6] = { Eval(0), Eval(0), Eval(0), Eval(30), Eval(30), Eval(30) };
+        Eval MALUS_ISOLATED_PAWN = Eval(5);
+		Eval MALUS_BACKWARD_PAWN = Eval(20);
+		Eval MALUS_ISLAND_COUNT = Eval(5);
+		Eval BONUS_CANDIDATE = Eval(5);
+		Eval BONUS_LEVER = Eval(5);
+		Eval MALUS_DOUBLED_PAWN = Eval(0, 20);
 		int TBProbeDepth = 8;
 #ifdef TUNE
 		bool parse(std::string input);
 		std::vector<int> parseValue(std::string input);
-		void setEval(eval & e, std::vector<int> & v, int index);
+		void setEval(Eval & e, std::vector<int> & v, int index);
 		inline void setValue(Value & val, std::vector<int> & v) { val = Value(v[0]); };
 		inline void setValue(int & val, std::vector<int> & v) { val = Value(v[0]); };
 #endif

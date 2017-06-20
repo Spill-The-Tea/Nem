@@ -8,8 +8,8 @@ public:
 	void loop();
 
 private:
-	search * Engine = new search;
-	position * _position = nullptr;
+	Search * Engine = new Search;
+	Position * _position = nullptr;
 	std::thread * Mainthread = nullptr;
 	int64_t ponderStartTime = 0;
 	bool ponderActive = false;
@@ -41,6 +41,6 @@ private:
 	void dumpTT(std::vector<std::string> &tokens);
 	void updateFromOptions();
 	void tb();
-	void copySettings(search * source, search * destination);
+	void copySettings(Search * source, Search * destination);
 };
 

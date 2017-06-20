@@ -5,47 +5,47 @@
 #include "position.h"
 #include "bbEndings.h"
 
-int scaleEG(const position& pos);
+int scaleEG(const Position& pos);
 
-struct evaluation
+struct Evaluation
 {
 public:
-	eval Material = EVAL_ZERO;
-	eval Mobility = EVAL_ZERO;
-	eval Threats = EVAL_ZERO;
-	eval KingSafety = EVAL_ZERO;
-	eval Pieces = EVAL_ZERO;
-	eval PsqEval = EVAL_ZERO;
-	//eval Space = EVAL_ZERO;
-	eval PawnStructure = EVAL_ZERO;
+	Eval Material = EVAL_ZERO;
+	Eval Mobility = EVAL_ZERO;
+	Eval Threats = EVAL_ZERO;
+	Eval KingSafety = EVAL_ZERO;
+	Eval Pieces = EVAL_ZERO;
+	Eval PsqEval = EVAL_ZERO;
+	//Eval Space = EVAL_ZERO;
+	Eval PawnStructure = EVAL_ZERO;
 
-	inline Value GetScore(const position & pos) {
-		eval total = Material + Mobility + KingSafety + Threats + Pieces + PawnStructure + PsqEval;
+	inline Value GetScore(const Position & pos) {
+		Eval total = Material + Mobility + KingSafety + Threats + Pieces + PawnStructure + PsqEval;
 		total.egScore = Value((scaleEG(pos) * int(total.egScore)) / 128);
 		return total.getScore(pos.GetMaterialTableEntry()->Phase) * (1 - 2 * pos.GetSideToMove());
 	}
 };
 
-Value evaluateDraw(const position& pos);
-Value evaluateFromScratch(const position& pos);
-template<Color WinningSide> Value evaluateKBPK(const position& pos);
-template<Color KBPSide> Value evaluateKBPKx(const position& pos);
-template <Color WinningSide> Value easyMate(const position& pos);
-template <Color WinningSide> Value evaluateKQKP(const position& pos);
-template <Color StrongerSide> Value evaluateKRKP(const position& pos);
-template <Color StrongerSide> Value evaluateKNKP(const position& pos);
-template <Color StrongerSide> Value evaluateKBKP(const position& pos);
-template <Color SideWithoutPawns> Value evaluateKNKPx(const position& pos);
-template <Color SideWithoutPawns> Value evaluateKBKPx(const position& pos);
-template <Color StrongerSide> Value evaluateKQPKQ(const position& pos);
-template <Color StrongerSide> Value evaluateKQKRP(const position& pos);
-Value evaluateKBPxKBPx(const position& pos);
-eval evaluateMobility(const position& pos);
-eval evaluateKingSafety(const position& pos);
-Value evaluatePawnEnding(const position& pos);
-template <Color COL> eval evaluateThreats(const position& pos);
-template <Color COL> eval evaluatePieces(const position& pos);
-std::string printDefaultEvaluation(const position& pos);
+Value evaluateDraw(const Position& pos);
+Value evaluateFromScratch(const Position& pos);
+template<Color WinningSide> Value evaluateKBPK(const Position& pos);
+template<Color KBPSide> Value evaluateKBPKx(const Position& pos);
+template <Color WinningSide> Value easyMate(const Position& pos);
+template <Color WinningSide> Value evaluateKQKP(const Position& pos);
+template <Color StrongerSide> Value evaluateKRKP(const Position& pos);
+template <Color StrongerSide> Value evaluateKNKP(const Position& pos);
+template <Color StrongerSide> Value evaluateKBKP(const Position& pos);
+template <Color SideWithoutPawns> Value evaluateKNKPx(const Position& pos);
+template <Color SideWithoutPawns> Value evaluateKBKPx(const Position& pos);
+template <Color StrongerSide> Value evaluateKQPKQ(const Position& pos);
+template <Color StrongerSide> Value evaluateKQKRP(const Position& pos);
+Value evaluateKBPxKBPx(const Position& pos);
+Eval evaluateMobility(const Position& pos);
+Eval evaluateKingSafety(const Position& pos);
+Value evaluatePawnEnding(const Position& pos);
+template <Color COL> Eval evaluateThreats(const Position& pos);
+template <Color COL> Eval evaluatePieces(const Position& pos);
+std::string printDefaultEvaluation(const Position& pos);
 
 const int PSQ_GoForMate[64] = {
 	100, 90, 80, 70, 70, 80, 90, 100,
@@ -60,7 +60,7 @@ const int PSQ_GoForMate[64] = {
 
 const int BonusDistance[8] = { 0, 0, 100, 80, 60, 40, 20, 10 };
 
-template <Color WinningSide> Value easyMate(const position& pos) {
+template <Color WinningSide> Value easyMate(const Position& pos) {
 	Value result = pos.GetMaterialScore();
 	if (WinningSide == WHITE) {
 		result += VALUE_KNOWN_WIN;
@@ -79,7 +79,7 @@ template <Color WinningSide> Value easyMate(const position& pos) {
 //If Pawn isn't on 7th Rank it's always a win for stronger side
 //on 7th Rank it is a if pawn is no rook or bishop pawn
 //for rook or bishop pawns there is a bitbase in bbEndings
-template<Color WinningSide> Value evaluateKQKP(const position& pos) {
+template<Color WinningSide> Value evaluateKQKP(const Position& pos) {
 	Value result;
 	//First check if it's a "clear" win
 	Bitboard pawnBB = pos.PieceBB(PAWN, Color(WinningSide ^ 1));
@@ -126,7 +126,7 @@ template<Color WinningSide> Value evaluateKQKP(const position& pos) {
 	return WinningSide == pos.GetSideToMove() ? result : -result;
 }
 
-template<Color WinningSide> Value evaluateKBPK(const position& pos) {
+template<Color WinningSide> Value evaluateKBPK(const Position& pos) {
 	//Check for draw
 	Value result;
 	Bitboard bbPawn = pos.PieceBB(PAWN, WinningSide);
@@ -166,7 +166,7 @@ template<Color WinningSide> Value evaluateKBPK(const position& pos) {
 	return result * (1 - 2 * pos.GetSideToMove());
 }
 
-template<Color KBPSide> Value evaluateKBPKx(const position& pos) {
+template<Color KBPSide> Value evaluateKBPKx(const Position& pos) {
 	Value result = evaluateDefault(pos);
 	//If Side with KBP is winning according to standard evaluation and pawn is on rook file, check if that's really the case	
 	if ((KBPSide == pos.GetSideToMove() && result <= evaluateDraw(pos)) || (KBPSide != pos.GetSideToMove() && result >= evaluateDraw(pos)) 
@@ -193,7 +193,7 @@ const int PSQ_MateInCorner[64] = {
 	130, 140, 150, 160, 170, 180, 190, 200
 };
 
-template <Color WinningSide> Value evaluateKNBK(const position& pos) {
+template <Color WinningSide> Value evaluateKNBK(const Position& pos) {
 	Square winnerKingSquare = pos.KingSquare(WinningSide);
 	Square loosingKingSquare = pos.KingSquare(Color(WinningSide ^ 1));
 
@@ -208,7 +208,7 @@ template <Color WinningSide> Value evaluateKNBK(const position& pos) {
 }
 
 //KQP vs KQ: Try to centralize Queens and weaker side should try to get his king to the "safe" areas
-template <Color StrongerSide> Value evaluateKQPKQ(const position& pos) {
+template <Color StrongerSide> Value evaluateKQPKQ(const Position& pos) {
 	Value result = pos.GetMaterialScore() + pos.PawnStructureScore().getScore(pos.GetMaterialTableEntry()->Phase) + evaluateMobility(pos).egScore
 		+ evaluateThreats<WHITE>(pos).egScore - evaluateThreats<BLACK>(pos).egScore;
 	//result.Pieces = evaluatePieces<WHITE>(pos) -evaluatePieces<BLACK>(pos);
@@ -255,7 +255,7 @@ template <Color StrongerSide> Value evaluateKQPKQ(const position& pos) {
 
 //Stronger Side has no chance to win - this endgame is totally drawish, however if anybody can win, 
 //it's the weaker side
-template <Color StrongerSide> Value evaluateKNKP(const position& pos) {
+template <Color StrongerSide> Value evaluateKNKP(const Position& pos) {
 	Square pawnSquare = lsb(pos.PieceBB(PAWN, Color(StrongerSide ^ 1)));
 	Square conversionSquare = StrongerSide == WHITE ? Square(pawnSquare & 7) : Square((pawnSquare & 7) + 56);
 	int dtc = ChebishevDistance(pawnSquare, conversionSquare);
@@ -266,7 +266,7 @@ template <Color StrongerSide> Value evaluateKNKP(const position& pos) {
 
 //Stronger Side has no chance to win - this endgame is totally drawish, however if anybody can win, 
 //it's the weaker side
-template <Color StrongerSide> Value evaluateKBKP(const position& pos) {
+template <Color StrongerSide> Value evaluateKBKP(const Position& pos) {
 	Value result;
 	Square pawnSquare = lsb(pos.PieceBB(PAWN, Color(StrongerSide ^ 1)));
 	Square bishopSquare = lsb(pos.PieceBB(BISHOP, StrongerSide));
@@ -286,7 +286,7 @@ template <Color StrongerSide> Value evaluateKBKP(const position& pos) {
 //might convert to KNKQPx-1 Which will be evaluated in the default way 
 //=> Therefore evaluation should never exceed default evaluation for this ending
 //Evaluation should be positive for SideWithoutPawns (but drawish for 2 pawns)
-template <Color SideWithoutPawns> Value evaluateKNKPx(const position& pos) {
+template <Color SideWithoutPawns> Value evaluateKNKPx(const Position& pos) {
 	Bitboard pawns = pos.PieceTypeBB(PAWN);
 	int pawnCount = popcount(pawns);
 	//Material with scaled down knight value
@@ -312,7 +312,7 @@ template <Color SideWithoutPawns> Value evaluateKNKPx(const position& pos) {
 //To keep evaluation continuity evluation should be less than standard evaluation
 //with an additional Knight => we try to use default evaluation but reduce material value
 //of Bishop
-template <Color SideWithoutPawns> Value evaluateKBKPx(const position& pos) {
+template <Color SideWithoutPawns> Value evaluateKBKPx(const Position& pos) {
 	Bitboard pawns = pos.PieceTypeBB(PAWN);
 	//Bitboard frontspan = SideWithoutPawns == WHITE ? FrontFillSouth(pawns) : FrontFillNorth(pawns);
 	int pawnCount = popcount(pawns);
@@ -330,7 +330,7 @@ template <Color SideWithoutPawns> Value evaluateKBKPx(const position& pos) {
 	return (1 - 2 * pos.GetSideToMove()) * result;
 }
 
-template <Color StrongerSide> Value evaluateKRKP(const position& pos) {
+template <Color StrongerSide> Value evaluateKRKP(const Position& pos) {
 	Value result;
 	//if the stronger King is in the front of the pawn it's a win
 	Square pawnSquare = lsb(pos.PieceTypeBB(PAWN));
@@ -371,7 +371,7 @@ template <Color StrongerSide> Value evaluateKRKP(const position& pos) {
 	}
 }
 
-template <Color StrongerSide> Value evaluateKQKRP(const position& pos) {
+template <Color StrongerSide> Value evaluateKQKRP(const Position& pos) {
 	//Check for fortress
 	Color weak = StrongerSide == WHITE ? BLACK : WHITE;
 	Bitboard pawn = StrongerSide == WHITE ? 0x7e424242424200 : 0x42424242427e00;
@@ -392,11 +392,11 @@ template <Color StrongerSide> Value evaluateKQKRP(const position& pos) {
 	return evaluateDefault(pos);
 }
 
-template <Color COL> eval evaluateThreats(const position& pos) {
+template <Color COL> Eval evaluateThreats(const Position& pos) {
 	enum { Defended, Weak };
 	enum { Minor, Major };
 	Bitboard b, weak, defended;
-	eval result = EVAL_ZERO;
+	Eval result = EVAL_ZERO;
 	Color OTHER = Color(COL ^ 1);
 	// Non-pawn enemies defended by a pawn
 	defended = (pos.ColorBB(OTHER) ^ pos.PieceBB(PAWN, OTHER)) & pos.AttacksByPieceType(OTHER, PAWN);
@@ -439,7 +439,7 @@ template <Color COL> eval evaluateThreats(const position& pos) {
 	return result;
 }
 
-template <Color COL> eval evaluatePieces(const position& pos) {
+template <Color COL> Eval evaluatePieces(const Position& pos) {
 	Color OTHER = Color(COL ^ 1);
 	//Knights
 	Bitboard outpostArea = COL == WHITE ? 0x3c3c00000000 : 0x3c3c0000;
@@ -462,10 +462,10 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	//	ptBonus = BONUS_KNIGHT_OUTPOST;
 	//}
 	//Bishops
-	eval bonusBishop = eval(0);
+	Eval bonusBishop = Eval(0);
 	//Rooks
 	Bitboard rooks = pos.PieceBB(ROOK, COL);
-	eval bonusRook = EVAL_ZERO;
+	Eval bonusRook = EVAL_ZERO;
 	if (rooks) {
 		//bonusRook = popcount(rooks & seventhRank) * ROOK_ON_7TH;
 		Bitboard bbHalfOpen = COL == WHITE ? FileFill(pos.GetPawnEntry()->halfOpenFilesWhite) : FileFill(pos.GetPawnEntry()->halfOpenFilesBlack);
@@ -477,7 +477,7 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 	//evaluated here) dynamically 
 	Square ownKingSquare = pos.KingSquare(COL);
 	Square opponentKingSquare = pos.KingSquare(OTHER);
-	eval bonusPassedPawns = EVAL_ZERO;
+	Eval bonusPassedPawns = EVAL_ZERO;
 	Bitboard passedPawns = pos.GetPawnEntry()->passedPawns & pos.ColorBB(COL);
 	while (passedPawns) {
 		Square pawnSquare = lsb(passedPawns);
@@ -489,5 +489,5 @@ template <Color COL> eval evaluatePieces(const position& pos) {
 		if ((pos.ColorBB(OTHER) & ToBitboard(blockSquare))!= EMPTY) bonusPassedPawns -= settings::parameter.MALUS_BLOCKED[dtc-1];
 		passedPawns &= passedPawns - 1;
 	}
-	return bonusPassedPawns + bonusRook + bonusBishop + eval(bonusKnightOutpost, 0);
+	return bonusPassedPawns + bonusRook + bonusBishop + Eval(bonusKnightOutpost, 0);
 }

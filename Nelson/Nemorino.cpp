@@ -125,7 +125,7 @@ int main(int argc, const char* argv[]) {
 		}
 	}
 	std::string input = "";
-	position pos;
+	Position pos;
 	while (true) {
 		std::getline(std::cin, input);
 		if (!input.compare(0, 3, "uci")) {
@@ -138,7 +138,7 @@ int main(int argc, const char* argv[]) {
 		else if (!input.compare(0, 6, "xboard")) {
 			Initialize();
 			settings::parameter.protocol = XBOARD;
-			cecp::xboard xb;
+			cecp::XBoard xb;
 			xb.loop();
 			return 0;
 		}

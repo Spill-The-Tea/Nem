@@ -7,9 +7,9 @@
 namespace kpk
 {
 	bool probe(Square WhiteKingSquare, Square WhitePawnSquare, Square BlackKingSquare, Color stm);
-	template <Color StrongerSide> Value EvaluateKPK(const position &pos);
+	template <Color StrongerSide> Value EvaluateKPK(const Position &pos);
 
-	template <Color StrongerSide> Value EvaluateKPK(const position &pos) {
+	template <Color StrongerSide> Value EvaluateKPK(const Position &pos) {
 		Square pawnSquare;
 		Square wKingSquare;
 		Square bKingSquare;

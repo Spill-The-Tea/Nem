@@ -35,20 +35,6 @@ namespace utils {
 
 	std::string mirrorFenVertical(std::string fen);
 
-	class logger {
-	public:
-		logger();
-		~logger();
-		inline void add(std::string line) { entries.push_back(line); }
-		void flush();
-
-		static logger * instance();
-	private:
-		std::vector<std::string> entries;
-		static logger * _instance;
-	};
-
-
 #ifdef TRACE
 	enum ScoreType { UNDEFINED,
 	                 MDP,   //Mate-Distance-Pruned
@@ -65,7 +51,7 @@ namespace utils {
 		             DP     //Delta-Pruning
 	};
 
-	class traceEntry {
+	class TraceEntry {
 	public:
 		uint64_t NodeNumber;
 		std::string Path;
@@ -74,7 +60,7 @@ namespace utils {
 		ScoreType Type;
 		uint64_t Hash;
 
-		traceEntry(uint64_t nodeNumber, std::string path, int depth, uint64_t hash);
+		TraceEntry(uint64_t nodeNumber, std::string path, int depth, uint64_t hash);
 	};
 
 	void clearSearchTree();

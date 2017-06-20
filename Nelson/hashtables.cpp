@@ -21,10 +21,10 @@ namespace pawn {
 		std::memset(Table, 0, PAWN_TABLE_SIZE * sizeof(Entry));
 	}
 
-	Entry * probe(const position &pos) {
+	Entry * probe(const Position &pos) {
 		Entry * result = &Table[pos.GetPawnKey() & (PAWN_TABLE_SIZE - 1)];
 		if (result->Key == pos.GetPawnKey()) return result;
-		result->Score = eval(0);
+		result->Score = Eval(0);
 		Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
 		Bitboard bbBlack = pos.PieceBB(PAWN, BLACK);
 		Bitboard bbFilesWhite = FileFill(bbWhite);
@@ -210,13 +210,13 @@ namespace tt {
 
 namespace killer {
 
-	Move manager::getMove(const position & pos, int index) const
+	Move Manager::getMove(const Position & pos, int index) const
 	{
 		return plyTable[getIndex(pos) + index];
 	}
 
 
-	void manager::store(const position & pos, Move move)
+	void Manager::store(const Position & pos, Move move)
 	{
 		int indx = getIndex(pos);
 		if (plyTable[indx] != move) {
@@ -225,23 +225,23 @@ namespace killer {
 		}
 	}
 
-	void manager::clear()
+	void Manager::clear()
 	{
 		std::memset(plyTable, 0, NB_SLOTS_KILLER * (MAX_DEPTH + 1) * 2 * sizeof(Move));
 	}
 
-	int manager::getIndex(const position & pos) const
+	int Manager::getIndex(const Position & pos) const
 	{
 		return NB_SLOTS_KILLER * (2 * pos.GetPliesFromRoot() + int(pos.GetSideToMove()));
 	}
 
-	bool manager::isKiller(const position & pos, Move move) const
+	bool Manager::isKiller(const Position & pos, Move move) const
 	{
 		int index = getIndex(pos);
 		return (move == plyTable[index]) || (move == plyTable[index + 1]);
 	}
 
-	void manager::enterLevel(const position & pos)
+	void Manager::enterLevel(const Position & pos)
 	{
 		int index = getIndex(pos) + 2 * NB_SLOTS_KILLER;
 		if (pos.Previous()->Checked()) {

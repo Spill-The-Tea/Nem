@@ -12,13 +12,13 @@ namespace nomad {
 	double results[ThreadCount];
 
 	void processNomadPackage(int packageIndex, double result) {
-		baseSearch * Engine = new search < SINGLE >;
+		baseSearch * Engine = new Search < SINGLE >;
 		Engine->UciOutput = false;
 		std::vector<std::string>::iterator it;
 		double localresult = 0;
 		for (it = packages[packageIndex].begin(); it < packages[packageIndex].end(); it++) {
-			position pos(*it);
-			Value score = (dynamic_cast<search<SINGLE>*>(Engine))->qscore(&pos);
+			Position pos(*it);
+			Value score = (dynamic_cast<Search<SINGLE>*>(Engine))->qscore(&pos);
 			if (pos.GetSideToMove() == BLACK) score = -score;
 			double error = result - utils::sigmoid(score);
 			localresult += error * error;
@@ -139,7 +139,7 @@ int main(int argc, const char* argv[]) {
 		if (found != std::string::npos) {
 			std::string fen = str.substr(0, found);
 			double score = std::stod(str.substr(found + 1));
-			position pos(fen);
+			Position pos(fen);
 			Value engineScore = pos.evaluate();
 			if (pos.GetSideToMove() == BLACK) engineScore = -engineScore;
 			double we = utils::winExpectation(engineScore, scale);

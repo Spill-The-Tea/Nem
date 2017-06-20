@@ -148,7 +148,7 @@ namespace settings {
 		}
 	}
 
-	void Parameters::setEval(eval & e, std::vector<int>& v, int index)
+	void Parameters::setEval(Eval & e, std::vector<int>& v, int index)
 	{
 		if (index = -1 && v.size() == 1) e.mgScore = e.egScore = Value(v[0]);
 		else if (index = -1 && v.size() == 2) {
@@ -180,11 +180,11 @@ namespace settings {
 			//else if (!key.compare("PEG")) PieceValues[PAWN].mgScore = Value(val);
 			//else if (!key.compare(0, 3, "PPB")) {
 			//	int indx = stoi(key.substr(3));
-			//	PASSED_PAWN_BONUS[indx] = eval(val);
+			//	PASSED_PAWN_BONUS[indx] = Eval(val);
 			//}
 			//else if (!key.compare(0, 4, "BPPP")) {
 			//	int indx = stoi(key.substr(4));
-			//	BONUS_PROTECTED_PASSED_PAWN[indx] = eval(val);
+			//	BONUS_PROTECTED_PASSED_PAWN[indx] = Eval(val);
 			//}
 		}
 		sync_cout << "info string parameters set" << sync_endl;

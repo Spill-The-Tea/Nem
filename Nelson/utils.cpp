@@ -106,33 +106,6 @@ namespace utils {
 		}
 	}
 
-	logger::logger() {
-
-	}
-
-	logger::~logger() {
-		flush();
-	}
-
-	logger * logger::_instance = nullptr;
-
-	logger * logger::instance() {
-		if (_instance == nullptr) _instance = new logger();
-		return _instance;
-	}
-
-	void logger::flush() {
-		if (entries.size() > 0) {
-			std::ofstream logfile("./log.txt", std::ofstream::out | std::ios::app);
-			for (std::vector<std::string>::iterator it = entries.begin(); it != entries.end(); ++it) {
-				std::cout << *it << std::endl;
-				logfile << *it << std::endl;
-			}
-			logfile.close();
-			entries.clear();
-		}
-	}
-
 	void debugInfo(std::string info)
 	{
 		switch (settings::parameter.protocol) {
@@ -167,7 +140,7 @@ namespace utils {
 #ifdef TRACE
 	const std::string s_desc[13] = { "UND", "MDP", "TT", "TB", "RAZ", "BP", "NMP", "PC", "CUT", "EXA", "FIN", "SP", "DP" };
 
-	traceEntry::traceEntry(uint64_t nodeNumber, std::string path, int depth, uint64_t hash)
+	TraceEntry::TraceEntry(uint64_t nodeNumber, std::string path, int depth, uint64_t hash)
 	{
 		NodeNumber = nodeNumber;
 		Path = path;
@@ -177,7 +150,7 @@ namespace utils {
 		Hash = hash;
 	}
 
-	std::vector<traceEntry> searchTree;
+	std::vector<TraceEntry> searchTree;
 
 	void clearSearchTree()
 	{
@@ -185,7 +158,7 @@ namespace utils {
 	}
 
 	size_t addTraceEntry(uint64_t nodeNumber, std::string path, int depth, uint64_t hash) {
-		searchTree.push_back(traceEntry(nodeNumber, path, depth, hash));
+		searchTree.push_back(TraceEntry(nodeNumber, path, depth, hash));
 		return searchTree.size() - 1;
 	}
 
