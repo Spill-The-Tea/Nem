@@ -75,7 +75,6 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 	make_minidump(e);
 	return EXCEPTION_CONTINUE_SEARCH;
 }
-#endif
 
 #if defined(_WIN64) && defined(_MSC_VER)
 #pragma unmanaged  
@@ -87,11 +86,12 @@ void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
 }
 
 #endif 
+#endif
 
 
 
 const int MAJOR_VERSION = 3;
-const int MINOR_VERSION = 0;
+const int MINOR_VERSION = 1;
 const int BUILD_NUMBER = 0;
 
 
@@ -104,9 +104,9 @@ static bool popcountSupport();
 int main(int argc, const char* argv[]) {
 #ifdef CRASH
 	SetUnhandledExceptionFilter(unhandled_handler);
-#endif
 #if defined(_WIN64) && defined(_MSC_VER)
 	_set_se_translator(exc_transl);
+#endif
 #endif
 #ifndef NO_POPCOUNT
 	if (!popcountSupport()) {

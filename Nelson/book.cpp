@@ -52,8 +52,8 @@ namespace polyglot {
 		result.move = 0;
 		result.weight = 0;
 		for (int i = 0; i < 8; ++i) result.key = (result.key << 8) + std::ifstream::get();
-		for (int i = 0; i < 2; ++i) result.move = (result.move << 8) + std::ifstream::get();
-		for (int i = 0; i < 2; ++i) result.weight = (result.weight << 8) + std::ifstream::get();
+		for (int i = 0; i < 2; ++i) result.move = (uint16_t)((result.move << 8) + std::ifstream::get());
+		for (int i = 0; i < 2; ++i) result.weight = (uint16_t)((result.weight << 8) + std::ifstream::get());
 		return result;
 	}
 

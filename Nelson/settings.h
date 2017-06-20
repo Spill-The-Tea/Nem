@@ -353,7 +353,9 @@ namespace settings {
 		OptionButton(std::string Name, bool Technical = false) : Option(Name, OptionType::BUTTON, "", "", "", Technical) { };
 		virtual ~OptionButton() { };
 		void set(std::string value) { }
+#pragma warning(disable:4100) 
 		inline void read(std::vector<std::string> &tokens) { }
+#pragma warning(default:4100) 
 	};
 
 	class OptionThread : public OptionSpin {

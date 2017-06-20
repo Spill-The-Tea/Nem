@@ -26,7 +26,7 @@ Bitboard SquareBB[64];
 void InitializeDistance() {
 	for (int sq1 = 0; sq1 < 64; sq1++) {
 		for (int sq2 = 0; sq2 < 64; sq2++) {
-			Distance[sq1][sq2] = (std::max)(abs((sq1 >> 3) - (sq2 >> 3)), abs((sq1 & 7) - (sq2 & 7)));
+			Distance[sq1][sq2] = (uint8_t)(std::max(abs((sq1 >> 3) - (sq2 >> 3)), abs((sq1 & 7) - (sq2 & 7))));
 		}
 	}
 }
