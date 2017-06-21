@@ -596,53 +596,53 @@ Bitboard Position::checkBlocker(Color colorOfBlocker, Color kingColor) {
 const Bitboard Position::AttacksOfField(const Square targetField, const Bitboard occupanyMask) const
 {
 	//sliding attacks
-	Bitboard attacks = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
-	attacks |= SlidingAttacksBishopTo[targetField] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
-	attacks &= occupanyMask;
+	Bitboard attacksOfField = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
+	attacksOfField |= SlidingAttacksBishopTo[targetField] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
+	attacksOfField &= occupanyMask;
 	//Check for blockers
-	Bitboard tmpAttacks = attacks;
+	Bitboard tmpAttacks = attacksOfField;
 	while (tmpAttacks != 0)
 	{
 		Square from = lsb(tmpAttacks);
 		Bitboard blocker = InBetweenFields[from][targetField] & occupanyMask;
-		if (blocker) attacks &= ~ToBitboard(from);
+		if (blocker) attacksOfField &= ~ToBitboard(from);
 		tmpAttacks &= tmpAttacks - 1;
 	}
 	//non-sliding attacks
-	attacks |= KnightAttacks[targetField] & OccupiedByPieceType[KNIGHT];
-	attacks |= KingAttacks[targetField] & OccupiedByPieceType[KING];
+	attacksOfField |= KnightAttacks[targetField] & OccupiedByPieceType[KNIGHT];
+	attacksOfField |= KingAttacks[targetField] & OccupiedByPieceType[KING];
 	Bitboard targetBB = ToBitboard(targetField);
-	attacks |= ((targetBB >> 7) & NOT_A_FILE) & PieceBB(PAWN, WHITE);
-	attacks |= ((targetBB >> 9) & NOT_H_FILE) & PieceBB(PAWN, WHITE);
-	attacks |= ((targetBB << 7) & NOT_H_FILE) & PieceBB(PAWN, BLACK);
-	attacks |= ((targetBB << 9) & NOT_A_FILE) & PieceBB(PAWN, BLACK);
-	return attacks & occupanyMask;
+	attacksOfField |= ((targetBB >> 7) & NOT_A_FILE) & PieceBB(PAWN, WHITE);
+	attacksOfField |= ((targetBB >> 9) & NOT_H_FILE) & PieceBB(PAWN, WHITE);
+	attacksOfField |= ((targetBB << 7) & NOT_H_FILE) & PieceBB(PAWN, BLACK);
+	attacksOfField |= ((targetBB << 9) & NOT_A_FILE) & PieceBB(PAWN, BLACK);
+	return attacksOfField & occupanyMask;
 }
 
 const Bitboard Position::AttacksOfField(const Square targetField, const Color attackingSide) const {
 	//sliding attacks
-	Bitboard attacks = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
-	attacks |= SlidingAttacksBishopTo[targetField] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
-	attacks &= OccupiedByColor[attackingSide];
+	Bitboard attacksOfField = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
+	attacksOfField |= SlidingAttacksBishopTo[targetField] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
+	attacksOfField &= OccupiedByColor[attackingSide];
 	//Check for blockers
-	Bitboard tmpAttacks = attacks;
+	Bitboard tmpAttacks = attacksOfField;
 	while (tmpAttacks != 0)
 	{
 		Square from = lsb(tmpAttacks);
 		Bitboard blocker = InBetweenFields[from][targetField] & OccupiedBB();
-		if (blocker) attacks &= ~ToBitboard(from);
+		if (blocker) attacksOfField &= ~ToBitboard(from);
 		tmpAttacks &= tmpAttacks - 1;
 	}
 	//non-sliding attacks
-	attacks |= KnightAttacks[targetField] & OccupiedByPieceType[KNIGHT];
-	attacks |= KingAttacks[targetField] & OccupiedByPieceType[KING];
+	attacksOfField |= KnightAttacks[targetField] & OccupiedByPieceType[KNIGHT];
+	attacksOfField |= KingAttacks[targetField] & OccupiedByPieceType[KING];
 	Bitboard targetBB = ToBitboard(targetField);
-	attacks |= ((targetBB >> 7) & NOT_A_FILE) & PieceBB(PAWN, WHITE);
-	attacks |= ((targetBB >> 9) & NOT_H_FILE) & PieceBB(PAWN, WHITE);
-	attacks |= ((targetBB << 7) & NOT_H_FILE) & PieceBB(PAWN, BLACK);
-	attacks |= ((targetBB << 9) & NOT_A_FILE) & PieceBB(PAWN, BLACK);
-	attacks &= OccupiedByColor[attackingSide];
-	return attacks;
+	attacksOfField |= ((targetBB >> 7) & NOT_A_FILE) & PieceBB(PAWN, WHITE);
+	attacksOfField |= ((targetBB >> 9) & NOT_H_FILE) & PieceBB(PAWN, WHITE);
+	attacksOfField |= ((targetBB << 7) & NOT_H_FILE) & PieceBB(PAWN, BLACK);
+	attacksOfField |= ((targetBB << 9) & NOT_A_FILE) & PieceBB(PAWN, BLACK);
+	attacksOfField &= OccupiedByColor[attackingSide];
+	return attacksOfField;
 }
 
 
@@ -911,7 +911,7 @@ void Position::setFromFEN(const std::string& fen) {
 	std::string dpc;
 	ss >> std::skipws >> dpc;
 	if (dpc.length() > 0) {
-		DrawPlyCount = atoi(dpc.c_str());
+		DrawPlyCount = (unsigned char)atoi(dpc.c_str());
 	}
 	std::fill_n(attacks, 64, 0ull);
 	PawnKey = calculatePawnKey();
@@ -1068,7 +1068,7 @@ Result Position::GetResult() {
 }
 
 DetailedResult Position::GetDetailedResult() {
-	Result result = GetResult();
+	GetResult();
 	if (result == OPEN) return NO_RESULT;
 	else if (result == MATE) {
 		return GetSideToMove() == WHITE ? BLACK_MATES : WHITE_MATES;
@@ -1119,49 +1119,49 @@ bool Position::validateMove(Move move) {
 	Square fromSquare = from(move);
 	Piece movingPiece = Board[fromSquare];
 	Square toSquare = to(move);
-	bool result = (movingPiece != BLANK) && (GetColor(movingPiece) == SideToMove) //from field is occuppied by piece of correct color
+	bool valid = (movingPiece != BLANK) && (GetColor(movingPiece) == SideToMove) //from field is occuppied by piece of correct color
 		&& ((Board[toSquare] == BLANK) || (GetColor(Board[toSquare]) != SideToMove));
-	if (result) {
+	if (valid) {
 		PieceType pt = GetPieceType(movingPiece);
 		if (pt == PAWN) {
 			switch (type(move)) {
 			case NORMAL:
-				result = !(ToBitboard(toSquare) & RANKS[7 - 7 * SideToMove]) && (((int(toSquare) - int(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) ||
+				valid = !(ToBitboard(toSquare) & RANKS[7 - 7 * SideToMove]) && (((int(toSquare) - int(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) ||
 					(((int(toSquare) - int(fromSquare)) == 2 * PawnStep()) && ((fromSquare >> 3) == (1 + 5 * SideToMove)) && Board[toSquare] == BLANK && Board[toSquare - PawnStep()] == BLANK)
 					|| (attacks[fromSquare] & OccupiedByColor[SideToMove ^ 1] & ToBitboard(toSquare)));
 				break;
 			case PROMOTION:
-				result = (ToBitboard(toSquare) & RANKS[7 - 7 * SideToMove]) &&
+				valid = (ToBitboard(toSquare) & RANKS[7 - 7 * SideToMove]) &&
 					(((int(toSquare) - int(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) || (attacks[fromSquare] & OccupiedByColor[SideToMove ^ 1] & ToBitboard(toSquare)));
 				break;
 			case ENPASSANT:
-				result = toSquare == EPSquare;
+				valid = toSquare == EPSquare;
 				break;
 			default:
 				return false;
 			}
 		}
 		else if (pt == KING && type(move) == CASTLING) {
-			result = (CastlingOptions & CastlesbyColor[SideToMove]) != 0
+			valid = (CastlingOptions & CastlesbyColor[SideToMove]) != 0
 				&& ((InBetweenFields[fromSquare][InitialRookSquare[2 * SideToMove + (toSquare < fromSquare)]] & OccupiedBB()) == 0)
 				&& (((InBetweenFields[fromSquare][toSquare] | ToBitboard(toSquare)) & attackedByThem) == 0)
 				&& (InitialRookSquareBB[2 * SideToMove + (toSquare < fromSquare)] & PieceBB(ROOK, SideToMove))
 				&& !Checked();
 		}
-		else if (type(move) == NORMAL) result = (attacks[fromSquare] & ToBitboard(toSquare)) != 0;
-		else result = false;
+		else if (type(move) == NORMAL) valid = (attacks[fromSquare] & ToBitboard(toSquare)) != 0;
+		else valid = false;
 	}
-	return result;
+	return valid;
 }
 
 Move Position::validMove(Move proposedMove)
 {
-	ValuatedMove * moves = GenerateMoves<LEGAL>();
+	ValuatedMove * vmoves = GenerateMoves<LEGAL>();
 	int movecount = GeneratedMoveCount();
 	for (int i = 0; i < movecount; ++i) {
-		if (moves[i].move == proposedMove) return proposedMove;
+		if (vmoves[i].move == proposedMove) return proposedMove;
 	}
-	return movecount > 0 ? moves[0].move : MOVE_NONE;
+	return movecount > 0 ? vmoves[0].move : MOVE_NONE;
 }
 bool Position::givesCheck(Move move)
 {
@@ -1286,7 +1286,7 @@ bool Position::checkMaterialIsUnusual() const {
 ValuatedMove * Position::GenerateForks(bool withChecks)
 {
 	movepointer -= (movepointer != 0);
-	ValuatedMove * result = &moves[movepointer];
+	ValuatedMove * firstMove = &moves[movepointer];
 	Bitboard knights = PieceBB(KNIGHT, SideToMove);
 	Bitboard targets;
 	Bitboard forkTargets;
@@ -1316,7 +1316,7 @@ ValuatedMove * Position::GenerateForks(bool withChecks)
 		}
 	}
 	AddNullMove();
-	return result;
+	return firstMove;
 }
 
 bool Position::mateThread() const

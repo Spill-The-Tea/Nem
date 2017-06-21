@@ -953,6 +953,7 @@ namespace test {
 
 	bool testGivesCheck()
 	{
+		bool result = true;
 		std::vector<std::string> fens = benchFens3();
 		for (auto &fen : fens) {
 			Position pos(fen);
@@ -962,10 +963,11 @@ namespace test {
 				bool givesCheck = pos.givesCheck(moves[i].move);
 				Position next(pos);
 				next.ApplyMove(moves[i].move);
-				assert(next.Checked() == givesCheck);
+				result == result && (givesCheck == next.Checked());
+				assert(result);
 			}
 		}
-		return true;
+		return result;
 	}
 
 	bool testVerticalSymmetry()

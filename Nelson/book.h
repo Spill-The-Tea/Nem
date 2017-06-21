@@ -11,10 +11,10 @@ namespace polyglot {
 	//All integers are stored highest byte first(regardless of size)
 	//The entries are ordered according to key.Lowest key first.
 	struct Entry {
-		uint64_t key;
-		uint16_t move;
-		uint16_t weight;
-		uint32_t learn;
+		uint64_t key = 0;
+		uint16_t move = MOVE_NONE;
+		uint16_t weight = 0;
+		uint32_t learn = 0;
 	};
 
 	class Book : private std::ifstream

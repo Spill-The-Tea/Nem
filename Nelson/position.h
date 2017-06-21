@@ -127,7 +127,7 @@ public:
 	bool checkRepetition();
 	//checks if there are any repetitions in prior moves
 	bool hasRepetition();
-	inline void SwitchSideToMove() { SideToMove ^= 1; Hash ^= ZobristMoveColor; }
+	inline void SwitchSideToMove() { ~SideToMove; Hash ^= ZobristMoveColor; }
 	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount; }
 	//applies a null move to the given position (there is no copy/make for null move), the EPSquare is the only information which has to be restored afterwards
 	void NullMove(Square epsquare = OUTSIDE, Move lastApplied = MOVE_NONE);
@@ -512,7 +512,7 @@ template<> ValuatedMove* Position::GenerateMoves<LEGAL>() {
 //Generates all quiet moves giving check
 template<> ValuatedMove* Position::GenerateMoves<QUIET_CHECKS>() {
 	movepointer -= (movepointer != 0);
-	ValuatedMove * result = &moves[movepointer];
+	ValuatedMove * firstMove = &moves[movepointer];
 	//There are 2 options to give check: Either give check with the moving piece, or a discovered check by
 	//moving a check blocking piece
 	Square opposedKingSquare = kingSquares[SideToMove ^ 1];
@@ -666,7 +666,7 @@ template<> ValuatedMove* Position::GenerateMoves<QUIET_CHECKS>() {
 		}
 	}
 	AddNullMove();
-	return result;
+	return firstMove;
 }
 
 template<> inline ValuatedMove* Position::GenerateMoves<FORKS>() {
@@ -679,7 +679,7 @@ template<> inline ValuatedMove* Position::GenerateMoves<FORKS_NO_CHECKS>() {
 
 template<MoveGenerationType MGT> ValuatedMove * Position::GenerateMoves() {
 	if (MGT == ALL || MGT == CHECK_EVASION) movepointer = 0; else movepointer -= (movepointer != 0);
-	ValuatedMove * result = &moves[movepointer];
+	ValuatedMove * firstMove = &moves[movepointer];
 	//Rooksliders
 	Bitboard targets;
 	if (MGT == ALL || MGT == TACTICAL || MGT == QUIETS || MGT == CHECK_EVASION) {
@@ -1003,7 +1003,7 @@ template<MoveGenerationType MGT> ValuatedMove * Position::GenerateMoves() {
 		}
 	}
 	AddNullMove();
-	return result;
+	return firstMove;
 }
 
 

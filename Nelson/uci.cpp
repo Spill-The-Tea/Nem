@@ -485,9 +485,11 @@ void UCIInterface::ponderhit() {
 	Engine->timeManager.PonderHit();
 }
 
+#pragma warning(disable:4100)
 void UCIInterface::setvalue(std::vector<std::string> &tokens) {
 	//Only for CLOP to be implemented per experiment
 }
+#pragma warning(default:4100)
 
 void UCIInterface::stop() {
 	utils::debugInfo("Trying to stop...");
@@ -558,7 +560,7 @@ void UCIInterface::dumpTT(std::vector<std::string>& tokens)
 	size_t len = fen.length();
 	char * fena = new char[96];
 	for (size_t i = len; i < 96; ++i) fena[i] = 0x00;
-	fena[95] = popcount(tt::GetClusterCount() - 1);
+	fena[95] = (char)popcount(tt::GetClusterCount() - 1);
 	strcpy(fena, fen.c_str());
 	of.write(fena, 96);
 	tt::dumpTT(of);

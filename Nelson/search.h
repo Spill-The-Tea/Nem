@@ -504,7 +504,7 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 	tt::Entry ttEntry;
 	bool ttFound = false;
 	Value ttValue = VALUE_NOTYETDETERMINED;
-	tt::Entry* ttPointer;
+	tt::Entry* ttPointer = nullptr;
 	if (depth >= settings::parameter.LIMIT_QSEARCH_TT) {
 		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		if (ttFound) ttValue = tt::fromTT(ttEntry.value(), pos.GetPliesFromRoot());
