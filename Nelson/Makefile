@@ -6,5 +6,13 @@ FILES = bbEndings.cpp board.cpp book.cpp evaluation.cpp hashtables.cpp Material.
 
 FLAGS = -O3 -Wmain -std=c++11 -pthread -DNDEBUG
 
+FLAGS_VG = -O1 -g -Wmain -std=c++11 -pthread -DNDEBUG
+
 make: $(FILES)
 	g++ $(FLAGS) $(FILES) -o $(EXE)
+
+vg: $(FILES)
+	g++ $(FLAGS_VG) $(FILES) -o $(EXE)_vg
+
+vc: $(FILES)
+	g++ -g $(FLAGS) $(FILES) -o $(EXE)_vc

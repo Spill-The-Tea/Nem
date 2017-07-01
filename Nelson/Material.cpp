@@ -123,6 +123,9 @@ void InitializeMaterialTable() {
 												else if (MaterialTable[key].GetMostExpensivePiece(WHITE) != KING && nBQ == 0 && nBR == 0 && nBB == 1 && nBN == 0 && nBP == 1)
 													MaterialTable[key].EvaluationFunction = &evaluateKBPKx<BLACK>;
 											}
+											if (nWQ == 0 && nBQ == 0 && nWR == 0 && nBR == 0 && (nWB + nWN) == 1 && (nBB + nBN) == 1 && nWP != nBP && (nWP + nBP) < 5 && std::abs(nWP - nBP) < 2) {
+												MaterialTable[key].Evaluation.egScore = Value(MaterialTable[key].Evaluation.egScore / (4 - std::max(nWP, nBP)));
+											}
 											if (tablebases::MaxCardinality > 0) {
 												int totalPieceCount = 2;
 												for (int i = 0; i < 10; ++i) totalPieceCount += pieceCounts[i];

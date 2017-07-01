@@ -280,15 +280,25 @@ int scaleEG(const Position & pos)
 
 Value evaluatePawnEnding(const Position& pos) {
 	//try to find unstoppable pawns
-	Value unstoppable = VALUE_ZERO;
+	Value ppEval = VALUE_ZERO;
 	if (pos.GetPawnEntry()->passedPawns) {
+		int minUnstoppable[2] = { 999, 999 };
+		int distant[2] = { 0, 0 };
+		int distcount[2] = { 0, 0 };
 		Bitboard wpassed = pos.GetPawnEntry()->passedPawns & pos.PieceBB(PAWN, WHITE);
-		while (wpassed) {
+		while (wpassed) {			
 			Square passedPawnSquare = lsb(wpassed);
 			Square convSquare = ConversionSquare<WHITE>(passedPawnSquare);
 			int distToConv = std::min(7 - (passedPawnSquare >> 3), 5);
 			if (distToConv < (ChebishevDistance(pos.KingSquare(BLACK), convSquare) - (pos.GetSideToMove() == BLACK))) {
-				unstoppable += Value(settings::parameter.PieceValues[QUEEN].egScore - ((distToConv + 1 + (pos.GetSideToMove() == BLACK)) * settings::parameter.PieceValues[PAWN].egScore));
+				minUnstoppable[0] = std::min(minUnstoppable[0], distToConv);
+			}
+			else {
+				distcount[0]++;
+				Square blockSquare = Square(passedPawnSquare + 8);
+				int dtcSquare = (6 - distToConv) * (6 - distToConv);
+				int distPoints = 2 * dtcSquare * ChebishevDistance(pos.KingSquare(BLACK), blockSquare) + dtcSquare * ChebishevDistance(pos.KingSquare(WHITE), blockSquare);
+				distant[0] += distPoints;
 			}
 			wpassed &= wpassed - 1;
 		}
@@ -298,12 +308,28 @@ Value evaluatePawnEnding(const Position& pos) {
 			Square convSquare = ConversionSquare<BLACK>(passedPawnSquare);
 			int distToConv = std::min((passedPawnSquare >> 3), 5);
 			if (distToConv < (ChebishevDistance(pos.KingSquare(WHITE), convSquare) - (pos.GetSideToMove() == WHITE))) {
-				unstoppable -= Value(settings::parameter.PieceValues[QUEEN].egScore - ((distToConv + 1 + (pos.GetSideToMove() == WHITE)) * settings::parameter.PieceValues[PAWN].egScore));
+				minUnstoppable[1] = std::min(minUnstoppable[1], distToConv);
+			}
+			else {
+				distcount[1]++;
+				Square blockSquare = Square(passedPawnSquare - 8);
+				int dtcSquare = (6 - distToConv) * (6 - distToConv);
+				int distPoints = 2 * dtcSquare * ChebishevDistance(pos.KingSquare(WHITE), blockSquare) + dtcSquare * ChebishevDistance(pos.KingSquare(BLACK), blockSquare);
+				distant[1] += distPoints;
 			}
 			bpassed &= bpassed - 1;
 		}
+		if (minUnstoppable[0] < (minUnstoppable[1] - (pos.GetSideToMove() == BLACK))) {
+			ppEval += Value(settings::parameter.PieceValues[QUEEN].egScore - 100 * minUnstoppable[0]);
+		}
+		else if (minUnstoppable[1] < (minUnstoppable[0] - (pos.GetSideToMove() == WHITE))) {
+			ppEval -= Value(settings::parameter.PieceValues[QUEEN].egScore - 100 * minUnstoppable[1]);
+		}
+		else {
+			ppEval += Value(11 *(distant[0]*distcount[0] - distant[1]*distcount[1])/5);
+		}
 	}
-	return (pos.GetMaterialScore() + pos.GetPawnEntry()->Score.getScore(pos.GetMaterialTableEntry()->Phase) + unstoppable) * (1 - 2 * pos.GetSideToMove());
+	return Value((pos.GetMaterialScore() + pos.GetPawnEntry()->Score.egScore + pos.GetPsqEval().egScore + ppEval) * (1 - 2 * pos.GetSideToMove()));
 }
 
 Value evaluateKBPxKBPx(const Position& pos) {

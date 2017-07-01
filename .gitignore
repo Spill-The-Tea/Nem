@@ -219,3 +219,8 @@ Nelson/Nelson.vcxproj.filters
 *.iobj
 *.ipdb
 /Nelson/nemorino.js.bat
+*.53
+/Nelson/cachegrind.out.53
+/Nelson/nemorino_vc
+/Nelson/nemorino_vg
+/Nelson/cg.txt
