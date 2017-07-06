@@ -94,6 +94,7 @@ Nemorino 3.00
 * [CEGT 40/20 **Elo 2906 #25**](http://www.cegt.net/40_40%20Rating%20List/40_40%20SingleVersion/rangliste.html)
 * [CEGT 40/4 **Elo 2893 #29**](http://www.cegt.net/40_4_Ratinglist/40_4_single/rangliste.html)
 * [FastGM Bullet **Elo 3022 #23**](http://www.fastgm.de/60-0.60.html)
+* [Owl Chess **Elo 3098 #19**](http://chessowl.blogspot.de/p/rating-list_27.html)
 
 Nemorino 2.00 64-bit 4CPU
 
@@ -103,11 +104,7 @@ Nemorino 2.00 64-bit 4CPU
 Nemorino 2.00
 
 * [CEGT 5+3 PB=ON **Elo 2791 #33**](http://www.cegt.net/5Plus3Rating/Purelist/rangliste.html)
-* [Owl Chess **Elo 3013 #26**](http://chessowl.blogspot.de/p/rating-list_27.html)
 
-Nemorino 1.0x
-
-* [FCP 40/10 **Elo 2797 #29**](http://www.amateurschach.de/fcp-rating-list.txt)
 
 ### Remarks ###
 
