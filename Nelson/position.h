@@ -161,14 +161,8 @@ public:
 	  This method should always be used when a copy is neede without applying a move */
 	void copy(const Position &pos);
 	inline bool CastlingAllowed(CastleFlag castling) const { return (CastlingOptions & castling) != 0; }
-	inline unsigned GetCastles() const { return CastlingOptions & 15; }
+	inline unsigned GetCastles() const { return CastlingOptions; }
 	inline CastleFlag GetCastlesForColor(Color color) const { return color == WHITE ? CastleFlag(CastlingOptions & (W0_0 | W0_0_0)) : CastleFlag(CastlingOptions & (B0_0 | B0_0_0)); }
-	inline bool HasCastled(Color color) const { return (CastlingOptions & ((CastleFlag::W_CASTLED_SHORT | CastleFlag::W_CASTLED_LONG) << color)) != 0; }
-	inline bool HasCastled(CastleFlag castleFlag) const { return (CastlingOptions & castleFlag) != 0; }
-	inline bool OpposedCastles() const {
-		return (CastlingOptions & (CastleFlag::W_CASTLED_SHORT | CastleFlag::B_CASTLED_LONG)) == (CastleFlag::W_CASTLED_SHORT | CastleFlag::B_CASTLED_LONG)
-			|| (CastlingOptions & (CastleFlag::B_CASTLED_SHORT | CastleFlag::W_CASTLED_LONG)) == (CastleFlag::B_CASTLED_SHORT | CastleFlag::W_CASTLED_LONG);
-	}
 	//creates the SAN (standard algebraic notation) representation of a move
 	std::string toSan(Move move);
 	//parses a move in SAN notation
@@ -270,8 +264,8 @@ private:
 	template<bool SquareIsEmpty> void set(const Piece piece, const Square square);
 	void remove(const Square square);
 
-	inline void AddCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions & 15]; CastlingOptions |= castleFlag; Hash ^= ZobristCastles[CastlingOptions & 15]; }
-	inline void RemoveCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions & 15]; CastlingOptions &= ~castleFlag; Hash ^= ZobristCastles[CastlingOptions & 15]; }
+	inline void AddCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions]; CastlingOptions |= castleFlag; Hash ^= ZobristCastles[CastlingOptions]; }
+	inline void RemoveCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions]; CastlingOptions &= ~castleFlag; Hash ^= ZobristCastles[CastlingOptions]; }
 	inline void SetEPSquare(const Square square) {
 		if (EPSquare != square) {
 			if (EPSquare != OUTSIDE) {

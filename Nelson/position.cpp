@@ -87,7 +87,7 @@ bool Position::ApplyMove(Move move) {
 		else
 			++DrawPlyCount;
 		//update castlings
-		if ((CastlingOptions & 15) != 0) updateCastleFlags(fromSquare, toSquare);
+		if (CastlingOptions) updateCastleFlags(fromSquare, toSquare);
 		//Adjust material key
 		if (capturedInLastMove != BLANK) {
 			if (MaterialKey == MATERIAL_KEY_UNUSUAL) {
@@ -119,7 +119,7 @@ bool Position::ApplyMove(Move move) {
 	case PROMOTION:
 		convertedTo = GetPiece(promotionType(move), SideToMove);
 		set<false>(convertedTo, toSquare);
-		if ((CastlingOptions & 15) != 0) updateCastleFlags(fromSquare, toSquare);
+		if (CastlingOptions) updateCastleFlags(fromSquare, toSquare);
 		SetEPSquare(OUTSIDE);
 		DrawPlyCount = 0;
 		PawnKey ^= ZobristKeys[moving][fromSquare];
@@ -143,7 +143,6 @@ bool Position::ApplyMove(Move move) {
 			set<true>(moving, toSquare); //Place king
 			set<true>(Piece(WROOK + SideToMove),
 				Square(toSquare - 1)); //Place rook
-			CastlingOptions |= CastleFlag::W_CASTLED_SHORT << SideToMove;
 		}
 		else {
 			//long castling
@@ -152,7 +151,6 @@ bool Position::ApplyMove(Move move) {
 			set<true>(moving, toSquare); //Place king
 			set<true>(Piece(WROOK + SideToMove),
 				Square(toSquare + 1)); //Place rook
-			CastlingOptions |= CastleFlag::W_CASTLED_LONG << SideToMove;
 		}
 		RemoveCastlingOption(CastleFlag(W0_0 << (2 * SideToMove)));
 		RemoveCastlingOption(CastleFlag(W0_0_0 << (2 * SideToMove)));
@@ -951,7 +949,7 @@ std::string Position::fen() const {
 
 	ss << (SideToMove == WHITE ? " w " : " b ");
 
-	if ((CastlingOptions & 15) == NoCastles)
+	if (!CastlingOptions)
 		ss << '-';
 	else if (Chess960) {
 		if (W0_0 & CastlingOptions) {
