@@ -648,7 +648,6 @@ template<> ValuatedMove* Position::GenerateMoves<QUIET_CHECKS>() {
 		if ((CastlingOptions & (1 << (2 * SideToMove))) //Short castle allowed
 			&& (InitialRookSquareBB[2 * SideToMove] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 			&& !(SquaresToBeEmpty[2 * SideToMove] & OccupiedBB()) //Fields between Rook and King are empty
-			&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 			&& !(SquaresToBeUnattacked[2 * SideToMove] & attackedByThem) //Fields passed by the king are unattacked
 			&& (RookTargets(opposedKingSquare, ~targets & ~PieceBB(KING, SideToMove)) & RookSquareAfterCastling[2 * SideToMove])) //Rook is giving check after castling
 		{
@@ -658,7 +657,6 @@ template<> ValuatedMove* Position::GenerateMoves<QUIET_CHECKS>() {
 		if ((CastlingOptions & (1 << (2 * SideToMove + 1))) //Short castle allowed
 			&& (InitialRookSquareBB[2 * SideToMove + 1] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 			&& !(SquaresToBeEmpty[2 * SideToMove + 1] & OccupiedBB()) //Fields between Rook and King are empty
-			&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 			&& !(SquaresToBeUnattacked[2 * SideToMove + 1] & attackedByThem) //Fields passed by the king are unattacked
 			&& (RookTargets(opposedKingSquare, ~targets & ~PieceBB(KING, SideToMove)) & RookSquareAfterCastling[2 * SideToMove + 1])) //Rook is giving check after castling
 		{
@@ -714,7 +712,6 @@ template<MoveGenerationType MGT> ValuatedMove * Position::GenerateMoves() {
 				if ((CastlingOptions & (1 << (2 * SideToMove))) //Short castle allowed
 					&& (InitialRookSquareBB[2 * SideToMove] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 					&& !(SquaresToBeEmpty[2 * SideToMove] & OccupiedBB()) //Fields between Rook and King are empty
-					&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 					&& !(SquaresToBeUnattacked[2 * SideToMove] & attackedByThem)) //Fields passed by the king are unattacked
 				{
 					if (Chess960) AddMove(createMove<CASTLING>(kingSquare, InitialRookSquare[2 * SideToMove]));
@@ -724,7 +721,6 @@ template<MoveGenerationType MGT> ValuatedMove * Position::GenerateMoves() {
 				if ((CastlingOptions & (1 << (2 * SideToMove + 1))) //Short castle allowed
 					&& (InitialRookSquareBB[2 * SideToMove + 1] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 					&& !(SquaresToBeEmpty[2 * SideToMove + 1] & OccupiedBB()) //Fields between Rook and King are empty
-					&& (attackedByThem || (attackedByThem = calculateAttacks(Color(SideToMove ^ 1))))
 					&& !(SquaresToBeUnattacked[2 * SideToMove + 1] & attackedByThem)) //Fields passed by the king are unattacked
 				{
 					if (Chess960) AddMove(createMove<CASTLING>(kingSquare, InitialRookSquare[2 * SideToMove + 1]));
@@ -1021,7 +1017,6 @@ template<StagedMoveGenerationType SMGT> void Position::InitializeMoveIterator(Hi
 	}
 	if (SMGT == MAIN_SEARCH) killerManager = km; else killerManager = nullptr;
 	counterMove = counter;
-	if (!attackedByThem) attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	moveIterationPointer = -1;
 	movepointer = 0;
 	phaseStartIndex = 0;
