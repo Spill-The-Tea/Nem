@@ -157,8 +157,6 @@ inline Value operator+=(Value v, int i) { return Value(int(v) + i); }
 inline Value operator-=(Value v, int i) { return Value(int(v) - i); }
 inline Value operator+(Value v, int i) { return Value(int(v) + i); }
 
-inline Color& operator~(Color& col) { return col = Color(((int)col) ^ 1); }
-
 inline Square createSquare(Rank rank, File file) { return Square((rank << 3) + file); }
 inline char toChar(File f) { return char(f - FileA + 'a'); }
 inline char toChar(Rank r) { return char(r - Rank1 + '1'); }

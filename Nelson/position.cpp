@@ -1200,18 +1200,20 @@ bool Position::givesCheck(Move move)
 	}
 	//now check for discovered check
 	Bitboard dc = PinnedPieces(Color(SideToMove ^ 1));
-	if (moveType == MoveType::ENPASSANT) {
-		//in EP-captures 2 "from"-Moves have to be checked for discovered (from-square and square of captured pawn)
-		if ((ToBitboard(fromSquare) & dc) != EMPTY) { //capturing pawn was pinned
-			if ((ToBitboard(toSquare) & RaysBySquares[fromSquare][kingSquare]) == EMPTY) return true; //pin wasn't along capturing diagonal
+	if (dc) {
+		if (moveType == MoveType::ENPASSANT) {
+			//in EP-captures 2 "from"-Moves have to be checked for discovered (from-square and square of captured pawn)
+			if ((ToBitboard(fromSquare) & dc) != EMPTY) { //capturing pawn was pinned
+				if ((ToBitboard(toSquare) & RaysBySquares[fromSquare][kingSquare]) == EMPTY) return true; //pin wasn't along capturing diagonal
+			}
+			Square capturedPawnSquare = Square(toSquare - 8 + 16 * int(SideToMove));
+			if ((ToBitboard(capturedPawnSquare) & dc) == EMPTY) return false; //captured pawn isn't pinned
+			if ((ToBitboard(toSquare) & RaysBySquares[capturedPawnSquare][kingSquare]) != EMPTY) return false; //captured pawn was pinned, but capturing pawn is now blocking
 		}
-		Square capturedPawnSquare = Square(toSquare - 8 + 16 * int(SideToMove));
-		if ((ToBitboard(capturedPawnSquare) & dc) == EMPTY) return false; //captured pawn isn't pinned
-		if ((ToBitboard(toSquare) & RaysBySquares[capturedPawnSquare][kingSquare]) != EMPTY) return false; //captured pawn was pinned, but capturing pawn is now blocking
-	}
-	else {
-		if (moveType == MoveType::CASTLING || (ToBitboard(fromSquare) & dc) == EMPTY) return false;
-		return (ToBitboard(toSquare) & RaysBySquares[fromSquare][kingSquare]) == EMPTY;
+		else {
+			if (moveType == MoveType::CASTLING || (ToBitboard(fromSquare) & dc) == EMPTY) return false;
+			return (ToBitboard(toSquare) & RaysBySquares[fromSquare][kingSquare]) == EMPTY;
+		}
 	}
 	return false;
 }

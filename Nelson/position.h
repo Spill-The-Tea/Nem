@@ -127,7 +127,7 @@ public:
 	bool checkRepetition();
 	//checks if there are any repetitions in prior moves
 	bool hasRepetition();
-	inline void SwitchSideToMove() { ~SideToMove; Hash ^= ZobristMoveColor; }
+	inline void SwitchSideToMove() { SideToMove = Color(SideToMove ^1); Hash ^= ZobristMoveColor; }
 	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount; }
 	//applies a null move to the given position (there is no copy/make for null move), the EPSquare is the only information which has to be restored afterwards
 	void NullMove(Square epsquare = OUTSIDE, Move lastApplied = MOVE_NONE);
