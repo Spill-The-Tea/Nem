@@ -89,6 +89,7 @@ Nemorino is listed in several rating lists:
 
 Nemorino 3.00
 
+* [CCRL 40/40 **Elo 3104 #24**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%203.0%2064-bit%204CPU#Nemorino_3_0_64-bit_4CPU)
 * [CCRL 40/40 **Elo 3002 #27**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%203.0%2064-bit#Nemorino_3_0_64-bit)
 * [CCRL 40/4 **Elo 3043 #34**](http://www.computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%203.0%2064-bit#Nemorino_3_0_64-bit)
 * [CEGT 40/20 **Elo 2906 #25**](http://www.cegt.net/40_40%20Rating%20List/40_40%20SingleVersion/rangliste.html)
@@ -98,7 +99,6 @@ Nemorino 3.00
 
 Nemorino 2.00 64-bit 4CPU
 
-* [CCRL 40/40 **Elo 3020 #36**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%202.00%2064-bit%204CPU#Nemorino_2_00_64-bit_4CPU)
 * [CCRL 40/4 **Elo 3021**](http://www.computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%202.00%2064-bit%204CPU#Nemorino_2_00_64-bit_4CPU)
 
 Nemorino 2.00
