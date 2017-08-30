@@ -626,7 +626,7 @@ namespace test {
 		Search * engine = new Search;
 		engine->timeManager.initialize(FIXED_DEPTH, 0, depth);
 		ValuatedMove vm = engine->Think(pos);
-		std::cout << "Best Move: " << toString(vm.move) << " " << vm.score << std::endl;
+		std::cout << "Best Move: " << toString(vm.move) << " " << (int)vm.score << std::endl;
 		delete engine;
 	}
 
@@ -635,7 +635,7 @@ namespace test {
 		Search * engine = new Search;
 		engine->timeManager.initialize(FIXED_DEPTH, 0, 5);
 		ValuatedMove vm = engine->Think(pos);
-		std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << vm.score << std::endl;
+		std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << (int)vm.score << std::endl;
 		delete engine;
 	}
 
@@ -678,7 +678,7 @@ namespace test {
 			Position pos(fen);
 			ValuatedMove vm = engine->Think(pos);
 			std::cout << ((vm.move == iter->second) && (vm.score == VALUE_MATE - engine->timeManager.GetMaxDepth()) ? "OK    " : "ERROR ") << "\t" << toString(vm.move) << "/" << toString(iter->second)
-				<< "\t" << vm.score << "/" << VALUE_MATE - engine->timeManager.GetMaxDepth() << "\t" << fen << std::endl;
+				<< "\t" << (int)vm.score << "/" << (int)VALUE_MATE - engine->timeManager.GetMaxDepth() << "\t" << fen << std::endl;
 			count++;
 		}
 		delete engine;
@@ -991,7 +991,7 @@ namespace test {
 				srch->NewGame();
 				srch->timeManager.initialize(FIXED_DEPTH, 0, 8);
 				m[j] = srch->Think(*pos);
-				std::cout << toString(m[j].move) << " " << m[j].score << "  " << fen << std::endl;
+				std::cout << toString(m[j].move) << " " << (int)m[j].score << "  " << fen << std::endl;
 				delete srch;
 				delete pos;
 			}
@@ -2010,7 +2010,7 @@ namespace test {
 			bool lresult = vsee == std::stoi(tokens[2]);
 			result == result && lresult;
 			if (!lresult) std::cout << "ERROR ";
-			std::cout << tokens[1] << "\t" << vsee << "\t" << tokens[2] << std::endl;
+			std::cout << tokens[1] << "\t" << (int)vsee << "\t" << tokens[2] << std::endl;
 		}
 		return result;
 	}

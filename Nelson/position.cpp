@@ -1006,7 +1006,7 @@ std::string Position::print() {
 		ss << " |\n +---+---+---+---+---+---+---+---+\n";
 	}
 	ss << "\nChecked:         " << std::boolalpha << Checked() << std::noboolalpha
-		<< "\nEvaluation:      " << this->evaluate()
+		<< "\nEvaluation:      " << (int)this->evaluate()
 		<< "\nFen:             " << fen()
 		<< "\nHash:            " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << Hash
 		//<< "\nNormalized Hash: " << std::hex << std::uppercase << std::setfill('0') << std::setw(16) << GetNormalizedHash()
@@ -1018,7 +1018,7 @@ std::string Position::print() {
 std::string Position::printGeneratedMoves() {
 	std::ostringstream ss;
 	for (int i = 0; i < movepointer - 1; ++i) {
-		ss << toString(moves[i].move) << "\t" << moves[i].score << "\n";
+		ss << toString(moves[i].move) << "\t" << (int)moves[i].score << "\n";
 	}
 	return ss.str();
 }

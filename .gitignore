@@ -224,3 +224,7 @@ Nelson/Nelson.vcxproj.filters
 /Nelson/nemorino_vc
 /Nelson/nemorino_vg
 /Nelson/cg.txt
+/Nelson/create_node.bat
+/Nelson/create_wasm.bat
+/Nelson/nemorino.js
+/Nelson/nemorino.html

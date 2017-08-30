@@ -68,11 +68,11 @@ void UCIInterface::dispatch(std::string line) {
 		setvalue(tokens);
 	else if (!command.compare("bench")) {
 		if (tokens.size() == 1) {
-			test::benchmark(11);
+			test::benchmark(12);
 		}
 		else {
 			std::string filename = line.substr(6, std::string::npos);
-			test::benchmark(filename, 11);
+			test::benchmark(filename, 12);
 		}
 	}
 	else if (!command.compare("eval")) {
@@ -168,12 +168,12 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 	else if (!tokens[2].compare(settings::OPTION_MULTIPV)) {
 		Engine->MultiPv = settings::options.getInt(settings::OPTION_MULTIPV);
 	}
-	else if (!tokens[2].compare(settings::OPTION_OPPONENT)) {
+	else if (!tokens[2].compare(settings::OPTION_OPPONENT) && tokens.size() >= 6) {
 		try {
 			int rating = stoi(tokens[5]);
 			int ownRating = 2800;
 			settings::options.set(settings::OPTION_CONTEMPT, (ownRating - rating) / 10);
-			sync_cout << "info string Contempt set to " << settings::parameter.Contempt << sync_endl;
+			sync_cout << "info string Contempt set to " << (int)settings::parameter.Contempt << sync_endl;
 		}
 		catch (...) {
 
@@ -538,7 +538,7 @@ void UCIInterface::see(std::vector<std::string> &tokens) {
 		return;
 	}
 	Move move = parseMoveInUCINotation(tokens[1], *_position);
-	std::cout << "SEE: " << _position->SEE(move) << std::endl;
+	std::cout << "SEE: " << (int)_position->SEE(move) << std::endl;
 }
 
 void UCIInterface::quit() {

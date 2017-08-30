@@ -332,7 +332,7 @@ struct Eval {
 
 	std::string print() {
 		std::stringstream ss;
-		ss << std::setw(6) << mgScore << " : " << std::setw(6) << egScore;
+		ss << std::setw(6) << (int)mgScore << " : " << std::setw(6) << (int)egScore;
 		return ss.str();
 	}
 };
