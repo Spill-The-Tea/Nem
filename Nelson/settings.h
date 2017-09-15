@@ -66,7 +66,7 @@ namespace settings {
 
 		Eval BONUS_BISHOP_PAIR = Eval(50);
 		Value BONUS_CASTLING = Value(0);
-        Value BONUS_TEMPO = Value(5);
+        //Value BONUS_TEMPO = Value(5);
         Value DELTA_PRUNING_SAFETY_MARGIN = Value(VALUE_100CP);
         Eval PAWN_SHELTER_2ND_RANK = Eval(30, -10);
 		Eval PAWN_SHELTER_3RD_RANK = Eval(15, -8);

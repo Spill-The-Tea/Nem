@@ -91,7 +91,7 @@ void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
 
 
 const int MAJOR_VERSION = 3;
-const int MINOR_VERSION = 2;
+const int MINOR_VERSION = 3;
 const int BUILD_NUMBER = 0;
 
 

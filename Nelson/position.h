@@ -374,7 +374,7 @@ inline Value Position::evaluate() {
 	if (StaticEval != VALUE_NOTYETDETERMINED)
 		return StaticEval;
 	if (GetResult() == OPEN) {
-		return StaticEval = material->EvaluationFunction(*this);
+		return StaticEval = material->EvaluationFunction(*this); //+Eval(5, 0).getScore(GetMaterialTableEntry()->Phase);
 	}
 	else if (result == DRAW) return StaticEval = SideToMove == settings::parameter.EngineSide ? -settings::parameter.Contempt : settings::parameter.Contempt;
 	else return StaticEval = Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
