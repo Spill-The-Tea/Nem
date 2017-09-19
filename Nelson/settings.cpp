@@ -2,6 +2,7 @@
 #include <fstream>
 #include <algorithm>
 #include <regex>
+#include <thread>
 #include "settings.h"
 #include "utils.h"
 #include "hashtables.h"
@@ -11,6 +12,11 @@ namespace settings {
 	Parameters parameter;
 
 	void Parameters::Initialize() {
+		if (HelperThreads == 0) {
+			HelperThreads = std::max(0, (int)std::thread::hardware_concurrency()-1);
+			((OptionSpin *)options[OPTION_THREADS])->set(HelperThreads + 1);
+			((OptionSpin *)options[OPTION_THREADS])->setDefault(HelperThreads + 1);
+		}
 		for (int depth = 0; depth < 64; depth++) {
 			for (int moves = 0; moves < 64; moves++) {
 				double reduction = std::log(moves) * std::log(depth) / 2; //F
@@ -337,7 +343,7 @@ namespace settings {
 		(*this)[OPTION_BOOK_FILE] = (Option *)(new OptionString(OPTION_BOOK_FILE, "book.bin"));
 		(*this)[OPTION_OWN_BOOK] = (Option *)(new OptionCheck(OPTION_OWN_BOOK, false));
 		(*this)[OPTION_OPPONENT] = (Option *)(new OptionString(OPTION_OPPONENT));
-		(*this)[OPTION_EMERGENCY_TIME] = (Option *)(new OptionSpin(OPTION_EMERGENCY_TIME, 100, 0, 60000));
+		(*this)[OPTION_EMERGENCY_TIME] = (Option *)(new OptionSpin(OPTION_EMERGENCY_TIME, 0, 0, 60000));
 		(*this)[OPTION_NODES_TIME] = (Option *)(new OptionSpin(OPTION_NODES_TIME, 0, 0, INT_MAX, true));
 #ifdef TUNE
 		(*this)[OPTION_TEXEL_TUNING_WINS] = (Option *)(new OptionString(OPTION_TEXEL_TUNING_WINS, "", true));

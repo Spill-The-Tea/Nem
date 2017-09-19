@@ -62,6 +62,7 @@ void Timemanager::initialize(TimeMode mode, int movetime, int depth, int64_t nod
 	_stopTime = INT64_MAX;
 	_nodestime = nodestime;
 	if (mode == FIXED_TIME_PER_MOVE) {
+		if (settings::parameter.EmergencyTime == 0) settings::parameter.EmergencyTime = std::max(100, _time / 1000);
 		_mode = mode;
 		_hardStopTime = _starttime + _time - settings::parameter.EmergencyTime;
 	}
@@ -102,6 +103,7 @@ void Timemanager::init() {
 		}
 		//Leave in any case some emergency time for remaining moves
 		int64_t remainingTime = _time + (_movestogo * _inc);
+		if (settings::parameter.EmergencyTime == 0) settings::parameter.EmergencyTime = std::max(100, (int)(remainingTime / 1000));
 		//int64_t emergencySpareTime = _movestogo > 1 ? remainingTime / 3 : EmergencyTime;
 		//_hardStopTime = std::min(_starttime + _time - EmergencyTime, _starttime + _time - emergencySpareTime);
 		//Give at least 10 ms

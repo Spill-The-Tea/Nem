@@ -91,7 +91,7 @@ void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
 
 
 const int MAJOR_VERSION = 3;
-const int MINOR_VERSION = 3;
+const int MINOR_VERSION = 4;
 const int BUILD_NUMBER = 0;
 
 
@@ -146,7 +146,7 @@ int main(int argc, const char* argv[]) {
 #ifdef NO_POPCOUNT
 			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << " (No Popcount)" << std::setfill(' ') << std::endl;
 #else
-			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << std::setfill(' ') << std::endl;
+			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << std::setfill(' ') << " (TCEC)" << std::endl;
 #endif
 		}
 		else if (!input.compare(0, 8, "position")) {

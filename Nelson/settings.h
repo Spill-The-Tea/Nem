@@ -37,7 +37,7 @@ namespace settings {
 		Value Contempt = VALUE_ZERO;
 		Color EngineSide = WHITE;
 		Protocol protocol = NO_PROTOCOL;
-		int EmergencyTime = 100;
+		int EmergencyTime = 0;
 		//King safety parameters
 		int KING_SAFETY_MAXVAL = 500;
 		int KING_SAFETY_MAXINDEX = 61;
@@ -316,6 +316,8 @@ namespace settings {
 		virtual ~OptionSpin() { };
 		inline void set(std::string value) { _value = stoi(value); }
 		inline void set(int value) { _value = value; }
+		inline void setDefault(std::string value) { defaultValue = value; }
+		inline void setDefault(int value) { defaultValue = std::to_string(value); }
 		inline int getValue() { 
 			if (_value == INT_MIN) set(defaultValue); 
 			return _value; 
