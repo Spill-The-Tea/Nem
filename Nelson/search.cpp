@@ -84,7 +84,7 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 				<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
 			else {
 				int pliesToMate;
-				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
+				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score + 1; else pliesToMate = -BestMove.score - VALUE_MATE;
 				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
 					<< " tbhits " << tbHits
@@ -98,12 +98,12 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 			int xscore = BestMove.score;
 			if (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD)) {
 				if (int(BestMove.score) > 0) {
-					int pliesToMate = VALUE_MATE - BestMove.score;
-					xscore = 100000 + pliesToMate;
+					int pliesToMate = VALUE_MATE - BestMove.score + 1;
+					xscore = 100000 + pliesToMate/2;
 				}
 				else {
 					int pliesToMate = -BestMove.score - VALUE_MATE;
-					xscore = -100000 - pliesToMate;
+					xscore = -100000 - pliesToMate/2;
 				}
 			}
 			sync_cout << _depth << " " << xscore << " " << _thinkTime / 10 << " " << NodeCount << " " /*<< std::max(MaxDepth, _depth) << " " << (NodeCount / _thinkTime) * 1000

@@ -91,7 +91,7 @@ void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
 
 
 const int MAJOR_VERSION = 3;
-const int MINOR_VERSION = 4;
+const int MINOR_VERSION = 5;
 const int BUILD_NUMBER = 0;
 
 
@@ -118,6 +118,8 @@ int main(int argc, const char* argv[]) {
 		std::string arg1(argv[1]);
 		if (!arg1.compare("bench")) {
 			Initialize();
+			((settings::OptionSpin *)settings::options[settings::OPTION_THREADS])->set(1);
+			settings::parameter.HelperThreads = 0;
 			int depth = 12;
 			if (argc > 2) depth = std::atoi(argv[2]);
 			if (argc > 3) test::benchmark(argv[3], depth); else test::benchmark(depth);
@@ -146,7 +148,7 @@ int main(int argc, const char* argv[]) {
 #ifdef NO_POPCOUNT
 			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << " (No Popcount)" << std::setfill(' ') << std::endl;
 #else
-			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << std::setfill(' ') << " (TCEC)" << std::endl;
+			std::cout << "Nemorino " << MAJOR_VERSION << "." << std::setfill('0') << std::setw(2) << MINOR_VERSION << std::setfill(' ') << std::endl;
 #endif
 		}
 		else if (!input.compare(0, 8, "position")) {
