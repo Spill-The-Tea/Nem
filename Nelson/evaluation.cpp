@@ -1,9 +1,36 @@
 #include <algorithm>
+#include <fstream>
 #include <sstream>
 #include <iomanip>
 #include "evaluation.h"
 #include "position.h"
 #include "settings.h"
+
+#ifdef WPF
+struct wpf_entry {
+	std::string fen;
+	Phase_t phase;
+	Value score;
+	Evaluation evaluation;
+	};
+
+std::vector<wpf_entry> wpf_data;
+
+int wpf_count = 0;
+
+void writeWPF() {
+	std::ofstream of;
+	of.open("wpf.txt", std::ios::out | std::ios_base::app);
+	for (auto it = wpf_data.begin(); it != wpf_data.end(); ++it) {
+		wpf_entry e = *it;
+		Evaluation v = e.evaluation;
+		of << e.fen << ";" << e.score << ";" << v.KingSafety.getScore(e.phase) << ";" << v.Material.getScore(e.phase)
+			<< ";" << v.Mobility.getScore(e.phase) << ";" << v.PawnStructure.getScore(e.phase) << ";" << v.Pieces.getScore(e.phase)
+			<< ";" << v.PsqEval.getScore(e.phase) << ";" << v.Threats.getScore(e.phase) << std::endl;
+	}
+	of.close();
+}
+#endif
 
 Value evaluateDefault(const Position& pos) {
 	Evaluation result;
@@ -15,7 +42,23 @@ Value evaluateDefault(const Position& pos) {
 	result.Pieces = evaluatePieces<WHITE>(pos) - evaluatePieces<BLACK>(pos);
 	result.PsqEval = pos.GetPsqEval();
 	//result.Space = evaluateSpace<WHITE>(pos) -evaluateSpace<BLACK>(pos);
+#ifdef WPF
+	Value r = result.GetScore(pos);
+	if (std::abs((int)r) < 100) {
+		if (wpf_count % 10000 == 0) {
+			wpf_entry e;
+			e.fen = pos.fen();
+			e.phase = pos.GetMaterialTableEntry()->Phase;
+			e.score = r;
+			e.evaluation = result;
+			wpf_data.push_back(e);
+		}
+		++wpf_count;
+	}
+	return r;
+#else
 	return result.GetScore(pos);
+#endif
 }
 
 std::string printDefaultEvaluation(const Position& pos) {

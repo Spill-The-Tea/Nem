@@ -7,6 +7,10 @@
 
 int scaleEG(const Position& pos);
 
+#ifdef WPF
+void writeWPF();
+#endif
+
 struct Evaluation
 {
 public:
