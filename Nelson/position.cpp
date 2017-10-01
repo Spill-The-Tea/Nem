@@ -540,9 +540,13 @@ Bitboard Position::calculateAttacks(Color color) {
 	Bitboard occupied = OccupiedBB();
 	attacksByPt[GetPiece(ROOK, color)] = 0ull;
 	Bitboard rookSliders = PieceBB(ROOK, color);
+	Bitboard bbAttacks = EMPTY;
 	while (rookSliders) {
 		Square sq = lsb(rookSliders);
-		attacks[sq] = RookTargets(sq, occupied);
+		Bitboard a = RookTargets(sq, occupied);
+		dblAttacked[color] = bbAttacks & a;
+		attacks[sq] = a;
+		bbAttacks |= a;
 		attacksByPt[GetPiece(ROOK, color)] |= attacks[sq];
 		rookSliders &= rookSliders - 1;
 	}
@@ -550,7 +554,10 @@ Bitboard Position::calculateAttacks(Color color) {
 	Bitboard bishopSliders = PieceBB(BISHOP, color);
 	while (bishopSliders) {
 		Square sq = lsb(bishopSliders);
-		attacks[sq] = BishopTargets(sq, occupied);
+		Bitboard a = BishopTargets(sq, occupied);
+		dblAttacked[color] = bbAttacks & a;
+		attacks[sq] = a;
+		bbAttacks |= a;
 		attacksByPt[GetPiece(BISHOP, color)] |= attacks[sq];
 		bishopSliders &= bishopSliders - 1;
 	}
@@ -558,8 +565,11 @@ Bitboard Position::calculateAttacks(Color color) {
 	Bitboard queenSliders = PieceBB(QUEEN, color);
 	while (queenSliders) {
 		Square sq = lsb(queenSliders);
-		attacks[sq] = RookTargets(sq, occupied);
-		attacks[sq] |= BishopTargets(sq, occupied);
+		Bitboard a = RookTargets(sq, occupied);
+		a |= BishopTargets(sq, occupied);
+		dblAttacked[color] = bbAttacks & a;
+		attacks[sq] = a;
+		bbAttacks |= a;
 		attacksByPt[GetPiece(QUEEN, color)] |= attacks[sq];
 		queenSliders &= queenSliders - 1;
 	}
@@ -567,23 +577,30 @@ Bitboard Position::calculateAttacks(Color color) {
 	Bitboard knights = PieceBB(KNIGHT, color);
 	while (knights) {
 		Square sq = lsb(knights);
-		attacks[sq] = KnightAttacks[sq];
+		Bitboard a = KnightAttacks[sq];
+		dblAttacked[color] = bbAttacks & a;
+		attacks[sq] = a;
+		bbAttacks |= a;
 		attacksByPt[GetPiece(KNIGHT, color)] |= attacks[sq];
 		knights &= knights - 1;
 	}
 	Square kingSquare = kingSquares[color];
 	attacks[kingSquare] = KingAttacks[kingSquare];
+	dblAttacked[color] = bbAttacks & attacks[kingSquare];
+	bbAttacks |= attacks[kingSquare];
 	attacksByPt[GetPiece(KING, color)] = attacks[kingSquare];
 	attacksByPt[GetPiece(PAWN, color)] = 0ull;
 	Bitboard pawns = PieceBB(PAWN, color);
 	while (pawns) {
 		Square sq = lsb(pawns);
-		attacks[sq] = PawnAttacks[color][sq];
+		Bitboard a = PawnAttacks[color][sq];
+		dblAttacked[color] = bbAttacks & a;
+		attacks[sq] = a;
+		bbAttacks |= a;
 		attacksByPt[GetPiece(PAWN, color)] |= attacks[sq];
 		pawns &= pawns - 1;
 	}
-	return attacksByPt[GetPiece(QUEEN, color)] | attacksByPt[GetPiece(ROOK, color)] | attacksByPt[GetPiece(BISHOP, color)]
-		| attacksByPt[GetPiece(KNIGHT, color)] | attacksByPt[GetPiece(PAWN, color)] | attacksByPt[GetPiece(KING, color)];
+	return bbAttacks;
 }
 
 Bitboard Position::checkBlocker(Color colorOfBlocker, Color kingColor) {

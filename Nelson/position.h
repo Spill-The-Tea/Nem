@@ -191,6 +191,8 @@ public:
 	bool oppositeColoredBishops() const;
 	//Check if there is a mate threat (a possibility that there might be a quiet move giving mate)
 	bool mateThread() const;
+	//Bitboard of squares attacked by more than one piece
+	inline Bitboard dblAttacks(Color color) const { return dblAttacked[color]; }
 #ifdef TRACE
 	std::string printPath() const;
 #endif
@@ -234,6 +236,8 @@ private:
 	Bitboard attackedByThem;
 	//Attack bitboard containing all squares attacked by the side to move
 	Bitboard attackedByUs;
+	//Attack bitboard containing all squares attacked by at least 2 pieces (indexed by attacking color)
+	Bitboard dblAttacked[2] = { EMPTY, EMPTY };
 	//Attack bitboard containing all attacks by a certain Piece Type
 	Bitboard attacksByPt[12];
 	//Bitboards of pieces pinned to king of given Color: bbPinned[0] contains white an black pieces "pinned" to white king

@@ -52,6 +52,8 @@ inline const Phase_t Phase(int nWQ, int nBQ, int nWR, int nBR, int nWB, int nBB,
 	return Phase_t(phase);
 }
 
+const Phase_t PHASE_LIMIT_ENDGAME = Phase(0, 0, 1, 0, 0, 0, 1, 0);
+
 void InitializeMaterialTable();
 
 inline MaterialTableEntry * probe(MaterialKey_t key) { if (key == MATERIAL_KEY_UNUSUAL) return &UnusualMaterial; else return &MaterialTable[key]; }

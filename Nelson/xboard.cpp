@@ -176,7 +176,6 @@ namespace cecp {
 		default:
 			return true;
 		}
-		return false;
 	}
 
 	//Only used when engine has received quit command

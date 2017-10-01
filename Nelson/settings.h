@@ -235,13 +235,15 @@ namespace settings {
 		Eval BONUS_LEVER = Eval(5);
 		Eval MALUS_DOUBLED_PAWN = Eval(0, 20);
 		int TBProbeDepth = 8;
+		const int ATTACK_WEIGHT[6] = { 5, 3, 2, 2, 0, 0 }; //Indexed by Piece Type
+		const int SAFE_CHECK[4] = { 780, 880, 435, 790 };
 #ifdef TUNE
 		bool parse(std::string input);
 		std::vector<int> parseValue(std::string input);
 		void setEval(Eval & e, std::vector<int> & v, int index);
 		inline void setValue(Value & val, std::vector<int> & v) { val = Value(v[0]); };
 		inline void setValue(int & val, std::vector<int> & v) { val = Value(v[0]); };
-#endif
+#endif 
 	private:
 		int LMR_REDUCTION[64][64];
 	};

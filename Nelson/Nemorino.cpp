@@ -77,7 +77,6 @@ LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
 }
 
 #if defined(_WIN64) && defined(_MSC_VER)
-#pragma unmanaged  
 std::exception seExc("Windows Exception");
 
 void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
