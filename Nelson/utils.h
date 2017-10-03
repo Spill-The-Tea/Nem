@@ -35,6 +35,8 @@ namespace utils {
 
 	std::string mirrorFenVertical(std::string fen);
 
+	double TexelTuneError(const char* argv[], int argc);
+
 #ifdef TRACE
 	enum ScoreType { UNDEFINED,
 	                 MDP,   //Mate-Distance-Pruned

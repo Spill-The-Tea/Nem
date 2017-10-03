@@ -117,6 +117,10 @@ int main(int argc, const char* argv[]) {
 			if (argc > 3) test::benchmark(argv[3], depth); else test::benchmark(depth);
 			return 0;
 		}
+		else if (!arg1.compare("-q")) {
+			std::cout << utils::TexelTuneError(argv, argc) << std::endl;
+			return 0;
+		}
 	}
 	std::string input = "";
 	Position pos;

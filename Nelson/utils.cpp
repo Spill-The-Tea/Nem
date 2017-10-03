@@ -99,6 +99,32 @@ namespace utils {
 		return ss.str();
 	}
 
+	double TexelTuneError(const char * argv[], int argc)
+	{
+		assert(argc > 3);
+		Initialize();
+		std::string filename(argv[2]);
+		settings::parameter.KING_DANGER_SCALE = std::atoi(argv[3]);
+		Search * Engine = new Search();
+		std::ifstream infile(filename);
+		double error = 0.0;
+		int n = 0;
+		for (std::string line; getline(infile, line); )
+		{
+			std::size_t found = line.find(" c9 ");
+			if (found != std::string::npos) {
+				Position pos(line.substr(0, found));
+				double result = stod(line.substr(found + 4));
+				Value score = Engine->qscore(&pos);
+				if (pos.GetSideToMove() == BLACK) score = -score;
+				double lerror = result - utils::sigmoid(score);
+				error += lerror * lerror;
+				++n;
+			}
+		}
+		return error / n;
+	}
+
 	void replaceExt(std::string& s, const std::string& newExt) {
 		std::string::size_type i = s.rfind('.', s.length());
 		if (i != std::string::npos) {

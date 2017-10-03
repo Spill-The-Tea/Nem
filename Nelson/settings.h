@@ -235,8 +235,9 @@ namespace settings {
 		Eval BONUS_LEVER = Eval(5);
 		Eval MALUS_DOUBLED_PAWN = Eval(0, 20);
 		int TBProbeDepth = 8;
-		const int ATTACK_WEIGHT[6] = { 5, 3, 2, 2, 0, 0 }; //Indexed by Piece Type
+		const int ATTACK_WEIGHT[4] = { 11, 45, 56, 78 }; //Indexed by Piece Type
 		const int SAFE_CHECK[4] = { 780, 880, 435, 790 };
+		int KING_DANGER_SCALE = 4096 * 4;
 #ifdef TUNE
 		bool parse(std::string input);
 		std::vector<int> parseValue(std::string input);
