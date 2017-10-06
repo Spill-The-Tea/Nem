@@ -4,6 +4,8 @@
 #include <mutex>
 #include <map>
 #include <algorithm>
+#include <thread>
+#include <future>
 
 #include "types.h"
 #include "uci.h"
@@ -99,29 +101,48 @@ namespace utils {
 		return ss.str();
 	}
 
+	double CalcErrorForPackage(const std::vector<std::string>& lines) {
+		double error = 0.0;
+		Search * Engine = new Search();
+		for (auto line : lines) {
+			std::size_t found = line.find(" c9 ");
+			Position pos(line.substr(0, found));
+			double result = stod(line.substr(found + 4));
+			Value score = Engine->qscore(&pos);
+			if (pos.GetSideToMove() == BLACK) score = -score;
+			double lerror = result - utils::sigmoid(score);
+			error += lerror * lerror;
+		}
+		return error;
+	}
+
 	double TexelTuneError(const char * argv[], int argc)
 	{
 		assert(argc > 3);
 		Initialize();
 		std::string filename(argv[2]);
-		settings::parameter.KING_DANGER_SCALE = std::atoi(argv[3]);
-		Search * Engine = new Search();
+		//for (int i = 3; i < argc; ++i) settings::parameter.ATTACK_WEIGHT[i-3] = std::atoi(argv[i]);
+		//settings::parameter.KING_DANGER_SCALE = std::atoi(argv[3]);
+		//settings::parameter.ATTACK_WITH_QUEEN = std::atoi(argv[3]);
+		int packageCount = (int)std::thread::hardware_concurrency() - 1;
+		std::vector<std::string> * packages = new std::vector<std::string>[packageCount];
 		std::ifstream infile(filename);
 		double error = 0.0;
 		int n = 0;
 		for (std::string line; getline(infile, line); )
 		{
-			std::size_t found = line.find(" c9 ");
-			if (found != std::string::npos) {
-				Position pos(line.substr(0, found));
-				double result = stod(line.substr(found + 4));
-				Value score = Engine->qscore(&pos);
-				if (pos.GetSideToMove() == BLACK) score = -score;
-				double lerror = result - utils::sigmoid(score);
-				error += lerror * lerror;
-				++n;
-			}
+			packages[n % packageCount].push_back(line);
+			++n;
 		}
+		std::vector<std::future<double>> futures;
+		for (int i = 0; i < packageCount; ++i) {
+			futures.push_back(std::async(std::launch::async, CalcErrorForPackage, std::ref(packages[i])));
+		}
+		for (int i = 0; i < packageCount; ++i) {
+			error += futures[i].get();
+		}
+		//for (int i = 0; i < packageCount; ++i) error += CalcErrorForPackage(packages[i]);
+		delete[] packages;
 		return error / n;
 	}
 

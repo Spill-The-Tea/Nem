@@ -122,12 +122,12 @@ Eval evaluateKingSafety(const Position& pos) {
 		if (attackerCount[c ^ 1] > (1 - (pos.GetMaterialTableEntry()->GetMostExpensivePiece(color_attacker) == QUEEN))) {
 			Bitboard bbWeak = pos.AttacksByColor(color_attacker) & KingAttacks[pos.KingSquare(color)] & ~pos.dblAttacks(color);
 			Bitboard bbUndefended = pos.AttacksByColor(color_attacker) & ~pos.AttacksByColor(color) & kingZone[color] & ~pos.ColorBB(color_attacker);
-			kingDanger[c] = attackerCount[c ^ 1] * attackWeight[c ^ 1]
-				+ 102 * kingRingAttacks[c ^ 1]
-				+ 191 * popcount(bbWeak | bbUndefended)
-				+ 143 * (pos.PinnedPieces(color) != EMPTY)
-				- 848 * (pos.GetMaterialTableEntry()->GetMostExpensivePiece(color_attacker) != QUEEN)
-				+ 40;
+			kingDanger[c] = attackerCount[c ^ 1] * attackWeight[c ^ 1];
+			kingDanger[c] += settings::parameter.KING_RING_ATTACK_FACTOR * kingRingAttacks[c ^ 1];
+			kingDanger[c] += settings::parameter.WEAK_SQUARES_FACTOR * popcount(bbWeak | bbUndefended);
+			kingDanger[c] += settings::parameter.PINNED_FACTOR * (pos.PinnedPieces(color) != EMPTY);
+			kingDanger[c] -= settings::parameter.ATTACK_WITH_QUEEN * (pos.GetMaterialTableEntry()->GetMostExpensivePiece(color_attacker) != QUEEN);
+			kingDanger[c] += 40;
 			//Safe checks
 			Bitboard bbSafe = (~pos.AttacksByColor(color) | (bbWeak & pos.dblAttacks(color_attacker))) & ~pos.ColorBB(color_attacker);
 			Bitboard bbRookAttacks = RookTargets(pos.KingSquare(color), pos.OccupiedBB());
