@@ -121,7 +121,7 @@ namespace utils {
 		assert(argc > 3);
 		Initialize();
 		std::string filename(argv[2]);
-		//for (int i = 3; i < argc; ++i) settings::parameter.ATTACK_WEIGHT[i-3] = std::atoi(argv[i]);
+		//for (int i = 3; i < argc; ++i) settings::parameter.SAFE_CHECK[i] = std::atoi(argv[i]);
 		//settings::parameter.KING_DANGER_SCALE = std::atoi(argv[3]);
 		//settings::parameter.ATTACK_WITH_QUEEN = std::atoi(argv[3]);
 		int packageCount = (int)std::thread::hardware_concurrency() - 1;

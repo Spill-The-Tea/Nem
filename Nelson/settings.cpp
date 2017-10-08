@@ -13,7 +13,7 @@ namespace settings {
 
 	void Parameters::Initialize() {
 		if (HelperThreads == 0) {
-			HelperThreads = std::max(0, (int)std::thread::hardware_concurrency()-1);
+			HelperThreads = std::max(0, (int)std::thread::hardware_concurrency() - 1);
 			((OptionSpin *)options[OPTION_THREADS])->set(HelperThreads + 1);
 			((OptionSpin *)options[OPTION_THREADS])->setDefault(HelperThreads + 1);
 		}
@@ -35,6 +35,34 @@ namespace settings {
 	int Parameters::LMRReduction(int depth, int moveNumber)
 	{
 		return LMR_REDUCTION[std::min(depth, 63)][std::min(moveNumber, 63)];
+	}
+
+	void Parameters::UCIExpose()
+	{
+		sync_cout << "option name KING_DANGER_SCALE type spin default " << KING_DANGER_SCALE << sync_endl;
+		for (int i = 0; i < 4; ++i) sync_cout << "option name SAFE_CHECK_" << i << " type spin default " << SAFE_CHECK[i] << sync_endl;
+		for (int i = 0; i < 4; ++i) sync_cout << "option name ATTACK_WEIGHT_" << i << " type spin default " << ATTACK_WEIGHT[i] << sync_endl;
+		sync_cout << "option name KING_RING_ATTACK_FACTOR type spin default " << KING_RING_ATTACK_FACTOR << sync_endl;
+		sync_cout << "option name WEAK_SQUARES_FACTOR type spin default " << WEAK_SQUARES_FACTOR << sync_endl;
+		sync_cout << "option name PINNED_FACTOR type spin default " << PINNED_FACTOR << sync_endl;
+		sync_cout << "option name ATTACK_WITH_QUEEN type spin default " << ATTACK_WITH_QUEEN << sync_endl;
+	}
+
+	void Parameters::SetFromUCI(std::string name, std::string value)
+	{
+		if (!name.compare("KING_DANGER_SCALE")) KING_DANGER_SCALE = stoi(value);
+		else if (!name.compare("KING_RING_ATTACK_FACTOR")) KING_RING_ATTACK_FACTOR = stoi(value);
+		else if (!name.compare("WEAK_SQUARES_FACTOR")) WEAK_SQUARES_FACTOR = stoi(value);
+		else if (!name.compare("PINNED_FACTOR")) PINNED_FACTOR = stoi(value);
+		else if (!name.compare("ATTACK_WITH_QUEEN")) ATTACK_WITH_QUEEN = stoi(value);
+		else if (name.find("SAFE_CHECK_") == 0) {
+			int index = stoi(name.substr(11));
+			SAFE_CHECK[index] = stoi(value);
+		}
+		else if (name.find("ATTACK_WEIGHT_") == 0) {
+			int index = stoi(name.substr(14));
+			ATTACK_WEIGHT[index] = stoi(value);
+		}
 	}
 
 #ifdef TUNE
@@ -287,7 +315,7 @@ namespace settings {
 	void Options::printInfo()
 	{
 		for (auto it = begin(); it != end(); ++it) {
-				sync_cout << it->second->printInfo() << sync_endl;
+			sync_cout << it->second->printInfo() << sync_endl;
 		}
 	}
 

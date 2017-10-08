@@ -114,41 +114,40 @@ Eval evaluateKingSafety(const Position& pos) {
 		}
 		attackerCount[c] += popcount(kingRing[c ^ 1] & pos.AttacksByPieceType(color, PAWN));
 	}
-	int kingDanger[2] = { 0, 0 };
-	Eval kingDangerEvals[2] = { EVAL_ZERO, EVAL_ZERO };
+	int attackScore[2] = { 0, 0 };
+	Value attackVals[2] = { VALUE_ZERO, VALUE_ZERO };
 	for (int c = (int)Color::WHITE; c <= (int)Color::BLACK; ++c) {
 		Color color = (Color)c;
 		Color color_attacker = (Color)(c ^ 1);
 		if (attackerCount[c ^ 1] > (1 - (pos.GetMaterialTableEntry()->GetMostExpensivePiece(color_attacker) == QUEEN))) {
 			Bitboard bbWeak = pos.AttacksByColor(color_attacker) & KingAttacks[pos.KingSquare(color)] & ~pos.dblAttacks(color);
 			Bitboard bbUndefended = pos.AttacksByColor(color_attacker) & ~pos.AttacksByColor(color) & kingZone[color] & ~pos.ColorBB(color_attacker);
-			kingDanger[c] = attackerCount[c ^ 1] * attackWeight[c ^ 1];
-			kingDanger[c] += settings::parameter.KING_RING_ATTACK_FACTOR * kingRingAttacks[c ^ 1];
-			kingDanger[c] += settings::parameter.WEAK_SQUARES_FACTOR * popcount(bbWeak | bbUndefended);
-			kingDanger[c] += settings::parameter.PINNED_FACTOR * (pos.PinnedPieces(color) != EMPTY);
-			kingDanger[c] -= settings::parameter.ATTACK_WITH_QUEEN * (pos.GetMaterialTableEntry()->GetMostExpensivePiece(color_attacker) != QUEEN);
-			kingDanger[c] += 40;
+			attackScore[c] = attackerCount[c ^ 1] * attackWeight[c ^ 1];
+			attackScore[c] += settings::parameter.KING_RING_ATTACK_FACTOR * kingRingAttacks[c ^ 1];
+			attackScore[c] += settings::parameter.WEAK_SQUARES_FACTOR * popcount(bbWeak | bbUndefended);
+			attackScore[c] += settings::parameter.PINNED_FACTOR * popcount(pos.PinnedPieces(color));
+			attackScore[c] -= settings::parameter.ATTACK_WITH_QUEEN * (pos.GetMaterialTableEntry()->GetMostExpensivePiece(color_attacker) != QUEEN);
 			//Safe checks
 			Bitboard bbSafe = (~pos.AttacksByColor(color) | (bbWeak & pos.dblAttacks(color_attacker))) & ~pos.ColorBB(color_attacker);
 			Bitboard bbRookAttacks = RookTargets(pos.KingSquare(color), pos.OccupiedBB());
 			Bitboard bbBishopAttacks = BishopTargets(pos.KingSquare(color), pos.OccupiedBB());
 			if ((bbRookAttacks | bbRookAttacks) & pos.AttacksByPieceType(color_attacker, QUEEN) & bbSafe)
-				kingDanger[c] += settings::parameter.SAFE_CHECK[QUEEN];
+				attackScore[c] += settings::parameter.SAFE_CHECK[QUEEN];
 			bbSafe |= pos.dblAttacks(color_attacker) & ~(pos.dblAttacks(color) | pos.ColorBB(color_attacker)) & pos.AttacksByPieceType(color, QUEEN);
 			if (bbRookAttacks & pos.AttacksByPieceType(color_attacker, ROOK) & bbSafe)
-				kingDanger[c] += settings::parameter.SAFE_CHECK[ROOK];
+				attackScore[c] += settings::parameter.SAFE_CHECK[ROOK];
 			if (bbBishopAttacks & pos.AttacksByPieceType(color_attacker, BISHOP) & bbSafe)
-				kingDanger[c] += settings::parameter.SAFE_CHECK[BISHOP];
+				attackScore[c] += settings::parameter.SAFE_CHECK[BISHOP];
 			Bitboard bbKnightAttacks = KnightAttacks[pos.KingSquare(color)] & pos.AttacksByPieceType(color_attacker, KNIGHT);
 			if (bbKnightAttacks & bbSafe)
-				kingDanger[c] += settings::parameter.SAFE_CHECK[KNIGHT];
-			if (kingDanger[c] > 0) {
-				kingDangerEvals[c].mgScore = (Value)(kingDanger[c] * kingDanger[c] / settings::parameter.KING_DANGER_SCALE);
+				attackScore[c] += settings::parameter.SAFE_CHECK[KNIGHT];
+			if (attackScore[c] > 0) {
+				attackVals[c] = (Value)(attackScore[c] * attackScore[c] / settings::parameter.KING_DANGER_SCALE);
 			}
 		}
 
 	}
-	result += kingDangerEvals[BLACK] - kingDangerEvals[WHITE];
+	result.mgScore += attackVals[BLACK] - attackVals[WHITE];
 	Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
 	Bitboard bbBlack = pos.PieceBB(PAWN, BLACK);
 	//Pawn shelter/storm

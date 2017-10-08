@@ -135,6 +135,7 @@ void UCIInterface::uci() {
 		}
 	}
 	settings::options.printUCI();
+	//settings::parameter.UCIExpose();
 	sync_cout << "uciok" << sync_endl;
 }
 
@@ -205,6 +206,9 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 	}
 	else if (!tokens[2].compare(settings::OPTION_SYZYGY_PROBE_DEPTH)) {
 		settings::parameter.TBProbeDepth = settings::options.getInt(settings::OPTION_SYZYGY_PROBE_DEPTH);
+	}
+	else {
+		settings::parameter.SetFromUCI(tokens[2], tokens[4]);
 	}
 }
 

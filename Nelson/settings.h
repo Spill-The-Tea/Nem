@@ -236,12 +236,16 @@ namespace settings {
 		Eval MALUS_DOUBLED_PAWN = Eval(0, 20);
 		int TBProbeDepth = 8;
 		int ATTACK_WEIGHT[4] = { 53, 82, 23, 17 }; //Indexed by Piece Type
-		int SAFE_CHECK[4] = { 780, 880, 435, 790 };
-		int KING_DANGER_SCALE = 16384;
+		int SAFE_CHECK[4] = { 800, 900, 450, 800 };
+		int KING_DANGER_SCALE = 1 << 14;
 		int KING_RING_ATTACK_FACTOR = 100;
 		int WEAK_SQUARES_FACTOR = 200;
 		int PINNED_FACTOR = 100;
 		int ATTACK_WITH_QUEEN = 900;
+
+		void UCIExpose();
+		void SetFromUCI(std::string name, std::string value);
+
 #ifdef TUNE
 		bool parse(std::string input);
 		std::vector<int> parseValue(std::string input);
