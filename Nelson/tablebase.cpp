@@ -34,9 +34,9 @@ namespace tablebases {
 	const Value SCORES[5] = { -VALUE_KNOWN_WIN, VALUE_DRAW - 1, VALUE_DRAW, VALUE_DRAW + 1, VALUE_KNOWN_WIN };
 
 	void getResultMove(std::vector<ValuatedMove>& rootMoves, unsigned int result) {
-		int from = TB_GET_FROM(result);
-		int to = TB_GET_TO(result);
-		unsigned promotionPiece = TB_GET_PROMOTES(result);
+		const int from = TB_GET_FROM(result);
+		const int to = TB_GET_TO(result);
+		const unsigned promotionPiece = TB_GET_PROMOTES(result);
 		Move move;
 		if (promotionPiece == TB_PROMOTES_NONE)
 			move = createMove(from, to);
@@ -51,7 +51,7 @@ namespace tablebases {
 	}
 
 	unsigned int getBestTBMove(Position& pos, std::vector<ValuatedMove>& rootMoves) {
-		unsigned int result = tb_probe_root(
+		const unsigned int result = tb_probe_root(
 			pos.ColorBB(WHITE),
 			pos.ColorBB(BLACK),
 			pos.PieceTypeBB(KING),
@@ -86,22 +86,22 @@ namespace tablebases {
 			pos.GetSideToMove() == WHITE,
 			&moves[0]);
 		if (result == TB_RESULT_FAILED) return result;
-		unsigned dtz = TB_GET_DTZ(result);
+		const unsigned dtz = TB_GET_DTZ(result);
 		if (dtz > 97) {
 			getResultMove(rootMoves, result);
 		}
 		else {
-			unsigned wdl = TB_GET_WDL(result);
+			const unsigned wdl = TB_GET_WDL(result);
 			int countGood = 0;
 			for (int i = 0; i < TB_MAX_MOVES; ++i) {
 				if (moves[i] == TB_RESULT_FAILED) break;
-				unsigned wdlMove = TB_GET_WDL(moves[i]);
-				unsigned dtzMove = TB_GET_DTZ(moves[i]);
+				const unsigned wdlMove = TB_GET_WDL(moves[i]);
+				const unsigned dtzMove = TB_GET_DTZ(moves[i]);
 				if (wdlMove >= wdl && dtzMove < 98) {
 					//check if move is either decreasing dtz or resetting draw ply counter
-					Square fromSquare = Square(TB_GET_FROM(moves[i]));
-					Square toSquare = Square(TB_GET_TO(moves[i]));
-					unsigned promotionPiece = TB_GET_PROMOTES(moves[i]);
+					const Square fromSquare = Square(TB_GET_FROM(moves[i]));
+					const Square toSquare = Square(TB_GET_TO(moves[i]));
+					const unsigned promotionPiece = TB_GET_PROMOTES(moves[i]);
 					if (repeated 
 						&& GetPieceType(pos.GetPieceOnSquare(fromSquare)) != PieceType::PAWN
 						&& pos.GetPieceOnSquare(toSquare) == Piece::BLANK
@@ -144,7 +144,7 @@ namespace tablebases {
 		//	return true;
 		//}
 		unsigned int result;
-		bool repeated = pos.hasRepetition();
+		const bool repeated = pos.hasRepetition();
 		result = getTBMoves(pos, rootMoves, repeated);
 		if (result == TB_RESULT_FAILED || rootMoves.size() == 0) result = getBestTBMove(pos, rootMoves);
 		if (result == TB_RESULT_FAILED || rootMoves.size() == 0) return false;
@@ -157,7 +157,7 @@ namespace tablebases {
 	void probe(Position & pos)
 	{
 		unsigned int moves[TB_MAX_MOVES];
-		unsigned int result = tb_probe_root(
+		const unsigned int result = tb_probe_root(
 			pos.ColorBB(WHITE),
 			pos.ColorBB(BLACK),
 			pos.PieceTypeBB(KING),
@@ -173,7 +173,7 @@ namespace tablebases {
 			&moves[0]);
 		if (result == TB_RESULT_FAILED) {
 			int success;
-			int wdl = probe_wdl(pos, &success);
+			const int wdl = probe_wdl(pos, &success);
 			if (success) {
 				printResult(wdl);
 				std::cout << "TB probe done!" << std::endl;
@@ -181,16 +181,16 @@ namespace tablebases {
 			else std::cout << "TB probe failed!" << std::endl;
 		}
 		else {
-			unsigned wdl = TB_GET_WDL(result);
+			const unsigned wdl = TB_GET_WDL(result);
 			printResult(wdl-2);
 			const std::string wdls[5] = { "Loss", "Blessed Loss", "Draw", "Cursed Win", "Win" };
 			for (int i = 0; i < TB_MAX_MOVES; ++i) {
 				if (moves[i] == TB_RESULT_FAILED) break;
-				unsigned wdlMove = TB_GET_WDL(moves[i]);
+				const unsigned wdlMove = TB_GET_WDL(moves[i]);
 				unsigned dtzMove = TB_GET_DTZ(moves[i]);
-				int from = TB_GET_FROM(moves[i]);
-				int to = TB_GET_TO(moves[i]);
-				unsigned promotionPiece = TB_GET_PROMOTES(moves[i]);
+				const int from = TB_GET_FROM(moves[i]);
+				const int to = TB_GET_TO(moves[i]);
+				const unsigned promotionPiece = TB_GET_PROMOTES(moves[i]);
 				Move move;
 				if (promotionPiece == TB_PROMOTES_NONE)
 					move = createMove(from, to);

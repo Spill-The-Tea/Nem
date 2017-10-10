@@ -12,7 +12,7 @@ struct wpf_entry {
 	Phase_t phase;
 	Value score;
 	Evaluation evaluation;
-	};
+};
 
 std::vector<wpf_entry> wpf_data;
 
@@ -98,12 +98,12 @@ Eval evaluateKingSafety(const Position& pos) {
 		pos.PieceBB(KING, WHITE) & RANK1 ? kingRing[0] | (kingRing[0] << 8) : kingRing[0],
 		pos.PieceBB(KING, BLACK) & RANK8 ? kingRing[1] | (kingRing[1] >> 8) : kingRing[1]
 	};
-	for (int c = (int)Color::WHITE; c <= (int)Color::BLACK; ++c) {
-		Color color = (Color)c;
+	for (int c = static_cast<int>(Color::WHITE); c <= static_cast<int>(Color::BLACK); ++c) {
+		const Color color = static_cast<Color>(c);
 		for (PieceType pt = PieceType::QUEEN; pt <= PieceType::KNIGHT; ++pt) {
 			Bitboard pieceBB = pos.PieceBB(pt, color);
 			while (pieceBB) {
-				Square s = lsb(pieceBB);
+				const Square s = lsb(pieceBB);
 				if (pos.GetAttacksFrom(s) & kingZone[c ^ 1]) {
 					++attackerCount[c];
 					attackWeight[c] += settings::parameter.ATTACK_WEIGHT[pt];
@@ -116,36 +116,33 @@ Eval evaluateKingSafety(const Position& pos) {
 	}
 	int attackScore[2] = { 0, 0 };
 	Value attackVals[2] = { VALUE_ZERO, VALUE_ZERO };
-	for (int c = (int)Color::WHITE; c <= (int)Color::BLACK; ++c) {
-		Color color = (Color)c;
-		Color color_attacker = (Color)(c ^ 1);
-		if (attackerCount[c ^ 1] > (1 - (pos.GetMaterialTableEntry()->GetMostExpensivePiece(color_attacker) == QUEEN))) {
-			Bitboard bbWeak = pos.AttacksByColor(color_attacker) & KingAttacks[pos.KingSquare(color)] & ~pos.dblAttacks(color);
-			Bitboard bbUndefended = pos.AttacksByColor(color_attacker) & ~pos.AttacksByColor(color) & kingZone[color] & ~pos.ColorBB(color_attacker);
-			attackScore[c] = attackerCount[c ^ 1] * attackWeight[c ^ 1];
-			attackScore[c] += settings::parameter.KING_RING_ATTACK_FACTOR * kingRingAttacks[c ^ 1];
-			attackScore[c] += settings::parameter.WEAK_SQUARES_FACTOR * popcount(bbWeak | bbUndefended);
-			attackScore[c] += settings::parameter.PINNED_FACTOR * popcount(pos.PinnedPieces(color));
-			attackScore[c] -= settings::parameter.ATTACK_WITH_QUEEN * (pos.GetMaterialTableEntry()->GetMostExpensivePiece(color_attacker) != QUEEN);
-			//Safe checks
-			Bitboard bbSafe = (~pos.AttacksByColor(color) | (bbWeak & pos.dblAttacks(color_attacker))) & ~pos.ColorBB(color_attacker);
-			Bitboard bbRookAttacks = RookTargets(pos.KingSquare(color), pos.OccupiedBB());
-			Bitboard bbBishopAttacks = BishopTargets(pos.KingSquare(color), pos.OccupiedBB());
-			if ((bbRookAttacks | bbRookAttacks) & pos.AttacksByPieceType(color_attacker, QUEEN) & bbSafe)
-				attackScore[c] += settings::parameter.SAFE_CHECK[QUEEN];
-			bbSafe |= pos.dblAttacks(color_attacker) & ~(pos.dblAttacks(color) | pos.ColorBB(color_attacker)) & pos.AttacksByPieceType(color, QUEEN);
-			if (bbRookAttacks & pos.AttacksByPieceType(color_attacker, ROOK) & bbSafe)
-				attackScore[c] += settings::parameter.SAFE_CHECK[ROOK];
-			if (bbBishopAttacks & pos.AttacksByPieceType(color_attacker, BISHOP) & bbSafe)
-				attackScore[c] += settings::parameter.SAFE_CHECK[BISHOP];
-			Bitboard bbKnightAttacks = KnightAttacks[pos.KingSquare(color)] & pos.AttacksByPieceType(color_attacker, KNIGHT);
-			if (bbKnightAttacks & bbSafe)
-				attackScore[c] += settings::parameter.SAFE_CHECK[KNIGHT];
-			if (attackScore[c] > 0) {
-				attackVals[c] = (Value)(attackScore[c] * attackScore[c] / settings::parameter.KING_DANGER_SCALE);
-			}
+	for (int c = static_cast<int>(Color::WHITE); c <= static_cast<int>(Color::BLACK); ++c) {
+		const Color color = static_cast<Color>(c);
+		const Color color_attacker = static_cast<Color>(c ^ 1);
+		Bitboard bbWeak = pos.AttacksByColor(color_attacker) & KingAttacks[pos.KingSquare(color)] & ~pos.dblAttacks(color);
+		Bitboard bbUndefended = pos.AttacksByColor(color_attacker) & ~pos.AttacksByColor(color) & kingZone[color] & ~pos.ColorBB(color_attacker);
+		attackScore[c] = attackerCount[c ^ 1] * attackWeight[c ^ 1];
+		attackScore[c] += settings::parameter.KING_RING_ATTACK_FACTOR * kingRingAttacks[c ^ 1];
+		attackScore[c] += settings::parameter.WEAK_SQUARES_FACTOR * popcount(bbWeak | bbUndefended);
+		attackScore[c] += settings::parameter.PINNED_FACTOR * popcount(pos.PinnedPieces(color));
+		attackScore[c] -= settings::parameter.ATTACK_WITH_QUEEN * (pos.GetMaterialTableEntry()->GetMostExpensivePiece(color_attacker) != QUEEN);
+		//Safe checks
+		Bitboard bbSafe = (~pos.AttacksByColor(color) | (bbWeak & pos.dblAttacks(color_attacker))) & ~pos.ColorBB(color_attacker);
+		const Bitboard bbRookAttacks = RookTargets(pos.KingSquare(color), pos.OccupiedBB());
+		const Bitboard bbBishopAttacks = BishopTargets(pos.KingSquare(color), pos.OccupiedBB());
+		if ((bbRookAttacks | bbRookAttacks) & pos.AttacksByPieceType(color_attacker, QUEEN) & bbSafe)
+			attackScore[c] += settings::parameter.SAFE_CHECK[QUEEN];
+		bbSafe |= pos.dblAttacks(color_attacker) & ~(pos.dblAttacks(color) | pos.ColorBB(color_attacker)) & pos.AttacksByPieceType(color, QUEEN);
+		if (bbRookAttacks & pos.AttacksByPieceType(color_attacker, ROOK) & bbSafe)
+			attackScore[c] += settings::parameter.SAFE_CHECK[ROOK];
+		if (bbBishopAttacks & pos.AttacksByPieceType(color_attacker, BISHOP) & bbSafe)
+			attackScore[c] += settings::parameter.SAFE_CHECK[BISHOP];
+		const Bitboard bbKnightAttacks = KnightAttacks[pos.KingSquare(color)] & pos.AttacksByPieceType(color_attacker, KNIGHT);
+		if (bbKnightAttacks & bbSafe)
+			attackScore[c] += settings::parameter.SAFE_CHECK[KNIGHT];
+		if (attackScore[c] > 0) {
+			attackVals[c] = static_cast<Value>(attackScore[c] * attackScore[c] / settings::parameter.KING_DANGER_SCALE);
 		}
-
 	}
 	result.mgScore += attackVals[BLACK] - attackVals[WHITE];
 	Bitboard bbWhite = pos.PieceBB(PAWN, WHITE);
@@ -156,13 +153,13 @@ Eval evaluateKingSafety(const Position& pos) {
 		pawnStorm += settings::parameter.PAWN_SHELTER_2ND_RANK * popcount(bbWhite & kingRing[0] & ShelterPawns2ndRank);
 		pawnStorm += settings::parameter.PAWN_SHELTER_3RD_RANK * popcount(bbWhite & kingZone[0] & ShelterPawns3rdRank);
 		pawnStorm += settings::parameter.PAWN_SHELTER_4TH_RANK * popcount(bbWhite & (kingZone[0] << 8) & ShelterPawns4thRank);
-		bool kingSide = (pos.KingSquare(WHITE) & 7) > 3;
+		const bool kingSide = (pos.KingSquare(WHITE) & 7) > 3;
 		Bitboard pawnStormArea = kingSide ? bbKINGSIDE : bbQUEENSIDE;
 		Bitboard stormPawns = pos.PieceBB(PAWN, BLACK) & pawnStormArea & (HALF_OF_WHITE | RANK5);
 		while (stormPawns) {
-			Square sq = lsb(stormPawns);
+			const Square sq = lsb(stormPawns);
 			stormPawns &= stormPawns - 1;
-			Piece blocker = pos.GetPieceOnSquare(Square(sq - 8));
+			const Piece blocker = pos.GetPieceOnSquare(static_cast<Square>(sq - 8));
 			if ((blocker == WKING || GetPieceType(blocker) == PAWN) && (pos.GetAttacksFrom(sq) & pos.ColorBB(WHITE)) == EMPTY)
 				continue;//blocked
 			pawnStorm -= settings::parameter.PAWN_STORM[(sq >> 3) - 1];
@@ -172,13 +169,13 @@ Eval evaluateKingSafety(const Position& pos) {
 		pawnStorm -= settings::parameter.PAWN_SHELTER_2ND_RANK * popcount(bbBlack & kingRing[1] & ShelterPawns2ndRank);
 		pawnStorm -= settings::parameter.PAWN_SHELTER_3RD_RANK * popcount(bbBlack & kingZone[1] & ShelterPawns3rdRank);
 		pawnStorm -= settings::parameter.PAWN_SHELTER_4TH_RANK * popcount(bbBlack & (kingZone[1] >> 8) & ShelterPawns4thRank);
-		bool kingSide = (pos.KingSquare(BLACK) & 7) > 3;
+		const bool kingSide = (pos.KingSquare(BLACK) & 7) > 3;
 		Bitboard pawnStormArea = kingSide ? bbKINGSIDE : bbQUEENSIDE;
 		Bitboard stormPawns = pos.PieceBB(PAWN, WHITE) & pawnStormArea & (HALF_OF_BLACK | RANK4);
 		while (stormPawns) {
-			Square sq = lsb(stormPawns);
+			const Square sq = lsb(stormPawns);
 			stormPawns &= stormPawns - 1;
-			Piece blocker = pos.GetPieceOnSquare(Square(sq + 8));
+			const Piece blocker = pos.GetPieceOnSquare(static_cast<Square>(sq + 8));
 			if ((blocker == BKING || GetPieceType(blocker) == PAWN) && (pos.GetAttacksFrom(sq) & pos.ColorBB(BLACK)) == EMPTY)
 				continue; //blocked
 			pawnStorm += settings::parameter.PAWN_STORM[6 - (sq >> 3)];
@@ -211,7 +208,7 @@ Eval evaluateMobility(const Position& pos) {
 	//Queens can move to all unattacked squares and if protected to all squares attacked by queens or kings
 	Bitboard pieceBB = pos.PieceBB(QUEEN, WHITE);
 	while (pieceBB) {
-		Square square = lsb(pieceBB);
+		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
 		targets &= ~abbBlack | (abbWhite & ~abbBRook);
 		result += settings::parameter.MOBILITY_BONUS_QUEEN[popcount(targets)];
@@ -219,7 +216,7 @@ Eval evaluateMobility(const Position& pos) {
 	}
 	pieceBB = pos.PieceBB(QUEEN, BLACK);
 	while (pieceBB) {
-		Square square = lsb(pieceBB);
+		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
 		targets &= ~abbWhite | (abbBlack & ~abbWRook);
 		result -= settings::parameter.MOBILITY_BONUS_QUEEN[popcount(targets)];
@@ -228,7 +225,7 @@ Eval evaluateMobility(const Position& pos) {
 	//Rooks can move to all unattacked squares and if protected to all squares attacked by rooks or less important pieces
 	pieceBB = pos.PieceBB(ROOK, WHITE);
 	while (pieceBB) {
-		Square square = lsb(pieceBB);
+		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
 		targets &= ~abbBlack | (abbWhite & ~abbBMinor);
 		result += settings::parameter.MOBILITY_BONUS_ROOK[popcount(targets)];
@@ -236,7 +233,7 @@ Eval evaluateMobility(const Position& pos) {
 	}
 	pieceBB = pos.PieceBB(ROOK, BLACK);
 	while (pieceBB) {
-		Square square = lsb(pieceBB);
+		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
 		targets &= ~abbWhite | (abbBlack & ~abbWMinor);
 		result -= settings::parameter.MOBILITY_BONUS_ROOK[popcount(targets)];
@@ -245,7 +242,7 @@ Eval evaluateMobility(const Position& pos) {
 	//Leichtfiguren
 	pieceBB = pos.PieceBB(BISHOP, WHITE);
 	while (pieceBB) {
-		Square square = lsb(pieceBB);
+		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
 		targets &= ~abbBlack | (abbWhite & ~abbBPawn);
 		result += settings::parameter.MOBILITY_BONUS_BISHOP[popcount(targets)];
@@ -253,7 +250,7 @@ Eval evaluateMobility(const Position& pos) {
 	}
 	pieceBB = pos.PieceBB(BISHOP, BLACK);
 	while (pieceBB) {
-		Square square = lsb(pieceBB);
+		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
 		targets &= ~abbWhite | (abbBlack & ~abbWPawn);
 		result -= settings::parameter.MOBILITY_BONUS_BISHOP[popcount(targets)];
@@ -261,7 +258,7 @@ Eval evaluateMobility(const Position& pos) {
 	}
 	pieceBB = pos.PieceBB(KNIGHT, WHITE);
 	while (pieceBB) {
-		Square square = lsb(pieceBB);
+		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
 		targets &= ~abbBlack | (abbWhite & ~abbBPawn);
 		result += settings::parameter.MOBILITY_BONUS_KNIGHT[popcount(targets)];
@@ -269,7 +266,7 @@ Eval evaluateMobility(const Position& pos) {
 	}
 	pieceBB = pos.PieceBB(KNIGHT, BLACK);
 	while (pieceBB) {
-		Square square = lsb(pieceBB);
+		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
 		targets &= ~abbWhite | (abbBlack & ~abbWPawn);
 		result -= settings::parameter.MOBILITY_BONUS_KNIGHT[popcount(targets)];
@@ -289,7 +286,7 @@ Value evaluateFromScratch(const Position& pos) {
 	Evaluation result;
 	MaterialTableEntry * material = pos.GetMaterialTableEntry();
 	for (PieceType pt = QUEEN; pt <= PAWN; ++pt) {
-		int diff = popcount(pos.PieceBB(pt, WHITE)) - popcount(pos.PieceBB(pt, BLACK));
+		const int diff = popcount(pos.PieceBB(pt, WHITE)) - popcount(pos.PieceBB(pt, BLACK));
 		material->Evaluation += diff * settings::parameter.PieceValues[pt];
 	}
 	Phase_t phase = Phase(popcount(pos.PieceBB(QUEEN, WHITE)), popcount(pos.PieceBB(QUEEN, BLACK)),
@@ -321,35 +318,35 @@ Value evaluatePawnEnding(const Position& pos) {
 		int distant[2] = { 0, 0 };
 		int distcount[2] = { 0, 0 };
 		Bitboard wpassed = pos.GetPawnEntry()->passedPawns & pos.PieceBB(PAWN, WHITE);
-		while (wpassed) {			
-			Square passedPawnSquare = lsb(wpassed);
-			Square convSquare = ConversionSquare<WHITE>(passedPawnSquare);
-			int distToConv = std::min(7 - (passedPawnSquare >> 3), 5);
+		while (wpassed) {
+			const Square passedPawnSquare = lsb(wpassed);
+			const Square convSquare = ConversionSquare<WHITE>(passedPawnSquare);
+			const int distToConv = std::min(7 - (passedPawnSquare >> 3), 5);
 			if (distToConv < (ChebishevDistance(pos.KingSquare(BLACK), convSquare) - (pos.GetSideToMove() == BLACK))) {
 				minUnstoppable[0] = std::min(minUnstoppable[0], distToConv);
 			}
 			else {
 				distcount[0]++;
-				Square blockSquare = Square(passedPawnSquare + 8);
-				int dtcSquare = (6 - distToConv) * (6 - distToConv);
-				int distPoints = 2 * dtcSquare * ChebishevDistance(pos.KingSquare(BLACK), blockSquare) + dtcSquare * ChebishevDistance(pos.KingSquare(WHITE), blockSquare);
+				const Square blockSquare = static_cast<Square>(passedPawnSquare + 8);
+				const int dtcSquare = (6 - distToConv) * (6 - distToConv);
+				const int distPoints = 2 * dtcSquare * ChebishevDistance(pos.KingSquare(BLACK), blockSquare) + dtcSquare * ChebishevDistance(pos.KingSquare(WHITE), blockSquare);
 				distant[0] += distPoints;
 			}
 			wpassed &= wpassed - 1;
 		}
 		Bitboard bpassed = pos.GetPawnEntry()->passedPawns & pos.PieceBB(PAWN, BLACK);
 		while (bpassed) {
-			Square passedPawnSquare = lsb(bpassed);
-			Square convSquare = ConversionSquare<BLACK>(passedPawnSquare);
-			int distToConv = std::min((passedPawnSquare >> 3), 5);
+			const Square passedPawnSquare = lsb(bpassed);
+			const Square convSquare = ConversionSquare<BLACK>(passedPawnSquare);
+			const int distToConv = std::min((passedPawnSquare >> 3), 5);
 			if (distToConv < (ChebishevDistance(pos.KingSquare(WHITE), convSquare) - (pos.GetSideToMove() == WHITE))) {
 				minUnstoppable[1] = std::min(minUnstoppable[1], distToConv);
 			}
 			else {
 				distcount[1]++;
-				Square blockSquare = Square(passedPawnSquare - 8);
-				int dtcSquare = (6 - distToConv) * (6 - distToConv);
-				int distPoints = 2 * dtcSquare * ChebishevDistance(pos.KingSquare(WHITE), blockSquare) + dtcSquare * ChebishevDistance(pos.KingSquare(BLACK), blockSquare);
+				const Square blockSquare = Square(passedPawnSquare - 8);
+				const int dtcSquare = (6 - distToConv) * (6 - distToConv);
+				const int distPoints = 2 * dtcSquare * ChebishevDistance(pos.KingSquare(WHITE), blockSquare) + dtcSquare * ChebishevDistance(pos.KingSquare(BLACK), blockSquare);
 				distant[1] += distPoints;
 			}
 			bpassed &= bpassed - 1;
@@ -361,7 +358,7 @@ Value evaluatePawnEnding(const Position& pos) {
 			ppEval -= Value(settings::parameter.PieceValues[QUEEN].egScore - 100 * minUnstoppable[1]);
 		}
 		else {
-			ppEval += Value(11 *(distant[0]*distcount[0] - distant[1]*distcount[1])/5);
+			ppEval += Value(11 * (distant[0] * distcount[0] - distant[1] * distcount[1]) / 5);
 		}
 	}
 	return Value((pos.GetMaterialScore() + pos.GetPawnEntry()->Score.egScore + pos.GetPsqEval().egScore + ppEval) * (1 - 2 * pos.GetSideToMove()));
@@ -373,7 +370,7 @@ Value evaluateKBPxKBPx(const Position& pos) {
 	result.Mobility = evaluateMobility(pos);
 	result.PawnStructure = pos.PawnStructureScore();
 	//result.Space = evaluateSpace<WHITE>(pos) -evaluateSpace<BLACK>(pos);
-	Bitboard darkSquareBishops = pos.PieceTypeBB(BISHOP) & DARKSQUARES;
+	const Bitboard darkSquareBishops = pos.PieceTypeBB(BISHOP) & DARKSQUARES;
 	if (darkSquareBishops != 0 && (darkSquareBishops & (darkSquareBishops - 1)) == 0) {
 		//oposite colored bishops
 		result.Material.egScore -= result.Material.egScore > 0 ? settings::parameter.PieceValues[PAWN].egScore : -settings::parameter.PieceValues[PAWN].egScore;

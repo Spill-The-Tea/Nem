@@ -19,7 +19,7 @@ namespace settings {
 		}
 		for (int depth = 0; depth < 64; depth++) {
 			for (int moves = 0; moves < 64; moves++) {
-				double reduction = std::log(moves) * std::log(depth) / 2; //F
+				const double reduction = std::log(moves) * std::log(depth) / 2; //F
 				if (reduction < 0.8) LMR_REDUCTION[depth][moves] = 0;
 				else LMR_REDUCTION[depth][moves] = int(std::round(reduction));
 			}

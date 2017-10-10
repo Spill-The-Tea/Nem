@@ -98,11 +98,11 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 			int xscore = BestMove.score;
 			if (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD)) {
 				if (int(BestMove.score) > 0) {
-					int pliesToMate = VALUE_MATE - BestMove.score + 1;
+					const int pliesToMate = VALUE_MATE - BestMove.score + 1;
 					xscore = 100000 + pliesToMate/2;
 				}
 				else {
-					int pliesToMate = -BestMove.score - VALUE_MATE;
+					const int pliesToMate = -BestMove.score - VALUE_MATE;
 					xscore = -100000 - pliesToMate/2;
 				}
 			}
@@ -241,7 +241,7 @@ ValuatedMove Search::Think(Position &pos) {
 	probeTB = tablebases::MaxCardinality > 0;
 	if (pos.GetMaterialTableEntry()->IsTablebaseEntry()) {
 		std::vector<ValuatedMove> tbMoves(rootMoves, rootMoves + rootMoveCount);
-		bool tbHit = tablebases::root_probe(pos, tbMoves, score);
+		const bool tbHit = tablebases::root_probe(pos, tbMoves, score);
 		if (tbHit) {
 			tbHits++;
 			probeTB = false;
@@ -365,24 +365,21 @@ END://when pondering engine must not return a best move before opponent moved =>
 //slave thread
 void Search::startHelper() {
 	int depth = 1;
-	Move * PVMovesLocal = new Move[PV_MAX_LENGTH];
-	ValuatedMove * moves = new ValuatedMove[MAX_MOVE_COUNT];
+	Move PVMovesLocal[PV_MAX_LENGTH];
+	ValuatedMove moves[MAX_MOVE_COUNT];
 	memcpy(moves, rootMoves, MAX_MOVE_COUNT * sizeof(ValuatedMove));
-	ThreadData * h = new ThreadData;
+	ThreadData h;
 	//Iterative Deepening Loop
 	while (!Stop.load() && depth < MAX_DEPTH) {
 		Value alpha = -VALUE_MATE;
 		Value beta = VALUE_MATE;
-		SearchRoot<SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, *h);
+		SearchRoot<SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, h);
 		++depth;
 	}
-	delete h;
-	delete[] moves;
-	delete[] PVMovesLocal;
 }
 
 bool Search::isQuiet(Position &pos) {
-	Value evaluationDiff = pos.GetStaticEval() - QSearch<SINGLE>(-VALUE_MATE, VALUE_MATE, pos, 0, threadLocalData);
+	const Value evaluationDiff = pos.GetStaticEval() - QSearch<SINGLE>(-VALUE_MATE, VALUE_MATE, pos, 0, threadLocalData);
 	return std::abs(int16_t(evaluationDiff)) <= 30;
 }
 

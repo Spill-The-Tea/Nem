@@ -29,7 +29,7 @@
 #endif
 #endif
 
-const std::string VERSION_INFO = "Nemorino 3.09";
+const std::string VERSION_INFO = "Nemorino 3.10";
 
 typedef uint64_t Bitboard;
 typedef int64_t Time_t;
@@ -208,7 +208,7 @@ inline int popcount(Bitboard bb) {
 	return (bb * 0x0101010101010101ULL) >> 56;
 }
 #else
-inline int popcount(Bitboard bb) { return (int)_mm_popcnt_u64(bb); }
+inline int popcount(Bitboard bb) { return static_cast<int>(_mm_popcnt_u64(bb)); }
 #endif
 #else
 inline int popcount(Bitboard bb) {
@@ -327,14 +327,14 @@ struct Eval {
 	}
 
 	inline Value getScore(Phase_t phase) const {
-		return Value(((((int)mgScore) * (256 - phase)) + (phase * (int)egScore)) / 256);
+		return Value((((static_cast<int>(mgScore)) * (256 - phase)) + (phase * static_cast<int>(egScore))) / 256);
 	}
 
 	inline Value getAverage() const { return Value((mgScore + egScore) / 2); }
 
 	std::string print() {
 		std::stringstream ss;
-		ss << std::setw(6) << (int)mgScore << " : " << std::setw(6) << (int)egScore;
+		ss << std::setw(6) << static_cast<int>(mgScore) << " : " << std::setw(6) << static_cast<int>(egScore);
 		return ss.str();
 	}
 };

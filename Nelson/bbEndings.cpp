@@ -2,11 +2,12 @@
 #include <vector>
 #include <string>
 #include <sstream>
+#include <array>
 
 namespace kpk {
 
 	// Each uint32_t stores results of 32 positions, one per bit
-	const uint32_t Bitbase[6144] = {
+	const std::array<uint32_t, 6144> Bitbase = {
 		4294966524, 4294901759, 4294965496, 4294901759, 4294963697, 4294901759, 4294960099, 4294901759,
 		4294952903, 4294901759, 4294938511, 4294901759, 4294909727, 4294901759, 4294917951, 4294901759,
 		4294769916, 4294901759, 4294506744, 4294901759, 4294046193, 4294901759, 4293125091, 4294901759,
@@ -786,14 +787,14 @@ namespace kpk {
 
 
 	bool probe(Square WhiteKingSquare, Square WhitePawnSquare, Square BlackKingSquare, Color stm) {
-		uint32_t idx = index(BlackKingSquare, WhiteKingSquare, WhitePawnSquare, stm);
+		const uint32_t idx = index(BlackKingSquare, WhiteKingSquare, WhitePawnSquare, stm);
 		return (Bitbase[idx / 32] & (1 << (idx & 0x1F))) != 0;
 	}
 
 }
 
 namespace kqkp {
-	const uint64_t bbA2[8192] = {
+	const std::array<uint64_t, 8192> bbA2 = {
 		0x0, 0x0, 0xfd7dbdddedf5f800, 0x0, 0xfbfb7bbbdbeaf000, 0xfffffffffffff0f0, 0xf7f7f777b6d5e000, 0xffffffffffffe0e0,
 		0xefefefee6dabc400, 0xffffffffffffc4c4, 0xdfdfdedddb578c00, 0xffffffffffff8c8c, 0xbfbebdbbb7af1c00, 0xffffffffffff1c1c, 0x7e7d7b776f5f3c00, 0xffffffffffff3c3c,
 		0x0, 0x0, 0x7dbdddedf5f800f8, 0xfffffffffffffcfc, 0xfb7bbbdbeaf100f0, 0xfffffffffff1f0f0, 0xf7f777b6d5e300e0, 0xffffffffffe3e0e0,
@@ -1820,7 +1821,7 @@ namespace kqkp {
 		0x7ab6deeefe8e8, 0x700549211101010, 0xf57dbddded8d8, 0xf00a8342a202020, 0x1fafb7bbbdbcbc, 0x3f2070584c404040, 0x0, 0x0
 	};
 
-	const uint64_t bbC2[8192] = { 0x0, 0x0, 0xfdfdfdfdfdfdf800, 0x0, 0xffff7fbfdfeef000, 0xfffffffffffff0f0, 0xf7f7f777b7d7e000, 0x0,
+	const std::array<uint64_t, 8192> bbC2 = { 0x0, 0x0, 0xfdfdfdfdfdfdf800, 0x0, 0xffff7fbfdfeef000, 0xfffffffffffff0f0, 0xf7f7f777b7d7e000, 0x0,
 		0xefefefee6dabc000, 0xffffffffffffc0c4, 0xdfdfdedddb578800, 0xffffffffffff808c, 0xbfbebdbbb7af1800, 0xffffffffffff101c, 0x7e7d7b776f5f3800, 0xffffffffffff303c,
 		0xbedeeef6fafcf8fc, 0x412111090503f804, 0x7dbdddedf5f8f8f8, 0xfffffffffffff8f4, 0x0, 0x0, 0xf7f777b6d5e300e0, 0xffffffffffe3e0e0,
 		0xefefee6dabc700c4, 0x101011925400c000, 0xdfdedddb578f008c, 0x20212224a8008804, 0xbebdbbb7af1f001c, 0x4142444850001804, 0x7d7b776f5f3f003c, 0x82848890a0003804,
@@ -2851,13 +2852,13 @@ namespace kqkp {
 		return stm + 2 * WhiteQueenSquare + 128 * WhiteKingSquare;
 	}
 
-	bool probeA2(Square WhiteKingSquare, Square WhiteQueenSquare, Square BlackKingSquare, Color stm) {
-		uint32_t idx = index(WhiteKingSquare, WhiteQueenSquare, stm);
+	bool probeA2(const Square WhiteKingSquare, const Square WhiteQueenSquare, const Square BlackKingSquare, const Color stm) {
+		const uint32_t idx = index(WhiteKingSquare, WhiteQueenSquare, stm);
 		return (bbA2[idx] & ToBitboard(BlackKingSquare)) != 0;
 	}
 
-	bool probeC2(Square WhiteKingSquare, Square WhiteQueenSquare, Square BlackKingSquare, Color stm) {
-		uint32_t idx = index(WhiteKingSquare, WhiteQueenSquare, stm);
+	bool probeC2(const Square WhiteKingSquare, const Square WhiteQueenSquare, const Square BlackKingSquare, const Color stm) {
+		const uint32_t idx = index(WhiteKingSquare, WhiteQueenSquare, stm);
 		return (bbC2[idx] & ToBitboard(BlackKingSquare)) != 0;
 	}
 }

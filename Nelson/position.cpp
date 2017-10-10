@@ -60,7 +60,7 @@ bool Position::ApplyMove(Move move) {
 	Piece moving = Board[fromSquare];
 	capturedInLastMove = Board[toSquare];
 	remove(fromSquare);
-	MoveType moveType = type(move);
+	const MoveType moveType = type(move);
 	Piece convertedTo;
 	switch (moveType) {
 	case NORMAL:
@@ -182,7 +182,7 @@ bool Position::ApplyMove(Move move) {
 void Position::AddUnderPromotions() {
 	if (canPromote) {
 		movepointer--;
-		int moveCount = movepointer;
+		const int moveCount = movepointer;
 		for (int i = 0; i < moveCount; ++i) {
 			Move pmove = moves[i].move;
 			if (type(pmove) == PROMOTION) {
@@ -243,7 +243,7 @@ Move Position::NextMove() {
 			case UNDERPROMOTION:
 				if (canPromote) {
 					movepointer--;
-					int moveCount = movepointer;
+					const int moveCount = movepointer;
 					for (int i = 0; i < moveCount; ++i) {
 						Move pmove = moves[i].move;
 						if (type(pmove) == PROMOTION) {
@@ -387,10 +387,10 @@ void Position::insertionSort(ValuatedMove* first, ValuatedMove* last)
 
 void Position::shellSort(ValuatedMove* vm, int count) {
 	const int gaps[] = { 57, 23, 10, 4, 1 };
-	for (int gap : gaps) {
+	for (const int gap : gaps) {
 		for (int i = 0; i < count - gap; i++) {
 			int j = i + gap;
-			ValuatedMove tmp = vm[j];
+			const ValuatedMove tmp = vm[j];
 			while (j >= gap && tmp.score > vm[j - gap].score) {
 				vm[j] = vm[j - gap];
 				j -= gap;
@@ -420,7 +420,7 @@ void Position::evaluateBySEE(int startIndex) {
 }
 
 void Position::evaluateCheckEvasions(int startIndex) {
-	ValuatedMove * firstQuiet = std::partition(moves + startIndex, &moves[movepointer - 1], [this](ValuatedMove m) { return IsTactical(m); });
+	const ValuatedMove * firstQuiet = std::partition(moves + startIndex, &moves[movepointer - 1], [this](ValuatedMove m) { return IsTactical(m); });
 	bool quiets = false;
 	int quietsIndex = startIndex;
 	for (int i = startIndex; i < movepointer - 1; ++i) {
@@ -457,7 +457,7 @@ void Position::evaluateByHistory(int startIndex) {
 			lastMovingPieces[1] = Previous()->Board[to(lastMoves[1])];
 		}
 	}
-	Bitboard bbNewlyAttacked = lastAppliedMove == MOVE_NONE ? EMPTY : (~(Previous()->attackedByUs)) & AttackedByThem();
+	const Bitboard bbNewlyAttacked = lastAppliedMove == MOVE_NONE ? EMPTY : (~(Previous()->attackedByUs)) & AttackedByThem();
 	for (int i = startIndex; i < movepointer - 1; ++i) {
 		if (moves[i].move == counterMove) {
 			moves[i].score = VALUE_MATE;
@@ -472,7 +472,7 @@ void Position::evaluateByHistory(int startIndex) {
 					moves[i].score += 2 * cmHistory->getValue(lastMovingPieces[0], to(lastMoves[0]), p, toSquare);
 					if (lastMoves[1]) moves[i].score += 2 * followupHistory->getValue(lastMovingPieces[1], to(lastMoves[1]), p, toSquare);
 				}
-				Bitboard toBB = ToBitboard(toSquare);
+				const Bitboard toBB = ToBitboard(toSquare);
 				if (ToBitboard(from(moves[i].move)) & bbNewlyAttacked) moves[i].score = Value(moves[i].score + 100);
 				if ((toBB & (attackedByUs | ~attackedByThem)) != EMPTY)
 					moves[i].score = Value(moves[i].score + 500);
@@ -619,7 +619,7 @@ const Bitboard Position::AttacksOfField(const Square targetField, const Bitboard
 	while (tmpAttacks != 0)
 	{
 		Square from = lsb(tmpAttacks);
-		Bitboard blocker = InBetweenFields[from][targetField] & occupanyMask;
+		const Bitboard blocker = InBetweenFields[from][targetField] & occupanyMask;
 		if (blocker) attacksOfField &= ~ToBitboard(from);
 		tmpAttacks &= tmpAttacks - 1;
 	}
@@ -644,7 +644,7 @@ const Bitboard Position::AttacksOfField(const Square targetField, const Color at
 	while (tmpAttacks != 0)
 	{
 		Square from = lsb(tmpAttacks);
-		Bitboard blocker = InBetweenFields[from][targetField] & OccupiedBB();
+		const Bitboard blocker = InBetweenFields[from][targetField] & OccupiedBB();
 		if (blocker) attacksOfField &= ~ToBitboard(from);
 		tmpAttacks &= tmpAttacks - 1;
 	}
@@ -676,7 +676,7 @@ const PieceType Position::getAndResetLeastValuableAttacker(Square toSquare, Bitb
 	Bitboard shadowed = ShadowedFields[toSquare][leastAttackerSquare];
 	Bitboard xray = mayXray & shadowed;
 	while (xray) {
-		Square xraySquare = lsb(xray);
+		const Square xraySquare = lsb(xray);
 		if ((InBetweenFields[xraySquare][toSquare] & occupied) == 0) {
 			attadef |= ToBitboard(xraySquare);
 			mayXray &= ~attadef;
@@ -689,8 +689,8 @@ const PieceType Position::getAndResetLeastValuableAttacker(Square toSquare, Bitb
 
 //SEE method, which returns without exact value, when it's sure that value is positive (then VALUE_KNOWN_WIN is returned)
 Value Position::SEE_Sign(Move move) const {
-	Square fromSquare = from(move);
-	Square toSquare = to(move);
+	const Square fromSquare = from(move);
+	const Square toSquare = to(move);
 	if (settings::parameter.PieceValues[GetPieceType(Board[fromSquare])].mgScore <= settings::parameter.PieceValues[GetPieceType(Board[toSquare])].mgScore && type(move) != PROMOTION) return VALUE_KNOWN_WIN;
 	return SEE(move);
 }
@@ -704,7 +704,7 @@ const Value Position::SEE(Move move) const
 	Value gain[32];
 	int d = 1;
 
-	Square fromSquare = from(move);
+	const Square fromSquare = from(move);
 	Square toSquare = to(move);
 	gain[0] = settings::parameter.PieceValues[GetPieceType(Board[toSquare])].mgScore;
 	Color side = GetColor(Board[fromSquare]);
@@ -855,7 +855,7 @@ void Position::setFromFEN(const std::string& fen) {
 		else if (token == '-') continue;
 		else {
 			if (token >= 'A' && token <= 'H') {
-				File kingFile = File(kingSquares[WHITE] & 7);
+				const File kingFile = File(kingSquares[WHITE] & 7);
 				InitialKingSquareBB[WHITE] = PieceBB(KING, WHITE);
 				InitialKingSquare[WHITE] = lsb(InitialKingSquareBB[WHITE]);
 				File rookFile = File((int)token - (int)'A');
@@ -869,7 +869,7 @@ void Position::setFromFEN(const std::string& fen) {
 				}
 			}
 			else if (token >= 'a' && token <= 'h') {
-				File kingFile = File(kingSquares[BLACK] & 7);
+				const File kingFile = File(kingSquares[BLACK] & 7);
 				InitialKingSquareBB[BLACK] = PieceBB(KING, BLACK);
 				InitialKingSquare[BLACK] = lsb(InitialKingSquareBB[BLACK]);
 				File rookFile = File((int)token - (int)'a');
@@ -887,12 +887,12 @@ void Position::setFromFEN(const std::string& fen) {
 	if (CastlingOptions) {
 		Chess960 = Chess960 || (InitialKingSquare[WHITE] != E1) || (InitialRookSquare[0] != H1) || (InitialRookSquare[1] != A1);
 		for (int i = 0; i < 4; ++i) InitialRookSquareBB[i] = 1ull << InitialRookSquare[i];
-		Square kt[4] = { G1, C1, G8, C8 };
-		Square rt[4] = { F1, D1, F8, D8 };
+		const Square kt[4] = { G1, C1, G8, C8 };
+		const Square rt[4] = { F1, D1, F8, D8 };
 		for (int i = 0; i < 4; ++i) {
 			SquaresToBeEmpty[i] = 0ull;
 			SquaresToBeUnattacked[i] = 0ull;
-			Square ks = lsb(InitialKingSquareBB[i / 2]);
+			const Square ks = lsb(InitialKingSquareBB[i / 2]);
 			for (int j = std::min(ks, kt[i]); j <= std::max(ks, kt[i]); ++j) SquaresToBeUnattacked[i] |= 1ull << j;
 			for (int j = std::min(InitialRookSquare[i], rt[i]); j <= std::max(InitialRookSquare[i], rt[i]); ++j) {
 				SquaresToBeEmpty[i] |= 1ull << j;
@@ -1132,12 +1132,12 @@ bool Position::hasRepetition() {
 //Hashmoves, countermoves, ... aren't really reliable => therefore check if it is a valid move
 bool Position::validateMove(Move move) {
 	Square fromSquare = from(move);
-	Piece movingPiece = Board[fromSquare];
+	const Piece movingPiece = Board[fromSquare];
 	Square toSquare = to(move);
 	bool valid = (movingPiece != BLANK) && (GetColor(movingPiece) == SideToMove) //from field is occuppied by piece of correct color
 		&& ((Board[toSquare] == BLANK) || (GetColor(Board[toSquare]) != SideToMove));
 	if (valid) {
-		PieceType pt = GetPieceType(movingPiece);
+		const PieceType pt = GetPieceType(movingPiece);
 		if (pt == PAWN) {
 			switch (type(move)) {
 			case NORMAL:
@@ -1172,7 +1172,7 @@ bool Position::validateMove(Move move) {
 Move Position::validMove(Move proposedMove)
 {
 	ValuatedMove * vmoves = GenerateMoves<LEGAL>();
-	int movecount = GeneratedMoveCount();
+	const int movecount = GeneratedMoveCount();
 	for (int i = 0; i < movecount; ++i) {
 		if (vmoves[i].move == proposedMove) return proposedMove;
 	}
@@ -1183,7 +1183,7 @@ bool Position::givesCheck(Move move)
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
 	Square kingSquare = kingSquares[SideToMove ^ 1];
-	MoveType moveType = type(move);
+	const MoveType moveType = type(move);
 	PieceType pieceType;
 	if (moveType == MoveType::NORMAL)
 		pieceType = GetPieceType(GetPieceOnSquare(fromSquare));
@@ -1216,7 +1216,7 @@ bool Position::givesCheck(Move move)
 		break;
 	}
 	//now check for discovered check
-	Bitboard dc = PinnedPieces(Color(SideToMove ^ 1));
+	const Bitboard dc = PinnedPieces(Color(SideToMove ^ 1));
 	if (dc) {
 		if (moveType == MoveType::ENPASSANT) {
 			//in EP-captures 2 "from"-Moves have to be checked for discovered (from-square and square of captured pawn)
@@ -1266,7 +1266,7 @@ std::string Position::printPath() const
 #endif
 
 bool Position::validateMove(ExtendedMove move) {
-	Square fromSquare = from(move.move);
+	const Square fromSquare = from(move.move);
 	return Board[fromSquare] == move.piece && validateMove(move.move);
 }
 
@@ -1317,7 +1317,7 @@ ValuatedMove * Position::GenerateForks(bool withChecks)
 		forkTargets = PieceBB(QUEEN, Color(SideToMove ^ 1)) | PieceBB(ROOK, Color(SideToMove ^ 1));
 		forkTargets |= ColorBB(Color(SideToMove ^ 1)) & ~attackedByThem & ~PieceTypeBB(KING);
 	}
-	int forkTargetCount = popcount(forkTargets);
+	const int forkTargetCount = popcount(forkTargets);
 	if (forkTargetCount > 1) {
 		while (knights) {
 			Square fromSquare = lsb(knights);
@@ -1339,19 +1339,19 @@ ValuatedMove * Position::GenerateForks(bool withChecks)
 bool Position::mateThread() const
 {
 	Bitboard bbEscapeSquares = GetAttacksFrom(kingSquares[SideToMove ^ 1]) & ~ColorBB(Color(SideToMove ^ 1)) & ~attackedByUs;
-	int countEscapeSquares = popcount(bbEscapeSquares);
+	const int countEscapeSquares = popcount(bbEscapeSquares);
 	return (countEscapeSquares <= 1); //At most one escape square
 		//|| (countEscapeSquares == 2  && (bbEscapeSquares & (Rank1 | Rank8)) == bbEscapeSquares); //Backrank mate
 }
 
 std::string Position::toSan(Move move) {
-	Square toSquare = to(move);
-	Square fromSquare = from(move);
+	const Square toSquare = to(move);
+	const Square fromSquare = from(move);
 	if (type(move) == CASTLING) {
 		if (toSquare > fromSquare) return "O-O"; else return "O-O-O";
 	}
-	PieceType pt = GetPieceType(Board[from(move)]);
-	bool isCapture = (Board[to(move)] != BLANK) || (type(move) == PROMOTION);
+	const PieceType pt = GetPieceType(Board[from(move)]);
+	const bool isCapture = (Board[to(move)] != BLANK) || (type(move) == PROMOTION);
 	if (pt == PAWN) {
 		if (isCapture || type(move) == ENPASSANT) {
 			if (type(move) == PROMOTION) {

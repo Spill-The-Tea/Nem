@@ -275,13 +275,13 @@ void UCIInterface::deleteThread() {
 
 void UCIInterface::qscore(std::vector<std::string>& tokens)
 {
-	double result = stod(tokens[1]);
+	const double result = stod(tokens[1]);
 	std::vector<Position *> positions;
 	positions.push_back(_position);
 	Position * pos = _position;
 	while ((pos = pos->Previous()) != nullptr) positions.push_back(pos);
 	double totalError = 0;
-	int totalPlies = (int)positions.size();
+	const int totalPlies = (int)positions.size();
 	int plies = totalPlies+1;
 	int count = 0;
 	for (auto it = positions.rbegin(); it != positions.rend(); ++it)
@@ -292,7 +292,7 @@ void UCIInterface::qscore(std::vector<std::string>& tokens)
 		Value score = Engine->qscore(pos);
 		if (std::abs(int(score - pos->evaluate())) > 100) continue;
 		if (pos->GetSideToMove() == BLACK) score = -score;
-		double error = result - utils::sigmoid(score);
+		const double error = result - utils::sigmoid(score);
 		totalError += error * error;
 		++count;
 	}
@@ -508,7 +508,7 @@ void UCIInterface::perft(std::vector<std::string> &tokens) {
 		std::cout << "No depth specified!" << std::endl;
 		return;
 	}
-	int depth = stoi(tokens[1]);
+	const int depth = stoi(tokens[1]);
 	if (depth == 0) {
 		std::cout << tokens[1] << " is no valid depth!" << std::endl;
 		return;
@@ -524,7 +524,7 @@ void UCIInterface::divide(std::vector<std::string> &tokens) {
 		std::cout << "No depth specified!" << std::endl;
 		return;
 	}
-	int depth = stoi(tokens[1]);
+	const int depth = stoi(tokens[1]);
 	if (depth == 0) {
 		std::cout << tokens[1] << " is no valid depth!" << std::endl;
 		return;

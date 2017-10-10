@@ -44,13 +44,13 @@ namespace pawn {
 		result->halfOpenFilesWhite = Fileset(~bbFilesWhite & bbFilesBlack);
 		result->halfOpenFilesBlack = Fileset(bbFilesWhite & ~bbFilesBlack);
 		while (ppW) {
-			int rank = (lsb(ppW) >> 3) - 1;
+			const int rank = (lsb(ppW) >> 3) - 1;
 			result->Score += settings::parameter.PASSED_PAWN_BONUS[rank];
 			if (rank > 0 && (isolateLSB(ppW) & attacksWhite) != 0) result->Score += settings::parameter.BONUS_PROTECTED_PASSED_PAWN[rank];
 			ppW &= ppW - 1;
 		}
 		while (ppB) {
-			int rank = 6 - (lsb(ppB) >> 3);
+			const int rank = 6 - (lsb(ppB) >> 3);
 			result->Score -= settings::parameter.PASSED_PAWN_BONUS[rank];
 			if (rank > 0 && (isolateLSB(ppB) & attacksBlack) != 0) result->Score -= settings::parameter.BONUS_PROTECTED_PASSED_PAWN[rank];
 			ppB &= ppB - 1;
@@ -79,14 +79,14 @@ namespace pawn {
 		//Levers 
 		Bitboard levers = bbWhite & (RANK5 | RANK6) & attacksBlack;
 		while (levers) {
-			int leverRank = int(lsb(levers) >> 3) - 3;
+			const int leverRank = int(lsb(levers) >> 3) - 3;
 			assert(leverRank == 1 || leverRank == 2);
 			result->Score += leverRank * settings::parameter.BONUS_LEVER;
 			levers &= levers - 1;
 		}
 		levers = bbBlack & (RANK4 | RANK3) & attacksWhite;
 		while (levers) {
-			int leverRank = 4 - int(lsb(levers) >> 3);
+			const int leverRank = 4 - int(lsb(levers) >> 3);
 			assert(leverRank == 1 || leverRank == 2);
 			result->Score -= leverRank * settings::parameter.BONUS_LEVER;
 			levers &= levers - 1;
@@ -146,7 +146,7 @@ namespace tt {
 	}
 
 	void InitializeTranspositionTable() {
-		int newHashSize = settings::options.getInt(settings::OPTION_HASH);
+		const int newHashSize = settings::options.getInt(settings::OPTION_HASH);
 		if (initializedSizeInMB != newHashSize) {
 			FreeTranspositionTable();
 			uint64_t clusterCount = CalculateClusterCount(newHashSize);
@@ -237,7 +237,7 @@ namespace killer {
 
 	bool Manager::isKiller(const Position & pos, Move move) const
 	{
-		int index = getIndex(pos);
+		const int index = getIndex(pos);
 		return (move == plyTable[index]) || (move == plyTable[index + 1]);
 	}
 

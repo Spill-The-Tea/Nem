@@ -1,6 +1,7 @@
 #pragma once
 #include "types.h"
 #include <algorithm>
+#include <array>
 
 extern bool Chess960;
 
@@ -50,15 +51,15 @@ const Bitboard Diagonals[] = { 0x8040, 0x804020, 0x80402010, 0x8040201008, 0x804
                  0x80402010080402, 0x8040201008040201, 0x4020100804020100, 0x2010080402010000,
                  0x1008040201000000, 0x804020100000000, 0x402010000000000, 0x201000000000000 };
 const Bitboard DARKSQUARES = 0xaa55aa55aa55aa55;
-extern Bitboard InitialKingSquareBB[2];
-extern Square InitialKingSquare[2];
-extern Bitboard InitialRookSquareBB[4];
-extern Square InitialRookSquare[4];
-extern Bitboard SquaresToBeUnattacked[4];
-extern Bitboard SquaresToBeEmpty[4];
-extern Bitboard SlidingAttacksRookTo[64];
-extern Bitboard SlidingAttacksBishopTo[64];
-const Bitboard RookSquareAfterCastling[4] = { 1ull << F1, 1ull << D1, 1ull << F8, 1ull << D8 };
+extern std::array<Bitboard,2> InitialKingSquareBB;
+extern std::array<Square, 2> InitialKingSquare;
+extern std::array<Bitboard, 4> InitialRookSquareBB;
+extern std::array<Square, 4> InitialRookSquare;
+extern std::array<Bitboard, 4> SquaresToBeUnattacked;
+extern std::array<Bitboard, 4> SquaresToBeEmpty;
+extern std::array<Bitboard, 64> SlidingAttacksRookTo;
+extern std::array<Bitboard, 64> SlidingAttacksBishopTo;
+const std::array<Bitboard, 4> RookSquareAfterCastling = { 1ull << F1, 1ull << D1, 1ull << F8, 1ull << D8 };
 
 const Bitboard SaveSquaresForKing = 0xe7c300000000c3e7;
 const Bitboard SaveSquaresForKingA[2] = { SaveSquaresForKing & HALF_OF_WHITE, SaveSquaresForKing & HALF_OF_BLACK }; //Index Color
@@ -68,30 +69,30 @@ const Bitboard ShelterPawns4thRank = 0x8181000000;
 //const Bitboard TrappedBishopSquares = 0x4281000000008142;
 
 #ifdef USE_PEXT
-extern Bitboard ROOK_MASKS[64];
-extern Bitboard BISHOP_MASKS[64];
-extern int ROOK_OFFSETS[64];
-extern int BISHOP_OFFSETS[64];
-extern Bitboard ATTACKS[107648];
+extern std::array<Bitboard, 64> ROOK_MASKS;
+extern std::array<Bitboard, 64> BISHOP_MASKS;
+extern std::array<int, 64> ROOK_OFFSETS;
+extern std::array<int, 64> BISHOP_OFFSETS;
+extern std::array<Bitboard, 107648> ATTACKS;
 #else
-extern Bitboard MagicMovesRook[88576];
-extern Bitboard MagicMovesBishop[4800];
-extern int BishopShift[64];
-extern int RookShift[64];
-extern Bitboard OccupancyMaskRook[64];
-extern Bitboard OccupancyMaskBishop[64];
-extern int IndexOffsetRook[64];
-extern int IndexOffsetBishop[64];
-extern uint64_t RookMagics[64];
-extern uint64_t BishopMagics[64];
+extern std::array<Bitboard, 88576> MagicMovesRook;
+extern std::array<Bitboard, 4800> MagicMovesBishop;
+extern std::array<int, 64> BishopShift;
+extern std::array<int, 64> RookShift;
+extern std::array<Bitboard, 64> OccupancyMaskRook;
+extern std::array<Bitboard, 64> OccupancyMaskBishop;
+extern std::array<int, 64> IndexOffsetRook;
+extern std::array<int, 64> IndexOffsetBishop;
+extern std::array<uint64_t, 64> RookMagics;
+extern std::array<uint64_t, 64> BishopMagics;
 #endif
-extern Bitboard InBetweenFields[64][64];
-extern Bitboard RaysBySquares[64][64];
-extern Bitboard ShadowedFields[64][64];
-extern Bitboard KnightAttacks[64];
-extern Bitboard KingAttacks[64];
-extern Bitboard PawnAttacks[2][64];
-extern uint8_t Distance[64][64];
+extern std::array<std::array<Bitboard, 64>, 64> InBetweenFields;
+extern std::array<std::array<Bitboard, 64>, 64> RaysBySquares;
+extern std::array<std::array<Bitboard, 64>, 64> ShadowedFields;
+extern std::array<Bitboard, 64> KnightAttacks;
+extern std::array<Bitboard, 64> KingAttacks;
+extern std::array<std::array<Bitboard, 64>, 2> PawnAttacks;
+extern std::array<std::array<uint8_t, 64>, 64> Distance;
 
 inline Bitboard mirrorHorizontal(Bitboard bb) {
 	const Bitboard k1 = Bitboard(0x5555555555555555);
@@ -118,7 +119,7 @@ inline Bitboard flipVertical(Bitboard bb) {
 #endif
 }
 
-extern Bitboard SquareBB[64];
+extern std::array<Bitboard, 64> SquareBB;
 
 inline Bitboard ToBitboard(Square square) { return SquareBB[square]; }
 inline Bitboard ToBitboard(int square) { return SquareBB[square]; }
@@ -129,35 +130,35 @@ inline std::string toString(Move move) {
 	Square fromSquare = from(move);
 	Square toSquare = to(move);
 	if (type(move) == PROMOTION) {
-		char ch[] = { toChar(File(fromSquare & 7)), toChar(Rank(fromSquare >> 3)),
-			toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)),
-			"qrbn"[promotionType(move)], 0 };
-		return ch;
+		std::array<char,5> ch = { toChar(static_cast<File>(fromSquare & 7)), toChar(static_cast<Rank>(fromSquare >> 3)),
+			toChar(static_cast<File>(toSquare & 7)), toChar(static_cast<Rank>(toSquare >> 3)),
+			"qrbn"[promotionType(move)]};
+		return std::string(ch.begin(), ch.end());
 	}
 	if (Chess960 && type(move) == CASTLING) {
 		toSquare = InitialRookSquare[2 * (fromSquare > H4) + (toSquare < fromSquare)];
 	}
-	char ch[] = { toChar(File(fromSquare & 7)), toChar(Rank(fromSquare >> 3)),
-		toChar(File(toSquare & 7)), toChar(Rank(toSquare >> 3)), 0 };
-	return ch;
+	std::array<char, 4> ch = { toChar(static_cast<File>(fromSquare & 7)), toChar(static_cast<Rank>(fromSquare >> 3)),
+		toChar(static_cast<File>(toSquare & 7)), toChar(static_cast<Rank>(toSquare >> 3))};
+	return std::string(ch.begin(), ch.end());
 }
 
 //Converts a Chess960 move (KxR) to a king move (e.g. e1h1 => e1g1 for classical 0-0)
 inline Move FixCastlingMove(Move move) {
 	if (!Chess960 || type(move) != CASTLING) return move;
-	Square fromSquare = from(move);
-	Square toSquare = to(move);
-	int offset = fromSquare > H4 ? 56 : 0;
-	Square targetSquare = toSquare > fromSquare ? Square(G1 + offset) : Square(C1 + offset);
+	const Square fromSquare = from(move);
+	const Square toSquare = to(move);
+	const int offset = fromSquare > H4 ? 56 : 0;
+	const Square targetSquare = toSquare > fromSquare ? Square(G1 + offset) : Square(C1 + offset);
 	return createMove<CASTLING>(fromSquare, targetSquare);
 }
 
-inline bool oppositeColors(Square s1, Square s2) {
-	int s = int(s1) ^ int(s2);
+inline constexpr bool oppositeColors(Square s1, Square s2) {
+	const int s = static_cast<int>(s1) ^ static_cast<int>(s2);
 	return ((s >> 3) ^ s) & 1;
 }
 
-inline bool sameColor(Square s1, Square s2) {
+inline constexpr bool sameColor(Square s1, Square s2) {
 	return ((9 * (s1 ^ s2)) & 8) == 0;
 }
 
@@ -180,12 +181,12 @@ inline Bitboard BishopTargets(Square bishopSquare, Bitboard occupied) {
 #else
 
 inline Bitboard RookTargets(Square rookSquare, Bitboard occupied) {
-	int index = (int)(((OccupancyMaskRook[rookSquare] & occupied) * RookMagics[rookSquare]) >> RookShift[rookSquare]);
+	int index = static_cast<int>(((OccupancyMaskRook[rookSquare] & occupied) * RookMagics[rookSquare]) >> RookShift[rookSquare]);
 	return MagicMovesRook[index + IndexOffsetRook[rookSquare]];
 }
 
 inline Bitboard BishopTargets(Square bishopSquare, Bitboard occupied) {
-	int index = (int)(((OccupancyMaskBishop[bishopSquare] & occupied) * BishopMagics[bishopSquare]) >> BishopShift[bishopSquare]);
+	int index = static_cast<int>(((OccupancyMaskBishop[bishopSquare] & occupied) * BishopMagics[bishopSquare]) >> BishopShift[bishopSquare]);
 	return MagicMovesBishop[index + IndexOffsetBishop[bishopSquare]];
 }
 
@@ -210,15 +211,15 @@ inline Bitboard FrontFillSouth(Bitboard gen) {
 }
 
 inline uint8_t Fileset(Bitboard gen) {
-	return (uint8_t)FrontFillSouth(gen);
+	return static_cast<uint8_t>(FrontFillSouth(gen));
 }
 
-inline Bitboard FileFill(uint8_t fileset) {
-	return 0x0101010101010101ull * Bitboard(fileset);
+inline constexpr Bitboard FileFill(uint8_t fileset) {
+	return 0x0101010101010101ull * static_cast<Bitboard>(fileset);
 }
 
 inline Bitboard FileFill(Bitboard gen) {
-	return 0x0101010101010101ull * (uint8_t)FrontFillSouth(gen);
+	return 0x0101010101010101ull * static_cast<uint8_t>(FrontFillSouth(gen));
 }
 
 inline uint8_t IslandsEastFiles(uint8_t f) { return f &  ~(f >> 1); }
@@ -240,7 +241,7 @@ inline int ChebishevDistance(Square sq1, Square sq2) {
 	return Distance[sq1][sq2];
 }
 
-template<Color COLOR_OF_PAWN> inline Square ConversionSquare(Square pawnSquare) { if (COLOR_OF_PAWN == WHITE) return Square(56 + (pawnSquare & 7)); else return Square(pawnSquare & 7); }
+template<Color COLOR_OF_PAWN> inline Square ConversionSquare(Square pawnSquare) { if (COLOR_OF_PAWN == WHITE) return static_cast<Square>(56 + (pawnSquare & 7)); else return static_cast<Square>(pawnSquare & 7); }
 
 template<Color COLOR_OF_PAWN> inline uint8_t MovesToConversion(Square pawnSquare) {
 	if (COLOR_OF_PAWN == BLACK) return (uint8_t)std::min(pawnSquare >> 3, 5); else return (uint8_t)std::min((pawnSquare >> 3) ^ 7, 5);

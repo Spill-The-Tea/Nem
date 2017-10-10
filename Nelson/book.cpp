@@ -19,11 +19,11 @@ namespace polyglot {
 	Book::Book() {
 		this->open(fileName, std::ifstream::in | std::ifstream::binary);
 		this->seekg(0, std::ios::end);
-		count = size_t(this->tellg() / sizeof(Entry));
+		count = static_cast<size_t>(this->tellg() / sizeof(Entry));
 #ifdef _MSC_VER // Windows
-		srand(uint32_t(time(NULL)*_getpid()));
+		srand(static_cast<uint32_t>(time(NULL)*_getpid()));
 #else
-        srand(uint32_t(time(NULL)*getpid()));
+        srand(static_cast<uint32_t>(time(NULL)*getpid()));
 #endif
 	}
 
@@ -32,11 +32,11 @@ namespace polyglot {
 		fileName = filename;
 		this->open(fileName, std::ifstream::in | std::ifstream::binary);
 		this->seekg(0, std::ios::end);
-		count = size_t(this->tellg() / sizeof(Entry));
+		count = static_cast<size_t>(this->tellg() / sizeof(Entry));
 #ifdef _MSC_VER // Windows
-		srand(uint32_t(time(NULL)*_getpid()));
+		srand(static_cast<uint32_t>(time(NULL)*_getpid()));
 #else
-        srand(uint32_t(time(NULL)*getpid()));
+        srand(static_cast<uint32_t>(time(NULL)*getpid()));
 #endif
 	}
 
@@ -52,12 +52,12 @@ namespace polyglot {
 		result.move = 0;
 		result.weight = 0;
 		for (int i = 0; i < 8; ++i) result.key = (result.key << 8) + std::ifstream::get();
-		for (int i = 0; i < 2; ++i) result.move = (uint16_t)((result.move << 8) + std::ifstream::get());
-		for (int i = 0; i < 2; ++i) result.weight = (uint16_t)((result.weight << 8) + std::ifstream::get());
+		for (int i = 0; i < 2; ++i) result.move = static_cast<uint16_t>((result.move << 8) + std::ifstream::get());
+		for (int i = 0; i < 2; ++i) result.weight = static_cast<uint16_t>((result.weight << 8) + std::ifstream::get());
 		return result;
 	}
 
-	Move Book::probe(Position& pos, bool pickBest, ValuatedMove * moves, int moveCount) {
+	Move Book::probe(const Position& pos, bool pickBest, ValuatedMove * moves, int moveCount) {
 		if (!is_open()) return MOVE_NONE;
 		//Make a binary search to find the right Entry
 		size_t low = 0;
@@ -98,7 +98,7 @@ namespace polyglot {
 		}
 		Move move = best.move;
 		if (!pickBest && entries.size() > 0) {
-			uint32_t indx = rand() % sum;
+			const uint32_t indx = rand() % sum;
 			sum = 0;
 			for (size_t i = 0; i < entries.size(); ++i) {
 				Entry e = entries[i];
@@ -110,9 +110,9 @@ namespace polyglot {
 			}
 		}
 		//Now move contains move in polyglot representation
-		int pt = (move >> 12) & 7;
+		const int pt = (move >> 12) & 7;
 		if (pt)
-			move = createMove<PROMOTION>(from(move), to(move), PieceType(4 - pt));
+			move = createMove<PROMOTION>(from(move), to(move), static_cast<PieceType>(4 - pt));
 		else {
 			//Castling is stored as king captures rook
 			if (pos.GetSideToMove() == WHITE && from(move) == InitialKingSquare[WHITE]) {

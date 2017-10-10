@@ -144,7 +144,7 @@ namespace cecp {
 	}
 
 	bool XBoard::processResult(Value score) {
-		DetailedResult dr = pos->GetDetailedResult();
+		const DetailedResult dr = pos->GetDetailedResult();
 		switch (dr)
 		{
 		case NO_RESULT:
@@ -558,7 +558,7 @@ namespace cecp {
 
 	Move XBoard::parseMoveInXBoardNotation(const std::string& xboardMove, const Position& pos) {
 		if (!Chess960 || xboardMove[0] != 'O') return parseMoveInUCINotation(xboardMove, pos);
-		Square kingSquare = pos.KingSquare(pos.GetSideToMove());
+		const Square kingSquare = pos.KingSquare(pos.GetSideToMove());
 		if (!xboardMove.compare("O-O")) {
 			return createMove<CASTLING>(kingSquare, InitialRookSquare[2 * pos.GetSideToMove()]);
 		}
