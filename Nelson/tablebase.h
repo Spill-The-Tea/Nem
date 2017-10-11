@@ -10,7 +10,7 @@ namespace tablebases {
 	extern int MaxCardinality;
 
 	void init(const std::string& path);
-	int probe_wdl(Position& pos, int *success);
+	int probe_wdl(const Position& pos, int *success);
 	bool root_probe(Position& pos, std::vector<ValuatedMove>& rootMoves, Value& score);
 
 	void probe(Position& pos);

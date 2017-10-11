@@ -267,8 +267,7 @@ void UCIInterface::deleteThread() {
 	if (Mainthread != nullptr) {
 		if (Mainthread->joinable()) Mainthread->join();
 		else utils::debugInfo("Can't stop Engine Thread!");
-		free(Mainthread);
-		Mainthread = nullptr;
+		delete Mainthread;
 	}
 	Engine->Reset();
 }

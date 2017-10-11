@@ -33,7 +33,7 @@ struct MaterialTableEntry {
 	inline bool DoNullmove(Color col) const { return (Flags & (MSF_NO_NULLMOVE_WHITE << col)) == 0; }
 	inline Value Score() const { return Evaluation.getScore(Phase); }
 	inline bool IsTablebaseEntry() const { return (Flags & MSF_TABLEBASE_ENTRY) != 0; }
-	inline PieceType GetMostExpensivePiece(Color color) const { return PieceType((MostValuedPiece >> (4 * (int)color)) & 15); }
+	inline PieceType GetMostExpensivePiece(Color color) const { return static_cast<PieceType>((MostValuedPiece >> (4 * (int)color)) & 15); }
 	void setMostValuedPiece(Color color, PieceType pt) { 
 		MostValuedPiece &= color == BLACK ? 15 : 240;
 		MostValuedPiece |= color == BLACK ? pt << 4 : pt;
@@ -49,7 +49,7 @@ inline const Phase_t Phase(int nWQ, int nBQ, int nWR, int nBR, int nWB, int nBB,
 		- (nWR + nBR) * 2
 		- nWB - nBB - nWN - nBN;
 	phase = (phase * 256 + 12) / 24;
-	return Phase_t(phase);
+	return static_cast<Phase_t>(phase);
 }
 
 const Phase_t PHASE_LIMIT_ENDGAME = Phase(0, 0, 1, 0, 0, 0, 1, 0);

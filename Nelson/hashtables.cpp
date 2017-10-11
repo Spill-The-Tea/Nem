@@ -79,14 +79,14 @@ namespace pawn {
 		//Levers 
 		Bitboard levers = bbWhite & (RANK5 | RANK6) & attacksBlack;
 		while (levers) {
-			const int leverRank = int(lsb(levers) >> 3) - 3;
+			const int leverRank = static_cast<int>(lsb(levers) >> 3) - 3;
 			assert(leverRank == 1 || leverRank == 2);
 			result->Score += leverRank * settings::parameter.BONUS_LEVER;
 			levers &= levers - 1;
 		}
 		levers = bbBlack & (RANK4 | RANK3) & attacksWhite;
 		while (levers) {
-			const int leverRank = 4 - int(lsb(levers) >> 3);
+			const int leverRank = 4 - static_cast<int>(lsb(levers) >> 3);
 			assert(leverRank == 1 || leverRank == 2);
 			result->Score -= leverRank * settings::parameter.BONUS_LEVER;
 			levers &= levers - 1;
@@ -232,7 +232,7 @@ namespace killer {
 
 	int Manager::getIndex(const Position & pos) const
 	{
-		return NB_SLOTS_KILLER * (2 * pos.GetPliesFromRoot() + int(pos.GetSideToMove()));
+		return NB_SLOTS_KILLER * (2 * pos.GetPliesFromRoot() + static_cast<int>(pos.GetSideToMove()));
 	}
 
 	bool Manager::isKiller(const Position & pos, Move move) const

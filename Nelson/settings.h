@@ -38,46 +38,40 @@ namespace settings {
 		Color EngineSide = WHITE;
 		Protocol protocol = NO_PROTOCOL;
 		int EmergencyTime = 0;
-		//King safety parameters
-		int KING_SAFETY_MAXVAL = 500;
-		int KING_SAFETY_MAXINDEX = 61;
-		double KING_SAFETY_LINEAR = 0.5;
-		int ATTACK_UNITS_SAFE_CONTACT_CHECK = 5;
-		Value KING_SAFETY[100];
-		Eval SCALE_BISHOP_PAIR_WITH_PAWNS = EVAL_ZERO; //Reduce Bonus Bishop Pair by this value for each pawn on the board
-		Eval BONUS_BISHOP_PAIR_NO_OPP_MINOR = EVAL_ZERO; //Bonus for Bishop pair, if opponent has no minor piece for exchange
-		Eval SCALE_EXCHANGE_WITH_PAWNS = EVAL_ZERO; //Decrease Value of Exchange with number of pawns
-		Eval SCALE_EXCHANGE_WITH_MAJORS = EVAL_ZERO; //Decrease Value of Exchange with number of majors
-		Eval PAWN_STORM[4] = { Eval(10, 0), Eval(25, 0), Eval(15, 0), Eval(5, 0) };
-		Value BETA_PRUNING_FACTOR = Value(95);
-		inline Value BetaPruningMargin(int depth) { return Value(depth * BETA_PRUNING_FACTOR); }
-		Value RAZORING_FACTOR = Value(50);
-		Value RAZORING_OFFSET = Value(50);
-		inline Value RazoringMargin(int depth) { return Value(depth * RAZORING_FACTOR + RAZORING_OFFSET); }
-		int LIMIT_QSEARCH = -3;
-		int LIMIT_QSEARCH_TT = LIMIT_QSEARCH + 1;
-		Eval HANGING = Eval(16, 13);
-		Eval KING_ON_ONE = Eval(1, 29);
-		Eval KING_ON_MANY = Eval(3, 63);
-		Eval ROOK_ON_OPENFILE = Eval(10, 0);
-		Eval ROOK_ON_SEMIOPENFILE = Eval(10, 0);
-		Eval ROOK_ON_SEMIOPENFILE_WITH_KQ = Eval(5, 0);
-		Eval ROOK_ON_7TH = Eval(20, 0);
+		const Eval SCALE_BISHOP_PAIR_WITH_PAWNS = EVAL_ZERO; //Reduce Bonus Bishop Pair by this value for each pawn on the board
+		const Eval BONUS_BISHOP_PAIR_NO_OPP_MINOR = EVAL_ZERO; //Bonus for Bishop pair, if opponent has no minor piece for exchange
+		const Eval SCALE_EXCHANGE_WITH_PAWNS = EVAL_ZERO; //Decrease Value of Exchange with number of pawns
+		const Eval SCALE_EXCHANGE_WITH_MAJORS = EVAL_ZERO; //Decrease Value of Exchange with number of majors
+		const Eval PAWN_STORM[4] = { Eval(10, 0), Eval(25, 0), Eval(15, 0), Eval(5, 0) };
+		const Value BETA_PRUNING_FACTOR = static_cast<Value>(95);
+		inline Value BetaPruningMargin(int depth) { return static_cast<Value>(depth * BETA_PRUNING_FACTOR); }
+		const Value RAZORING_FACTOR = static_cast<Value>(50);
+		const Value RAZORING_OFFSET = static_cast<Value>(50);
+		inline Value RazoringMargin(int depth) { return static_cast<Value>(depth * RAZORING_FACTOR + RAZORING_OFFSET); }
+		const int LIMIT_QSEARCH = -3;
+		const int LIMIT_QSEARCH_TT = LIMIT_QSEARCH + 1;
+		const Eval HANGING = Eval(16, 13);
+		const Eval KING_ON_ONE = Eval(1, 29);
+		const Eval KING_ON_MANY = Eval(3, 63);
+		const Eval ROOK_ON_OPENFILE = Eval(10, 0);
+		const Eval ROOK_ON_SEMIOPENFILE = Eval(10, 0);
+		const Eval ROOK_ON_SEMIOPENFILE_WITH_KQ = Eval(5, 0);
+		const Eval ROOK_ON_7TH = Eval(20, 0);
 
-		Eval BONUS_BISHOP_PAIR = Eval(50);
-		Value BONUS_CASTLING = Value(0);
-        //Value BONUS_TEMPO = Value(5);
-        Value DELTA_PRUNING_SAFETY_MARGIN = Value(VALUE_100CP);
-        Eval PAWN_SHELTER_2ND_RANK = Eval(30, -10);
-		Eval PAWN_SHELTER_3RD_RANK = Eval(15, -8);
-		Eval PAWN_SHELTER_4TH_RANK = Eval(8, -4);
-        Value PROBCUT_MARGIN = Value(90);
-		Value BONUS_KNIGHT_OUTPOST = Value(5);
-		Value BONUS_BISHOP_OUTPOST = Value(0);
-		Eval PieceValues[7]{ Eval(1025), Eval(490, 550), Eval(325), Eval(325), Eval(80, 100), Eval(VALUE_KNOWN_WIN), Eval(0) };
-		int FULTILITY_PRUNING_DEPTH = 3;
-		Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
-		Eval PSQT[12][64]{
+		const Eval BONUS_BISHOP_PAIR = Eval(50);
+		const Value BONUS_CASTLING = static_cast<Value>(0);
+        //Value BONUS_TEMPO = static_cast<Value>(5);
+		const Value DELTA_PRUNING_SAFETY_MARGIN = static_cast<Value>(VALUE_100CP);
+		const Eval PAWN_SHELTER_2ND_RANK = Eval(30, -10);
+		const Eval PAWN_SHELTER_3RD_RANK = Eval(15, -8);
+		const Eval PAWN_SHELTER_4TH_RANK = Eval(8, -4);
+		const Value PROBCUT_MARGIN = static_cast<Value>(90);
+		const Value BONUS_KNIGHT_OUTPOST = static_cast<Value>(5);
+		const Value BONUS_BISHOP_OUTPOST = static_cast<Value>(0);
+		const Eval PieceValues[7]{ Eval(1025), Eval(490, 550), Eval(325), Eval(325), Eval(80, 100), Eval(VALUE_KNOWN_WIN), Eval(0) };
+		const int FULTILITY_PRUNING_DEPTH = 3;
+		const Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
+		const Eval PSQT[12][64]{
 			{  // White Queens
 				Eval(-10,-8), Eval(-7,-5), Eval(-4,-2), Eval(-2,0), Eval(-2,0), Eval(-4,-2), Eval(-7,-5), Eval(-10,-8),  // Rank 1
 				Eval(-4,-5), Eval(-2,-2), Eval(0,0), Eval(3,2), Eval(3,2), Eval(0,0), Eval(-2,-2), Eval(-4,-5),  // Rank 2
@@ -199,41 +193,41 @@ namespace settings {
 				Eval(-16,20), Eval(-17,15), Eval(-16,9), Eval(-14,4), Eval(-14,4), Eval(-16,9), Eval(-17,15), Eval(-16,20)  // Rank 8
 			}
 		};
-		Value CAPTURE_SCORES[6][7] = {
+		const Value CAPTURE_SCORES[6][7] = {
 			// Captured:  QUEEN, ROOK,   BISHOP,   KNIGHT,    PAWN,   King,   EP-Capture/Promotion
-			{ Value(QxQ), Value(QxR),  Value(QxB),  Value(QxN),  Value(QxP),  Value(0),  Value(0) },   // QUEEN
-			{ Value(RxQ), Value(RxR), Value(RxB), Value(RxN),  Value(RxP),  Value(0),  Value(0) },   // ROOK
-			{ Value(BxQ), Value(BxR), Value(BxB), Value(BxN),  Value(BxP),  Value(0),  Value(0) },   // BISHOP
-			{ Value(NxQ), Value(NxR), Value(NxB), Value(NxN), Value(NxP),  Value(0),  Value(0) },   // KNIGHT
-			{ Value(PxQ), Value(PxR), Value(PxB), Value(PxN), Value(PxP),  Value(0), Value(EP) },   // PAWN
-			{ Value(KxQ), Value(KxR), Value(KxB), Value(KxN), Value(KxP), Value(0),  Value(0) }    // KING
+			{ static_cast<Value>(QxQ), static_cast<Value>(QxR),  static_cast<Value>(QxB),  static_cast<Value>(QxN),  static_cast<Value>(QxP),  static_cast<Value>(0),  static_cast<Value>(0) },   // QUEEN
+			{ static_cast<Value>(RxQ), static_cast<Value>(RxR), static_cast<Value>(RxB), static_cast<Value>(RxN),  static_cast<Value>(RxP),  static_cast<Value>(0),  static_cast<Value>(0) },   // ROOK
+			{ static_cast<Value>(BxQ), static_cast<Value>(BxR), static_cast<Value>(BxB), static_cast<Value>(BxN),  static_cast<Value>(BxP),  static_cast<Value>(0),  static_cast<Value>(0) },   // BISHOP
+			{ static_cast<Value>(NxQ), static_cast<Value>(NxR), static_cast<Value>(NxB), static_cast<Value>(NxN), static_cast<Value>(NxP),  static_cast<Value>(0),  static_cast<Value>(0) },   // KNIGHT
+			{ static_cast<Value>(PxQ), static_cast<Value>(PxR), static_cast<Value>(PxB), static_cast<Value>(PxN), static_cast<Value>(PxP),  static_cast<Value>(0), static_cast<Value>(EP) },   // PAWN
+			{ static_cast<Value>(KxQ), static_cast<Value>(KxR), static_cast<Value>(KxB), static_cast<Value>(KxN), static_cast<Value>(KxP), static_cast<Value>(0),  static_cast<Value>(0) }    // KING
 		};
-		Eval MOBILITY_BONUS_KNIGHT[9] = { Eval(-29, -23), Eval(-19, -14), Eval(-4, -4), Eval(1, 0), Eval(7, 4), Eval(12, 9), Eval(16, 12), Eval(19, 14), Eval(21, 15) };
-		Eval MOBILITY_BONUS_BISHOP[14] = { Eval(-23, -22), Eval(-12, -11), Eval(2, 0), Eval(9, 7), Eval(15, 14), Eval(22, 19), Eval(28, 25), Eval(32, 29), Eval(33, 32),
+		const Eval MOBILITY_BONUS_KNIGHT[9] = { Eval(-29, -23), Eval(-19, -14), Eval(-4, -4), Eval(1, 0), Eval(7, 4), Eval(12, 9), Eval(16, 12), Eval(19, 14), Eval(21, 15) };
+		const Eval MOBILITY_BONUS_BISHOP[14] = { Eval(-23, -22), Eval(-12, -11), Eval(2, 0), Eval(9, 7), Eval(15, 14), Eval(22, 19), Eval(28, 25), Eval(32, 29), Eval(33, 32),
 			Eval(36, 33), Eval(37, 35), Eval(37, 36), Eval(39, 36), Eval(40, 37) };
-		Eval MOBILITY_BONUS_ROOK[15] = { Eval(-22, -25), Eval(-14, -12), Eval(-2, 0), Eval(0, 7), Eval(2, 15), Eval(5, 22), Eval(8, 29), Eval(9, 37), Eval(12, 44),
+		const Eval MOBILITY_BONUS_ROOK[15] = { Eval(-22, -25), Eval(-14, -12), Eval(-2, 0), Eval(0, 7), Eval(2, 15), Eval(5, 22), Eval(8, 29), Eval(9, 37), Eval(12, 44),
 			Eval(14, 50), Eval(14, 53), Eval(15, 56), Eval(16, 57), Eval(16, 57), Eval(16, 58) };
-		Eval MOBILITY_BONUS_QUEEN[28] = { Eval(-19, -18), Eval(-12, -11), Eval(-2, -2), Eval(0, 0), Eval(2, 4), Eval(5, 8), Eval(5, 14), Eval(8, 18), Eval(9, 18), Eval(9, 19),
+		const Eval MOBILITY_BONUS_QUEEN[28] = { Eval(-19, -18), Eval(-12, -11), Eval(-2, -2), Eval(0, 0), Eval(2, 4), Eval(5, 8), Eval(5, 14), Eval(8, 18), Eval(9, 18), Eval(9, 19),
 			Eval(9, 19), Eval(9, 19), Eval(9, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19),
 			Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19), Eval(11, 19) };
 		// Threat[defended/weak][minor/major attacking][attacked PieceType] contains
 		// bonuses according to which piece type attacks which one.
 		// "inspired" by SF
-		Eval Threat[2][2][6] = {
+		const Eval Threat[2][2][6] = {
 			{ { Eval(0, 0), Eval(0, 0), Eval(10, 18), Eval(12, 19), Eval(22, 49), Eval(18, 53) }, // Defended Minor
 			{ Eval(0, 0), Eval(0, 0), Eval(5, 7), Eval(5, 7), Eval(4, 7), Eval(12, 24) } }, // Defended Major
 			{ { Eval(0, 0), Eval(0, 16), Eval(17, 21), Eval(16, 25), Eval(21, 50), Eval(18, 52) }, // Weak Minor
 			{ Eval(0, 0), Eval(0, 14), Eval(13, 29), Eval(13, 29), Eval(0, 22), Eval(12, 26) } } // Weak Major
 		};
-		Eval PASSED_PAWN_BONUS[6] = { Eval(0), Eval(0), Eval(23), Eval(39), Eval(81), Eval(101) };
-		Eval MALUS_BLOCKED[6] = { Eval(30), Eval(20), Eval(10), Eval(5), Eval(0), Eval(0) }; //indexed by distance to conversion
-		Eval BONUS_PROTECTED_PASSED_PAWN[6] = { Eval(0), Eval(0), Eval(0), Eval(30), Eval(30), Eval(30) };
-        Eval MALUS_ISOLATED_PAWN = Eval(5);
-		Eval MALUS_BACKWARD_PAWN = Eval(20);
-		Eval MALUS_ISLAND_COUNT = Eval(5);
-		Eval BONUS_CANDIDATE = Eval(5);
-		Eval BONUS_LEVER = Eval(5);
-		Eval MALUS_DOUBLED_PAWN = Eval(0, 20);
+		const Eval PASSED_PAWN_BONUS[6] = { Eval(0), Eval(0), Eval(23), Eval(39), Eval(81), Eval(101) };
+		const Eval MALUS_BLOCKED[6] = { Eval(30), Eval(20), Eval(10), Eval(5), Eval(0), Eval(0) }; //indexed by distance to conversion
+		const Eval BONUS_PROTECTED_PASSED_PAWN[6] = { Eval(0), Eval(0), Eval(0), Eval(30), Eval(30), Eval(30) };
+		const Eval MALUS_ISOLATED_PAWN = Eval(5);
+		const Eval MALUS_BACKWARD_PAWN = Eval(20);
+		const Eval MALUS_ISLAND_COUNT = Eval(5);
+		const Eval BONUS_CANDIDATE = Eval(5);
+		const Eval BONUS_LEVER = Eval(5);
+		const Eval MALUS_DOUBLED_PAWN = Eval(0, 20);
 		int TBProbeDepth = 8;
 		int ATTACK_WEIGHT[4] = { 53, 82, 23, 17 }; //Indexed by Piece Type
 		int SAFE_CHECK[4] = { 800, 900, 450, 800 };
@@ -250,8 +244,8 @@ namespace settings {
 		bool parse(std::string input);
 		std::vector<int> parseValue(std::string input);
 		void setEval(Eval & e, std::vector<int> & v, int index);
-		inline void setValue(Value & val, std::vector<int> & v) { val = Value(v[0]); };
-		inline void setValue(int & val, std::vector<int> & v) { val = Value(v[0]); };
+		inline void setValue(Value & val, std::vector<int> & v) { val = static_cast<Value>(v[0]); };
+		inline void setValue(int & val, std::vector<int> & v) { val = static_cast<Value>(v[0]); };
 #endif 
 	private:
 		int LMR_REDUCTION[64][64];

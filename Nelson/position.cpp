@@ -67,10 +67,10 @@ bool Position::ApplyMove(Move move) {
 		set<false>(moving, toSquare);
 		//update epField
 		if ((GetPieceType(moving) == PAWN)
-			&& (abs(int(toSquare) - int(fromSquare)) == 16)
-			&& (GetEPAttackersForToField(toSquare) & PieceBB(PAWN, Color(SideToMove ^ 1))))
+			&& (abs(static_cast<int>(toSquare) - static_cast<int>(fromSquare)) == 16)
+			&& (GetEPAttackersForToField(toSquare) & PieceBB(PAWN, static_cast<Color>(SideToMove ^ 1))))
 		{
-			SetEPSquare(Square(toSquare - PawnStep()));
+			SetEPSquare(static_cast<Square>(toSquare - PawnStep()));
 		}
 		else
 			SetEPSquare(OUTSIDE);
@@ -88,7 +88,7 @@ bool Position::ApplyMove(Move move) {
 			++DrawPlyCount;
 		//update castlings
 		if (CastlingOptions) updateCastleFlags(fromSquare, toSquare);
-		//Adjust material key
+		//Adjust material key(static_cast<Square>(
 		if (capturedInLastMove != BLANK) {
 			if (MaterialKey == MATERIAL_KEY_UNUSUAL) {
 				if (checkMaterialIsUnusual()) material->Evaluation = calculateMaterialEval(*this);
@@ -101,8 +101,8 @@ bool Position::ApplyMove(Move move) {
 		break;
 	case ENPASSANT:
 		set<true>(moving, toSquare);
-		remove(Square(toSquare - PawnStep()));
-		capturedInLastMove = Piece(BPAWN - SideToMove);
+		remove(static_cast<Square>(toSquare - PawnStep()));
+		capturedInLastMove = static_cast<Piece>(BPAWN - SideToMove);
 		if (MaterialKey == MATERIAL_KEY_UNUSUAL) {
 			material->Evaluation = calculateMaterialEval(*this);
 		}
@@ -139,17 +139,17 @@ bool Position::ApplyMove(Move move) {
 		if (toSquare == G1 + (SideToMove * 56) || (toSquare == InitialRookSquare[2 * SideToMove])) {
 			//short castling
 			remove(InitialRookSquare[2 * SideToMove]); //remove rook
-			toSquare = Square(G1 + (SideToMove * 56));
+			toSquare = static_cast<Square>(G1 + (SideToMove * 56));
 			set<true>(moving, toSquare); //Place king
-			set<true>(Piece(WROOK + SideToMove),
+			set<true>(static_cast<Piece>(WROOK + SideToMove),
 				Square(toSquare - 1)); //Place rook
 		}
 		else {
 			//long castling
 			remove(InitialRookSquare[2 * SideToMove + 1]); //remove rook
-			toSquare = Square(C1 + (SideToMove * 56));
+			toSquare = static_cast<Square>(C1 + (SideToMove * 56));
 			set<true>(moving, toSquare); //Place king
-			set<true>(Piece(WROOK + SideToMove),
+			set<true>(static_cast<Piece>(WROOK + SideToMove),
 				Square(toSquare + 1)); //Place rook
 		}
 		RemoveCastlingOption(CastleFlag(W0_0 << (2 * SideToMove)));
@@ -173,8 +173,8 @@ bool Position::ApplyMove(Move move) {
 	if (pawn->Key != PawnKey) pawn = pawn::probe(*this);
 	lastAppliedMove = move;
 	if (material->IsTheoreticalDraw()) result = DRAW;
-	return !(attackedByUs & PieceBB(KING, Color(SideToMove ^ 1)));
-	//if (attackedByUs & PieceBB(KING, Color(SideToMove ^ 1))) return false;
+	return !(attackedByUs & PieceBB(KING, static_cast<Color>(SideToMove ^ 1)));
+	//if (attackedByUs & PieceBB(KING, static_cast<Color>(SideToMove ^ 1))) return false;
 	//attackedByThem = calculateAttacks(Color(SideToMove ^1));
 	//return true;
 }
@@ -199,7 +199,7 @@ Move Position::NextMove() {
 	if (generationPhases[generationPhase] == NONE) return MOVE_NONE;
 	Move move;
 	do {
-		processedMoveGenerationPhases |= 1 << (int)generationPhases[generationPhase];
+		processedMoveGenerationPhases |= 1 << static_cast<int>(generationPhases[generationPhase]);
 		if (moveIterationPointer < 0) {
 			phaseStartIndex = movepointer - (movepointer != 0);
 			switch (generationPhases[generationPhase]) {
@@ -364,7 +364,7 @@ Move Position::NextMove() {
 	} while (generationPhases[generationPhase] != NONE);
 	return MOVE_NONE;
 end_post_killer:
-	if (killerManager != nullptr && (processedMoveGenerationPhases & (1 << (int)MoveGenerationType::KILLER)) != 0) {
+	if (killerManager != nullptr && (processedMoveGenerationPhases & (1 << static_cast<int>(MoveGenerationType::KILLER))) != 0) {
 		if (killerManager->isKiller(*this, move)) return NextMove();
 	}
 end_post_hash:
@@ -374,7 +374,7 @@ end:
 }
 
 //Insertion Sort (copied from SF)
-void Position::insertionSort(ValuatedMove* first, ValuatedMove* last)
+void Position::insertionSort(ValuatedMove* first, const ValuatedMove* last)
 {
 	ValuatedMove tmp, *p, *q;
 	for (p = first + 1; p < last; ++p)
@@ -408,7 +408,7 @@ void Position::evaluateByCaptureScore(int startIndex) {
 
 void Position::evaluateByMVVLVA(int startIndex) {
 	for (int i = startIndex; i < movepointer - 1; ++i) {
-		moves[i].score = settings::parameter.PieceValues[GetPieceType(Board[to(moves[i].move)])].mgScore - 150 * relativeRank(GetSideToMove(), Rank(to(moves[i].move) >> 3));
+		moves[i].score = settings::parameter.PieceValues[GetPieceType(Board[to(moves[i].move)])].mgScore - 150 * relativeRank(GetSideToMove(), static_cast<Rank>(to(moves[i].move) >> 3));
 	}
 }
 
@@ -467,17 +467,17 @@ void Position::evaluateByHistory(int startIndex) {
 				Move fixedMove = FixCastlingMove(moves[i].move);
 				Square toSquare = to(fixedMove);
 				Piece p = Board[from(fixedMove)];
-				moves[i].score = Value(history->getValue(p, fixedMove) - ChebishevDistance(toSquare, KingSquare(Color(SideToMove ^ 1)))); //History + king tropism if equal
+				moves[i].score = static_cast<Value>(history->getValue(p, fixedMove) - ChebishevDistance(toSquare, KingSquare(Color(SideToMove ^ 1)))); //History + king tropism if equal
 				if (lastMoves[0] && cmHistory) {
 					moves[i].score += 2 * cmHistory->getValue(lastMovingPieces[0], to(lastMoves[0]), p, toSquare);
 					if (lastMoves[1]) moves[i].score += 2 * followupHistory->getValue(lastMovingPieces[1], to(lastMoves[1]), p, toSquare);
 				}
 				const Bitboard toBB = ToBitboard(toSquare);
-				if (ToBitboard(from(moves[i].move)) & bbNewlyAttacked) moves[i].score = Value(moves[i].score + 100);
+				if (ToBitboard(from(moves[i].move)) & bbNewlyAttacked) moves[i].score = static_cast<Value>(moves[i].score + 100);
 				if ((toBB & (attackedByUs | ~attackedByThem)) != EMPTY)
-					moves[i].score = Value(moves[i].score + 500);
+					moves[i].score = static_cast<Value>(moves[i].score + 500);
 				else if ((p < WPAWN) && (toBB & AttacksByPieceType(Color(SideToMove ^ 1), PAWN)) != 0) {
-					moves[i].score = Value(moves[i].score - 500);
+					moves[i].score = static_cast<Value>(moves[i].score - 500);
 				}
 				assert(moves[i].score < VALUE_MATE);
 			}
@@ -726,7 +726,7 @@ const Value Position::SEE(Move move) const
 	mayXRay &= ~attadef;
 
 	// If there are no attackers we are done (we had a simple capture of a hanging piece)
-	side = Color(side ^ 1);
+	side = static_cast<Color>(side ^ 1);
 	Bitboard attackers = attadef & OccupiedByColor[side];
 
 	//Consider pinned pieces
@@ -745,7 +745,7 @@ const Value Position::SEE(Move move) const
 
 		// Locate and remove the next least valuable attacker
 		capturingPiece = getAndResetLeastValuableAttacker(toSquare, attackers, occ, attadef, mayXRay);
-		side = Color(side ^ 1);
+		side = static_cast<Color>(side ^ 1);
 		attackers = attadef & OccupiedByColor[side];
 		//Consider pinned pieces
 		if ((attackers & PinnedPieces(side)) != EMPTY && (bbPinner[side] & occ) != EMPTY)
@@ -855,31 +855,31 @@ void Position::setFromFEN(const std::string& fen) {
 		else if (token == '-') continue;
 		else {
 			if (token >= 'A' && token <= 'H') {
-				const File kingFile = File(kingSquares[WHITE] & 7);
+				const File kingFile = static_cast<File>(kingSquares[WHITE] & 7);
 				InitialKingSquareBB[WHITE] = PieceBB(KING, WHITE);
 				InitialKingSquare[WHITE] = lsb(InitialKingSquareBB[WHITE]);
-				File rookFile = File((int)token - (int)'A');
+				File rookFile = static_cast<File>((int)token - (int)'A');
 				if (rookFile < kingFile) {
 					AddCastlingOption(W0_0_0);
-					InitialRookSquare[1] = Square(rookFile);
+					InitialRookSquare[1] = static_cast<Square>(rookFile);
 				}
 				else {
 					AddCastlingOption(W0_0);
-					InitialRookSquare[0] = Square(rookFile);
+					InitialRookSquare[0] = static_cast<Square>(rookFile);
 				}
 			}
 			else if (token >= 'a' && token <= 'h') {
-				const File kingFile = File(kingSquares[BLACK] & 7);
+				const File kingFile = static_cast<File>(kingSquares[BLACK] & 7);
 				InitialKingSquareBB[BLACK] = PieceBB(KING, BLACK);
 				InitialKingSquare[BLACK] = lsb(InitialKingSquareBB[BLACK]);
-				File rookFile = File((int)token - (int)'a');
+				File rookFile = static_cast<File>((int)token - (int)'a');
 				if (rookFile < kingFile) {
 					AddCastlingOption(B0_0_0);
-					InitialRookSquare[3] = Square(rookFile + 56);
+					InitialRookSquare[3] = static_cast<Square>(rookFile + 56);
 				}
 				else {
 					AddCastlingOption(B0_0);
-					InitialRookSquare[2] = Square(rookFile + 56);
+					InitialRookSquare[2] = static_cast<Square>(rookFile + 56);
 				}
 			}
 		}
@@ -1005,7 +1005,7 @@ std::string Position::fen() const {
 			ss << 'q';
 	}
 	ss << (EPSquare == OUTSIDE ? " - " : " " + toString(EPSquare) + " ")
-		<< int(DrawPlyCount) << " "
+		<< static_cast<int>(DrawPlyCount) << " "
 		//<< 1 + (_ply - (_sideToMove == BLACK)) / 2;
 		<< "1";
 	return ss.str();
@@ -1043,7 +1043,7 @@ std::string Position::printGeneratedMoves() {
 MaterialKey_t Position::calculateMaterialKey() const {
 	MaterialKey_t key = MATERIAL_KEY_OFFSET;
 	for (int i = WQUEEN; i <= BPAWN; ++i)
-		key += materialKeyFactors[i] * popcount(PieceBB(GetPieceType(Piece(i)), Color(i & 1)));
+		key += materialKeyFactors[i] * popcount(PieceBB(GetPieceType(static_cast<Piece>(i)), static_cast<Color>(i & 1)));
 	return key;
 }
 
@@ -1096,7 +1096,7 @@ DetailedResult Position::GetDetailedResult() {
 			//Check for 3 fold repetition
 			int repCounter = 0;
 			Position * prev = Previous();
-			for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, int(DrawPlyCount)) >> 1); ++i) {
+			for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, static_cast<int>(DrawPlyCount)) >> 1); ++i) {
 				prev = prev->Previous();
 				if (prev->GetHash() == GetHash()) {
 					repCounter++;
@@ -1111,7 +1111,7 @@ DetailedResult Position::GetDetailedResult() {
 
 bool Position::checkRepetition() {
 	Position * prev = Previous();
-	for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, int(DrawPlyCount)) >> 1); ++i) {
+	for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, static_cast<int>(DrawPlyCount)) >> 1); ++i) {
 		prev = prev->Previous();
 		if (prev->GetHash() == GetHash())
 			return true;
@@ -1141,13 +1141,13 @@ bool Position::validateMove(Move move) {
 		if (pt == PAWN) {
 			switch (type(move)) {
 			case NORMAL:
-				valid = !(ToBitboard(toSquare) & RANKS[7 - 7 * SideToMove]) && (((int(toSquare) - int(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) ||
-					(((int(toSquare) - int(fromSquare)) == 2 * PawnStep()) && ((fromSquare >> 3) == (1 + 5 * SideToMove)) && Board[toSquare] == BLANK && Board[toSquare - PawnStep()] == BLANK)
+				valid = !(ToBitboard(toSquare) & RANKS[7 - 7 * SideToMove]) && (((int(toSquare) - static_cast<int>(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) ||
+					(((int(toSquare) - static_cast<int>(fromSquare)) == 2 * PawnStep()) && ((fromSquare >> 3) == (1 + 5 * SideToMove)) && Board[toSquare] == BLANK && Board[toSquare - PawnStep()] == BLANK)
 					|| (attacks[fromSquare] & OccupiedByColor[SideToMove ^ 1] & ToBitboard(toSquare)));
 				break;
 			case PROMOTION:
 				valid = (ToBitboard(toSquare) & RANKS[7 - 7 * SideToMove]) &&
-					(((int(toSquare) - int(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) || (attacks[fromSquare] & OccupiedByColor[SideToMove ^ 1] & ToBitboard(toSquare)));
+					(((int(toSquare) - static_cast<int>(fromSquare)) == PawnStep() && Board[toSquare] == BLANK) || (attacks[fromSquare] & OccupiedByColor[SideToMove ^ 1] & ToBitboard(toSquare)));
 				break;
 			case ENPASSANT:
 				valid = toSquare == EPSquare;
@@ -1191,7 +1191,7 @@ bool Position::givesCheck(Move move)
 		pieceType = promotionType(move);
 	else if (moveType == MoveType::ENPASSANT) pieceType = PieceType::PAWN;
 	else {
-		toSquare = File(toSquare & 7) == File::FileG ? Square(toSquare - 1) : Square(toSquare + 1);
+		toSquare = static_cast<File>(toSquare & 7) == File::FileG ? static_cast<Square>(toSquare - 1) : static_cast<Square>(toSquare + 1);
 		pieceType = ROOK; //Castling
 	}
 	//Check direct checks
@@ -1204,13 +1204,13 @@ bool Position::givesCheck(Move move)
 		if (PawnAttacks[SideToMove][toSquare] & ToBitboard(kingSquare)) return true;
 		break;
 	case BISHOP:
-		if (BishopTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1))) return true;
+		if (BishopTargets(toSquare, OccupiedBB()) & PieceBB(KING, static_cast<Color>(SideToMove ^ 1))) return true;
 		break;
 	case ROOK:
-		if (RookTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1))) return true;
+		if (RookTargets(toSquare, OccupiedBB()) & PieceBB(KING, static_cast<Color>(SideToMove ^ 1))) return true;
 		break;
 	case QUEEN:
-		if ((RookTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1))) || (BishopTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1)))) return true;
+		if ((RookTargets(toSquare, OccupiedBB()) & PieceBB(KING, static_cast<Color>(SideToMove ^ 1))) || (BishopTargets(toSquare, OccupiedBB()) & PieceBB(KING, static_cast<Color>(SideToMove ^ 1)))) return true;
 		break;
 	default:
 		break;
@@ -1223,7 +1223,7 @@ bool Position::givesCheck(Move move)
 			if ((ToBitboard(fromSquare) & dc) != EMPTY) { //capturing pawn was pinned
 				if ((ToBitboard(toSquare) & RaysBySquares[fromSquare][kingSquare]) == EMPTY) return true; //pin wasn't along capturing diagonal
 			}
-			Square capturedPawnSquare = Square(toSquare - 8 + 16 * int(SideToMove));
+			Square capturedPawnSquare = static_cast<Square>(toSquare - 8 + 16 * static_cast<int>(SideToMove));
 			if ((ToBitboard(capturedPawnSquare) & dc) == EMPTY) return false; //captured pawn isn't pinned
 			if ((ToBitboard(toSquare) & RaysBySquares[capturedPawnSquare][kingSquare]) != EMPTY) return false; //captured pawn was pinned, but capturing pawn is now blocking
 		}
@@ -1309,12 +1309,12 @@ ValuatedMove * Position::GenerateForks(bool withChecks)
 	Bitboard forkTargets;
 	if (withChecks) {
 		targets = ~OccupiedBB() & ~attackedByThem;
-		forkTargets = PieceBB(QUEEN, Color(SideToMove ^ 1)) | PieceBB(ROOK, Color(SideToMove ^ 1)) | PieceBB(KING, Color(SideToMove ^ 1));
+		forkTargets = PieceBB(QUEEN, static_cast<Color>(SideToMove ^ 1)) | PieceBB(ROOK, static_cast<Color>(SideToMove ^ 1)) | PieceBB(KING, static_cast<Color>(SideToMove ^ 1));
 		forkTargets |= ColorBB(Color(SideToMove ^ 1)) & ~attackedByThem;
 	}
 	else {
 		targets = ~OccupiedBB() & ~attackedByThem & ~KnightAttacks[kingSquares[SideToMove ^ 1]];
-		forkTargets = PieceBB(QUEEN, Color(SideToMove ^ 1)) | PieceBB(ROOK, Color(SideToMove ^ 1));
+		forkTargets = PieceBB(QUEEN, static_cast<Color>(SideToMove ^ 1)) | PieceBB(ROOK, static_cast<Color>(SideToMove ^ 1));
 		forkTargets |= ColorBB(Color(SideToMove ^ 1)) & ~attackedByThem & ~PieceTypeBB(KING);
 	}
 	const int forkTargetCount = popcount(forkTargets);

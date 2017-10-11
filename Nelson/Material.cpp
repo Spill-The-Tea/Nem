@@ -124,7 +124,7 @@ void InitializeMaterialTable() {
 													MaterialTable[key].EvaluationFunction = &evaluateKBPKx<BLACK>;
 											}
 											if (nWQ == 0 && nBQ == 0 && nWR == 0 && nBR == 0 && (nWB + nWN) == 1 && (nBB + nBN) == 1 && nWP != nBP && (nWP + nBP) < 5 && std::abs(nWP - nBP) < 2) {
-												MaterialTable[key].Evaluation.egScore = Value(MaterialTable[key].Evaluation.egScore / (4 - std::max(nWP, nBP)));
+												MaterialTable[key].Evaluation.egScore = static_cast<Value>(MaterialTable[key].Evaluation.egScore / (4 - std::max(nWP, nBP)));
 											}
 											if (tablebases::MaxCardinality > 0) {
 												int totalPieceCount = 2;

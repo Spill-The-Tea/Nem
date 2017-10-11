@@ -209,7 +209,7 @@ Eval evaluateMobility(const Position& pos) {
 	Bitboard pieceBB = pos.PieceBB(QUEEN, WHITE);
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
-		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite & ~pos.dblAttacks(BLACK);
 		targets &= ~abbBlack | (abbWhite & ~abbBRook);
 		result += settings::parameter.MOBILITY_BONUS_QUEEN[popcount(targets)];
 		pieceBB &= pieceBB - 1;
@@ -217,7 +217,7 @@ Eval evaluateMobility(const Position& pos) {
 	pieceBB = pos.PieceBB(QUEEN, BLACK);
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
-		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack & ~pos.dblAttacks(WHITE);
 		targets &= ~abbWhite | (abbBlack & ~abbWRook);
 		result -= settings::parameter.MOBILITY_BONUS_QUEEN[popcount(targets)];
 		pieceBB &= pieceBB - 1;
@@ -344,7 +344,7 @@ Value evaluatePawnEnding(const Position& pos) {
 			}
 			else {
 				distcount[1]++;
-				const Square blockSquare = Square(passedPawnSquare - 8);
+				const Square blockSquare = static_cast<Square>(passedPawnSquare - 8);
 				const int dtcSquare = (6 - distToConv) * (6 - distToConv);
 				const int distPoints = 2 * dtcSquare * ChebishevDistance(pos.KingSquare(WHITE), blockSquare) + dtcSquare * ChebishevDistance(pos.KingSquare(BLACK), blockSquare);
 				distant[1] += distPoints;
@@ -352,16 +352,16 @@ Value evaluatePawnEnding(const Position& pos) {
 			bpassed &= bpassed - 1;
 		}
 		if (minUnstoppable[0] < (minUnstoppable[1] - (pos.GetSideToMove() == BLACK))) {
-			ppEval += Value(settings::parameter.PieceValues[QUEEN].egScore - 100 * minUnstoppable[0]);
+			ppEval += static_cast<Value>(settings::parameter.PieceValues[QUEEN].egScore - 100 * minUnstoppable[0]);
 		}
 		else if (minUnstoppable[1] < (minUnstoppable[0] - (pos.GetSideToMove() == WHITE))) {
-			ppEval -= Value(settings::parameter.PieceValues[QUEEN].egScore - 100 * minUnstoppable[1]);
+			ppEval -= static_cast<Value>(settings::parameter.PieceValues[QUEEN].egScore - 100 * minUnstoppable[1]);
 		}
 		else {
-			ppEval += Value(11 * (distant[0] * distcount[0] - distant[1] * distcount[1]) / 5);
+			ppEval += static_cast<Value>(11 * (distant[0] * distcount[0] - distant[1] * distcount[1]) / 5);
 		}
 	}
-	return Value((pos.GetMaterialScore() + pos.GetPawnEntry()->Score.egScore + pos.GetPsqEval().egScore + ppEval) * (1 - 2 * pos.GetSideToMove()));
+	return static_cast<Value>((pos.GetMaterialScore() + pos.GetPawnEntry()->Score.egScore + pos.GetPsqEval().egScore + ppEval) * (1 - 2 * pos.GetSideToMove()));
 }
 
 Value evaluateKBPxKBPx(const Position& pos) {

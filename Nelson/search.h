@@ -245,8 +245,8 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 #endif
 	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
 	//Mate distance pruning
-	alpha = Value(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), int(alpha)));
-	beta = Value(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, int(beta)));
+	alpha = static_cast<Value>(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), static_cast<int>(alpha)));
+	beta = static_cast<Value>(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, static_cast<int>(beta)));
 	if (alpha >= beta) return SCORE_MDP(alpha);
 	//If depth = 0 is reached go to Quiescence Search
 	if (depth <= 0) {
@@ -312,7 +312,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		{
 			//if (depth <= 1 && (effectiveEvaluation + settings::RazoringMargin(depth)) <= alpha) return QSearch(alpha, beta, pos, 0);
 			Value razorAlpha = alpha - settings::parameter.RazoringMargin(depth);
-			const Value razorScore = QSearch<T>(razorAlpha, Value(razorAlpha + 1), pos, 0, tlData);
+			const Value razorScore = QSearch<T>(razorAlpha, static_cast<Value>(razorAlpha + 1), pos, 0, tlData);
 			if (razorScore <= razorAlpha) return SCORE_RAZ(razorScore);
 		}
 
@@ -322,7 +322,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			&& excludeMove == MOVE_NONE
 			) {
 			int reduction = (depth + 14) / 5;
-			if (int(effectiveEvaluation - beta) > int(settings::parameter.PieceValues[PAWN].egScore)) ++reduction;
+			if (int(effectiveEvaluation - beta) > static_cast<int>(settings::parameter.PieceValues[PAWN].egScore)) ++reduction;
 			Square epsquare = pos.GetEPSquare();
 			Move lastApplied = pos.GetLastAppliedMove();
 			pos.NullMove();
@@ -358,7 +358,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			while ((move = cpos.NextMove())) {
 				Position next(cpos);
 				if (next.ApplyMove(move)) {
-					const Value score = -SearchMain<T>(-rbeta, Value(-rbeta + 1), next, rdepth, subpv, tlData, !cutNode);
+					const Value score = -SearchMain<T>(-rbeta, static_cast<Value>(-rbeta + 1), next, rdepth, subpv, tlData, !cutNode);
 					if (score >= rbeta)
 						return SCORE_PC(score);
 				}
@@ -495,8 +495,8 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 	if (Stopped()) return VALUE_ZERO;
 	if (pos.GetResult() != OPEN)  return SCORE_FINAL(pos.evaluateFinalPosition());
 	//Mate distance pruning
-	alpha = Value(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), int(alpha)));
-	beta = Value(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, int(beta)));
+	alpha = static_cast<Value>(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), static_cast<int>(alpha)));
+	beta = static_cast<Value>(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, static_cast<int>(beta)));
 	if (alpha >= beta) return SCORE_MDP(alpha);
 	Move ttMove = MOVE_NONE;
 #ifndef TUNE
@@ -540,7 +540,7 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 #endif
 		//Delta Pruning
 		if (!checked && !pos.GetMaterialTableEntry()->IsLateEndgame()) {
-			const Value delta = settings::parameter.PieceValues[pos.GetMostValuableAttackedPieceType()].egScore + int(pos.PawnOn7thRank()) * (settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore) + settings::parameter.DELTA_PRUNING_SAFETY_MARGIN;
+			const Value delta = settings::parameter.PieceValues[pos.GetMostValuableAttackedPieceType()].egScore + static_cast<int>(pos.PawnOn7thRank()) * (settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore) + settings::parameter.DELTA_PRUNING_SAFETY_MARGIN;
 			if (standPat + delta < alpha) return SCORE_DP(alpha);
 		}
 		if (alpha < standPat) alpha = standPat;

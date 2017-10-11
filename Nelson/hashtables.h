@@ -94,8 +94,8 @@ namespace tt {
 			}
 			data.details.value = v;
 			data.details.evalValue = ev;
-			data.details.gentype = (uint8_t)(_generation | nt);
-			data.details.depth = (int8_t)d;
+			data.details.gentype = static_cast<uint8_t>(_generation | nt);
+			data.details.depth = static_cast<int8_t>(d);
 			key = PT == THREAD_SAFE ? hash ^ data.dataAsInt : hash;
 		}
 
@@ -136,7 +136,7 @@ namespace tt {
 		else {
 			for (unsigned i = 0; i < CLUSTER_SIZE; ++i) {
 				if (tte[i].key == hash) return tte[i].evalValue();
-			}
+			} 
 		}
 		return VALUE_NOTYETDETERMINED;
 	}
@@ -149,7 +149,7 @@ namespace tt {
 				if (!tte[i].key || tte[i].GetKey() == hash)
 				{
 					if (tte[i].key) {
-						tte[i].data.details.gentype = uint8_t(_generation | tte[i].type()); // Refresh
+						tte[i].data.details.gentype = static_cast<uint8_t>(_generation | tte[i].type()); // Refresh
 						HitCounter++;
 					}
 					found = tte[i].key != 0;
@@ -163,7 +163,7 @@ namespace tt {
 				if (!tte[i].key || tte[i].key == hash)
 				{
 					if (tte[i].key) {
-						tte[i].data.details.gentype = uint8_t(_generation | tte[i].type()); // Refresh
+						tte[i].data.details.gentype = static_cast<uint8_t>(_generation | tte[i].type()); // Refresh
 						HitCounter++;
 					}
 					found = tte[i].key != 0;
@@ -193,18 +193,18 @@ namespace tt {
 			//the mate and therefore we will store -VALUE_MATE + (N-M) as score
 			//Example: We found a mate at ply 18 => score = -VALUE_MATE + 18 = -31982
 			//Now we store the value at ply 14 => entry->score = score - 14 = -31982 - 14 = -31996
-			return Value(v - pliesFromRoot);
+			return static_cast<Value>(v - pliesFromRoot);
 		}
 		else if (v > VALUE_MATE_THRESHOLD) {
 			//same but inverse logic as above
-			return Value(v + pliesFromRoot);
+			return static_cast<Value>(v + pliesFromRoot);
 		}
 		else return v;
 	}
 
 	inline Value fromTT(Value v, int pliesFromRoot) {
-		if (v < -VALUE_MATE_THRESHOLD)  return Value(v + pliesFromRoot);
-		else if (v > VALUE_MATE_THRESHOLD) return Value(v - pliesFromRoot);
+		if (v < -VALUE_MATE_THRESHOLD)  return static_cast<Value>(v + pliesFromRoot);
+		else if (v > VALUE_MATE_THRESHOLD) return static_cast<Value>(v - pliesFromRoot);
 		else return v;
 	}
 

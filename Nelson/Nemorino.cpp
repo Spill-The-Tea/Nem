@@ -191,7 +191,7 @@ int main(int argc, const char* argv[]) {
 		else if (!input.compare(0, 8, "setvalue")) {
 			std::vector<std::string> token = utils::split(input);
 			int indx = 1;
-			while (indx < (int)token.size() - 1) {
+			while (indx < static_cast<int>(token.size()) - 1) {
 				settings::options.set(token[indx], token[indx + 1]);
 				indx += 2;
 			}

@@ -149,7 +149,7 @@ inline Move FixCastlingMove(Move move) {
 	const Square fromSquare = from(move);
 	const Square toSquare = to(move);
 	const int offset = fromSquare > H4 ? 56 : 0;
-	const Square targetSquare = toSquare > fromSquare ? Square(G1 + offset) : Square(C1 + offset);
+	const Square targetSquare = toSquare > fromSquare ? static_cast<Square>(G1 + offset) : static_cast<Square>(C1 + offset);
 	return createMove<CASTLING>(fromSquare, targetSquare);
 }
 

@@ -76,7 +76,7 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 		if (UciOutput) {
 			std::string srtString;
 			if (srt == SearchResultType::FAIL_LOW) srtString = " upperbound"; else if (srt == SearchResultType::FAIL_HIGH) srtString = " lowerbound";
-			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
+			if (abs(int(BestMove.score)) <= static_cast<int>(VALUE_MATE_THRESHOLD))
 				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score cp " << (int)BestMove.score << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
 				<< " hashfull " << tt::GetHashFull()
 				<< " tbhits " << tbHits
@@ -96,7 +96,7 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 			if (_depth < 5) return;
 			const char srtChar[3] = { ' ', '?', '!' };
 			int xscore = BestMove.score;
-			if (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD)) {
+			if (abs(int(BestMove.score)) > static_cast<int>(VALUE_MATE_THRESHOLD)) {
 				if (int(BestMove.score) > 0) {
 					const int pliesToMate = VALUE_MATE - BestMove.score + 1;
 					xscore = 100000 + pliesToMate/2;
@@ -227,7 +227,7 @@ ValuatedMove Search::Think(Position &pos) {
 	}
 	//If a search move list is provided replace root moves by search moves
 	if (searchMoves.size()) {
-		rootMoveCount = int(searchMoves.size());
+		rootMoveCount = static_cast<int>(searchMoves.size());
 		for (int i = 0; i < rootMoveCount; ++i) rootMoves[i].move = searchMoves[i];
 		searchMoves.clear();
 	}
@@ -265,7 +265,7 @@ ValuatedMove Search::Think(Position &pos) {
 	if (timeManager.GetMaxDepth() == 0) {
 		BestMove.move = MOVE_NONE;
 		BestMove.score = pos.evaluate();
-		if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD)) sync_cout << "info score cp " << (int)BestMove.score << sync_endl;
+		if (abs(int(BestMove.score)) <= static_cast<int>(VALUE_MATE_THRESHOLD)) sync_cout << "info score cp " << (int)BestMove.score << sync_endl;
 		else {
 			int pliesToMate;
 			if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
@@ -275,7 +275,7 @@ ValuatedMove Search::Think(Position &pos) {
 	}
 	//Iterativ Deepening Loop
 	for (_depth = 1; _depth < timeManager.GetMaxDepth(); ++_depth) {
-		Value alpha, beta, delta = Value(20);
+		Value alpha, beta, delta = static_cast<Value>(20);
 		for (int pvIndx = 0; pvIndx < MultiPv && pvIndx < rootMoveCount; ++pvIndx) {
 			if (_depth >= 5 && MultiPv == 1 && std::abs(int16_t(score)) < VALUE_KNOWN_WIN) {
 				//set aspiration window
@@ -398,7 +398,7 @@ void Search::updateCutoffStats(ThreadData& tlData, const Move cutoffMove, int de
 		if (moveIndex >= 0) {
 			tlData.killerManager.store(pos, cutoffMove);
 		}
-		Value v = Value(depth * depth);
+		Value v = static_cast<Value>(depth * depth);
 		tlData.History.update(-depth * tlData.History.getValue(movingPiece, cutoffMove) / 64, movingPiece, cutoffMove);
 		tlData.History.update(v, movingPiece, cutoffMove);
 		Piece prevPiece = BLANK;
