@@ -91,7 +91,7 @@ namespace cecp {
 		//The side engine is playing
 		Color EngineSide = BLACK;
 		//The clocks  
-		int64_t time[2];
+		int64_t time[2] = { 0, 0 };
 		int protocolVersion = 1;
 		XState xstate = STANDARD;
 		int tc_increment = 0;

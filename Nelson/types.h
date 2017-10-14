@@ -29,7 +29,7 @@
 #endif
 #endif
 
-const std::string VERSION_INFO = "Nemorino 3.11";
+const std::string VERSION_INFO = "Nemorino 3.12";
 
 typedef uint64_t Bitboard;
 typedef int64_t Time_t;
@@ -62,9 +62,9 @@ enum PieceType : unsigned char {
 	QUEEN, ROOK, BISHOP, KNIGHT, PAWN, KING, NO_TYPE
 };
 
-inline PieceType GetPieceType(Piece piece) { return PieceType(piece >> 1); }
-inline Piece GetPiece(PieceType pieceType, Color color) { return static_cast<Piece>(2 * pieceType + color); }
-inline Color GetColor(Piece piece) { return static_cast<Color>(piece & 1); }
+inline constexpr PieceType GetPieceType(Piece piece) { return PieceType(piece >> 1); }
+inline constexpr Piece GetPiece(PieceType pieceType, Color color) { return static_cast<Piece>(2 * pieceType + color); }
+inline constexpr Color GetColor(Piece piece) { return static_cast<Color>(piece & 1); }
 
 enum Square : unsigned char {
 	A1, B1, C1, D1, E1, F1, G1, H1,
@@ -82,8 +82,8 @@ enum Rank {
 	Rank1, Rank2, Rank3, Rank4, Rank5, Rank6, Rank7, Rank8
 };
 
-inline Rank relativeRank(Color color, Rank rank) { return static_cast<Rank>(rank ^ (color * 7)); }
-inline Rank relativeRank(Color color, int rank) { return static_cast<Rank>(rank ^ (color * 7)); }
+inline constexpr Rank relativeRank(Color color, Rank rank) { return static_cast<Rank>(rank ^ (color * 7)); }
+inline constexpr Rank relativeRank(Color color, int rank) { return static_cast<Rank>(rank ^ (color * 7)); }
 
 enum File {
 	FileA, FileB, FileC, FileD, FileE, FileF, FileG, FileH
@@ -131,11 +131,11 @@ typedef uint16_t Phase_t;
 
 //Operator overloads are copied from SF
 #define ENABLE_BASE_OPERATORS_ON(T)                                             \
-	inline T operator+(const T d1, const T d2) { return T(static_cast<int>(d1) + static_cast<int>(d2)); } \
-	inline T operator-(const T d1, const T d2) { return T(static_cast<int>(d1) - static_cast<int>(d2)); } \
-	inline T operator*(int i, const T d) { return T(i * static_cast<int>(d)); }              \
-	inline T operator*(const T d, int i) { return T(int(d) * i); }              \
-	inline T operator-(const T d) { return T(-int(d)); }                        \
+	inline constexpr T operator+(const T d1, const T d2) { return T(static_cast<int>(d1) + static_cast<int>(d2)); } \
+	inline constexpr T operator-(const T d1, const T d2) { return T(static_cast<int>(d1) - static_cast<int>(d2)); } \
+	inline constexpr T operator*(int i, const T d) { return T(i * static_cast<int>(d)); }              \
+	inline constexpr T operator*(const T d, int i) { return T(int(d) * i); }              \
+	inline constexpr T operator-(const T d) { return T(-int(d)); }                        \
 	inline T& operator+=(T& d1, const T d2) { return d1 = d1 + d2; }            \
 	inline T& operator-=(T& d1, const T d2) { return d1 = d1 - d2; }            \
 	inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }
@@ -144,7 +144,7 @@ typedef uint16_t Phase_t;
 	ENABLE_BASE_OPERATORS_ON(T)                                                 \
 	inline T& operator++(T& d) { return d = T(int(d) + 1); }                    \
 	inline T& operator--(T& d) { return d = T(int(d) - 1); }                    \
-	inline T operator/(const T d, int i) { return T(int(d) / i); }              \
+	inline constexpr T operator/(const T d, int i) { return T(int(d) / i); }              \
 	inline T& operator/=(T& d, int i) { return d = T(int(d) / i); }
 
 ENABLE_FULL_OPERATORS_ON(Rank)
@@ -154,12 +154,12 @@ ENABLE_FULL_OPERATORS_ON(Value);
 ENABLE_FULL_OPERATORS_ON(PieceType);
 ENABLE_FULL_OPERATORS_ON(Piece);
 
-inline Value operator-(Value v, int i) { return static_cast<Value>(int(v) - i); }
-inline Value operator+=(Value v, int i) { return static_cast<Value>(int(v) + i); }
-inline Value operator-=(Value v, int i) { return static_cast<Value>(int(v) - i); }
-inline Value operator+(Value v, int i) { return static_cast<Value>(int(v) + i); }
+inline constexpr Value operator-(Value v, int i) { return static_cast<Value>(int(v) - i); }
+inline constexpr Value operator+=(Value v, int i) { return static_cast<Value>(int(v) + i); }
+inline constexpr Value operator-=(Value v, int i) { return static_cast<Value>(int(v) - i); }
+inline constexpr Value operator+(Value v, int i) { return static_cast<Value>(int(v) + i); }
 
-inline Square createSquare(Rank rank, File file) { return static_cast<Square>((rank << 3) + file); }
+inline constexpr Square createSquare(Rank rank, File file) { return static_cast<Square>((rank << 3) + file); }
 inline char toChar(File f) { return char(f - FileA + 'a'); }
 inline char toChar(Rank r) { return char(r - Rank1 + '1'); }
 
@@ -177,17 +177,17 @@ inline Move createMove(Square from, Square to,
 inline Move createMove(Square from, Square to) { return Move(to | (from << 6)); }
 inline Move createMove(int from, int to) { return Move(to | (from << 6)); }
 
-inline Square from(Move move) { return static_cast<Square>((move >> 6) & 0x3F); }
+inline constexpr Square from(Move move) { return static_cast<Square>((move >> 6) & 0x3F); }
 
-inline Square to(Move move) { return static_cast<Square>(move & 0x3F); }
+inline constexpr Square to(Move move) { return static_cast<Square>(move & 0x3F); }
 inline Move invert(Move m) { return Move((m & 0xF000) | from(m) | (to(m) << 6)); }
 
-inline Square flip(Square s) { return static_cast<Square>(s ^ 56); }
+inline constexpr Square flip(Square s) { return static_cast<Square>(s ^ 56); }
 
-inline MoveType type(Move move) { return MoveType(move & (3 << 14)); }
+inline constexpr MoveType type(Move move) { return MoveType(move & (3 << 14)); }
 
 
-inline PieceType promotionType(Move move) { return PieceType((move >> 12) & 3); }
+inline constexpr PieceType promotionType(Move move) { return PieceType((move >> 12) & 3); }
 
 const uint64_t EPAttackersForToField[] = { 0x2000000ull,
 0x5000000ull, 0xa000000ull, 0x14000000ull, 0x28000000ull,

@@ -200,10 +200,9 @@ Eval evaluateMobility(const Position& pos) {
 	Bitboard abbWhite = pos.AttacksByColor(WHITE);
 	Bitboard abbBlack = pos.AttacksByColor(BLACK);
 
-	//excluded fields
-	Bitboard allowedWhite = ~(pos.PieceBB(PAWN, WHITE) | pos.PieceBB(KING, WHITE));
-	Bitboard allowedBlack = ~(pos.PieceBB(PAWN, BLACK) | pos.PieceBB(KING, BLACK));
-
+	Bitboard bbBlockedPawns[2] = { (pos.PieceBB(PAWN, WHITE) << 8) & pos.PieceBB(PAWN, BLACK), (pos.PieceBB(PAWN, BLACK) >> 8) & pos.PieceBB(PAWN, WHITE) };
+	Bitboard allowedWhite = ~((pos.PieceBB(PAWN, WHITE) & (RANK2 | RANK3)) | bbBlockedPawns[WHITE] | pos.PieceBB(KING, WHITE));
+	Bitboard allowedBlack = ~((pos.PieceBB(PAWN, BLACK) & (RANK6 | RANK7)) | bbBlockedPawns[BLACK] | pos.PieceBB(KING, BLACK));
 	//Now calculate Mobility
 	//Queens can move to all unattacked squares and if protected to all squares attacked by queens or kings
 	Bitboard pieceBB = pos.PieceBB(QUEEN, WHITE);

@@ -368,12 +368,12 @@ void Search::startHelper() {
 	Move PVMovesLocal[PV_MAX_LENGTH];
 	ValuatedMove moves[MAX_MOVE_COUNT];
 	memcpy(moves, rootMoves, MAX_MOVE_COUNT * sizeof(ValuatedMove));
-	ThreadData h;
+	std::unique_ptr<ThreadData> h(new ThreadData);
 	//Iterative Deepening Loop
 	while (!Stop.load() && depth < MAX_DEPTH) {
 		Value alpha = -VALUE_MATE;
 		Value beta = VALUE_MATE;
-		SearchRoot<SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, h);
+		SearchRoot<SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, *h);
 		++depth;
 	}
 }

@@ -8,8 +8,6 @@ namespace cecp {
 	{
 		BestMove.move = MOVE_NONE;
 		BestMove.score = VALUE_ZERO;
-		time[0] = 0;
-		time[1] = 0;
 		ponder.store(false);
 		drawOffered.store(false);
 		engineState.store(Waiting);

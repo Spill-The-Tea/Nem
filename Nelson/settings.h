@@ -55,8 +55,6 @@ namespace settings {
 		const Eval KING_ON_MANY = Eval(3, 63);
 		const Eval ROOK_ON_OPENFILE = Eval(10, 0);
 		const Eval ROOK_ON_SEMIOPENFILE = Eval(10, 0);
-		const Eval ROOK_ON_SEMIOPENFILE_WITH_KQ = Eval(5, 0);
-		const Eval ROOK_ON_7TH = Eval(20, 0);
 
 		const Eval BONUS_BISHOP_PAIR = Eval(50);
 		const Value BONUS_CASTLING = static_cast<Value>(0);
