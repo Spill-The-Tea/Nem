@@ -77,7 +77,8 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 			std::string srtString;
 			if (srt == SearchResultType::FAIL_LOW) srtString = " upperbound"; else if (srt == SearchResultType::FAIL_HIGH) srtString = " lowerbound";
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
-				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score cp " << (int)BestMove.score << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score cp " << (int)BestMove.score << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
+				<< " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime
 				<< " hashfull " << tt::GetHashFull()
 				<< " tbhits " << tbHits
 				<< " time " << _thinkTime
@@ -85,7 +86,8 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 			else {
 				int pliesToMate;
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score; else pliesToMate = -BestMove.score - VALUE_MATE;
-				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
+				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
+					<< " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime
 					<< " hashfull " << tt::GetHashFull()
 					<< " tbhits " << tbHits
 					<< " time " << _thinkTime
