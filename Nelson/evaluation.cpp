@@ -196,9 +196,6 @@ Eval evaluateMobility(const Position& pos) {
 	//Rooks
 	Bitboard abbWRook = abbWMinor | pos.AttacksByPieceType(WHITE, ROOK);
 	Bitboard abbBRook = abbBMinor | pos.AttacksByPieceType(BLACK, ROOK);
-	//Total Attacks
-	Bitboard abbWhite = pos.AttacksByColor(WHITE);
-	Bitboard abbBlack = pos.AttacksByColor(BLACK);
 
 	Bitboard bbBlockedPawns[2] = { (pos.PieceBB(PAWN, WHITE) << 8) & pos.PieceBB(PAWN, BLACK), (pos.PieceBB(PAWN, BLACK) >> 8) & pos.PieceBB(PAWN, WHITE) };
 	Bitboard allowedWhite = ~((pos.PieceBB(PAWN, WHITE) & (RANK2 | RANK3)) | bbBlockedPawns[WHITE] | pos.PieceBB(KING, WHITE));
@@ -209,7 +206,7 @@ Eval evaluateMobility(const Position& pos) {
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite & ~pos.dblAttacks(BLACK);
-		targets &= ~abbBlack | (abbWhite & ~abbBRook);
+		targets &= ~abbBRook;
 		result += settings::parameter.MOBILITY_BONUS_QUEEN[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
@@ -217,7 +214,7 @@ Eval evaluateMobility(const Position& pos) {
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack & ~pos.dblAttacks(WHITE);
-		targets &= ~abbWhite | (abbBlack & ~abbWRook);
+		targets &= ~abbWRook;
 		result -= settings::parameter.MOBILITY_BONUS_QUEEN[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
@@ -226,7 +223,7 @@ Eval evaluateMobility(const Position& pos) {
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
-		targets &= ~abbBlack | (abbWhite & ~abbBMinor);
+		targets &= ~abbBMinor;
 		result += settings::parameter.MOBILITY_BONUS_ROOK[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
@@ -234,7 +231,7 @@ Eval evaluateMobility(const Position& pos) {
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
-		targets &= ~abbWhite | (abbBlack & ~abbWMinor);
+		targets &= ~abbWMinor;
 		result -= settings::parameter.MOBILITY_BONUS_ROOK[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
@@ -243,7 +240,7 @@ Eval evaluateMobility(const Position& pos) {
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
-		targets &= ~abbBlack | (abbWhite & ~abbBPawn);
+		targets &= ~abbBPawn;
 		result += settings::parameter.MOBILITY_BONUS_BISHOP[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
@@ -251,7 +248,7 @@ Eval evaluateMobility(const Position& pos) {
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
-		targets &= ~abbWhite | (abbBlack & ~abbWPawn);
+		targets &= ~abbWPawn;
 		result -= settings::parameter.MOBILITY_BONUS_BISHOP[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
@@ -259,7 +256,7 @@ Eval evaluateMobility(const Position& pos) {
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
-		targets &= ~abbBlack | (abbWhite & ~abbBPawn);
+		targets &= ~abbBPawn;
 		result += settings::parameter.MOBILITY_BONUS_KNIGHT[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}
@@ -267,7 +264,7 @@ Eval evaluateMobility(const Position& pos) {
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
-		targets &= ~abbWhite | (abbBlack & ~abbWPawn);
+		targets &= ~abbWPawn;
 		result -= settings::parameter.MOBILITY_BONUS_KNIGHT[popcount(targets)];
 		pieceBB &= pieceBB - 1;
 	}

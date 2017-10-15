@@ -83,12 +83,12 @@ namespace tt {
 
 		//Stores a changed 
 		template <ProbeType PT> inline void update(uint64_t hash, Value v, NodeType nt, int d, Move m, Value ev) {
-			FillCounter += (key == 0); //Initial entry get's overwritten
 			if (PT == THREAD_SAFE) {
 				if (m || hash != GetKey()) // Preserve any existing move for the same position
 					data.details.move = m;
 			}
 			else {
+				FillCounter += (key == 0); //Initial entry get's overwritten
 				if (m || hash != key) // Preserve any existing move for the same position
 					data.details.move = m;
 			}
@@ -142,7 +142,6 @@ namespace tt {
 	}
 
 	template <ProbeType PT> inline Entry* probe(const uint64_t hash, bool& found, Entry& entry) {
-		ProbeCounter++;
 		Entry* const tte = firstEntry(hash);
 		if (PT == THREAD_SAFE) {
 			for (unsigned i = 0; i < CLUSTER_SIZE; ++i) {
@@ -150,7 +149,6 @@ namespace tt {
 				{
 					if (tte[i].key) {
 						tte[i].data.details.gentype = static_cast<uint8_t>(_generation | tte[i].type()); // Refresh
-						HitCounter++;
 					}
 					found = tte[i].key != 0;
 					entry = tte[i];
@@ -159,6 +157,7 @@ namespace tt {
 			}
 		}
 		else {
+			ProbeCounter++;
 			for (unsigned i = 0; i < CLUSTER_SIZE; ++i) {
 				if (!tte[i].key || tte[i].key == hash)
 				{

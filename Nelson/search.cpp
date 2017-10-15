@@ -158,7 +158,7 @@ Search::Search() {
 
 Search::~Search() {
 	//stop and delete Slave Threads
-	for (int i = 0; i < settings::parameter.HelperThreads; ++i) {
+	for (int i = 0; i < subThreads.size(); ++i) {
 		if (subThreads[i].joinable()) subThreads[i].join();
 	}
 	if (book != nullptr) {
