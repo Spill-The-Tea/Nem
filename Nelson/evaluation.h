@@ -445,29 +445,6 @@ template <Color COL> Eval evaluateThreats(const Position& pos) {
 
 template <Color COL> Eval evaluatePieces(const Position& pos) {
 	const Color OTHER = static_cast<Color>(COL ^ 1);
-	//Knights
-	Bitboard outpostArea = COL == WHITE ? 0x3c3c00000000 : 0x3c3c0000;
-	Bitboard outposts = pos.PieceBB(KNIGHT, COL) & outpostArea & pos.AttacksByPieceType(COL, PAWN);
-	Value bonusKnightOutpost = settings::parameter.BONUS_KNIGHT_OUTPOST * popcount(outposts);
-	//Value bonus = VALUE_ZERO;
-	//Value ptBonus = BONUS_BISHOP_OUTPOST;
-	//for (PieceType pt = BISHOP; pt <= KNIGHT; ++pt) {
-	//	Bitboard outposts = pos.PieceBB(pt, COL) & outpostArea & pos.AttacksByPieceType(COL, PAWN);
-	//	while (outposts) {
-	//		bonus += ptBonus;
-	//		Bitboard outpostBB = isolateLSB(outposts);
-	//		Square outpostSquare = lsb(outposts);
-	//		Bitboard defendingPawnSquares = PawnAttacks[COL][outpostSquare];
-	//		if (COL == WHITE) defendingPawnSquares |= defendingPawnSquares << 8; else defendingPawnSquares |= defendingPawnSquares >> 8;
-	//		if (!(pos.PieceBB(PAWN, OTHER) & defendingPawnSquares)) bonus += ptBonus; //Outpost can't be attacked by a pawn
-	//		if (!pos.PieceBB(KNIGHT, OTHER) && !(squaresOfSameColor(outpostSquare) & pos.PieceBB(BISHOP, OTHER))) bonus += ptBonus; //Outpost can't be exchanged
-	//		outposts &= outposts - 1;
-	//	}
-	//	ptBonus = BONUS_KNIGHT_OUTPOST;
-	//}
-	//Bishops
-	Eval bonusBishop = Eval(0);
-	//Rooks
 	Bitboard rooks = pos.PieceBB(ROOK, COL);
 	Eval bonusRook = EVAL_ZERO;
 	if (rooks) {
@@ -493,5 +470,5 @@ template <Color COL> Eval evaluatePieces(const Position& pos) {
 		if ((pos.ColorBB(OTHER) & ToBitboard(blockSquare))!= EMPTY) bonusPassedPawns -= settings::parameter.MALUS_BLOCKED[dtc-1];
 		passedPawns &= passedPawns - 1;
 	}
-	return bonusPassedPawns + bonusRook + bonusBishop + Eval(bonusKnightOutpost, 0);
+	return bonusPassedPawns + bonusRook;
 }
