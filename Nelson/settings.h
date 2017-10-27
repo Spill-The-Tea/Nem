@@ -57,8 +57,6 @@ namespace settings {
 		const Eval ROOK_ON_SEMIOPENFILE = Eval(10, 0);
 
 		const Eval BONUS_BISHOP_PAIR = Eval(50);
-		const Value BONUS_CASTLING = static_cast<Value>(0);
-        //Value BONUS_TEMPO = static_cast<Value>(5);
 		const Value DELTA_PRUNING_SAFETY_MARGIN = static_cast<Value>(VALUE_100CP);
 		const Eval PAWN_SHELTER_2ND_RANK = Eval(30, -10);
 		const Eval PAWN_SHELTER_3RD_RANK = Eval(15, -8);

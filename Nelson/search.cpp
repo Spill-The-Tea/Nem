@@ -321,7 +321,7 @@ ValuatedMove Search::Think(Position &pos) {
 					alpha = -VALUE_MATE;
 					beta = VALUE_MATE;
 				}
-				else delta += delta / 4 + 5; //widening formula is from SF - very small widening of the aspiration window size, more might be better => let's tune it some day
+				else delta += delta * 2; //widening formula is from SF - very small widening of the aspiration window size, more might be better => let's tune it some day
 			}
 			Time_t tNow = now();
 			_thinkTime = std::max(tNow - timeManager.GetStartTime(), int64_t(1));
