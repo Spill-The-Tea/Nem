@@ -24,7 +24,7 @@ namespace polyglot {
 		explicit Book(const std::string& filename);
 		~Book();
 
-		Move probe(const Position& pos, bool pickBest, ValuatedMove * moves, int moveCount);
+		Move probe(Position& pos, bool pickBest, ValuatedMove * moves, int moveCount);
 
 	private:
 		std::string fileName = "book.bin";

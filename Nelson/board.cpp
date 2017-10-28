@@ -3,7 +3,6 @@
 #include <iostream>
 #include <chrono>
 #include <iomanip>
-#include <array>
 #include "board.h"
 #include "types.h"
 #include "material.h"
@@ -13,21 +12,21 @@
 
 bool Chess960 = false;
 
-std::array<Bitboard, 2> InitialKingSquareBB;
-std::array<Square, 2> InitialKingSquare;
-std::array<Bitboard, 4> InitialRookSquareBB;
-std::array<Square, 4> InitialRookSquare;
-std::array<Bitboard, 4> SquaresToBeUnattacked;
-std::array<Bitboard, 4> SquaresToBeEmpty;
+Bitboard InitialKingSquareBB[2];
+Square InitialKingSquare[2];
+Bitboard InitialRookSquareBB[4];
+Square InitialRookSquare[4];
+Bitboard SquaresToBeUnattacked[4];
+Bitboard SquaresToBeEmpty[4];
 
-std::array<std::array<Bitboard, 64>, 64> InBetweenFields;
-std::array<std::array<uint8_t, 64>, 64> Distance;
-std::array<Bitboard, 64> SquareBB;
+Bitboard InBetweenFields[64][64];
+uint8_t Distance[64][64];
+Bitboard SquareBB[64];
 
 void InitializeDistance() {
 	for (int sq1 = 0; sq1 < 64; sq1++) {
 		for (int sq2 = 0; sq2 < 64; sq2++) {
-			Distance[sq1][sq2] = static_cast<uint8_t>(std::max(abs((sq1 >> 3) - (sq2 >> 3)), abs((sq1 & 7) - (sq2 & 7))));
+			Distance[sq1][sq2] = (uint8_t)(std::max(abs((sq1 >> 3) - (sq2 >> 3)), abs((sq1 & 7) - (sq2 & 7))));
 		}
 	}
 }
@@ -41,9 +40,9 @@ void InitializeInBetweenFields() {
 		InBetweenFields[from][from] = 0ull;
 		for (int to = from + 1; to < 64; to++) {
 			InBetweenFields[from][to] = 0;
-			const int colFrom = from & 7;
+			int colFrom = from & 7;
 			int colTo = to & 7;
-			const int rowFrom = from >> 3;
+			int rowFrom = from >> 3;
 			int rowTo = to >> 3;
 			if (colFrom == colTo) {
 				for (int row = rowFrom + 1; row < rowTo; row++)
@@ -76,19 +75,20 @@ void InitializeInBetweenFields() {
 	}
 }
 
-std::array<Bitboard, 64> KnightAttacks;
-std::array<Bitboard, 64> KingAttacks;
+Bitboard KnightAttacks[64];
+Bitboard KingAttacks[64];
 
 void InitializeKnightAttacks() {
-	const int knightMoves[] = { -17, -15, -10, -6, 6, 10, 15, 17 };
+	int knightMoves[] = { -17, -15, -10, -6, 6, 10, 15, 17 };
 	for (int square = A1; square <= H8; square++) {
 		KnightAttacks[square] = 0;
-		const int col = square & 7;
+		int col = square & 7;
 		for (int move = 0; move < 8; move++)
 		{
-			const int to = square + knightMoves[move];
+			int to = square + knightMoves[move];
 			if (to < 0 || to > 63) continue;
-			const int colldiff = col - (to & 7);
+			int toCol = to & 7;
+			int colldiff = col - toCol;
 			if (colldiff < -2 || colldiff > 2) continue;
 			KnightAttacks[square] |= ToBitboard(to);
 		}
@@ -96,23 +96,24 @@ void InitializeKnightAttacks() {
 }
 
 void InitializeKingAttacks() {
-	const int kingMoves[] = { -9, -8, -7, -1, 1, 7, 8, 9 };
+	int kingMoves[] = { -9, -8, -7, -1, 1, 7, 8, 9 };
 	for (int square = 0; square < 64; square++)
 	{
 		KingAttacks[square] = 0;
-		const int col = square & 7;
+		int col = square & 7;
 		for (int move = 0; move < 8; move++)
 		{
-			const int to = square + kingMoves[move];
+			int to = square + kingMoves[move];
 			if (to < 0 || to > 63) continue;
-			const int colldiff = col - (to & 7);
+			int toCol = to & 7;
+			int colldiff = col - toCol;
 			if (colldiff < -1 || colldiff > 1) continue;
 			KingAttacks[square] |= ToBitboard(to);
 		}
 	}
 }
 
-std::array<std::array<Bitboard, 64>, 2> PawnAttacks;
+Bitboard PawnAttacks[2][64];
 void InitializePawnAttacks() {
 	for (Square sq = A2; sq <= H7; ++sq) {
 		Bitboard sqBB = ToBitboard(sq);
@@ -123,8 +124,8 @@ void InitializePawnAttacks() {
 	}
 }
 
-std::array<Bitboard, 64> SlidingAttacksRookTo;
-std::array<Bitboard, 64> SlidingAttacksBishopTo;
+Bitboard SlidingAttacksRookTo[64];
+Bitboard SlidingAttacksBishopTo[64];
 void InitializeSlidingAttacksTo() {
 	for (int row = 0; row < 8; ++row) {
 		for (int col = 0; col < 8; ++col) {
@@ -157,7 +158,7 @@ void InitializeSlidingAttacksTo() {
 	}
 }
 
-std::array<std::array<Bitboard, 64>, 64> RaysBySquares;
+Bitboard RaysBySquares[64][64];
 
 void Ray2RayBySquares(Bitboard ray) {
 	Bitboard b1 = ray;
@@ -226,7 +227,7 @@ void InitializeRaysBySquares() {
 
 //ShadowedFields[s1][s2] contains the fields which are seen from s1 shadowed by a piece on s2
 //f.e. ShadowedFields[A1][F1] = contains G1 and H1
-std::array<std::array<Bitboard, 64>, 64> ShadowedFields;
+Bitboard ShadowedFields[64][64];
 void InitializeShadowedFields()
 {
 	for (int square = 0; square < 64; square++)
@@ -235,7 +236,7 @@ void InitializeShadowedFields()
 	}
 	for (int square = 0; square < 64; square++)
 	{
-		const int col = square & 7;
+		int col = square & 7;
 		//North
 		for (int blocker = square + 8; blocker <= 55; blocker += 8)
 		{
@@ -314,11 +315,11 @@ void InitializeShadowedFields()
 }
 
 #ifdef USE_PEXT
-std::array<Bitboard, 64> ROOK_MASKS;
-std::array<Bitboard, 64> BISHOP_MASKS;
-std::array<int, 64> ROOK_OFFSETS;
-std::array<int, 64> BISHOP_OFFSETS;
-std::array<Bitboard, 107648> ATTACKS;
+Bitboard ROOK_MASKS[64];
+Bitboard BISHOP_MASKS[64];
+int ROOK_OFFSETS[64];
+int BISHOP_OFFSETS[64];
+Bitboard ATTACKS[107648];
 
 void initializePextMasks() {
 	for (int rank = 0; rank < 8; ++rank) {
@@ -374,7 +375,7 @@ void initializePextAttacks() {
 		Bitboard occupany = 0ull;
 		Bitboard bbMask = ROOK_MASKS[square];
 		do {
-			int index = static_cast<int>(pext(occupany, bbMask)) + offset;
+			int index = (int)pext(occupany, bbMask) + offset;
 			if (index > maxIndex)
 				maxIndex = index;
 			Bitboard attacks = 0ull;
@@ -426,7 +427,7 @@ void initializePextAttacks() {
 		//Traverse all subsets
 		Bitboard occupany = 0ull;
 		do {
-			int index = static_cast<int>(pext(occupany, bbMask)) + offset;
+			int index = (int)pext(occupany, bbMask) + offset;
 			if (index > maxIndex)
 				maxIndex = index;
 			Bitboard attacks = 0ull;
@@ -479,17 +480,17 @@ void initializePext() {
 }
 #else
 
-std::array<int, 64> BishopShift = { 59, 60, 59, 59, 59, 59, 60, 59, 60, 60, 59, 59, 59, //a1 - e2
+int BishopShift[] = { 59, 60, 59, 59, 59, 59, 60, 59, 60, 60, 59, 59, 59, //a1 - e2
 59, 60, 60, 60, 60, 57, 57, 57, 57, 60, 60, 59, 59, 57, 55, 55, 57, //f2 - f4
 59, 59, 59, 59, 57, 55, 55, 57, 59, 59, 60, 60, 57, 57, 57, 57, 60, //g4 - g6
 60, 60, 60, 59, 59, 59, 59, 60, 60, 59, 60, 59, 59, 59, 59, 60, 59 }; //h6 - h8
 
-std::array<int, 64> RookShift = { 52, 53, 53, 53, 53, 53, 53, 52, 53, 54, 54, 54, 54, 54, //a1 - f2
+int RookShift[] = { 52, 53, 53, 53, 53, 53, 53, 52, 53, 54, 54, 54, 54, 54, //a1 - f2
 54, 53, 53, 54, 54, 54, 54, 54, 54, 53, 53, 54, 54, 54, 54, 54, 54, //g2 - g4
 53, 53, 54, 54, 54, 54, 54, 54, 53, 53, 54, 54, 54, 54, 54, 54, 53, //h4 - h6
 54, 55, 55, 55, 55, 55, 54, 54, 53, 54, 54, 54, 54, 53, 54, 53 }; //a7 - h8
 
-std::array<uint64_t, 64> RookMagics =
+uint64_t RookMagics[] =
 { 0x8880004002208a10ull, 0x0840100040042004ull, //a1
 0x0180281000802000ull, 0x0180048010000800ull,
 0x060020a200100408ull, 0x210002880c000100ull,
@@ -522,7 +523,7 @@ std::array<uint64_t, 64> RookMagics =
 0x53BFFFEDFFDEB1A2ull, 0x127FFFB9FFDFB5F6ull,
 0x411FFFDDFFDBF4D6ull, 0x0042007008010402ull,
 0x0003ffef27eebe74ull, 0x7645FFFECBFEA79Eull };
-std::array<uint64_t, 64> BishopMagics =
+uint64_t BishopMagics[] =
 { 0xffedf9fd7cfcffffull, 0xfc0962854a77f576ull, //a1
 0x0004080200501010ull, 0x0084140181222400ull,
 0x0214104404000006ull, 0x0108822021880802ull,
@@ -557,12 +558,12 @@ std::array<uint64_t, 64> BishopMagics =
 0xfc087e8e4bb2f736ull, 0x43ff9e4ef4ca2c89ull };
 
 
-std::array<Bitboard, 64> OccupancyMaskRook;
-std::array<Bitboard, 64> OccupancyMaskBishop;
+Bitboard OccupancyMaskRook[64];
+Bitboard OccupancyMaskBishop[64];
 
 void InitializeOccupancyMasks() {
-	int i = 0, bitRef = 0;
-	Bitboard mask = 0;
+	int i, bitRef;
+	Bitboard mask;
 	for (bitRef = 0; bitRef <= 63; bitRef++) {
 		mask = 0;
 		for (i = bitRef + 8; i <= 55; i += 8)
@@ -598,7 +599,7 @@ void generateOccupancyVariations(bool isRook)
 		occupancyAttackSet[i].clear();
 		occupancyVariation[i].clear();
 	}
-	std::array<Bitboard, 64> occupancies = { EMPTY };
+	Bitboard* occupancies;
 	if (isRook) occupancies = OccupancyMaskRook; else occupancies = OccupancyMaskBishop;
 	for (int square = A1; square <= H8; square++) {
 		Bitboard occupancy = occupancies[square];
@@ -624,11 +625,11 @@ void generateOccupancyVariations(bool isRook)
 
 int MaxIndexRook[64];
 int MaxIndexBishop[64];
-std::array<int, 64> IndexOffsetRook;
-std::array<int, 64> IndexOffsetBishop;
+int IndexOffsetRook[64];
+int IndexOffsetBishop[64];
 
-std::array<Bitboard, 88576> MagicMovesRook;
-std::array<Bitboard, 4800> MagicMovesBishop;
+Bitboard MagicMovesRook[88576];
+Bitboard MagicMovesBishop[4800];
 
 void InitializeMaxIndices() {
 	for (int i = 0; i < 64; i++)
@@ -650,7 +651,7 @@ void InitializeMoveDB(bool isRook) {
 	for (int square = A1; square <= H8; square++) {
 		for (unsigned int i = 0; i < occupancyVariation[square].size(); i++) {
 			if (isRook) {
-				int magicIndex = static_cast<int>((occupancyVariation[square][i] * RookMagics[square]) >> RookShift[square]);
+				int magicIndex = (int)((occupancyVariation[square][i] * RookMagics[square]) >> RookShift[square]);
 				Bitboard attacks = 0;
 				for (int to = square + 8; to <= H8; to += 8) {
 					attacks |= ToBitboard(to);
@@ -671,7 +672,7 @@ void InitializeMoveDB(bool isRook) {
 				MagicMovesRook[IndexOffsetRook[square] + magicIndex] = attacks;
 			}
 			else {
-				int magicIndex = static_cast<int>((occupancyVariation[square][i] * BishopMagics[square]) >> BishopShift[square]);
+				int magicIndex = (int)((occupancyVariation[square][i] * BishopMagics[square]) >> BishopShift[square]);
 				Bitboard attacks = 0;
 				for (int to = square + 9; to <= H8 && (to & 7) != 0; to += 9) {
 					attacks |= ToBitboard(to);
@@ -736,8 +737,8 @@ void Initialize() {
 }
 
 Move parseMoveInUCINotation(const std::string& uciMove, const Position& pos) {
-	const Square fromSquare = static_cast<Square>(uciMove[0] - 'a' + 8 * (uciMove[1] - '1'));
-	const Square toSquare = static_cast<Square>(uciMove[2] - 'a' + 8 * (uciMove[3] - '1'));
+	Square fromSquare = Square(uciMove[0] - 'a' + 8 * (uciMove[1] - '1'));
+	Square toSquare = Square(uciMove[2] - 'a' + 8 * (uciMove[3] - '1'));
 	if (uciMove.length() > 4) {
 		switch (uciMove[4]) {
 		case 'q': case 'Q':

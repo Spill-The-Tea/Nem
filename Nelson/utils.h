@@ -28,7 +28,7 @@ namespace utils {
 	const double K = -1.13 / 400;
 	inline double sigmoid(Value score) { return 1 / (1 + std::pow(10, K * (int)score)); }
 
-	inline constexpr double interpolatedResult(double result, int ply, int totalPlies) {
+	inline double interpolatedResult(double result, int ply, int totalPlies) {
 		return 0.5 + ((result - 0.5) * ply) / totalPlies;
 	}
 	inline double winExpectation(Value score, double scale = 1.305) { return 1 / (1 + std::pow(10, -scale / 400 * (int)score)); }

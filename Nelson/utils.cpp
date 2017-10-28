@@ -93,7 +93,7 @@ namespace utils {
 		ss << ' ' << token[1] << " - ";
 		if (token[3].compare("-") == 0) ss << '-'; 
 		else {
-			const char file = (char)((int)'h' - ((int)token[3][0] - (int)'a'));
+			char file = (char)((int)'h' - ((int)token[3][0] - (int)'a'));
 			ss << file << token[3][1];
 		}
 		if (token.size() > 4) ss << ' ' << token[4];
@@ -110,7 +110,7 @@ namespace utils {
 			double result = stod(line.substr(found + 4));
 			Value score = Engine->qscore(&pos);
 			if (pos.GetSideToMove() == BLACK) score = -score;
-			const double lerror = result - utils::sigmoid(score);
+			double lerror = result - utils::sigmoid(score);
 			error += lerror * lerror;
 		}
 		return error;
