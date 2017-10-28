@@ -19,13 +19,11 @@ namespace settings {
 		}
 		for (int depth = 0; depth < 64; depth++) {
 			for (int moves = 0; moves < 64; moves++) {
-				double reduction = std::log(moves) * std::log(depth) / 2; //F
+				const double reduction = std::log(moves) * std::log(depth) / 2; //F
 				if (reduction < 0.8) LMR_REDUCTION[depth][moves] = 0;
-				else LMR_REDUCTION[depth][moves] = int(std::round(reduction));
+				else LMR_REDUCTION[depth][moves] = static_cast<int>(std::round(reduction));
 			}
 		}
-		for (int i = 0; i < 100; ++i)
-			KING_SAFETY[i] = Value(std::min(KING_SAFETY_MAXVAL, int(i*i / (KING_SAFETY_MAXINDEX * KING_SAFETY_MAXINDEX / KING_SAFETY_MAXVAL) + KING_SAFETY_LINEAR * i)));
 	}
 
 	void Initialize() {
@@ -184,13 +182,13 @@ namespace settings {
 
 	void Parameters::setEval(Eval & e, std::vector<int>& v, int index)
 	{
-		if (index = -1 && v.size() == 1) e.mgScore = e.egScore = Value(v[0]);
+		if (index = -1 && v.size() == 1) e.mgScore = e.egScore = static_cast<Value>(v[0]);
 		else if (index = -1 && v.size() == 2) {
-			e.mgScore = Value(v[0]);
-			e.egScore = Value(v[1]);
+			e.mgScore = static_cast<Value>(v[0]);
+			e.egScore = static_cast<Value>(v[1]);
 		}
-		else if (index == 0)  e.mgScore = Value(v[0]);
-		else if (index == 1) e.egScore = Value(v[0]);
+		else if (index == 0)  e.mgScore = static_cast<Value>(v[0]);
+		else if (index == 1) e.egScore = static_cast<Value>(v[0]);
 	}
 
 	void processParameter(std::vector<std::string> parameters)
@@ -202,16 +200,16 @@ namespace settings {
 			std::string key = parameters[i].substr(0, indx);
 			std::string value = parameters[i].substr(indx + 1);
 			int val = stoi(value);
-			//if (!key.compare("QMG")) PieceValues[QUEEN].mgScore = Value(val);
-			//else if (!key.compare("QEG")) PieceValues[QUEEN].egScore = Value(val);
-			//else if (!key.compare("RMG")) PieceValues[ROOK].mgScore = Value(val);
-			//else if (!key.compare("REG")) PieceValues[ROOK].egScore = Value(val);
-			//else if (!key.compare("BMG")) PieceValues[BISHOP].mgScore = Value(val);
-			//else if (!key.compare("BEG")) PieceValues[BISHOP].egScore = Value(val);
-			//else if (!key.compare("NMG")) PieceValues[KNIGHT].mgScore = Value(val);
-			//else if (!key.compare("NEG")) PieceValues[KNIGHT].egScore = Value(val);
-			//else if (!key.compare("PMG")) PieceValues[PAWN].mgScore = Value(val);
-			//else if (!key.compare("PEG")) PieceValues[PAWN].mgScore = Value(val);
+			//if (!key.compare("QMG")) PieceValues[QUEEN].mgScore = static_cast<Value>(val);
+			//else if (!key.compare("QEG")) PieceValues[QUEEN].egScore = static_cast<Value>(val);
+			//else if (!key.compare("RMG")) PieceValues[ROOK].mgScore = static_cast<Value>(val);
+			//else if (!key.compare("REG")) PieceValues[ROOK].egScore = static_cast<Value>(val);
+			//else if (!key.compare("BMG")) PieceValues[BISHOP].mgScore = static_cast<Value>(val);
+			//else if (!key.compare("BEG")) PieceValues[BISHOP].egScore = static_cast<Value>(val);
+			//else if (!key.compare("NMG")) PieceValues[KNIGHT].mgScore = static_cast<Value>(val);
+			//else if (!key.compare("NEG")) PieceValues[KNIGHT].egScore = static_cast<Value>(val);
+			//else if (!key.compare("PMG")) PieceValues[PAWN].mgScore = static_cast<Value>(val);
+			//else if (!key.compare("PEG")) PieceValues[PAWN].mgScore = static_cast<Value>(val);
 			//else if (!key.compare(0, 3, "PPB")) {
 			//	int indx = stoi(key.substr(3));
 			//	PASSED_PAWN_BONUS[indx] = Eval(val);
@@ -412,13 +410,13 @@ namespace settings {
 	void OptionContempt::set(std::string value)
 	{
 		_value = stoi(value);
-		parameter.Contempt = Value(_value);
+		parameter.Contempt = static_cast<Value>(_value);
 	}
 
 	void OptionContempt::set(int value)
 	{
 		_value = value;
-		parameter.Contempt = Value(_value);
+		parameter.Contempt = static_cast<Value>(_value);
 	}
 
 	void OptionString::read(std::vector<std::string>& tokens)

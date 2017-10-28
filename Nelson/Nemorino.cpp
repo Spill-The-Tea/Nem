@@ -191,7 +191,7 @@ int main(int argc, const char* argv[]) {
 		else if (!input.compare(0, 8, "setvalue")) {
 			std::vector<std::string> token = utils::split(input);
 			int indx = 1;
-			while (indx < (int)token.size() - 1) {
+			while (indx < static_cast<int>(token.size()) - 1) {
 				settings::options.set(token[indx], token[indx + 1]);
 				indx += 2;
 			}
@@ -211,7 +211,7 @@ static bool popcountSupport() {
 	return false;
 #else
 	int cpuInfo[4];
-	int functionId = 0x00000001;
+	const int functionId = 0x00000001;
 	__cpuid(cpuInfo, functionId);
 	return (cpuInfo[2] & (1 << 23)) != 0;
 #endif

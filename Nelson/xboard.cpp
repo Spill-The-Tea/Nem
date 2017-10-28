@@ -8,8 +8,6 @@ namespace cecp {
 	{
 		BestMove.move = MOVE_NONE;
 		BestMove.score = VALUE_ZERO;
-		time[0] = 0;
-		time[1] = 0;
 		ponder.store(false);
 		drawOffered.store(false);
 		engineState.store(Waiting);
@@ -144,7 +142,7 @@ namespace cecp {
 	}
 
 	bool XBoard::processResult(Value score) {
-		DetailedResult dr = pos->GetDetailedResult();
+		const DetailedResult dr = pos->GetDetailedResult();
 		switch (dr)
 		{
 		case NO_RESULT:
@@ -187,7 +185,7 @@ namespace cecp {
 		if (Enginethread != nullptr) {
 			if (Enginethread->joinable())  Enginethread->join();
 			else sync_cout << "info string Can't stop Engine Thread!" << sync_endl;
-			free(Enginethread);
+			delete Enginethread;
 			Enginethread = nullptr;
 		}
 		Engine->Reset();
@@ -305,7 +303,7 @@ namespace cecp {
 			includeMoves(tokens);
 		}
 		else if (!command.compare("playother")) {
-			EngineSide = Color(EngineSide ^ 1);
+			EngineSide = static_cast<Color>(EngineSide ^ 1);
 		}
 		else if (!command.compare("analyze")) {
 			analyze();
@@ -420,7 +418,7 @@ namespace cecp {
 				}
 			}
 		}
-		tc_increment = int(stod(tokens[3]) * 1000);
+		tc_increment = static_cast<int>(stod(tokens[3]) * 1000);
 	}
 
 	void XBoard::setboard(std::string line) {
@@ -471,7 +469,7 @@ namespace cecp {
 	void XBoard::includeMoves(std::vector<std::string> tokens) {
 		if (!tokens[1].compare("all")) Engine->searchMoves.clear();
 		else {
-			for (int i = 1; i < int(tokens.size()); ++i) {
+			for (int i = 1; i < static_cast<int>(tokens.size()); ++i) {
 				Engine->searchMoves.push_back(parseMoveInXBoardNotation(tokens[1], *pos));
 			}
 		}
@@ -484,7 +482,7 @@ namespace cecp {
 		int ownRating = stoi(tokens[1]);
 		if (ownRating == 0) ownRating = 2700;
 		if (ratingOpponent == 0) ratingOpponent = 2000;
-		settings::parameter.Contempt = Value((ownRating - ratingOpponent) / 10);
+		settings::parameter.Contempt = static_cast<Value>((ownRating - ratingOpponent) / 10);
 	}
 
 	void XBoard::egtpath(std::vector<std::string> tokens) {
@@ -517,7 +515,7 @@ namespace cecp {
 			Engine->MultiPv = stoi(value);
 		}
 		else if (!name.compare(settings::OPTION_CONTEMPT)) {
-			settings::parameter.Contempt = Value(stoi(value));
+			settings::parameter.Contempt = static_cast<Value>(stoi(value));
 		}
 		else if (!name.compare(settings::OPTION_BOOK_FILE)) {
 			((settings::OptionString *)settings::options[settings::OPTION_BOOK_FILE])->set(value);
@@ -548,7 +546,7 @@ namespace cecp {
 		int movestogo = 30;
 		if (tc_moves > 0) movestogo = tc_moves - (moves.size() % tc_moves);
 
-		Engine->timeManager.initialize(mode, tc_movetime, tc_maxDepth, INT64_MAX, int(time[EngineSide]), tc_increment, movestogo, tnow, startPonder);
+		Engine->timeManager.initialize(mode, tc_movetime, tc_maxDepth, INT64_MAX, static_cast<int>(time[EngineSide]), tc_increment, movestogo, tnow, startPonder);
 	}
 
 	std::string XBoard::toXboardString(Move move) {
@@ -558,7 +556,7 @@ namespace cecp {
 
 	Move XBoard::parseMoveInXBoardNotation(const std::string& xboardMove, const Position& pos) {
 		if (!Chess960 || xboardMove[0] != 'O') return parseMoveInUCINotation(xboardMove, pos);
-		Square kingSquare = pos.KingSquare(pos.GetSideToMove());
+		const Square kingSquare = pos.KingSquare(pos.GetSideToMove());
 		if (!xboardMove.compare("O-O")) {
 			return createMove<CASTLING>(kingSquare, InitialRookSquare[2 * pos.GetSideToMove()]);
 		}

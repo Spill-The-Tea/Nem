@@ -155,7 +155,7 @@ template<ThreadType T> Value Search::SearchRoot(Value alpha, Value beta, Positio
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	pv[1] = MOVE_NONE; //pv[1] will be the ponder move, so we should make sure, that it is initialized as well
-	bool lmr = !pos.Checked() && depth >= 3;
+	const bool lmr = !pos.Checked() && depth >= 3;
 	bool ttFound;
 	tt::Entry ttEntry;
 	tt::Entry* ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
@@ -205,7 +205,7 @@ template<ThreadType T> Value Search::SearchRoot(Value alpha, Value beta, Positio
 			memcpy(pv + 1, subpv, (PV_MAX_LENGTH - 1) * sizeof(Move));
 			if (i > 0) {
 				//make sure that best move is always in first place 
-				ValuatedMove bm = moves[i];
+				const ValuatedMove bm = moves[i];
 				for (int j = i; j > startWithMove; --j)moves[j] = moves[j - 1];
 				moves[startWithMove] = bm;
 			}
@@ -245,8 +245,8 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 #endif
 	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
 	//Mate distance pruning
-	alpha = Value(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), int(alpha)));
-	beta = Value(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, int(beta)));
+	alpha = static_cast<Value>(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), static_cast<int>(alpha)));
+	beta = static_cast<Value>(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, static_cast<int>(beta)));
 	if (alpha >= beta) return SCORE_MDP(alpha);
 	//If depth = 0 is reached go to Quiescence Search
 	if (depth <= 0) {
@@ -257,7 +257,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	bool ttFound;
 	tt::Entry ttEntry;
 	tt::Entry* ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
-	Value ttValue = ttFound ? tt::fromTT(ttEntry.value(), pos.GetPliesFromRoot()) : VALUE_NOTYETDETERMINED;
+	const Value ttValue = ttFound ? tt::fromTT(ttEntry.value(), pos.GetPliesFromRoot()) : VALUE_NOTYETDETERMINED;
 	Move ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	if (ttFound
 		&& ttEntry.depth() >= depth
@@ -272,11 +272,11 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	if (probeTB && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry() && depth >= settings::parameter.TBProbeDepth)
 	{
 		int found;
-		int v = tablebases::probe_wdl(pos, &found);
+		const int v = tablebases::probe_wdl(pos, &found);
 		if (found)
 		{
 			tbHits++;
-			Value value = v < -1 ? -VALUE_MATE + MAX_DEPTH + pos.GetPliesFromRoot()
+			const Value value = v < -1 ? -VALUE_MATE + MAX_DEPTH + pos.GetPliesFromRoot()
 				: v >  1 ? VALUE_MATE - MAX_DEPTH - pos.GetPliesFromRoot()
 				: VALUE_DRAW + 2 * v;
 			if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(value, pos.GetPliesFromRoot()), tt::EXACT, MAX_DEPTH - 1, MOVE_NONE, VALUE_NOTYETDETERMINED);
@@ -284,10 +284,10 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			return SCORE_TB(value);
 		}
 	}
-	bool PVNode = (beta > alpha + 1);
+	const bool PVNode = (beta > alpha + 1);
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
-	bool checked = pos.Checked();
+	const bool checked = pos.Checked();
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
 		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
 	prune = prune && !PVNode && !checked && (pos.GetLastAppliedMove() != MOVE_NONE) && (!pos.GetMaterialTableEntry()->SkipPruning());
@@ -312,7 +312,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		{
 			//if (depth <= 1 && (effectiveEvaluation + settings::RazoringMargin(depth)) <= alpha) return QSearch(alpha, beta, pos, 0);
 			Value razorAlpha = alpha - settings::parameter.RazoringMargin(depth);
-			Value razorScore = QSearch<T>(razorAlpha, Value(razorAlpha + 1), pos, 0, tlData);
+			const Value razorScore = QSearch<T>(razorAlpha, static_cast<Value>(razorAlpha + 1), pos, 0, tlData);
 			if (razorScore <= razorAlpha) return SCORE_RAZ(razorScore);
 		}
 
@@ -322,7 +322,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			&& excludeMove == MOVE_NONE
 			) {
 			int reduction = (depth + 14) / 5;
-			if (int(effectiveEvaluation - beta) > int(settings::parameter.PieceValues[PAWN].egScore)) ++reduction;
+			if (int(effectiveEvaluation - beta) > static_cast<int>(settings::parameter.PieceValues[PAWN].egScore)) ++reduction;
 			Square epsquare = pos.GetEPSquare();
 			Move lastApplied = pos.GetLastAppliedMove();
 			pos.NullMove();
@@ -332,7 +332,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 				if (nullscore >= VALUE_MATE_THRESHOLD) nullscore = beta;
 				if (depth < 9 && beta < VALUE_KNOWN_WIN) return SCORE_NMP(nullscore);
 				// Do verification search at high depths
-				Value verificationScore = SearchMain<T>(beta - 1, beta, pos, depth - reduction, subpv, tlData, false, false);
+				const Value verificationScore = SearchMain<T>(beta - 1, beta, pos, depth - reduction, subpv, tlData, false, false);
 				if (verificationScore >= beta) return SCORE_NMP(nullscore);
 			}
 		}
@@ -342,12 +342,12 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			&&  depth >= 5
 			&& std::abs(int(beta)) < VALUE_MATE_THRESHOLD)
 		{
-			Value rbeta = std::min(Value(beta + 90), VALUE_INFINITE);
+			const Value rbeta = std::min(Value(beta + 90), VALUE_INFINITE);
 			int rdepth = depth - 4;
 
 			Position cpos(pos);
 			cpos.copy(pos);
-			Value limit = settings::parameter.PieceValues[GetPieceType(pos.getCapturedInLastMove())].mgScore;
+			const Value limit = settings::parameter.PieceValues[GetPieceType(pos.getCapturedInLastMove())].mgScore;
 			Move ttm = ttMove;
 			if (ttm != MOVE_NONE && cpos.SEE(ttMove) < limit) ttm = MOVE_NONE;
 			if (pos.mateThread())
@@ -358,7 +358,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			while ((move = cpos.NextMove())) {
 				Position next(cpos);
 				if (next.ApplyMove(move)) {
-					Value score = -SearchMain<T>(-rbeta, Value(-rbeta + 1), next, rdepth, subpv, tlData, !cutNode);
+					const Value score = -SearchMain<T>(-rbeta, static_cast<Value>(-rbeta + 1), next, rdepth, subpv, tlData, !cutNode);
 					if (score >= rbeta)
 						return SCORE_PC(score);
 				}
@@ -379,7 +379,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	if (!checked && ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED && pos.GetStaticEval() == VALUE_NOTYETDETERMINED) pos.SetStaticEval(ttEntry.evalValue());
 	Move counter = pos.GetCounterMove(counterMove);
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
-	bool futilityPruning = pos.GetLastAppliedMove() != MOVE_NONE && !checked && depth <= settings::parameter.FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.GetMaterialTableEntry()->DoNullmove(pos.GetSideToMove());
+	const bool futilityPruning = pos.GetLastAppliedMove() != MOVE_NONE && !checked && depth <= settings::parameter.FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.GetMaterialTableEntry()->DoNullmove(pos.GetSideToMove());
 	if (futilityPruning && alpha > (staticEvaluation + settings::parameter.FUTILITY_PRUNING_LIMIT[depth]))
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&tlData.History, &tlData.cmHistory, &tlData.followupHistory, nullptr, counter, ttMove);
 	else
@@ -387,19 +387,19 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	Value score;
 	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
-	bool lmr = !checked && depth >= 3;
+	const bool lmr = !checked && depth >= 3;
 	Move move;
 	int moveIndex = -1;
 	int bestMoveIndex = -1;
 	bool ZWS = !PVNode;
-	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
-	bool trySE = depth >= 8 && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
+	const Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
+	const bool trySE = depth >= 8 && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
 		&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
 	while ((move = pos.NextMove())) {
 		++moveIndex;
 		if (move == excludeMove) continue;
-		int reducedDepth = lmr ? depth - settings::parameter.LMRReduction(depth, moveIndex) : depth;
-		bool prunable = !PVNode && reducedDepth <= 4 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
+		const int reducedDepth = lmr ? depth - settings::parameter.LMRReduction(depth, moveIndex) : depth;
+		const bool prunable = !PVNode && reducedDepth <= 4 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
 			&& !tlData.killerManager.isKiller(pos, move) && (pos.IsQuietAndNoCastles(move) || pos.GetMoveGenerationPhase() == MoveGenerationType::LOOSING_CAPTURES)
 			&& !pos.IsAdvancedPawnPush(move) && !pos.givesCheck(move);
 		if (prunable) {
@@ -495,8 +495,8 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 	if (Stopped()) return VALUE_ZERO;
 	if (pos.GetResult() != OPEN)  return SCORE_FINAL(pos.evaluateFinalPosition());
 	//Mate distance pruning
-	alpha = Value(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), int(alpha)));
-	beta = Value(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, int(beta)));
+	alpha = static_cast<Value>(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), static_cast<int>(alpha)));
+	beta = static_cast<Value>(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, static_cast<int>(beta)));
 	if (alpha >= beta) return SCORE_MDP(alpha);
 	Move ttMove = MOVE_NONE;
 #ifndef TUNE
@@ -517,8 +517,8 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 		if (ttFound && ttEntry.move()) ttMove = ttEntry.move();
 	}
 #endif
-	bool WithChecks = depth == 0 || pos.mateThread();
-	bool checked = pos.Checked();
+	const bool WithChecks = depth == 0 || pos.mateThread();
+	const bool checked = pos.Checked();
 	Value standPat;
 	if (checked) {
 		standPat = VALUE_NOTYETDETERMINED;
@@ -540,7 +540,7 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 #endif
 		//Delta Pruning
 		if (!checked && !pos.GetMaterialTableEntry()->IsLateEndgame()) {
-			Value delta = settings::parameter.PieceValues[pos.GetMostValuableAttackedPieceType()].egScore + int(pos.PawnOn7thRank()) * (settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore) + settings::parameter.DELTA_PRUNING_SAFETY_MARGIN;
+			const Value delta = settings::parameter.PieceValues[pos.GetMostValuableAttackedPieceType()].egScore + static_cast<int>(pos.PawnOn7thRank()) * (settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore) + settings::parameter.DELTA_PRUNING_SAFETY_MARGIN;
 			if (standPat + delta < alpha) return SCORE_DP(alpha);
 		}
 		if (alpha < standPat) alpha = standPat;

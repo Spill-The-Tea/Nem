@@ -435,7 +435,7 @@ namespace test {
 		double avgBF = 0.0;
 		std::cout << std::setprecision(3) << std::left << std::setw(4) << "Nr" << std::setw(7) << "Time" << std::setw(10) << "Nodes" << std::setw(6) << "Speed" << std::setw(6) << "BF" << std::setw(6) << "TT[%]"
 			<< std::setw(6) << "C1st" << std::setw(6) << "CIndx" << std::setw(40) << "PV" << std::endl;
-		for (int i = 0; i < int(fens.size()); i++) {
+		for (int i = 0; i < static_cast<int>(fens.size()); i++) {
 			Position* pos = new Position(fens[i]);
 			Search * srch = new Search;
 			srch->PrintCurrmove = false;
@@ -626,7 +626,7 @@ namespace test {
 		Search * engine = new Search;
 		engine->timeManager.initialize(FIXED_DEPTH, 0, depth);
 		ValuatedMove vm = engine->Think(pos);
-		std::cout << "Best Move: " << toString(vm.move) << " " << (int)vm.score << std::endl;
+		std::cout << "Best Move: " << toString(vm.move) << " " << static_cast<int>(vm.score) << std::endl;
 		delete engine;
 	}
 
@@ -635,7 +635,7 @@ namespace test {
 		Search * engine = new Search;
 		engine->timeManager.initialize(FIXED_DEPTH, 0, 5);
 		ValuatedMove vm = engine->Think(pos);
-		std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << (int)vm.score << std::endl;
+		std::cout << (((vm.move == createMove(G2, H2)) && (vm.score == VALUE_DRAW)) ? "OK     " : "ERROR ") << toString(vm.move) << "\t" << static_cast<int>(vm.score) << std::endl;
 		delete engine;
 	}
 
@@ -678,7 +678,7 @@ namespace test {
 			Position pos(fen);
 			ValuatedMove vm = engine->Think(pos);
 			std::cout << ((vm.move == iter->second) && (vm.score == VALUE_MATE - engine->timeManager.GetMaxDepth()) ? "OK    " : "ERROR ") << "\t" << toString(vm.move) << "/" << toString(iter->second)
-				<< "\t" << (int)vm.score << "/" << (int)VALUE_MATE - engine->timeManager.GetMaxDepth() << "\t" << fen << std::endl;
+				<< "\t" << static_cast<int>(vm.score) << "/" << static_cast<int>(VALUE_MATE) - engine->timeManager.GetMaxDepth() << "\t" << fen << std::endl;
 			count++;
 		}
 		delete engine;
@@ -904,15 +904,15 @@ namespace test {
 		std::cout << "Testing LSB..." << std::endl;
 		for (int i = 0; i < 8; ++i) {
 			Square pc = lsb(RANKS[i]);
-			if (pc != Square(A1 + 8*i)) {
-				std::cout << "Error: LSB(" << RANKS[i] << ") = " << pc << "   should be " << Square(A1 + 8 * i) << std::endl;
+			if (pc != static_cast<Square>(A1 + 8*i)) {
+				std::cout << "Error: LSB(" << RANKS[i] << ") = " << pc << "   should be " << static_cast<Square>(A1 + 8 * i) << std::endl;
 				return false;
 			}
 		}
 		for (int i = 0; i < 8; ++i) {
 			Square pc = lsb(FILES[i]);
-			if (pc != Square(A1 + i)) {
-				std::cout << "Error: LSB(" << FILES[i] << ") = " << pc << "   should be " << Square(A1 + i) << std::endl;
+			if (pc != static_cast<Square>(A1 + i)) {
+				std::cout << "Error: LSB(" << FILES[i] << ") = " << pc << "   should be " << static_cast<Square>(A1 + i) << std::endl;
 				return false;
 			}
 		}
@@ -920,8 +920,8 @@ namespace test {
 		int count = 0;
 		while (bb != EMPTY) {
 			Square sq = pop_lsb(&bb);
-			if (sq != Square(count)) {
-				std::cout << "Error: pop_lsb(" << bb << ") = " << sq << "   should be " << Square(count) << std::endl;
+			if (sq != static_cast<Square>(count)) {
+				std::cout << "Error: pop_lsb(" << bb << ") = " << sq << "   should be " << static_cast<Square>(count) << std::endl;
 				return false;
 			}
 			++count;
@@ -935,15 +935,15 @@ namespace test {
 		std::cout << "Testing MSB..." << std::endl;
 		for (int i = 0; i < 8; ++i) {
 			Square pc = msb(RANKS[i]);
-			if (pc != Square(H1 + 8 * i)) {
-				std::cout << "Error: MSB(" << RANKS[i] << ") = " << pc << "   should be " << Square(A1 + 8 * i) << std::endl;
+			if (pc != static_cast<Square>(H1 + 8 * i)) {
+				std::cout << "Error: MSB(" << RANKS[i] << ") = " << pc << "   should be " << static_cast<Square>(A1 + 8 * i) << std::endl;
 				return false;
 			}
 		}
 		for (int i = 0; i < 8; ++i) {
 			Square pc = msb(FILES[i]);
-			if (pc != Square(A8 + i)) {
-				std::cout << "Error: MSB(" << FILES[i] << ") = " << pc << "   should be " << Square(A1 + i) << std::endl;
+			if (pc != static_cast<Square>(A8 + i)) {
+				std::cout << "Error: MSB(" << FILES[i] << ") = " << pc << "   should be " << static_cast<Square>(A1 + i) << std::endl;
 				return false;
 			}
 		}
@@ -974,7 +974,7 @@ namespace test {
 	{
 		Initialize();
 		std::vector<std::string> fens(benchFens1());
-		for (int i = 0; i < int(fens.size()); i++) {
+		for (int i = 0; i < static_cast<int>(fens.size()); i++) {
 			Position * p = new Position(fens[i]);
 			bool castles = p->GetCastles() != 0;
 			delete p;
@@ -991,7 +991,7 @@ namespace test {
 				srch->NewGame();
 				srch->timeManager.initialize(FIXED_DEPTH, 0, 8);
 				m[j] = srch->Think(*pos);
-				std::cout << toString(m[j].move) << " " << (int)m[j].score << "  " << fen << std::endl;
+				std::cout << toString(m[j].move) << " " << static_cast<int>(m[j].score) << "  " << fen << std::endl;
 				delete srch;
 				delete pos;
 			}
@@ -2000,7 +2000,7 @@ namespace test {
 			"3k4/4q3/4R3/4r3/4Q3/4r3/4R3/3K4 w - - 0 1;e6e7;470"
 		};
 		bool result = true;
-		for (int i = 0; i < int(tests.size()); i++) {
+		for (int i = 0; i < static_cast<int>(tests.size()); i++) {
 			auto tokens = utils::split(tests[i], ';');
 			assert(tokens.size() == 3);
 			Position pos(tokens[0]);
@@ -2010,7 +2010,7 @@ namespace test {
 			bool lresult = vsee == std::stoi(tokens[2]);
 			result == result && lresult;
 			if (!lresult) std::cout << "ERROR ";
-			std::cout << tokens[1] << "\t" << (int)vsee << "\t" << tokens[2] << std::endl;
+			std::cout << tokens[1] << "\t" << static_cast<int>(vsee) << "\t" << tokens[2] << std::endl;
 		}
 		return result;
 	}
