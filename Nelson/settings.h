@@ -65,8 +65,6 @@ namespace settings {
 		Eval ROOK_ON_7TH = Eval(20, 0);
 
 		Eval BONUS_BISHOP_PAIR = Eval(50);
-		Value BONUS_CASTLING = Value(0);
-        //Value BONUS_TEMPO = Value(5);
         Value DELTA_PRUNING_SAFETY_MARGIN = Value(VALUE_100CP);
         Eval PAWN_SHELTER_2ND_RANK = Eval(30, -10);
 		Eval PAWN_SHELTER_3RD_RANK = Eval(15, -8);
@@ -143,16 +141,16 @@ namespace settings {
 				Eval(-14,-12), Eval(-8,-7), Eval(-3,-2), Eval(4,5), Eval(4,5), Eval(-3,-2), Eval(-8,-7), Eval(-14,-12),  // Rank 2
 				Eval(-8,-7), Eval(-3,-2), Eval(4,5), Eval(15,16), Eval(15,16), Eval(4,5), Eval(-3,-2), Eval(-8,-7),  // Rank 3
 				Eval(-3,-2), Eval(4,5), Eval(15,16), Eval(21,22), Eval(21,22), Eval(15,16), Eval(4,5), Eval(-3,-2),  // Rank 4
-				Eval(-3,-2), Eval(4,5), Eval(21,16), Eval(26,22), Eval(26,22), Eval(21,16), Eval(4,5), Eval(-3,-2),  // Rank 5
-				Eval(-8,-7), Eval(-3,-2), Eval(10,5), Eval(31,16), Eval(31,16), Eval(10,5), Eval(-3,-2), Eval(-8,-7),  // Rank 6
+				Eval(-3,-2), Eval(4,5), Eval(26,16), Eval(31,22), Eval(31,22), Eval(26,16), Eval(4,5), Eval(-3,-2),  // Rank 5
+				Eval(-8,-7), Eval(-3,-2), Eval(15,5), Eval(36,16), Eval(36,16), Eval(15,5), Eval(-3,-2), Eval(-8,-7),  // Rank 6
 				Eval(-14,-12), Eval(-8,-7), Eval(-3,-2), Eval(4,5), Eval(4,5), Eval(-3,-2), Eval(-8,-7), Eval(-14,-12),  // Rank 7
 				Eval(-19,-18), Eval(-14,-12), Eval(-8,-7), Eval(-3,-2), Eval(-3,-2), Eval(-8,-7), Eval(-14,-12), Eval(-19,-18)  // Rank 8
 			},
 			{  // Black Knight
 				Eval(19,18), Eval(14,12), Eval(8,7), Eval(3,2), Eval(3,2), Eval(8,7), Eval(14,12), Eval(19,18),  // Rank 1
 				Eval(14,12), Eval(8,7), Eval(3,2), Eval(-4,-5), Eval(-4,-5), Eval(3,2), Eval(8,7), Eval(14,12),  // Rank 2
-				Eval(8,7), Eval(3,2), Eval(-10,-5), Eval(-31,-16), Eval(-31,-16), Eval(-10,-5), Eval(3,2), Eval(8,7),  // Rank 3
-				Eval(3,2), Eval(-4,-5), Eval(-21,-16), Eval(-26,-22), Eval(-26,-22), Eval(-21,-16), Eval(-4,-5), Eval(3,2),  // Rank 4
+				Eval(8,7), Eval(3,2), Eval(-15,-5), Eval(-36,-16), Eval(-36,-16), Eval(-15,-5), Eval(3,2), Eval(8,7),  // Rank 3
+				Eval(3,2), Eval(-4,-5), Eval(-26,-16), Eval(-31,-22), Eval(-31,-22), Eval(-26,-16), Eval(-4,-5), Eval(3,2),  // Rank 4
 				Eval(3,2), Eval(-4,-5), Eval(-15,-16), Eval(-21,-22), Eval(-21,-22), Eval(-15,-16), Eval(-4,-5), Eval(3,2),  // Rank 5
 				Eval(8,7), Eval(3,2), Eval(-4,-5), Eval(-15,-16), Eval(-15,-16), Eval(-4,-5), Eval(3,2), Eval(8,7),  // Rank 6
 				Eval(14,12), Eval(8,7), Eval(3,2), Eval(-4,-5), Eval(-4,-5), Eval(3,2), Eval(8,7), Eval(14,12),  // Rank 7
@@ -285,16 +283,6 @@ namespace settings {
 	const std::string OPTION_TEXEL_TUNING_LOSSES = "TTLoss"; //Path to file containing EPD records of lost positions
 	const std::string OPTION_TEXEL_TUNING_LABELLED = "TTLabeled"; //Path to file containing EPD records with WDL label
 #endif
-	const std::string OPTION_PIECE_VALUES_QUEEN_MG = "PVQM";
-	const std::string OPTION_PIECE_VALUES_QUEEN_EG = "PVQE";
-	const std::string OPTION_PIECE_VALUES_ROOK_MG = "PVRM";
-	const std::string OPTION_PIECE_VALUES_ROOK_EG = "PVRE";
-	const std::string OPTION_PIECE_VALUES_BISHOP_MG = "PVBM";
-	const std::string OPTION_PIECE_VALUES_BISHOP_EG = "PVBE";
-	const std::string OPTION_PIECE_VALUES_KNIGHT_MG = "PVNM";
-	const std::string OPTION_PIECE_VALUES_KNIGHT_EG = "PVNE";
-	const std::string OPTION_PIECE_VALUES_PAWN_MG = "PVPM";
-	const std::string OPTION_PIECE_VALUES_PAWN_EG = "PVPE";
 	const std::string OPTION_SYZYGY_PATH = "SyzygyPath";
 	const std::string OPTION_SYZYGY_PROBE_DEPTH = "SyzygyProbeDepth";
 

@@ -90,9 +90,6 @@ void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
 
 static bool popcountSupport();
 
-#ifdef NOMAD
-#include "nomad.h"
-#else
 int main(int argc, const char* argv[]) {
 #ifdef CRASH
 	SetUnhandledExceptionFilter(unhandled_handler);
@@ -207,7 +204,6 @@ int main(int argc, const char* argv[]) {
 #endif
 	}
 }
-#endif
 
 #ifdef _MSC_VER
 static bool popcountSupport() {

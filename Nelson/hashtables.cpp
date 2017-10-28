@@ -129,12 +129,24 @@ namespace tt {
 	uint64_t GetProbeCounter() { return ProbeCounter; }
 	uint64_t GetHitCounter() { return HitCounter; }
 	uint64_t GetFillCounter() { return FillCounter; }
-	uint64_t GetHashFull() {
-		return 1000 * FillCounter / GetEntryCount();
-	}
 
 	Cluster * Table = nullptr;
 	uint64_t MASK;
+
+	uint64_t GetHashFull() {
+		if (settings::parameter.HelperThreads == 0)
+			return 1000 * FillCounter / GetEntryCount();
+		else {
+			uint64_t result = 0;
+			for (int i = 0; i < 250; ++i) {
+				for (int j = 0; j < CLUSTER_SIZE; ++j) {
+					if (Table[i].entry[j].key) ++result;
+				}
+
+			}
+			return result;
+		}
+	}
 
 	//Calculates the number of clusters in the transposition table if the table size should use
 	//sizeMB Megabytes (which is treated as upper limit)
@@ -203,7 +215,7 @@ namespace tt {
 					stream.write(reinterpret_cast<const char *>(&cluster->entry[j]), sizeof(Entry));
 				}
 			}
-		}
+}
 		return true;
 	}
 }
@@ -247,7 +259,8 @@ namespace killer {
 		if (pos.Previous()->Checked()) {
 			plyTable[index] = plyTable[index - 4 * NB_SLOTS_KILLER];
 			plyTable[index + 1] = plyTable[index - 4 * NB_SLOTS_KILLER + 1];
-		} else {
+		}
+		else {
 			plyTable[index] = MOVE_NONE;
 			plyTable[index + 1] = MOVE_NONE;
 		}

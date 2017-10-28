@@ -77,16 +77,16 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 			std::string srtString;
 			if (srt == SearchResultType::FAIL_LOW) srtString = " upperbound"; else if (srt == SearchResultType::FAIL_HIGH) srtString = " lowerbound";
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
-				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score cp " << (int)BestMove.score << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
-				<< " hashfull " << tt::GetHashFull()
+				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score cp " << (int)BestMove.score << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
+                << " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime << " hashfull " << tt::GetHashFull()
 				<< " tbhits " << tbHits
 				<< " time " << _thinkTime
 				<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
 			else {
 				int pliesToMate;
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score + 1; else pliesToMate = -BestMove.score - VALUE_MATE;
-				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << NodeCount << " nps " << NodeCount * 1000 / _thinkTime
-					<< " hashfull " << tt::GetHashFull()
+				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
+                    << " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime << " hashfull " << tt::GetHashFull()
 					<< " tbhits " << tbHits
 					<< " time " << _thinkTime
 					<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
@@ -321,7 +321,7 @@ ValuatedMove Search::Think(Position &pos) {
 					alpha = -VALUE_MATE;
 					beta = VALUE_MATE;
 				}
-				else delta += delta / 4 + 5; //widening formula is from SF - very small widening of the aspiration window size, more might be better => let's tune it some day
+				else delta += delta * 2; 
 			}
 			Time_t tNow = now();
 			_thinkTime = std::max(tNow - timeManager.GetStartTime(), int64_t(1));
@@ -355,9 +355,8 @@ END://when pondering engine must not return a best move before opponent moved =>
 	}
 	//If for some reason search did not find a best move return the  first one (to avoid loss and it's anyway the best guess then)
 	if (BestMove.move == MOVE_NONE) BestMove = rootMoves[0];
-	if (settings::parameter.HelperThreads > 0 && rootMoveCount > 1) {
-		for (int i = 0; i < subThreads.size(); ++i) subThreads[i].join();
-		subThreads.clear();
+	for (int i = 0; i < subThreads.size(); ++i) {
+		if (subThreads[i].joinable()) subThreads[i].join();
 	}
 	return BestMove;
 }
