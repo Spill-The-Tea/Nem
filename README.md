@@ -97,7 +97,8 @@ Nemorino 3.00
 * [FastGM Bullet **Elo 2835 #25**](http://www.fastgm.de/60-0.60.html)
 * [Owl Chess **Elo 3098 #19**](http://chessowl.blogspot.de/p/rating-list_27.html)
 
-Nemorino 3.04a 
+Nemorino 3.04a
+
 * [CCRL 40/4 (FRC) **Elo 3104 #9**](http://www.computerchess.org.uk/ccrl/404FRC/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%203.04a%2064-bit#Nemorino_3_04a_64-bit)
 
 Nemorino 2.00 64-bit 4CPU
