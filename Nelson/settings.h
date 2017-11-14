@@ -241,6 +241,9 @@ namespace settings {
 		int PINNED_FACTOR = 100;
 		int ATTACK_WITH_QUEEN = 900;
 
+		Eval IMBALANCE_Q_vs_RN = Eval(75);
+		Eval IMBALANCE_Q_vs_RB = Eval(75);
+
 		void UCIExpose();
 		void SetFromUCI(std::string name, std::string value);
 

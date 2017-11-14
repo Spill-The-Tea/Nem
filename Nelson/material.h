@@ -65,3 +65,4 @@ Eval calculateMaterialEval(const Position &pos);
 Value calculateMaterialScore(const Position &pos);
 
 MaterialKey_t calculateMaterialKey(int * pieceCounts);
+MaterialKey_t calculateMaterialKey(int nQW, int nQB, int nRW, int nRB, int nBW, int nBB, int nNW, int nNB, int nPW, int nPB);
