@@ -89,13 +89,17 @@ Nemorino is listed in several rating lists:
 
 Nemorino 3.00
 
-* [CCRL 40/40 **Elo 3104 #24**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%203.0%2064-bit%204CPU#Nemorino_3_0_64-bit_4CPU)
+* [CCRL 40/40 (4 CPU) **Elo 3104 #24**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%203.0%2064-bit%204CPU#Nemorino_3_0_64-bit_4CPU)
 * [CCRL 40/40 **Elo 3002 #27**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%203.0%2064-bit#Nemorino_3_0_64-bit)
 * [CCRL 40/4 **Elo 3043 #34**](http://www.computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%203.0%2064-bit#Nemorino_3_0_64-bit)
 * [CEGT 40/20 **Elo 2906 #25**](http://www.cegt.net/40_40%20Rating%20List/40_40%20SingleVersion/rangliste.html)
 * [CEGT 40/4 **Elo 2893 #29**](http://www.cegt.net/40_4_Ratinglist/40_4_single/rangliste.html)
-* [FastGM Bullet **Elo 3022 #23**](http://www.fastgm.de/60-0.60.html)
+* [FastGM Bullet **Elo 2835 #25**](http://www.fastgm.de/60-0.60.html)
 * [Owl Chess **Elo 3098 #19**](http://chessowl.blogspot.de/p/rating-list_27.html)
+
+Nemorino 3.04a
+
+* [CCRL 40/4 (FRC) **Elo 3104 #9**](http://www.computerchess.org.uk/ccrl/404FRC/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%203.04a%2064-bit#Nemorino_3_04a_64-bit)
 
 Nemorino 2.00 64-bit 4CPU
 
