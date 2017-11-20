@@ -95,7 +95,7 @@ void adjust() {
 									pieceCounts[6] = nWN;
 									for (int nBN = 0; nBN <= 2; ++nBN) {
 										pieceCounts[7] = nBN;
-										Phase_t phase = Phase(nWQ, nBQ, nWR, nBR, nWB, nBB, nWN, nBN);
+										//Phase_t phase = Phase(nWQ, nBQ, nWR, nBR, nWB, nBB, nWN, nBN);
 										for (int nWP = 0; nWP <= 8; ++nWP) {
 											pieceCounts[8] = nWP;
 											for (int nBP = 0; nBP <= 8; ++nBP) {

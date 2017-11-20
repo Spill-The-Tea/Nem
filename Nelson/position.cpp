@@ -1282,7 +1282,7 @@ void Position::NullMove(Square epsquare, Move lastApplied) {
 	attackedByThem = attackedByUs;
 	attackedByUs = tmp;
 	if (StaticEval != VALUE_NOTYETDETERMINED) {
-		StaticEval = -StaticEval + 2 * settings::parameter.BONUS_TEMPO;
+		StaticEval = -StaticEval + 2 * settings::parameter.BONUS_TEMPO.getScore(material->Phase);
 	}
 }
 
