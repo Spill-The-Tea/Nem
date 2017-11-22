@@ -43,7 +43,6 @@ namespace settings {
 		int KING_SAFETY_MAXINDEX = 61;
 		double KING_SAFETY_LINEAR = 0.5;
 		int ATTACK_UNITS_SAFE_CONTACT_CHECK = 5;
-		Value KING_SAFETY[100];
 		Eval SCALE_BISHOP_PAIR_WITH_PAWNS = EVAL_ZERO; //Reduce Bonus Bishop Pair by this value for each pawn on the board
 		Eval BONUS_BISHOP_PAIR_NO_OPP_MINOR = EVAL_ZERO; //Bonus for Bishop pair, if opponent has no minor piece for exchange
 		Eval SCALE_EXCHANGE_WITH_PAWNS = EVAL_ZERO; //Decrease Value of Exchange with number of pawns

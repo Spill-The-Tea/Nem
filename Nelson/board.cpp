@@ -736,6 +736,13 @@ void Initialize() {
 #endif
 }
 
+#ifdef _DEBUG
+std::string printMove(Move move)
+{
+	return toString(move);
+}
+#endif
+
 Move parseMoveInUCINotation(const std::string& uciMove, const Position& pos) {
 	Square fromSquare = Square(uciMove[0] - 'a' + 8 * (uciMove[1] - '1'));
 	Square toSquare = Square(uciMove[2] - 'a' + 8 * (uciMove[3] - '1'));

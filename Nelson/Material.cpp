@@ -98,7 +98,7 @@ void adjust() {
 										//Phase_t phase = Phase(nWQ, nBQ, nWR, nBR, nWB, nBB, nWN, nBN);
 										for (int nWP = 0; nWP <= 8; ++nWP) {
 											pieceCounts[8] = nWP;
-											for (int nBP = 0; nBP <= 8; ++nBP) {
+											for (int nBP = 0; nBP <= 8; ++nBP) {											
 												pieceCounts[9] = nBP;
 												MaterialKey_t key = calculateMaterialKey(&pieceCounts[0]);
 												for (int i = 0; i < 5; ++i) {
@@ -173,6 +173,7 @@ void InitializeMaterialTable() {
 										pieceCounts[8] = nWP;
 										for (int nBP = 0; nBP <= 8; ++nBP) {
 											pieceCounts[9] = nBP;
+											int pawnCount = nWP + nBP - 8;
 											MaterialKey_t key = calculateMaterialKey(&pieceCounts[0]);
 											assert(key <= MATERIAL_KEY_MAX);
 											Eval evaluation(0);
@@ -180,6 +181,7 @@ void InitializeMaterialTable() {
 												imbalance[i] = pieceCounts[2 * i] - pieceCounts[2 * i + 1];
 												evaluation += imbalance[i] * settings::parameter.PieceValues[i];
 											}
+											evaluation += Eval(2 * imbalance[KNIGHT] * pawnCount);
 											if ((nWB == 2 || nBB == 2) && imbalance[BISHOP] != 0) {
 												//Bonus for bishop pair
 												if (nWB == 2) {//White has Bishop pair

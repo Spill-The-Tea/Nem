@@ -24,8 +24,6 @@ namespace settings {
 				else LMR_REDUCTION[depth][moves] = int(std::round(reduction));
 			}
 		}
-		for (int i = 0; i < 100; ++i)
-			KING_SAFETY[i] = Value(std::min(KING_SAFETY_MAXVAL, int(i*i / (KING_SAFETY_MAXINDEX * KING_SAFETY_MAXINDEX / KING_SAFETY_MAXVAL) + KING_SAFETY_LINEAR * i)));
 	}
 
 	void Initialize() {
