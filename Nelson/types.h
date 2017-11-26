@@ -29,7 +29,7 @@
 #endif
 #endif
 
-const std::string VERSION_INFO = "Nemorino 3.20";
+const std::string VERSION_INFO = "Nemorino 3.21";
 
 typedef uint64_t Bitboard;
 typedef int64_t Time_t;
@@ -90,7 +90,7 @@ enum File {
 };
 
 enum CastleFlag {
-	NoCastles, W0_0, W0_0_0, B0_0 = 4, B0_0_0 = 8
+	NoCastles, W0_0, W0_0_0, B0_0 = 4, B0_0_0 = 8, W_LOST_CASTLING = 16, B_LOST_CASTLING = 32
 };
 
 const int CastlesbyColor[] = { W0_0 | W0_0_0, B0_0 | B0_0_0 };

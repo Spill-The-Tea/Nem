@@ -161,8 +161,9 @@ public:
 	  This method should always be used when a copy is neede without applying a move */
 	void copy(const Position &pos);
 	inline bool CastlingAllowed(CastleFlag castling) const { return (CastlingOptions & castling) != 0; }
-	inline unsigned GetCastles() const { return CastlingOptions; }
-	inline CastleFlag GetCastlesForColor(Color color) const { return color == WHITE ? CastleFlag(CastlingOptions & (W0_0 | W0_0_0)) : CastleFlag(CastlingOptions & (B0_0 | B0_0_0)); }
+	inline unsigned GetCastles() const { return CastlingOptions & 15; }
+	inline CastleFlag GetCastlesForColor(Color color) const { return static_cast<CastleFlag>(CastlingOptions & ((W0_0 | W0_0_0) << (2 * color))); }
+	inline bool HasCastlingLost(const Color col) const { return (CastlingOptions & (CastleFlag::W_LOST_CASTLING << (int)col)) != 0; }
 	//creates the SAN (standard algebraic notation) representation of a move
 	std::string toSan(Move move);
 	//parses a move in SAN notation
@@ -268,8 +269,9 @@ private:
 	template<bool SquareIsEmpty> void set(const Piece piece, const Square square);
 	void remove(const Square square);
 
-	inline void AddCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions]; CastlingOptions |= castleFlag; Hash ^= ZobristCastles[CastlingOptions]; }
-	inline void RemoveCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions]; CastlingOptions &= ~castleFlag; Hash ^= ZobristCastles[CastlingOptions]; }
+	inline void AddCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions & 15]; CastlingOptions |= castleFlag; Hash ^= ZobristCastles[CastlingOptions & 15]; }
+	inline void RemoveCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions & 15]; CastlingOptions &= ~castleFlag; Hash ^= ZobristCastles[CastlingOptions & 15]; }
+	inline void SetCastlingLost(const Color col) { CastlingOptions |= CastleFlag::W_LOST_CASTLING << (int)col; }
 	inline void SetEPSquare(const Square square) {
 		if (EPSquare != square) {
 			if (EPSquare != OUTSIDE) {
@@ -293,7 +295,7 @@ private:
 	}
 	//Adds MOVE_NONE at the end of the move list
 	inline void AddNullMove() { moves[movepointer].move = MOVE_NONE; moves[movepointer].score = VALUE_NOTYETDETERMINED; ++movepointer; }
-	//Updates Castle Flags after a move from fromSquare to toSquare has been applied
+	//Updates Castle Flags after a move from fromSquare to toSquare has been applied, must not be called for castling moves
 	void updateCastleFlags(Square fromSquare, Square toSquare);
 	//Calculates the attack bitboards for all pieces of one side
 	Bitboard calculateAttacks(Color color);
@@ -640,10 +642,10 @@ template<> ValuatedMove* Position::GenerateMoves<QUIET_CHECKS>() {
 		dblPawnFrom &= dblPawnFrom - 1;
 	}
 	//2e Castles
-	if (CastlingOptions & CastlesbyColor[SideToMove]) //King is on initial square
+	if (CastlingOptions & 15 & CastlesbyColor[SideToMove]) //King is on initial square
 	{
 		//King-side castles
-		if ((CastlingOptions & (1 << (2 * SideToMove))) //Short castle allowed
+		if ((CastlingOptions & 15 & (1 << (2 * SideToMove))) //Short castle allowed
 			&& (InitialRookSquareBB[2 * SideToMove] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 			&& !(SquaresToBeEmpty[2 * SideToMove] & OccupiedBB()) //Fields between Rook and King are empty
 			&& !(SquaresToBeUnattacked[2 * SideToMove] & attackedByThem) //Fields passed by the king are unattacked
@@ -652,7 +654,7 @@ template<> ValuatedMove* Position::GenerateMoves<QUIET_CHECKS>() {
 			if (Chess960) AddMove(createMove<CASTLING>(kingSquare, InitialRookSquare[2 * SideToMove])); else AddMove(createMove<CASTLING>(kingSquare, Square(G1 + SideToMove * 56)));
 		}
 		//Queen-side castles
-		if ((CastlingOptions & (1 << (2 * SideToMove + 1))) //Short castle allowed
+		if ((CastlingOptions & 15 & (1 << (2 * SideToMove + 1))) //Short castle allowed
 			&& (InitialRookSquareBB[2 * SideToMove + 1] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 			&& !(SquaresToBeEmpty[2 * SideToMove + 1] & OccupiedBB()) //Fields between Rook and King are empty
 			&& !(SquaresToBeUnattacked[2 * SideToMove + 1] & attackedByThem) //Fields passed by the king are unattacked
@@ -704,10 +706,10 @@ template<MoveGenerationType MGT> ValuatedMove * Position::GenerateMoves() {
 			kingTargets &= kingTargets - 1;
 		}
 		if (MGT == ALL || MGT == QUIETS) {
-			if (CastlingOptions & CastlesbyColor[SideToMove]) //King is on initial square
+			if (CastlingOptions & 15 & CastlesbyColor[SideToMove]) //King is on initial square
 			{
 				//King-side castles
-				if ((CastlingOptions & (1 << (2 * SideToMove))) //Short castle allowed
+				if ((CastlingOptions & 15 & (1 << (2 * SideToMove))) //Short castle allowed
 					&& (InitialRookSquareBB[2 * SideToMove] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 					&& !(SquaresToBeEmpty[2 * SideToMove] & OccupiedBB()) //Fields between Rook and King are empty
 					&& !(SquaresToBeUnattacked[2 * SideToMove] & attackedByThem)) //Fields passed by the king are unattacked
@@ -716,7 +718,7 @@ template<MoveGenerationType MGT> ValuatedMove * Position::GenerateMoves() {
 					else AddMove(createMove<CASTLING>(kingSquare, Square(G1 + SideToMove * 56)));
 				}
 				//Queen-side castles
-				if ((CastlingOptions & (1 << (2 * SideToMove + 1))) //Short castle allowed
+				if ((CastlingOptions & 15 & (1 << (2 * SideToMove + 1))) //Short castle allowed
 					&& (InitialRookSquareBB[2 * SideToMove + 1] & PieceBB(ROOK, SideToMove)) //Rook on initial square
 					&& !(SquaresToBeEmpty[2 * SideToMove + 1] & OccupiedBB()) //Fields between Rook and King are empty
 					&& !(SquaresToBeUnattacked[2 * SideToMove + 1] & attackedByThem)) //Fields passed by the king are unattacked

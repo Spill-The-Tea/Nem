@@ -450,7 +450,7 @@ template <Color COL> Eval evaluatePieces(const Position& pos) {
 	Eval bonusRook = EVAL_ZERO;
 	if (rooks) {
 		//bonusRook = popcount(rooks & seventhRank) * ROOK_ON_7TH;
-		Bitboard bbHalfOpen = COL == WHITE ? FileFill(pos.GetPawnEntry()->halfOpenFilesWhite) : FileFill(pos.GetPawnEntry()->halfOpenFilesBlack);
+		Bitboard bbHalfOpen = FileFill(pos.GetPawnEntry()->halfOpenFiles[COL]);
 		Bitboard rooksOnSemiOpen = bbHalfOpen & rooks;
 		bonusRook += popcount(rooksOnSemiOpen) * settings::parameter.ROOK_ON_SEMIOPENFILE;
 		bonusRook += 2 * popcount(FileFill(pos.GetPawnEntry()->openFiles) & rooks) * settings::parameter.ROOK_ON_OPENFILE;
@@ -471,5 +471,7 @@ template <Color COL> Eval evaluatePieces(const Position& pos) {
 		if ((pos.ColorBB(OTHER) & ToBitboard(blockSquare))!= EMPTY) bonusPassedPawns -= settings::parameter.MALUS_BLOCKED[dtc-1];
 		passedPawns &= passedPawns - 1;
 	}
-	return bonusPassedPawns + bonusRook;
+	Eval malusLostCastles = EVAL_ZERO;
+	if (pos.HasCastlingLost(COL)) malusLostCastles = Eval(20, 0);
+	return bonusPassedPawns + bonusRook - malusLostCastles;
 }

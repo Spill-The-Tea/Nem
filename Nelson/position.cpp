@@ -87,7 +87,7 @@ bool Position::ApplyMove(Move move) {
 		else
 			++DrawPlyCount;
 		//update castlings
-		if (CastlingOptions) updateCastleFlags(fromSquare, toSquare);
+		updateCastleFlags(fromSquare, toSquare);
 		//Adjust material key
 		if (capturedInLastMove != BLANK) {
 			if (MaterialKey == MATERIAL_KEY_UNUSUAL) {
@@ -119,7 +119,7 @@ bool Position::ApplyMove(Move move) {
 	case PROMOTION:
 		convertedTo = GetPiece(promotionType(move), SideToMove);
 		set<false>(convertedTo, toSquare);
-		if (CastlingOptions) updateCastleFlags(fromSquare, toSquare);
+		updateCastleFlags(fromSquare, toSquare);
 		SetEPSquare(OUTSIDE);
 		DrawPlyCount = 0;
 		PawnKey ^= ZobristKeys[moving][fromSquare];
@@ -216,12 +216,12 @@ Move Position::NextMove() {
 				evaluateByCaptureScore(phaseStartIndex);
 				moveIterationPointer = 0;
 				break;
-			//case QUIETS:
-			//	GenerateMoves<QUIETS>();
-			//	evaluateByHistory(phaseStartIndex);
-			//	shellSort(moves + phaseStartIndex, movepointer - phaseStartIndex - 1);
-			//	moveIterationPointer = 0;
-			//	break;
+				//case QUIETS:
+				//	GenerateMoves<QUIETS>();
+				//	evaluateByHistory(phaseStartIndex);
+				//	shellSort(moves + phaseStartIndex, movepointer - phaseStartIndex - 1);
+				//	moveIterationPointer = 0;
+				//	break;
 			case QUIETS_POSITIVE:
 				GenerateMoves<QUIETS>();
 				evaluateByHistory(phaseStartIndex);
@@ -258,7 +258,7 @@ Move Position::NextMove() {
 					break;
 				}
 				else return MOVE_NONE;
-			case FORKS: 
+			case FORKS:
 				GenerateForks(true);
 				moveIterationPointer = 0;
 				break;
@@ -313,17 +313,17 @@ Move Position::NextMove() {
 				moveIterationPointer = -1;
 			}
 			break;
-		//case QUIETS:
-		//	move = moves[phaseStartIndex + moveIterationPointer].move;
-		//	if (move) {
-		//		++moveIterationPointer;
-		//		goto end_post_killer;
-		//	}
-		//	else {
-		//		++generationPhase;
-		//		moveIterationPointer = -1;
-		//	}
-		//	break;
+			//case QUIETS:
+			//	move = moves[phaseStartIndex + moveIterationPointer].move;
+			//	if (move) {
+			//		++moveIterationPointer;
+			//		goto end_post_killer;
+			//	}
+			//	else {
+			//		++generationPhase;
+			//		moveIterationPointer = -1;
+			//	}
+			//	break;
 		case CHECK_EVASION: case QUIET_CHECKS: case FORKS: case FORKS_NO_CHECKS:
 #pragma warning(suppress: 6385)
 			move = moves[phaseStartIndex + moveIterationPointer].move;
@@ -524,15 +524,21 @@ void Position::remove(const Square square) {
 }
 
 void Position::updateCastleFlags(Square fromSquare, Square toSquare) {
-	if (fromSquare == InitialKingSquare[SideToMove]) {
-		RemoveCastlingOption(CastleFlag(W0_0 << (2 * SideToMove)));
-		RemoveCastlingOption(CastleFlag(W0_0_0 << (2 * SideToMove)));
-	}
-	else if (fromSquare == InitialRookSquare[2 * SideToMove] || toSquare == InitialRookSquare[2 * SideToMove]) {
-		RemoveCastlingOption(CastleFlag(W0_0 << (2 * SideToMove)));
-	}
-	else if (fromSquare == InitialRookSquare[2 * SideToMove + 1] || toSquare == InitialRookSquare[2 * SideToMove + 1]) {
-		RemoveCastlingOption(CastleFlag(W0_0_0 << (2 * SideToMove)));
+	assert(GetPieceType(Board[fromSquare]) != KING || std::abs((int)from - (int)to) != 2 || Chess960);
+	if (GetCastlesForColor(SideToMove) != CastleFlag::NoCastles) {
+		if (fromSquare == InitialKingSquare[SideToMove]) {
+			RemoveCastlingOption(CastleFlag(W0_0 << (2 * SideToMove)));
+			RemoveCastlingOption(CastleFlag(W0_0_0 << (2 * SideToMove)));
+			SetCastlingLost(SideToMove);
+		}
+		else if (fromSquare == InitialRookSquare[2 * SideToMove] || toSquare == InitialRookSquare[2 * SideToMove]) {
+			RemoveCastlingOption(CastleFlag(W0_0 << (2 * SideToMove)));
+			if (GetCastlesForColor(SideToMove) == CastleFlag::NoCastles) SetCastlingLost(SideToMove);
+		}
+		else if (fromSquare == InitialRookSquare[2 * SideToMove + 1] || toSquare == InitialRookSquare[2 * SideToMove + 1]) {
+			RemoveCastlingOption(CastleFlag(W0_0_0 << (2 * SideToMove)));
+			if (GetCastlesForColor(SideToMove) == CastleFlag::NoCastles) SetCastlingLost(SideToMove);
+		}
 	}
 }
 
@@ -884,7 +890,7 @@ void Position::setFromFEN(const std::string& fen) {
 			}
 		}
 	}
-	if (CastlingOptions) {
+	if (CastlingOptions & 15) {
 		Chess960 = Chess960 || (InitialKingSquare[WHITE] != E1) || (InitialRookSquare[0] != H1) || (InitialRookSquare[1] != A1);
 		for (int i = 0; i < 4; ++i) InitialRookSquareBB[i] = 1ull << InitialRookSquare[i];
 		Square kt[4] = { G1, C1, G8, C8 };
@@ -966,7 +972,7 @@ std::string Position::fen() const {
 
 	ss << (SideToMove == WHITE ? " w " : " b ");
 
-	if (!CastlingOptions)
+	if (!(CastlingOptions & 15))
 		ss << '-';
 	else if (Chess960) {
 		if (W0_0 & CastlingOptions) {

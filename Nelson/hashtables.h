@@ -15,10 +15,9 @@ namespace pawn {
 		Bitboard passedPawns;
 		Eval Score;
 		uint8_t openFiles;
-		uint8_t halfOpenFilesWhite;
-		uint8_t halfOpenFilesBlack;
+		uint8_t halfOpenFiles[2];
 
-		inline int assymetry() { return popcount(halfOpenFilesWhite ^ halfOpenFilesBlack); }
+		inline int assymetry() { return popcount(halfOpenFiles[WHITE] ^ halfOpenFiles[BLACK]); }
 	};
 
 	extern Entry Table[PAWN_TABLE_SIZE];
