@@ -472,6 +472,6 @@ template <Color COL> Eval evaluatePieces(const Position& pos) {
 		passedPawns &= passedPawns - 1;
 	}
 	Eval malusLostCastles = EVAL_ZERO;
-	if (pos.HasCastlingLost(COL)) malusLostCastles = Eval(20, 0);
+	if (pos.GetMaterialTableEntry()->Phase < 128 && pos.HasCastlingLost(COL)) malusLostCastles = Eval(50, -50);
 	return bonusPassedPawns + bonusRook - malusLostCastles;
 }
