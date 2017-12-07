@@ -118,6 +118,9 @@ int main(int argc, const char* argv[]) {
 			std::cout << utils::TexelTuneError(argv, argc) << std::endl;
 			return 0;
 		}
+		else if (!arg1.compare("-e")) {
+			settings::parameter.extendedOptions = true;
+		}
 	}
 	std::string input = "";
 	Position pos;

@@ -38,13 +38,9 @@ namespace settings {
 		Color EngineSide = WHITE;
 		Protocol protocol = NO_PROTOCOL;
 		int EmergencyTime = 0;
-		//King safety parameters
-		int KING_SAFETY_MAXVAL = 500;
-		int KING_SAFETY_MAXINDEX = 61;
-		double KING_SAFETY_LINEAR = 0.5;
-		int ATTACK_UNITS_SAFE_CONTACT_CHECK = 5;
+		bool extendedOptions = false;
 		Eval SCALE_BISHOP_PAIR_WITH_PAWNS = EVAL_ZERO; //Reduce Bonus Bishop Pair by this value for each pawn on the board
-		Eval BONUS_BISHOP_PAIR_NO_OPP_MINOR = EVAL_ZERO; //Bonus for Bishop pair, if opponent has no minor piece for exchange
+		Eval BONUS_BISHOP_PAIR_NO_OPP_MINOR = Eval(10); //Bonus for Bishop pair, if opponent has no minor piece for exchange
 		Eval SCALE_EXCHANGE_WITH_PAWNS = EVAL_ZERO; //Decrease Value of Exchange with number of pawns
 		Eval SCALE_EXCHANGE_WITH_MAJORS = EVAL_ZERO; //Decrease Value of Exchange with number of majors
 		Eval PAWN_STORM[4] = { Eval(10, 0), Eval(25, 0), Eval(15, 0), Eval(5, 0) };
@@ -62,6 +58,7 @@ namespace settings {
 		Eval ROOK_ON_SEMIOPENFILE = Eval(10, 0);
 		Eval ROOK_ON_SEMIOPENFILE_WITH_KQ = Eval(5, 0);
 		Eval ROOK_ON_7TH = Eval(20, 0);
+		Eval MALUS_LOST_CASTLING = Eval(50, -50);
 
 		Eval BONUS_BISHOP_PAIR = Eval(50);
         Value DELTA_PRUNING_SAFETY_MARGIN = Value(VALUE_100CP);

@@ -6,6 +6,7 @@
 #include "settings.h"
 #include "utils.h"
 #include "hashtables.h"
+#include "material.h"
 
 namespace settings {
 
@@ -44,6 +45,12 @@ namespace settings {
 		sync_cout << "option name WEAK_SQUARES_FACTOR type spin default " << WEAK_SQUARES_FACTOR << sync_endl;
 		sync_cout << "option name PINNED_FACTOR type spin default " << PINNED_FACTOR << sync_endl;
 		sync_cout << "option name ATTACK_WITH_QUEEN type spin default " << ATTACK_WITH_QUEEN << sync_endl;
+		for (PieceType pt = PieceType::QUEEN; pt <= PieceType::PAWN; ++pt) {
+			sync_cout << "option name PIECEVAL_MG_" << static_cast<int>(pt) << " type spin default " << PieceValues[pt].mgScore << sync_endl;
+			sync_cout << "option name PIECEVAL_EG_" << static_cast<int>(pt) << " type spin default " << PieceValues[pt].egScore << sync_endl;
+		}
+		sync_cout << "option name HANGING_MG type spin default " << HANGING.mgScore << sync_endl;
+		sync_cout << "option name HANGING_EG type spin default " << HANGING.egScore << sync_endl;
 	}
 
 	void Parameters::SetFromUCI(std::string name, std::string value)
@@ -61,6 +68,17 @@ namespace settings {
 			int index = stoi(name.substr(14));
 			ATTACK_WEIGHT[index] = stoi(value);
 		}
+		else if (name.find("PIECEVAL_MG_") == 0) {
+			int index = stoi(name.substr(12));
+			PieceValues[index].mgScore = static_cast<Value>(stoi(value));
+			InitializeMaterialTable();
+		}
+		else if (name.find("PIECEVAL_EG_") == 0) {
+			int index = stoi(name.substr(12));
+			PieceValues[index].egScore = static_cast<Value>(stoi(value));
+			InitializeMaterialTable();
+		} else if (!name.compare("HANGING_EG")) HANGING.egScore = static_cast<Value>(stoi(value));
+		else if (!name.compare("HANGING_MG")) HANGING.mgScore = static_cast<Value>(stoi(value));
 	}
 
 #ifdef TUNE

@@ -471,7 +471,6 @@ template <Color COL> Eval evaluatePieces(const Position& pos) {
 		if ((pos.ColorBB(OTHER) & ToBitboard(blockSquare))!= EMPTY) bonusPassedPawns -= settings::parameter.MALUS_BLOCKED[dtc-1];
 		passedPawns &= passedPawns - 1;
 	}
-	Eval malusLostCastles = EVAL_ZERO;
-	if (pos.GetMaterialTableEntry()->Phase < 128 && pos.HasCastlingLost(COL)) malusLostCastles = Eval(50, -50);
+	Eval malusLostCastles = (pos.GetMaterialTableEntry()->Phase < 128 && pos.HasCastlingLost(COL)) ? settings::parameter.MALUS_LOST_CASTLING : EVAL_ZERO;
 	return bonusPassedPawns + bonusRook - malusLostCastles;
 }
