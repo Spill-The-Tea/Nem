@@ -66,3 +66,5 @@ Value calculateMaterialScore(const Position &pos);
 
 MaterialKey_t calculateMaterialKey(int * pieceCounts);
 MaterialKey_t calculateMaterialKey(int nQW, int nQB, int nRW, int nRB, int nBW, int nBB, int nNW, int nNB, int nPW, int nPB);
+
+inline uint64_t calculateMaterialHash(int * pieceCounts) { return calculateMaterialKey(pieceCounts) * 14695981039346656037; }

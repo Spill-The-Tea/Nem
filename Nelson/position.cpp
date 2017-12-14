@@ -1115,7 +1115,7 @@ DetailedResult Position::GetDetailedResult() {
 	return NO_RESULT;
 }
 
-bool Position::checkRepetition() {
+bool Position::checkRepetition() const {
 	Position * prev = Previous();
 	for (int i = 0; i < (std::min(pliesFromRoot + AppliedMovesBeforeRoot, int(DrawPlyCount)) >> 1); ++i) {
 		prev = prev->Previous();
@@ -1126,8 +1126,8 @@ bool Position::checkRepetition() {
 	return false;
 }
 
-bool Position::hasRepetition() {
-	Position * pos = this;
+bool Position::hasRepetition() const {
+	const Position * pos = this;
 	while (pos && pos->GetDrawPlyCount() > 0) {
 		if (pos->checkRepetition()) return true;
 		pos = pos->Previous();

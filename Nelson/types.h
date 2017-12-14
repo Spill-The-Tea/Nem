@@ -29,7 +29,7 @@
 #endif
 #endif
 
-const std::string VERSION_INFO = "Nemorino 3.23";
+const std::string VERSION_INFO = "Nemorino 3.24";
 
 typedef uint64_t Bitboard;
 typedef int64_t Time_t;
@@ -170,8 +170,8 @@ inline std::string toString(Square square) {
 
 template<MoveType T>
 inline Move createMove(Square from, Square to,
-	PieceType pieceType = QUEEN) {
-	return Move(to | (from << 6) | T | ((pieceType - QUEEN) << 12));
+	PieceType pieceType = PieceType::QUEEN) {
+	return Move(to | (from << 6) | T | ((pieceType - PieceType::QUEEN) << 12));
 }
 
 inline Move createMove(Square from, Square to) { return Move(to | (from << 6)); }
@@ -378,7 +378,12 @@ inline Eval operator*(const float f, const Eval& e) { return Eval(f * e.mgScore,
 struct ValuatedMove {
 	Move move;
 	Value score;
+
+	ValuatedMove() { }
+	ValuatedMove(Move m, Value s) { move = m; score = s; }
 };
+
+const ValuatedMove VALUATED_MOVE_NONE(MOVE_NONE, VALUE_ZERO);
 
 struct ExtendedMove {
 	Piece piece = BLANK;

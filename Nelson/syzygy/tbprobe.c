@@ -76,6 +76,7 @@
 #else
 //#include <popcntintrin.h>
 #ifdef _MSC_VER
+#include <intrin.h>
 #define popcount(x)             (int)_mm_popcnt_u64((x))
 #else
 #define popcount(x)            (int)__builtin_popcountll((x))

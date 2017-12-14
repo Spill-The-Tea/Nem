@@ -229,3 +229,4 @@ Nelson/Nelson.vcxproj.filters
 /Nelson/nemorino.js
 /Nelson/nemorino.html
 *.ruleset
+/Nelson/build_gcc.bat

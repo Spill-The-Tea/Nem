@@ -69,6 +69,7 @@ public:
 	//returns Zobrist Hash key of position
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
+	inline uint64_t GetMaterialHash() const { return MaterialKey *14695981039346656037; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
 	inline Eval GetPsqEval() const { return PsqEval; }
 	/* The position struct provides staged move generation. To make use of it the staged move generation has to be initialized first by calling InitializeMoveIterator.
@@ -124,9 +125,9 @@ public:
 	inline Bitboard AttacksByColor(Color color) const { return (SideToMove == color) * attackedByUs + (SideToMove != color) * attackedByThem; }
 	inline Bitboard AttackedByThem() const { return attackedByThem; }
 	//checks if the position is already repeated (if one of the ancestors has the same zobrist hash). This is no check for 3-fold repetition!
-	bool checkRepetition();
+	bool checkRepetition() const;
 	//checks if there are any repetitions in prior moves
-	bool hasRepetition();
+	bool hasRepetition() const;
 	inline void SwitchSideToMove() { SideToMove = Color(SideToMove ^1); Hash ^= ZobristMoveColor; }
 	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount; }
 	//applies a null move to the given position (there is no copy/make for null move), the EPSquare is the only information which has to be restored afterwards
@@ -710,7 +711,7 @@ template<MoveGenerationType MGT> ValuatedMove * Position::GenerateMoves() {
 			{
 				//King-side castles
 				if ((CastlingOptions & 15 & (1 << (2 * SideToMove))) //Short castle allowed
-					&& (InitialRookSquareBB[2 * SideToMove] & PieceBB(ROOK, SideToMove)) //Rook on initial square
+					&& (InitialRookSquareBB[2 * SideToMove] & PieceBB(PieceType::ROOK, SideToMove)) //Rook on initial square
 					&& !(SquaresToBeEmpty[2 * SideToMove] & OccupiedBB()) //Fields between Rook and King are empty
 					&& !(SquaresToBeUnattacked[2 * SideToMove] & attackedByThem)) //Fields passed by the king are unattacked
 				{
@@ -729,7 +730,7 @@ template<MoveGenerationType MGT> ValuatedMove * Position::GenerateMoves() {
 			}
 		}
 		if (!doubleCheck) {
-			Bitboard sliders = PieceBB(ROOK, SideToMove) | PieceBB(QUEEN, SideToMove) | PieceBB(BISHOP, SideToMove);
+			Bitboard sliders = PieceBB(PieceType::ROOK, SideToMove) | PieceBB(PieceType::QUEEN, SideToMove) | PieceBB(PieceType::BISHOP, SideToMove);
 			while (sliders) {
 				Square from = lsb(sliders);
 				Bitboard sliderTargets = attacks[from] & targets;
