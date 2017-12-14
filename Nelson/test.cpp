@@ -430,11 +430,9 @@ namespace test {
 		int64_t totalNodes = 0;
 		int64_t totalQNodes = 0;
 		totalTime = 0;
-		double avgC1st = 0.0;
-		double avgCIndx = 0.0;
 		double avgBF = 0.0;
 		std::cout << std::setprecision(3) << std::left << std::setw(4) << "Nr" << std::setw(7) << "Time" << std::setw(10) << "Nodes" << std::setw(6) << "Speed" << std::setw(6) << "BF" << std::setw(6) << "TT[%]"
-			<< std::setw(6) << "C1st" << std::setw(6) << "CIndx" << std::setw(40) << "PV" << std::endl;
+			<< std::setw(40) << "PV" << std::endl;
 		for (int i = 0; i < int(fens.size()); i++) {
 			Position* pos = new Position(fens[i]);
 			Search * srch = new Search;
@@ -448,24 +446,19 @@ namespace test {
 			totalNodes += srch->NodeCount;
 			totalQNodes += srch->QNodeCount;
 			avgBF += srch->timeManager.GetEBF(depth) * (srch->NodeCount - srch->QNodeCount);
-			avgC1st += srch->cutoffAt1stMoveRate();
-			avgCIndx += srch->cutoffAverageMove();
 			int64_t runtime = endTime - srch->timeManager.GetStartTime();
 			int64_t rt = runtime;
 			if (rt == 0) rt = 1;
 			std::cout << std::left << std::setw(4) << i << std::setw(7) << runtime << std::setw(10) << srch->NodeCount << std::setw(6)
 				<< srch->NodeCount / rt << std::setw(6) << srch->timeManager.GetEBF(depth) << std::setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
-				<< std::setw(6) << srch->cutoffAt1stMoveRate() << std::setw(6) << srch->cutoffAverageMove()
 				<< std::setw(40) << srch->PrincipalVariation(*pos, depth) << std::endl;
 			delete(srch);
 			delete(pos);
 		}
 		avgBF = avgBF / (totalNodes - totalQNodes);
-		avgCIndx = avgCIndx / fens.size();
-		avgC1st = avgC1st / fens.size();
 		std::cout << "------------------------------------------------------------------------" << std::endl;
 		std::cout << std::setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "
-			"BF: " << std::setprecision(3) << avgBF << "  C1st: " << avgC1st << "  CIndx: " << avgCIndx << std::endl;
+			"BF: " << std::setprecision(3) << avgBF << std::endl;
 
 		return totalNodes;
 	}

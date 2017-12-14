@@ -15,9 +15,6 @@ void Search::Reset() {
 	NodeCount = 0;
 	QNodeCount = 0;
 	MaxDepth = 0;
-	cutoffAt1stMove = 0;
-	cutoffCount = 0;
-	cutoffMoveIndexSum = 0;
 	Stop.store(false);
 	PonderMode.store(false);
 	threadLocalData.History.age();
@@ -76,10 +73,11 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 		if (UciOutput) {
 			std::string srtString;
 			if (srt == SearchResultType::FAIL_LOW) srtString = " upperbound"; else if (srt == SearchResultType::FAIL_HIGH) srtString = " lowerbound";
+			uint64_t effectiveTBHits = tbHits > 1 ? tbHits * (settings::parameter.HelperThreads + 1) : tbHits;
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score cp " << (int)BestMove.score << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
                 << " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime << " hashfull " << tt::GetHashFull()
-				<< " tbhits " << tbHits
+				<< " tbhits " << effectiveTBHits
 				<< " time " << _thinkTime
 				<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
 			else {
@@ -87,7 +85,7 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score + 1; else pliesToMate = -BestMove.score - VALUE_MATE;
 				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
                     << " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime << " hashfull " << tt::GetHashFull()
-					<< " tbhits " << tbHits
+					<< " tbhits " << effectiveTBHits
 					<< " time " << _thinkTime
 					<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
 			}
@@ -391,9 +389,6 @@ Value Search::qscore(Position * pos)
 }
 
 void Search::updateCutoffStats(ThreadData& tlData, const Move cutoffMove, int depth, Position &pos, int moveIndex) {
-	cutoffMoveIndexSum += std::max(0, moveIndex);
-	cutoffCount++;
-	cutoffAt1stMove += moveIndex <= 0;
 	if (moveIndex == -1 || pos.IsQuiet(cutoffMove)) {
 		Piece movingPiece = pos.GetPieceOnSquare(from(cutoffMove));
 		Square toSquare = to(cutoffMove);

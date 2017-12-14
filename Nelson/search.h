@@ -71,9 +71,6 @@ public:
 	inline int Depth() const { return _depth; }
 	//Returns the thinkTime needed so far (is updated after every iteration)
 	inline Time_t ThinkTime() const { return _thinkTime; }
-	//Statistic data no needed for playing
-	inline double cutoffAt1stMoveRate() const { return 100.0 * cutoffAt1stMove / cutoffCount; }
-	inline double cutoffAverageMove() const { return 1 + 1.0 * cutoffMoveIndexSum / cutoffCount; }
 	//Determines the move the engine assumes that the opponent is playing
 	inline Move PonderMove() const { return ponderMove; }
 	//Stops the current search immediatialy
@@ -114,10 +111,6 @@ private:
 
 	ThreadData threadLocalData;
 
-	//Internal statistics (to get a measure of move ordering quality)
-	uint64_t cutoffAt1stMove = 0;
-	uint64_t cutoffCount = 0;
-	uint64_t cutoffMoveIndexSum = 0;
 	//in xboard protocol in analysis mode, the GUI determines the point in time when information shall be provided (in UCI the engine determines these 
 	//point in times. As this information is only available while the search's recursion level is root the information is prepared, whenever feasible and
 	//stored in member XAnylysisOutput, where the protocol driver can retrieve it at any point in time
@@ -275,7 +268,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		int v = tablebases::probe_wdl(pos, &found);
 		if (found)
 		{
-			tbHits++;
+			if (T != SLAVE) tbHits++;
 			Value value = v < -1 ? -VALUE_MATE + MAX_DEPTH + pos.GetPliesFromRoot()
 				: v >  1 ? VALUE_MATE - MAX_DEPTH - pos.GetPliesFromRoot()
 				: VALUE_DRAW + 2 * v;

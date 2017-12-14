@@ -11,7 +11,6 @@ namespace tablebases {
 	}
 
 	int probe_wdl(Position& pos, int *success) {
-		//std::lock_guard<std::mutex> lck(mtx);
 		unsigned int result = tb_probe_wdl(
 			pos.ColorBB(WHITE),
 			pos.ColorBB(BLACK),
