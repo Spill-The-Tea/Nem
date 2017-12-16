@@ -99,7 +99,7 @@ namespace tablebases {
 					Square fromSquare = Square(TB_GET_FROM(moves[i]));
 					Square toSquare = Square(TB_GET_TO(moves[i]));
 					unsigned promotionPiece = TB_GET_PROMOTES(moves[i]);
-					if (repeated 
+					if (repeated
 						&& GetPieceType(pos.GetPieceOnSquare(fromSquare)) != PieceType::PAWN
 						&& pos.GetPieceOnSquare(toSquare) == Piece::BLANK
 						&& promotionPiece == TB_PROMOTES_NONE
@@ -179,7 +179,7 @@ namespace tablebases {
 		}
 		else {
 			unsigned wdl = TB_GET_WDL(result);
-			printResult(wdl-2);
+			printResult(wdl - 2);
 			const std::string wdls[5] = { "Loss", "Blessed Loss", "Draw", "Cursed Win", "Win" };
 			for (int i = 0; i < TB_MAX_MOVES; ++i) {
 				if (moves[i] == TB_RESULT_FAILED) break;
@@ -194,6 +194,9 @@ namespace tablebases {
 				else move = createMove<PROMOTION>(Square(from), Square(to), (PieceType)(promotionPiece - 1));
 				std::cout << std::setw(6) << toString(move) << " " << std::setw(10) << wdls[wdlMove] << " " << std::setw(3) << dtzMove << std::endl;
 			}
+			int success;
+			bool verified = (int)(wdl - 2) == probe_wdl(pos, &success);
+			std::cout << "WDL verification: " << verified << std::endl;
 			std::cout << "TB probe done!" << std::endl;
 		}
 	}

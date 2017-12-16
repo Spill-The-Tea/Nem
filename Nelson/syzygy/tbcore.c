@@ -249,7 +249,7 @@ static void init_tb(char *str)
   entry->ready = 0;
   entry->num = 0;
   for (i = 0; i < 16; i++)
-    entry->num += pcs[i];
+    entry->num += (ubyte)pcs[i];
   entry->symmetric = (key == key2);
   entry->has_pawns = (pcs[TB_WPAWN] + pcs[TB_BPAWN] > 0);
   if (entry->num > TB_LARGEST)
@@ -257,12 +257,12 @@ static void init_tb(char *str)
 
   if (entry->has_pawns) {
     struct TBEntry_pawn *ptr = (struct TBEntry_pawn *)entry;
-    ptr->pawns[0] = pcs[TB_WPAWN];
-    ptr->pawns[1] = pcs[TB_BPAWN];
+    ptr->pawns[0] = (ubyte)pcs[TB_WPAWN];
+    ptr->pawns[1] = (ubyte)pcs[TB_BPAWN];
     if (pcs[TB_BPAWN] > 0
 	      && (pcs[TB_WPAWN] == 0 || pcs[TB_BPAWN] < pcs[TB_WPAWN])) {
-      ptr->pawns[0] = pcs[TB_BPAWN];
-      ptr->pawns[1] = pcs[TB_WPAWN];
+      ptr->pawns[0] = (ubyte)pcs[TB_BPAWN];
+      ptr->pawns[1] = (ubyte)pcs[TB_WPAWN];
     }
   } else {
     struct TBEntry_piece *ptr = (struct TBEntry_piece *)entry;
@@ -274,7 +274,7 @@ static void init_tb(char *str)
       j = 16;
       for (i = 0; i < 16; i++) {
 	if (pcs[i] < j && pcs[i] > 1) j = pcs[i];
-	ptr->enc_type = 1 + j;
+	ptr->enc_type = (ubyte)(1 + j);
       }
     }
   }
@@ -1497,7 +1497,7 @@ static int init_table_dtz(struct TBEntry *entry)
 static ubyte decompress_pairs(struct PairsData *d, uint64 idx)
 {
   if (!d->idxbits)
-    return d->min_len;
+    return (ubyte)d->min_len;
 
   uint32 mainidx = (uint32)(idx >> d->idxbits);
   int litidx = (int)(idx & (((uint64)1 << d->idxbits) - 1)) - ((uint64)1 << (d->idxbits - 1));

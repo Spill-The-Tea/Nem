@@ -237,6 +237,11 @@ namespace settings {
 		int PINNED_FACTOR = 100;
 		int ATTACK_WITH_QUEEN = 900;
 
+		const Eval PAWN_ATTACK_TO_CENTER = Eval(3, 0);
+		const Eval PAWN_ATTACK_TO_EXTENDED_CENTER = Eval(3, 0);
+		const Eval MOBILITY_CENTER[4] = { Eval(3, 0), Eval(3, 0), Eval(3, 0), Eval(3, 0) };
+		const Eval MOBILITY_CENTER_EXTENDED[4] = { Eval(3, 0), Eval(3, 0), Eval(3, 0), Eval(3, 0) };
+
 		Eval BONUS_TEMPO = Eval(10,5);
 
 		Eval IMBALANCE_Q_vs_RN = Eval(75);

@@ -314,7 +314,7 @@ static const uint64_t anti2board_table[15] =
     0x0001020408102040ull,
 };
 
-static inline size_t diag2index(uint64_t b, unsigned d)
+static inline size_t diag2index(uint64_t b)
 {
     b *= 0x0101010101010101ull;
     b >>= 56;
@@ -322,9 +322,9 @@ static inline size_t diag2index(uint64_t b, unsigned d)
     return (size_t)b;
 }
 
-static inline size_t anti2index(uint64_t b, unsigned a)
+static inline size_t anti2index(uint64_t b)
 {
-    return diag2index(b, a);
+    return diag2index(b);
 }
 
 #define diag(s)                 square2diag_table[(s)]
@@ -338,8 +338,8 @@ static uint64_t bishop_attacks(unsigned sq, uint64_t occ)
     unsigned d = diag(sq), a = anti(sq);
     uint64_t d_occ = occ & (diag2board(d) & ~BOARD_EDGE);
     uint64_t a_occ = occ & (anti2board(a) & ~BOARD_EDGE);
-    size_t d_idx = diag2index(d_occ, d);
-    size_t a_idx = anti2index(a_occ, a);
+    size_t d_idx = diag2index(d_occ);
+    size_t a_idx = anti2index(a_occ);
     uint64_t d_attacks = diag_attacks_table[sq][d_idx];
     uint64_t a_attacks = anti_attacks_table[sq][a_idx];
     return d_attacks | a_attacks;
@@ -759,7 +759,7 @@ static int probe_wdl_table(const struct pos *pos, int *success)
         uint8_t *pc = entry->pieces[bside];
         for (i = 0; i < entry->num; )
         {
-            uint64_t bb = get_pieces(pos, pc[i] ^ cmirror);
+            uint64_t bb = get_pieces(pos, (uint8_t)(pc[i] ^ cmirror));
             do
             {
                 p[i++] = lsb(bb);
@@ -773,7 +773,7 @@ static int probe_wdl_table(const struct pos *pos, int *success)
     {
         struct TBEntry_pawn *entry = (struct TBEntry_pawn *)ptr;
         int k = entry->file[0].pieces[0][0] ^ cmirror;
-        uint64_t bb = get_pieces(pos, k);
+        uint64_t bb = get_pieces(pos, (uint8_t)k);
         i = 0;
         do {
             p[i++] = lsb(bb) ^ mirror;
@@ -783,7 +783,7 @@ static int probe_wdl_table(const struct pos *pos, int *success)
         uint8_t *pc = entry->file[f].pieces[bside];
         for (; i < entry->num; )
         {
-            bb = get_pieces(pos, pc[i] ^ cmirror);
+            bb = get_pieces(pos, (uint8_t)(pc[i] ^ cmirror));
             do
             {
                 p[i++] = lsb(bb) ^ mirror;
@@ -889,7 +889,7 @@ static int probe_dtz_table(const struct pos *pos, int wdl, int *success)
         uint8_t *pc = entry->pieces;
         for (i = 0; i < entry->num;)
         {
-            uint64_t bb = get_pieces(pos, pc[i] ^ cmirror);
+            uint64_t bb = get_pieces(pos, (uint8_t)(pc[i] ^ cmirror));
             do
             {
                 p[i++] = lsb(bb);
@@ -910,7 +910,7 @@ static int probe_dtz_table(const struct pos *pos, int wdl, int *success)
     {
         struct DTZEntry_pawn *entry = (struct DTZEntry_pawn *)ptr;
         int k = entry->file[0].pieces[0] ^ cmirror;
-        uint64_t bb = get_pieces(pos, k);
+        uint64_t bb = get_pieces(pos, (uint8_t)k);
         i = 0;
         do
         {
@@ -927,7 +927,7 @@ static int probe_dtz_table(const struct pos *pos, int wdl, int *success)
         uint8_t *pc = entry->file[f].pieces;
         for (; i < entry->num;)
         {
-            bb = get_pieces(pos, pc[i] ^ cmirror);
+            bb = get_pieces(pos, (uint8_t)(pc[i] ^ cmirror));
             do
             {
                 p[i++] = lsb(bb) ^ mirror;
@@ -1365,10 +1365,10 @@ static bool do_move(struct pos *pos, const struct pos *pos0, uint16_t move)
         pos->rule50 = 0;                // Pawn move
         if (rank(from) == 1 && rank(to) == 3 &&
             (pawn_attacks(from+8, true) & pos0->pawns & pos0->black) != 0)
-            pos->ep = from+8;
+            pos->ep = (uint8_t)(from+8);
         else if (rank(from) == 6 && rank(to) == 4 &&
             (pawn_attacks(from-8, false) & pos0->pawns & pos0->white) != 0)
-            pos->ep = from-8;
+            pos->ep = (uint8_t)(from-8);
         else if (to == pos0->ep)
         {
             unsigned ep_to = (pos0->turn? to-8: to+8);
@@ -1463,16 +1463,16 @@ static int probe_wdl(const struct pos *pos, int *success)
         else if (v == 0)
         {
             // Check whether there is at least one legal non-ep move.
-            uint16_t moves0[MAX_MOVES];
-            uint16_t *moves = moves0;
-            uint16_t *end = gen_moves(pos, moves);
+            uint16_t moves1[MAX_MOVES];
+            uint16_t *moves2 = moves1;
+            uint16_t *end1 = gen_moves(pos, moves2);
             bool found = false;
-            for (; moves < end; moves++)
+            for (; moves2 < end1; moves2++)
             {
-                if (is_en_passant(pos, *moves))
+                if (is_en_passant(pos, *moves2))
                     continue;
                 struct pos pos1;
-                if (do_move(&pos1, pos, *moves))
+                if (do_move(&pos1, pos, *moves2))
                 {
                     found = true;
                     break;
@@ -1663,16 +1663,16 @@ static int probe_dtz(const struct pos *pos, int *success)
             v = v1;
         else
         {
-            uint16_t moves0[MAX_MOVES];
-            uint16_t *moves = moves0;
-            uint16_t *end = gen_moves(pos, moves);
+            uint16_t moves01[MAX_MOVES];
+            uint16_t *moves1 = moves01;
+            uint16_t *end1 = gen_moves(pos, moves1);
             bool found = false;
-            for (; moves < end; moves++)
+            for (; moves1 < end1; moves1++)
             {
-                if (is_en_passant(pos, *moves))
+                if (is_en_passant(pos, *moves1))
                     continue;
                 struct pos pos1;
-                if (do_move(&pos1, pos, *moves))
+                if (do_move(&pos1, pos, *moves1))
                 {
                     found = true;
                     break;
@@ -1741,7 +1741,7 @@ static uint16_t probe_root(const struct pos *pos, int *score,
         num_draw += (v == 0);
         if (!success)
             return 0;
-        scores[i] = v;
+        scores[i] = (int16_t)v;
         if (results != NULL)
         {
             unsigned res = 0;
