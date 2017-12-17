@@ -31,6 +31,9 @@ namespace pawn {
 		Bitboard bbFilesBlack = FileFill(bbBlack);
 		Bitboard attacksWhite = ((bbWhite << 9) & NOT_A_FILE) | ((bbWhite << 7) & NOT_H_FILE);
 		Bitboard attacksBlack = ((bbBlack >> 9) & NOT_H_FILE) | ((bbBlack >> 7) & NOT_A_FILE);
+		//center attacks
+		result->Score += (popcount(attacksWhite & CENTER) - popcount(attacksBlack & CENTER)) * settings::parameter.PAWN_ATTACK_TO_CENTER;
+		result->Score += (popcount(attacksWhite & EXTENDED_CENTER) - popcount(attacksBlack & EXTENDED_CENTER)) * settings::parameter.PAWN_ATTACK_TO_EXTENDED_CENTER;
 		//frontspans
 		Bitboard bbWFrontspan = FrontFillNorth(bbWhite);
 		Bitboard bbBFrontspan = FrontFillSouth(bbBlack);

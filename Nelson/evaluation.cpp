@@ -209,8 +209,6 @@ Eval evaluateMobility(const Position& pos) {
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite & ~pos.dblAttacks(BLACK);
 		targets &= ~abbBRook;
 		result += settings::parameter.MOBILITY_BONUS_QUEEN[popcount(targets)];
-		result += popcount(targets & EXTENDED_CENTER) * settings::parameter.MOBILITY_CENTER_EXTENDED[QUEEN];
-		result += popcount(targets & CENTER) * settings::parameter.MOBILITY_CENTER[QUEEN];
 		pieceBB &= pieceBB - 1;
 	}
 	pieceBB = pos.PieceBB(QUEEN, BLACK);
@@ -219,8 +217,6 @@ Eval evaluateMobility(const Position& pos) {
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack & ~pos.dblAttacks(WHITE);
 		targets &= ~abbWRook;
 		result -= settings::parameter.MOBILITY_BONUS_QUEEN[popcount(targets)];
-		result -= popcount(targets & EXTENDED_CENTER) * settings::parameter.MOBILITY_CENTER_EXTENDED[QUEEN];
-		result -= popcount(targets & CENTER) * settings::parameter.MOBILITY_CENTER[QUEEN];
 		pieceBB &= pieceBB - 1;
 	}
 	//Rooks can move to all unattacked squares and if protected to all squares attacked by rooks or less important pieces
@@ -230,8 +226,6 @@ Eval evaluateMobility(const Position& pos) {
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
 		targets &= ~abbBMinor;
 		result += settings::parameter.MOBILITY_BONUS_ROOK[popcount(targets)];
-		result += popcount(targets & EXTENDED_CENTER) * settings::parameter.MOBILITY_CENTER_EXTENDED[ROOK];
-		result += popcount(targets & CENTER) * settings::parameter.MOBILITY_CENTER[ROOK];
 		pieceBB &= pieceBB - 1;
 	}
 	pieceBB = pos.PieceBB(ROOK, BLACK);
@@ -240,8 +234,6 @@ Eval evaluateMobility(const Position& pos) {
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
 		targets &= ~abbWMinor;
 		result -= settings::parameter.MOBILITY_BONUS_ROOK[popcount(targets)];
-		result -= popcount(targets & EXTENDED_CENTER) * settings::parameter.MOBILITY_CENTER_EXTENDED[ROOK];
-		result -= popcount(targets & CENTER) * settings::parameter.MOBILITY_CENTER[ROOK];
 		pieceBB &= pieceBB - 1;
 	}
 	//Leichtfiguren
@@ -292,8 +284,6 @@ Eval evaluateMobility(const Position& pos) {
 	pawnTargets = abbBPawn & pos.ColorBB(WHITE);
 	pawnTargets |= (pos.PieceBB(PAWN, BLACK) >> 8) & ~pos.OccupiedBB();
 	result -= Eval(10, 10) * popcount(pawnTargets);
-	result += (popcount(abbWPawn & EXTENDED_CENTER) - popcount(abbBPawn & EXTENDED_CENTER)) * settings::parameter.PAWN_ATTACK_TO_EXTENDED_CENTER;
-	result += (popcount(abbWPawn & CENTER) - popcount(abbBPawn & CENTER)) * settings::parameter.PAWN_ATTACK_TO_CENTER;
 	return result;
 }
 
