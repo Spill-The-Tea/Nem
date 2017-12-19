@@ -243,8 +243,6 @@ Eval evaluateMobility(const Position& pos) {
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
 		targets &= ~abbBPawn;
 		result += settings::parameter.MOBILITY_BONUS_BISHOP[popcount(targets)];
-		result += popcount(targets & EXTENDED_CENTER) * settings::parameter.MOBILITY_CENTER_EXTENDED[BISHOP];
-		result += popcount(targets & CENTER) * settings::parameter.MOBILITY_CENTER[BISHOP];
 		pieceBB &= pieceBB - 1;
 	}
 	pieceBB = pos.PieceBB(BISHOP, BLACK);
@@ -253,8 +251,6 @@ Eval evaluateMobility(const Position& pos) {
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
 		targets &= ~abbWPawn;
 		result -= settings::parameter.MOBILITY_BONUS_BISHOP[popcount(targets)];
-		result -= popcount(targets & EXTENDED_CENTER) * settings::parameter.MOBILITY_CENTER_EXTENDED[BISHOP];
-		result -= popcount(targets & CENTER) * settings::parameter.MOBILITY_CENTER[BISHOP];
 		pieceBB &= pieceBB - 1;
 	}
 	pieceBB = pos.PieceBB(KNIGHT, WHITE);
@@ -263,8 +259,8 @@ Eval evaluateMobility(const Position& pos) {
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
 		targets &= ~abbBPawn;
 		result += settings::parameter.MOBILITY_BONUS_KNIGHT[popcount(targets)];
-		result += popcount(targets & EXTENDED_CENTER) * settings::parameter.MOBILITY_CENTER_EXTENDED[KNIGHT];
-		result += popcount(targets & CENTER) * settings::parameter.MOBILITY_CENTER[KNIGHT];
+		result += popcount(targets & EXTENDED_CENTER) * settings::parameter.MOBILITY_CENTER_EXTENDED_KNIGHT;
+		result += popcount(targets & CENTER) * settings::parameter.MOBILITY_CENTER_KNIGHT;
 		pieceBB &= pieceBB - 1;
 	}
 	pieceBB = pos.PieceBB(KNIGHT, BLACK);
@@ -273,8 +269,8 @@ Eval evaluateMobility(const Position& pos) {
 		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
 		targets &= ~abbWPawn;
 		result -= settings::parameter.MOBILITY_BONUS_KNIGHT[popcount(targets)];
-		result -= popcount(targets & EXTENDED_CENTER) * settings::parameter.MOBILITY_CENTER_EXTENDED[KNIGHT];
-		result -= popcount(targets & CENTER) * settings::parameter.MOBILITY_CENTER[KNIGHT];
+		result -= popcount(targets & EXTENDED_CENTER) * settings::parameter.MOBILITY_CENTER_EXTENDED_KNIGHT;
+		result -= popcount(targets & CENTER) * settings::parameter.MOBILITY_CENTER_KNIGHT;
 		pieceBB &= pieceBB - 1;
 	}
 	//Pawn mobility
