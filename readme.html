@@ -10,7 +10,7 @@
 <li>Syzygy Tablebase support</li>
 <li>Pondering</li>
 <li>Standard Chess and Chess960</li>
-<li>Multi Core support (Very Lazy SMP)</li>
+<li>Multi Core support (Shared Hash Table)</li>
 <li>Multi PV analysis mode</li>
 <li>CECP support (experimental - all testing is done using UCI)</li>
 </ul>
@@ -35,8 +35,8 @@ Nemorino doesn't bring it's own UI. So for running it, you need a GUI supporting
 The engine requires 64-bit Windows.</p>
 There are 2 executables:
 <ul>
-<li><b>Nemorino_2.00_win64.exe</b> is the default and should work on most PCs</li>
-<li><b>Nemorino_2.00_win64-no-popcount.exe</b> should only be used on older PCs with CPUs without POPCNT instruction</li>
+<li><b>Nemorino_4.00_win64.exe</b> is the default and should work on most PCs</li>
+<li><b>Nemorino_4.00_win64-no-popcount.exe</b> should only be used on older PCs with CPUs without POPCNT instruction</li>
 </ul>
 <h3>Internals</h3>
 <ul>
@@ -49,27 +49,52 @@ There are 2 executables:
 </ul>
 <h3>Version History</h3>
 <ul>
-	<li><b>1.01:</b> 
-		<ul>
-			<li>Bugfix: rare crashes caused by hash collisions in transposition table</li>
-			<li>Code changes for non-popcount compiles</li>
-		</ul>
-	</li>
-	<li><b>1.02:</b> 
-		<ul>
-		    <li>New Parameters: SyzygyProbeDepth and MoveOverhead</li>
-			<li>Bugfix: Handling of EP-Squares in TB probing code</li>
-		</ul>
-	</li>
-	<li><b>2.00:</b> 
-		<ul>
-		    <li>Several Improvements in Search: Singular Extensions, Cut Node Extensions, improved IID,..</li>
-			<li>Improved SEE (consider promotions and pinned pieces)</li>
-			<li>Improved King Safety Evaluation</li>
-			<li>Scale down endgame values if there are opposite colored bishops</li>
-			<li>Several minor improvements and clean-ups</li>
-		</ul>
-	</li>
+    <li>
+        <b>1.01:</b>
+        <ul>
+            <li>Bugfix: rare crashes caused by hash collisions in transposition table</li>
+            <li>Code changes for non-popcount compiles</li>
+        </ul>
+    </li>
+    <li>
+        <b>1.02:</b>
+        <ul>
+            <li>New Parameters: SyzygyProbeDepth and MoveOverhead</li>
+            <li>Bugfix: Handling of EP-Squares in TB probing code</li>
+        </ul>
+    </li>
+    <li>
+        <b>2.00:</b>
+        <ul>
+            <li>Several Improvements in Search: Singular Extensions, Cut Node Extensions, improved IID,..</li>
+            <li>Improved SEE (consider promotions and pinned pieces)</li>
+            <li>Improved King Safety Evaluation</li>
+            <li>Scale down endgame values if there are opposite colored bishops</li>
+            <li>Several minor improvements and clean-ups</li>
+        </ul>
+    </li>
+    <li>
+        <b>2.00a (only bugfixes relevant when running with more than one thread):</b>
+        <ul>
+            <li>Fix for known issue with tablebase access (see <a href="https://github.com/basil00/Fathom/issues/15)">https://github.com/basil00/Fathom/issues/15</a></li>
+            <li>Fix for other (rare) crashes</li>
+        </ul>
+    </li>
+    <li>
+        <b>3.00:</b>
+        <ul>
+            <li>Refactoring of SMP implementation => Improved stability</li>
+            <li>Several minor improvements in search and move ordering</li>
+        </ul>
+    </li>
+    <li>
+        <b>4.00:</b>
+        <ul>
+            <li>Improved King Safety evaluation</li>
+            <li>Some Improvements when running with many threads</li>
+            <li>Some Evaluation Improvements (added some material imbalance terms, knight center mobility, ... and removed some useless terms)</li>
+        </ul>
+    </li>
 </ul>
 <h3>License</h3>
 <p><a href="https://www.gnu.org/licenses/gpl-3.0.en.html">GNU GENERAL PUBLIC LICENSE Version 3</a></p>

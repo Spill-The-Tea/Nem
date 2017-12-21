@@ -76,7 +76,11 @@ The engine requires 64-bit Windows.
 *          Refactoring of SMP implementation => Improved stability
 *          Several minor improvements in search and move ordering
 
+**4.00:**
 
+*          Improved King Safety evaluation
+*          Some Improvements when running with many threads
+*          Some Evaluation Improvements (added some material imbalance terms, knight center mobility, ... and removed some useless terms)
 
 
 ### License ###
