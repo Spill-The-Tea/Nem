@@ -41,6 +41,7 @@ Value evaluateDefault(const Position& pos) {
 	result.Threats = evaluateThreats<WHITE>(pos) - evaluateThreats<BLACK>(pos);
 	result.Pieces = evaluatePieces<WHITE>(pos) - evaluatePieces<BLACK>(pos);
 	result.PsqEval = pos.GetPsqEval();
+	//if (pos.KingOnOpposedWings()) result.KingSafety.mgScore *= 4 / 3;
 	//result.Space = evaluateSpace<WHITE>(pos) -evaluateSpace<BLACK>(pos);
 #ifdef WPF
 	Value r = result.GetScore(pos);

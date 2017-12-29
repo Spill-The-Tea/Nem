@@ -272,6 +272,7 @@ ValuatedMove Search::Think(Position &pos) {
 		return BestMove;
 	}
 	//Iterativ Deepening Loop
+	ValuatedMove lastBestMove = VALUATED_MOVE_NONE;
 	for (_depth = 1; _depth < timeManager.GetMaxDepth(); ++_depth) {
 		Value alpha, beta, delta = Value(20);
 		for (int pvIndx = 0; pvIndx < MultiPv && pvIndx < rootMoveCount; ++pvIndx) {
@@ -303,7 +304,12 @@ ValuatedMove Search::Think(Position &pos) {
 					//inform timemanager to assigne more time
 					if (!PonderMode.load()) timeManager.reportFailLow();
 				}
-				else if (score >= beta) {
+				else if (score >= beta && rootMoves[pvIndx].move == lastBestMove.move) {
+					//Iteration completed
+					BestMove = rootMoves[pvIndx];
+					score = BestMove.score;
+					break;
+				} else if (score >= beta) {
 					//fail-high
 					alpha = (alpha + beta) / 2;
 					beta = std::min(score + delta, VALUE_INFINITE);
@@ -336,6 +342,7 @@ ValuatedMove Search::Think(Position &pos) {
 			if (Stopped()) break;
 		}
 		if (Stopped()) break;
+		lastBestMove = BestMove;
 	}
 	Stop.store(true);
 END://when pondering engine must not return a best move before opponent moved => therefore let main thread wait	

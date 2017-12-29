@@ -195,6 +195,8 @@ public:
 	bool mateThread() const;
 	//Bitboard of squares attacked by more than one piece
 	inline Bitboard dblAttacks(Color color) const { return dblAttacked[color]; }
+	//CHeck if kings are on opposed wings 
+	inline bool KingOnOpposedWings() const { return std::abs((kingSquares[WHITE] & 7) - (kingSquares[BLACK] & 7)) > 2; }
 #ifdef TRACE
 	std::string printPath() const;
 #endif
