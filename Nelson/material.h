@@ -19,6 +19,8 @@ enum MaterialSearchFlags : uint8_t {
 	MSF_NO_NULLMOVE_BLACK = 32
 };
 
+
+
 struct MaterialTableEntry {
 	Eval Evaluation;
 	Phase_t Phase;
@@ -27,12 +29,12 @@ struct MaterialTableEntry {
 	uint8_t MostValuedPiece; //high bits for black piece type
 
 	inline bool IsLateEndgame() const { return EvaluationFunction != &evaluateDefault || Phase > 200; }
-	inline bool SkipPruning() const { return (Flags & MSF_SKIP_PRUNING) != 0; }
-	inline bool IsTheoreticalDraw() const { return (Flags & MSF_THEORETICAL_DRAW) != 0; }
-	inline bool NeedsScaling() const { return (Flags & MSF_SCALE) != 0; }
-	inline bool DoNullmove(Color col) const { return (Flags & (MSF_NO_NULLMOVE_WHITE << col)) == 0; }
+	inline bool SkipPruning() const { return (Flags & MaterialSearchFlags::MSF_SKIP_PRUNING) != 0; }
+	inline bool IsTheoreticalDraw() const { return (Flags & MaterialSearchFlags::MSF_THEORETICAL_DRAW) != 0; }
+	inline bool NeedsScaling() const { return (Flags & MaterialSearchFlags::MSF_SCALE) != 0; }
+	inline bool DoNullmove(Color col) const { return (Flags & (MaterialSearchFlags::MSF_NO_NULLMOVE_WHITE << col)) == 0; }
 	inline Value Score() const { return Evaluation.getScore(Phase); }
-	inline bool IsTablebaseEntry() const { return (Flags & MSF_TABLEBASE_ENTRY) != 0; }
+	inline bool IsTablebaseEntry() const { return (Flags & MaterialSearchFlags::MSF_TABLEBASE_ENTRY) != 0; }
 	inline PieceType GetMostExpensivePiece(Color color) const { return PieceType((MostValuedPiece >> (4 * (int)color)) & 15); }
 	void setMostValuedPiece(Color color, PieceType pt) { 
 		MostValuedPiece &= color == BLACK ? 15 : 240;
@@ -67,4 +69,4 @@ Value calculateMaterialScore(const Position &pos);
 MaterialKey_t calculateMaterialKey(int * pieceCounts);
 MaterialKey_t calculateMaterialKey(int nQW, int nQB, int nRW, int nRB, int nBW, int nBB, int nNW, int nNB, int nPW, int nPB);
 
-inline uint64_t calculateMaterialHash(int * pieceCounts) { return calculateMaterialKey(pieceCounts) * 14695981039346656037; }
+inline uint64_t calculateMaterialHash(int * pieceCounts) { return calculateMaterialKey(pieceCounts) * 14695981039346656037ull; }

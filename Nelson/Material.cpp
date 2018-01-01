@@ -33,7 +33,7 @@ MaterialTableEntry * initUnusual(const Position & pos)
 	UnusualMaterial.EvaluationFunction = &evaluateDefault;
 	UnusualMaterial.Phase = 128;
 	UnusualMaterial.MostValuedPiece = 0;
-	UnusualMaterial.Flags = MSF_DEFAULT;
+	UnusualMaterial.Flags = MaterialSearchFlags::MSF_DEFAULT;
 	return &UnusualMaterial;
 }
 
@@ -146,7 +146,7 @@ void InitializeMaterialTable() {
 	undetermined.Evaluation = Eval(VALUE_NOTYETDETERMINED);
 	undetermined.Phase = 128;
 	undetermined.EvaluationFunction = nullptr;
-	undetermined.Flags = MSF_DEFAULT;
+	undetermined.Flags = MaterialSearchFlags::MSF_DEFAULT;
 	undetermined.MostValuedPiece = 0;
 	std::fill_n(MaterialTable, MATERIAL_KEY_MAX + 2, undetermined);
 	MaterialTable[MATERIAL_KEY_UNUSUAL].EvaluationFunction = &evaluateDefault;
@@ -194,7 +194,7 @@ void InitializeMaterialTable() {
 												}
 											}
 
-											if (nWB == 1 && nBB == 1 && nWN == 0 && nBN == 0 && nWQ == 0 && nBQ == 0) MaterialTable[key].Flags |= MSF_SCALE;
+											if (nWB == 1 && nBB == 1 && nWN == 0 && nBN == 0 && nWQ == 0 && nBQ == 0) MaterialTable[key].Flags |= MaterialSearchFlags::MSF_SCALE;
 											if (imbalance[ROOK] != 0 && ((imbalance[ROOK] + imbalance[KNIGHT] + imbalance[BISHOP]) == 0)) {
 												evaluation += imbalance[ROOK] * ((3 - nWQ - nBQ - nWR - nBR) * settings::parameter.SCALE_EXCHANGE_WITH_MAJORS
 													+ (8 - nWP - nBP)*settings::parameter.SCALE_EXCHANGE_WITH_PAWNS);
@@ -241,10 +241,10 @@ void InitializeMaterialTable() {
 												int totalPieceCount = 2;
 												for (int i = 0; i < 10; ++i) totalPieceCount += pieceCounts[i];
 												if (totalPieceCount <= tablebases::MaxCardinality)
-													MaterialTable[key].Flags |= MSF_TABLEBASE_ENTRY;
+													MaterialTable[key].Flags |= MaterialSearchFlags::MSF_TABLEBASE_ENTRY;
 											}
-											if (nWQ == 0 && nWR == 0 && nWB == 0 && nWN == 0) MaterialTable[key].Flags |= MSF_NO_NULLMOVE_WHITE;
-											if (nBQ == 0 && nBR == 0 && nBB == 0 && nBN == 0) MaterialTable[key].Flags |= MSF_NO_NULLMOVE_BLACK;
+											if (nWQ == 0 && nWR == 0 && nWB == 0 && nWN == 0) MaterialTable[key].Flags |= MaterialSearchFlags::MSF_NO_NULLMOVE_WHITE;
+											if (nBQ == 0 && nBR == 0 && nBB == 0 && nBN == 0) MaterialTable[key].Flags |= MaterialSearchFlags::MSF_NO_NULLMOVE_BLACK;
 											assert(nWQ == (MaterialTable[key].GetMostExpensivePiece(WHITE) == QUEEN));
 											assert(nBQ == (MaterialTable[key].GetMostExpensivePiece(BLACK) == QUEEN));
 										}
@@ -277,26 +277,26 @@ void InitializeMaterialTable() {
 	MaterialKey_t key = calculateMaterialKey(0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
 	MaterialTable[key].Evaluation = Eval(VALUE_DRAW);
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
-	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
+	MaterialTable[key].Flags |= MaterialSearchFlags::MSF_THEORETICAL_DRAW;
 	//KBK
 	pieceCounts[WBISHOP] = 1;
 	key = calculateMaterialKey(0, 0, 0, 0, 1, 0, 0, 0, 0, 0);
 	MaterialTable[key].Evaluation = Eval(VALUE_DRAW);
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
-	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
+	MaterialTable[key].Flags |= MaterialSearchFlags::MSF_THEORETICAL_DRAW;
 	key = calculateMaterialKey(0, 0, 0, 0, 0, 1, 0, 0, 0, 0);
 	MaterialTable[key].Evaluation = Eval(VALUE_DRAW);
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
-	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
+	MaterialTable[key].Flags |= MaterialSearchFlags::MSF_THEORETICAL_DRAW;
 	//KNK 
 	key = calculateMaterialKey(0, 0, 0, 0, 0, 0, 1, 0, 0, 0);
 	MaterialTable[key].Evaluation = Eval(VALUE_DRAW);
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
-	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
+	MaterialTable[key].Flags |= MaterialSearchFlags::MSF_THEORETICAL_DRAW;
 	key = calculateMaterialKey(0, 0, 0, 0, 0, 0, 0, 1, 0, 0);
 	MaterialTable[key].Evaluation = Eval(VALUE_DRAW);
 	MaterialTable[key].EvaluationFunction = &evaluateDraw;
-	MaterialTable[key].Flags |= MSF_THEORETICAL_DRAW;
+	MaterialTable[key].Flags |= MaterialSearchFlags::MSF_THEORETICAL_DRAW;
 	//KNNK 
 	key = calculateMaterialKey(0, 0, 0, 0, 0, 0, 2, 0, 0, 0);
 	MaterialTable[key].Evaluation = Eval(VALUE_DRAW);
@@ -471,12 +471,12 @@ void InitializeMaterialTable() {
 	pieceCounts[WQUEEN] = pieceCounts[BPAWN] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].EvaluationFunction = &evaluateKQKP < WHITE >;
-	MaterialTable[key].Flags |= MSF_SKIP_PRUNING;
+	MaterialTable[key].Flags |= MaterialSearchFlags::MSF_SKIP_PRUNING;
 	pieceCounts[WQUEEN] = pieceCounts[BPAWN] = 0;
 	pieceCounts[BQUEEN] = pieceCounts[WPAWN] = 1;
 	key = calculateMaterialKey(&pieceCounts[0]);
 	MaterialTable[key].EvaluationFunction = &evaluateKQKP < BLACK >;
-	MaterialTable[key].Flags |= MSF_SKIP_PRUNING;
+	MaterialTable[key].Flags |= MaterialSearchFlags::MSF_SKIP_PRUNING;
 	pieceCounts[BQUEEN] = pieceCounts[WPAWN] = 0;
 	//KRKP
 	pieceCounts[WROOK] = pieceCounts[BPAWN] = 1;

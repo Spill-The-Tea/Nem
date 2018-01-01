@@ -172,7 +172,7 @@ bool Position::ApplyMove(Move move) {
 	//assert(PawnKey == calculatePawnKey());
 	if (pawn->Key != PawnKey) pawn = pawn::probe(*this);
 	lastAppliedMove = move;
-	if (material->IsTheoreticalDraw()) result = DRAW;
+	if (material->IsTheoreticalDraw()) result = Result::DRAW;
 	return !(attackedByUs & PieceBB(KING, Color(SideToMove ^ 1)));
 	//if (attackedByUs & PieceBB(KING, Color(SideToMove ^ 1))) return false;
 	//attackedByThem = calculateAttacks(Color(SideToMove ^1));
@@ -1076,13 +1076,13 @@ Result Position::GetResult() {
 	//	else if (DrawPlyCount >= 100 || checkRepetition()) result = DRAW;
 	//	else result = OPEN;
 	//}
-	if (!result) {
-		if (DrawPlyCount > 100 || checkRepetition()) result = DRAW;
+	if (result == Result::RESULT_UNKNOWN) {
+		if (DrawPlyCount > 100 || checkRepetition()) result = Result::DRAW;
 		else if (Checked()) {
-			if (CheckValidMoveExists<true>()) result = OPEN; else result = MATE;
+			if (CheckValidMoveExists<true>()) result = Result::OPEN; else result = Result::MATE;
 		}
 		else {
-			if (CheckValidMoveExists<false>()) result = OPEN; else result = DRAW;
+			if (CheckValidMoveExists<false>()) result = Result::OPEN; else result = Result::DRAW;
 		}
 	}
 	return result;
@@ -1090,14 +1090,14 @@ Result Position::GetResult() {
 
 DetailedResult Position::GetDetailedResult() {
 	GetResult();
-	if (result == OPEN) return NO_RESULT;
-	else if (result == MATE) {
-		return GetSideToMove() == WHITE ? BLACK_MATES : WHITE_MATES;
+	if (result == Result::OPEN) return DetailedResult::NO_RESULT;
+	else if (result == Result::MATE) {
+		return GetSideToMove() == WHITE ? DetailedResult::BLACK_MATES : DetailedResult::WHITE_MATES;
 	}
 	else {
-		if (DrawPlyCount >= 100) return DRAW_50_MOVES;
-		else if (GetMaterialTableEntry()->IsTheoreticalDraw()) return DRAW_MATERIAL;
-		else if (!Checked() && !CheckValidMoveExists<false>()) return DRAW_STALEMATE;
+		if (DrawPlyCount >= 100) return DetailedResult::DRAW_50_MOVES;
+		else if (GetMaterialTableEntry()->IsTheoreticalDraw()) return DetailedResult::DRAW_MATERIAL;
+		else if (!Checked() && !CheckValidMoveExists<false>()) return DetailedResult::DRAW_STALEMATE;
 		else {
 			//Check for 3 fold repetition
 			int repCounter = 0;
@@ -1106,13 +1106,13 @@ DetailedResult Position::GetDetailedResult() {
 				prev = prev->Previous();
 				if (prev->GetHash() == GetHash()) {
 					repCounter++;
-					if (repCounter > 1) return DRAW_REPETITION;
+					if (repCounter > 1) return DetailedResult::DRAW_REPETITION;
 					prev = prev->Previous();
 				}
 			}
 		}
 	}
-	return NO_RESULT;
+	return DetailedResult::NO_RESULT;
 }
 
 bool Position::checkRepetition() const {

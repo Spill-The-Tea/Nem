@@ -16,8 +16,8 @@
 #include "tablebase.h"
 
 
-enum ThreadType { SINGLE, MASTER, SLAVE };
-enum SearchResultType { EXACT_RESULT, FAIL_LOW, FAIL_HIGH, TABLEBASE_MOVE, UNIQUE_MOVE, BOOK_MOVE };
+enum struct ThreadType { SINGLE, MASTER, SLAVE };
+enum struct SearchResultType { EXACT_RESULT, FAIL_LOW, FAIL_HIGH, TABLEBASE_MOVE, UNIQUE_MOVE, BOOK_MOVE };
 
 //Struct contains thread local data, which isn't shared among threads
 struct ThreadData {
@@ -83,7 +83,7 @@ public:
 	//returns the analysis output for xboard in thread-safe mode 
 	std::string GetXAnalysisOutput();
 	//handling of the thinking output for uci and xboard
-	void info(Position &pos, int pvIndx, SearchResultType srt = EXACT_RESULT);
+	void info(Position &pos, int pvIndx, SearchResultType srt = SearchResultType::EXACT_RESULT);
 
 	void debugInfo(std::string info);
 
@@ -151,11 +151,11 @@ template<ThreadType T> Value Search::SearchRoot(Value alpha, Value beta, Positio
 	bool lmr = !pos.Checked() && depth >= 3;
 	bool ttFound;
 	tt::Entry ttEntry;
-	tt::Entry* ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
+	tt::Entry* ttPointer = (T == ThreadType::SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 	tt::NodeType nt = tt::NodeType::UPPER_BOUND;
 	//move loop
 	for (int i = startWithMove; i < rootMoveCount; ++i) {
-		if (T != SLAVE) {
+		if (T != ThreadType::SLAVE) {
 			//Send information about the current move to GUI
 			if (UciOutput && PrintCurrmove && depth > 5 && (now() - timeManager.GetStartTime()) > 3000) {
 				sync_cout << "info depth " << depth << " currmove " << toString(moves[i].move) << " currmovenumber " << i + 1 << sync_endl;
@@ -204,7 +204,7 @@ template<ThreadType T> Value Search::SearchRoot(Value alpha, Value beta, Positio
 			}
 			if (score >= beta) {
 				//Update transposition table
-				if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::NodeType::LOWER_BOUND, depth, pv[0], VALUE_NOTYETDETERMINED);
+				if (T != ThreadType::SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::NodeType::LOWER_BOUND, depth, pv[0], VALUE_NOTYETDETERMINED);
 				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::NodeType::LOWER_BOUND, depth, pv[0], VALUE_NOTYETDETERMINED);
 				return score;
 			}
@@ -216,14 +216,14 @@ template<ThreadType T> Value Search::SearchRoot(Value alpha, Value beta, Positio
 		}
 	}
 	//Update transposition table
-	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nt, depth, pv[0], VALUE_NOTYETDETERMINED);
+	if (T != ThreadType::SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nt, depth, pv[0], VALUE_NOTYETDETERMINED);
 	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nt, depth, pv[0], VALUE_NOTYETDETERMINED);
 	return bestScore;
 }
 
 //This is the main alpha-beta search routine
 template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Position &pos, int depth, Move * pv, ThreadData& tlData, bool cutNode, bool prune, Move excludeMove) {
-	if (T != SLAVE) {
+	if (T != ThreadType::SLAVE) {
 		if (depth > 0) {
 			++NodeCount;
 		}
@@ -236,7 +236,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		traceIndex = utils::addTraceEntry(NodeCount, pos.printPath(), depth, pos.GetHash());
 	}
 #endif
-	if (pos.GetResult() != OPEN)  return pos.evaluateFinalPosition();
+	if (pos.GetResult() != Result::OPEN)  return pos.evaluateFinalPosition();
 	//Mate distance pruning
 	alpha = Value(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), int(alpha)));
 	beta = Value(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, int(beta)));
@@ -249,7 +249,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	//TT lookup
 	bool ttFound;
 	tt::Entry ttEntry;
-	tt::Entry* ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
+	tt::Entry* ttPointer = (T == ThreadType::SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 	Value ttValue = ttFound ? tt::fromTT(ttEntry.value(), pos.GetPliesFromRoot()) : VALUE_NOTYETDETERMINED;
 	Move ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	if (ttFound
@@ -268,11 +268,11 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		int v = tablebases::probe_wdl(pos, &found);
 		if (found)
 		{
-			if (T != SLAVE) tbHits++;
+			if (T != ThreadType::SLAVE) tbHits++;
 			Value value = v < -1 ? -VALUE_MATE + MAX_DEPTH + pos.GetPliesFromRoot()
 				: v >  1 ? VALUE_MATE - MAX_DEPTH - pos.GetPliesFromRoot()
 				: VALUE_DRAW + 2 * v;
-			if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(value, pos.GetPliesFromRoot()), tt::EXACT, MAX_DEPTH - 1, MOVE_NONE, VALUE_NOTYETDETERMINED);
+			if (T != ThreadType::SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(value, pos.GetPliesFromRoot()), tt::EXACT, MAX_DEPTH - 1, MOVE_NONE, VALUE_NOTYETDETERMINED);
 			else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(value, pos.GetPliesFromRoot()), tt::EXACT, MAX_DEPTH - 1, MOVE_NONE, VALUE_NOTYETDETERMINED);
 			return SCORE_TB(value);
 		}
@@ -366,7 +366,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		//If there is no hash move, we are looking for a move => therefore search should is called with prune = false
 		SearchMain<T>(alpha, beta, next, iidDepth, subpv, tlData, cutNode, ttMove != MOVE_NONE);
 		if (Stopped()) return VALUE_ZERO;
-		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
+		ttPointer = (T == ThreadType::SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	}
 	if (!checked && ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED && pos.GetStaticEval() == VALUE_NOTYETDETERMINED) pos.SetStaticEval(ttEntry.evalValue());
@@ -450,7 +450,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			if (score >= beta) {
 				updateCutoffStats(tlData, move, depth, pos, moveIndex);
 				//Update transposition table
-				if (T != SINGLE)  ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
+				if (T != ThreadType::SINGLE)  ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
 				else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(score, pos.GetPliesFromRoot()), tt::LOWER_BOUND, depth, move, staticEvaluation);
 				return SCORE_BC(score);
 			}
@@ -470,13 +470,13 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	}
 	if (bestMoveIndex >= 0) updateCutoffStats(tlData, pv[0], depth, pos, bestMoveIndex);
 	//Update transposition table
-	if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
+	if (T != ThreadType::SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
 	else ttPointer->update<tt::UNSAFE>(pos.GetHash(), tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
 	return SCORE_EXACT(bestScore);
 }
 
 template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &pos, int depth, ThreadData& tlData) {
-	if (T != SLAVE) {
+	if (T != ThreadType::SLAVE) {
 		++QNodeCount;
 		++NodeCount;
 #ifdef TRACE
@@ -486,7 +486,7 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 		if (!Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop.store(true);
 }
 	if (Stopped()) return VALUE_ZERO;
-	if (pos.GetResult() != OPEN)  return SCORE_FINAL(pos.evaluateFinalPosition());
+	if (pos.GetResult() != Result::OPEN)  return SCORE_FINAL(pos.evaluateFinalPosition());
 	//Mate distance pruning
 	alpha = Value(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), int(alpha)));
 	beta = Value(std::min(int(VALUE_MATE) - pos.GetPliesFromRoot() - 1, int(beta)));
@@ -499,7 +499,7 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 	Value ttValue = VALUE_NOTYETDETERMINED;
 	tt::Entry* ttPointer = nullptr;
 	if (depth >= settings::parameter.LIMIT_QSEARCH_TT) {
-		ttPointer = (T == SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
+		ttPointer = (T == ThreadType::SINGLE) ? tt::probe<tt::UNSAFE>(pos.GetHash(), ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(pos.GetHash(), ttFound, ttEntry);
 		if (ttFound) ttValue = tt::fromTT(ttEntry.value(), pos.GetPliesFromRoot());
 		if (ttFound
 			&& ttEntry.depth() >= depth
@@ -525,7 +525,7 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 		if (ttFound && ttValue != VALUE_NOTYETDETERMINED && ((ttValue > standPat && ttEntry.type() == tt::LOWER_BOUND) || (ttValue < standPat && ttEntry.type() == tt::UPPER_BOUND))) standPat = ttValue;
 		if (standPat >= beta) {
 			if (depth >= settings::parameter.LIMIT_QSEARCH_TT) {
-				if (T == SINGLE) ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
+				if (T == ThreadType::SINGLE) ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
 				else ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, MOVE_NONE, standPat);
 			}
 			return SCORE_SP(beta);
@@ -557,7 +557,7 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 			if (score >= beta) {
 #ifndef TUNE
 				if (depth >= settings::parameter.LIMIT_QSEARCH_TT) {
-					if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, move, standPat);
+					if (T != ThreadType::SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, move, standPat);
 					else ttPointer->update<tt::UNSAFE>(pos.GetHash(), beta, tt::LOWER_BOUND, depth, move, standPat);
 				}
 #endif
@@ -572,7 +572,7 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 	}
 #ifndef TUNE
 	if (depth >= settings::parameter.LIMIT_QSEARCH_TT) {
-		if (T != SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), alpha, nt, depth, bestMove, standPat);
+		if (T != ThreadType::SINGLE) ttPointer->update<tt::THREAD_SAFE>(pos.GetHash(), alpha, nt, depth, bestMove, standPat);
 		else ttPointer->update<tt::UNSAFE>(pos.GetHash(), alpha, nt, depth, bestMove, standPat);
 	}
 #endif

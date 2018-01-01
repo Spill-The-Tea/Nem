@@ -147,30 +147,30 @@ namespace cecp {
 		DetailedResult dr = pos->GetDetailedResult();
 		switch (dr)
 		{
-		case NO_RESULT:
+		case DetailedResult::NO_RESULT:
 			return true;
-		case WHITE_MATES:
+		case DetailedResult::WHITE_MATES:
 			sync_cout << "1-0 {White mates}" << sync_endl;
 			return false;
-		case BLACK_MATES:
+		case DetailedResult::BLACK_MATES:
 			sync_cout << "0-1 {Black mates}" << sync_endl;
 			return false;
-		case DRAW_50_MOVES:
+		case DetailedResult::DRAW_50_MOVES:
 			if (score < -settings::parameter.Contempt) {
 				sync_cout << "1/2-1/2 {50-move rule}" << sync_endl;
 				return false;
 			}
 			else return true;
-		case DRAW_STALEMATE:
+		case DetailedResult::DRAW_STALEMATE:
 			sync_cout << "1/2-1/2 {Stalemate}" << sync_endl;
 			return false;
-		case DRAW_REPETITION:
+		case DetailedResult::DRAW_REPETITION:
 			if (score < -settings::parameter.Contempt) {
 				sync_cout << "1/2-1/2 {3-fold Repetition}" << sync_endl;
 				return false;
 			}
 			else return true;
-		case DRAW_MATERIAL:
+		case DetailedResult::DRAW_MATERIAL:
 			sync_cout << "1/2-1/2 {No mating material}" << sync_endl;
 			return false;
 		default:

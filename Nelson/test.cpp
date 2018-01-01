@@ -791,8 +791,8 @@ namespace test {
 						std::string fen = line.substr(0, indx);
 						Position p1(fen);
 						if (count < lines.size()) {
-							if (p1.GetResult() != OPEN) {
-								std::cout << "Expected: Open Actual: " << p1.GetResult() << "\t" << p1.fen() << std::endl;
+							if (p1.GetResult() != Result::OPEN) {
+								std::cout << "Expected: Open Actual: " << static_cast<int>(p1.GetResult()) << "\t" << p1.fen() << std::endl;
 								//__debugbreak();
 								Position p2(fen);
 								p2.GetResult();
@@ -800,7 +800,7 @@ namespace test {
 						}
 						else {
 							if (p1.GetResult() != result) {
-								std::cout << "Expected: " << result << " Actual: " << p1.GetResult() << "\t" << p1.fen() << std::endl;
+								std::cout << "Expected: " << static_cast<int>(result) << " Actual: " << static_cast<int>(p1.GetResult()) << "\t" << p1.fen() << std::endl;
 								//__debugbreak();
 								Position p2(fen);
 								p2.GetResult();
@@ -1024,8 +1024,8 @@ namespace test {
 
 	void testResult() {
 		int64_t begin = now();
-		testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/stalemate.epd", DRAW);
-		testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/mate.epd", MATE);
+		testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/stalemate.epd", Result::DRAW);
+		testResult("C:/Users/chrgu_000/Desktop/Data/cutechess/testpositions/mate.epd", Result::MATE);
 		int64_t end = now();
 		int64_t runtime = end - begin;
 		std::cout << "Runtime: " << runtime / 1000.0 << " s" << std::endl;

@@ -29,7 +29,7 @@
 #endif
 #endif
 
-const std::string VERSION_INFO = "Nemorino 4.01";
+const std::string VERSION_INFO = "Nemorino 4.02";
 
 typedef uint64_t Bitboard;
 typedef int64_t Time_t;
@@ -104,10 +104,10 @@ enum StagedMoveGenerationType {
 };
 
 //Result as used in Search
-enum Result { RESULT_UNKNOWN, OPEN, DRAW, MATE };
+enum struct Result { RESULT_UNKNOWN, OPEN, DRAW, MATE };
 
 //Result according to rules 
-enum DetailedResult { NO_RESULT, WHITE_MATES, BLACK_MATES, DRAW_50_MOVES, DRAW_STALEMATE, DRAW_REPETITION, DRAW_MATERIAL };
+enum struct DetailedResult { NO_RESULT, WHITE_MATES, BLACK_MATES, DRAW_50_MOVES, DRAW_STALEMATE, DRAW_REPETITION, DRAW_MATERIAL };
 
 
 enum Value : int16_t {
@@ -415,7 +415,7 @@ typedef Value(*EvalFunction)(const Position&);
 Value evaluateDefault(const Position& pos);
 Value evaluatePawnEnding(const Position& pos);
 
-enum Protocol { NO_PROTOCOL, UCI, XBOARD };
+enum struct Protocol { NO_PROTOCOL, UCI, XBOARD };
 
 #ifdef _MSC_VER
 inline Time_t now() {

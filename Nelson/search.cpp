@@ -106,7 +106,7 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 			}
 			sync_cout << _depth << " " << xscore << " " << _thinkTime / 10 << " " << NodeCount << " " /*<< std::max(MaxDepth, _depth) << " " << (NodeCount / _thinkTime) * 1000
 				<< " " << tbHits
-				<< "\t"*/ << PrincipalVariation(npos, _depth) << srtChar[srt] << sync_endl;
+				<< "\t"*/ << PrincipalVariation(npos, _depth) << srtChar[static_cast<int>(srt)] << sync_endl;
 		}
 	}
 }
@@ -183,6 +183,7 @@ ValuatedMove Search::Think(Position &pos) {
 	_thinkTime = 1; //to avoid divide by 0 errors
 	ponderMove = MOVE_NONE;
 	Value score = VALUE_ZERO;
+	ValuatedMove lastBestMove = VALUATED_MOVE_NONE;
 	rootPosition = pos;
 	pos.ResetPliesFromRoot();
 	settings::parameter.EngineSide = pos.GetSideToMove();
@@ -272,7 +273,6 @@ ValuatedMove Search::Think(Position &pos) {
 		return BestMove;
 	}
 	//Iterativ Deepening Loop
-	ValuatedMove lastBestMove = VALUATED_MOVE_NONE;
 	for (_depth = 1; _depth < timeManager.GetMaxDepth(); ++_depth) {
 		Value alpha, beta, delta = Value(20);
 		for (int pvIndx = 0; pvIndx < MultiPv && pvIndx < rootMoveCount; ++pvIndx) {
@@ -287,9 +287,9 @@ ValuatedMove Search::Think(Position &pos) {
 			}
 			while (true) {
 				if (settings::parameter.HelperThreads > 0)
-					score = SearchRoot<MASTER>(alpha, beta, pos, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
+					score = SearchRoot<ThreadType::MASTER>(alpha, beta, pos, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
 				else
-					score = SearchRoot<SINGLE>(alpha, beta, pos, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
+					score = SearchRoot<ThreadType::SINGLE>(alpha, beta, pos, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
 				//Best move is already in first place, this is assured by SearchRoot
 				//therefore we sort only the other moves
 				std::stable_sort(rootMoves + pvIndx + 1, &rootMoves[rootMoveCount], sortByScore);
@@ -377,7 +377,7 @@ void Search::startHelper() {
 	while (!Stop.load() && depth < MAX_DEPTH) {
 		Value alpha = -VALUE_MATE;
 		Value beta = VALUE_MATE;
-		SearchRoot<SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, *h);
+		SearchRoot<ThreadType::SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, *h);
 		++depth;
 	}
 	delete h;
@@ -386,13 +386,13 @@ void Search::startHelper() {
 }
 
 bool Search::isQuiet(Position &pos) {
-	Value evaluationDiff = pos.GetStaticEval() - QSearch<SINGLE>(-VALUE_MATE, VALUE_MATE, pos, 0, threadLocalData);
+	Value evaluationDiff = pos.GetStaticEval() - QSearch<ThreadType::SINGLE>(-VALUE_MATE, VALUE_MATE, pos, 0, threadLocalData);
 	return std::abs(int16_t(evaluationDiff)) <= 30;
 }
 
 Value Search::qscore(Position * pos)
 {
-	return QSearch<SINGLE>(-VALUE_MATE, VALUE_MATE, *pos, 0, threadLocalData);
+	return QSearch<ThreadType::SINGLE>(-VALUE_MATE, VALUE_MATE, *pos, 0, threadLocalData);
 }
 
 void Search::updateCutoffStats(ThreadData& tlData, const Move cutoffMove, int depth, Position &pos, int moveIndex) {

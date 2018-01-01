@@ -36,7 +36,7 @@ namespace settings {
 		int HelperThreads = 0;
 		Value Contempt = VALUE_ZERO;
 		Color EngineSide = WHITE;
-		Protocol protocol = NO_PROTOCOL;
+		Protocol protocol = Protocol::NO_PROTOCOL;
 		int EmergencyTime = 0;
 		bool extendedOptions = false;
 		Eval SCALE_BISHOP_PAIR_WITH_PAWNS = EVAL_ZERO; //Reduce Bonus Bishop Pair by this value for each pawn on the board

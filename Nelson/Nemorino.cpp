@@ -128,14 +128,14 @@ int main(int argc, const char* argv[]) {
 		std::getline(std::cin, input);
 		if (!input.compare(0, 3, "uci")) {
 			Initialize();
-			settings::parameter.protocol = UCI;
+			settings::parameter.protocol = Protocol::UCI;
 			UCIInterface uciInterface;
 			uciInterface.loop();
 			return 0;
 		}
 		else if (!input.compare(0, 6, "xboard")) {
 			Initialize();
-			settings::parameter.protocol = XBOARD;
+			settings::parameter.protocol = Protocol::XBOARD;
 			cecp::XBoard xb;
 			xb.loop();
 			return 0;
