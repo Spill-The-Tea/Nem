@@ -370,14 +370,52 @@ END://when pondering engine must not return a best move before opponent moved =>
 void Search::startHelper() {
 	int depth = 1;
 	Move * PVMovesLocal = new Move[PV_MAX_LENGTH];
+	ValuatedMove lastBestMove = VALUATED_MOVE_NONE;
 	ValuatedMove * moves = new ValuatedMove[MAX_MOVE_COUNT];
 	memcpy(moves, rootMoves, MAX_MOVE_COUNT * sizeof(ValuatedMove));
 	ThreadData * h = new ThreadData;
 	//Iterative Deepening Loop
+	Value score = VALUE_ZERO;
 	while (!Stop.load() && depth < MAX_DEPTH) {
-		Value alpha = -VALUE_MATE;
-		Value beta = VALUE_MATE;
-		SearchRoot<ThreadType::SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, *h);
+		Value alpha, beta, delta = Value(20);
+		if (depth >= 5) {
+			//set aspiration window
+			alpha = std::max(score - delta, -VALUE_INFINITE);
+			beta = std::min(score + delta, VALUE_INFINITE);
+		}
+		else {
+			alpha = -VALUE_MATE;
+			beta = VALUE_MATE;
+		}
+		while (true && !Stop.load()) {
+			score = SearchRoot<ThreadType::SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, *h);
+			if (score <= alpha) {
+				//fail-low
+				beta = (alpha + beta) / 2;
+				alpha = std::max(score - delta, -VALUE_INFINITE);
+			}
+			else if (score >= beta && moves[0].move == lastBestMove.move) {
+				//Iteration completed
+				score = moves[0].score;
+				break;
+			}
+			else if (score >= beta) {
+				//fail-high
+				alpha = (alpha + beta) / 2;
+				beta = std::min(score + delta, VALUE_INFINITE);
+			}
+			else {
+				//Iteration completed
+				score = moves[0].score;
+				break;
+			}
+			if (std::abs(int16_t(score)) >= VALUE_KNOWN_WIN) {
+				alpha = -VALUE_MATE;
+				beta = VALUE_MATE;
+			}
+			else delta += delta * 2;
+		}
+		lastBestMove = moves[0];
 		++depth;
 	}
 	delete h;

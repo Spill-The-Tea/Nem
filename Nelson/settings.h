@@ -56,7 +56,6 @@ namespace settings {
 		Eval KING_ON_MANY = Eval(3, 63);
 		Eval ROOK_ON_OPENFILE = Eval(10, 0);
 		Eval ROOK_ON_SEMIOPENFILE = Eval(10, 0);
-		Eval ROOK_ON_SEMIOPENFILE_WITH_KQ = Eval(5, 0);
 		Eval ROOK_ON_7TH = Eval(20, 0);
 		Eval MALUS_LOST_CASTLING = Eval(50, -50);
 
@@ -66,8 +65,6 @@ namespace settings {
 		Eval PAWN_SHELTER_3RD_RANK = Eval(15, -8);
 		Eval PAWN_SHELTER_4TH_RANK = Eval(8, -4);
         Value PROBCUT_MARGIN = Value(90);
-		Value BONUS_KNIGHT_OUTPOST = Value(5);
-		Value BONUS_BISHOP_OUTPOST = Value(0);
 		Eval PieceValues[7]{ Eval(1025), Eval(490, 550), Eval(325), Eval(325), Eval(80, 100), Eval(VALUE_KNOWN_WIN), Eval(0) };
 		int FULTILITY_PRUNING_DEPTH = 3;
 		Value FUTILITY_PRUNING_LIMIT[4] = { VALUE_ZERO, PieceValues[BISHOP].mgScore, PieceValues[ROOK].mgScore, PieceValues[QUEEN].mgScore };
