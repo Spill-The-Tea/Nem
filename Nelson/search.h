@@ -284,6 +284,13 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
 		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
 	prune = prune && !PVNode && !checked && (pos.GetLastAppliedMove() != MOVE_NONE) && (!pos.GetMaterialTableEntry()->SkipPruning());
+
+	if (ttFound &&
+		((ttValue > staticEvaluation && ttEntry.type() == tt::LOWER_BOUND)
+			|| (ttValue < staticEvaluation && ttEntry.type() == tt::UPPER_BOUND)
+			|| (ttEntry.type() == tt::EXACT)
+			)) staticEvaluation = ttValue;
+
 	if (prune) {
 		//Check if Value from TT is better
 		// Beta Pruning
@@ -292,10 +299,6 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			&& (staticEvaluation - settings::parameter.BetaPruningMargin(depth)) >= beta
 			&& pos.GetMaterialTableEntry()->DoNullmove(pos.GetSideToMove()))
 			return SCORE_BP(staticEvaluation - settings::parameter.BetaPruningMargin(depth));
-		Value effectiveEvaluation = staticEvaluation;
-		if (ttFound &&
-			((ttValue > staticEvaluation && ttEntry.type() == tt::LOWER_BOUND)
-				|| (ttValue < staticEvaluation && ttEntry.type() == tt::UPPER_BOUND))) effectiveEvaluation = ttValue;
 
 		//Razoring
 		if (depth < 4
@@ -310,12 +313,12 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		}
 
 		//Null Move Pruning
-		if (effectiveEvaluation >= beta
+		if (staticEvaluation >= beta
 			&& pos.GetMaterialTableEntry()->DoNullmove(pos.GetSideToMove())
 			&& excludeMove == MOVE_NONE
 			) {
 			int reduction = (depth + 14) / 5;
-			if (int(effectiveEvaluation - beta) > int(settings::parameter.PieceValues[PAWN].egScore)) ++reduction;
+			if (int(staticEvaluation - beta) > int(settings::parameter.PieceValues[PAWN].egScore)) ++reduction;
 			Square epsquare = pos.GetEPSquare();
 			Move lastApplied = pos.GetLastAppliedMove();
 			pos.NullMove();
