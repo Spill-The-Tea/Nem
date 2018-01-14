@@ -55,7 +55,7 @@
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>Nelson</RootNamespace>
     <ProjectName>Nemorino</ProjectName>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.16299.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -388,12 +388,12 @@
     </Link>
     <PostBuildEvent>
       <Command>if "%APPVEYOR%" == "True" EXIT
-copy /Y  "$(SolutionDir)\Nelson\*.cpp"  "$(USERPROFILE)\workspace\Nelson\*.*"
-copy /Y  "$(SolutionDir)\Nelson\*.h"  "$(USERPROFILE)\workspace\Nelson\*.*"
-copy /Y  "$(SolutionDir)\Nelson\syzygy\*.cpp"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
-copy /Y  "$(SolutionDir)\Nelson\syzygy\*.c"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
-copy /Y  "$(SolutionDir)\Nelson\syzygy\*.h"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
-"C:\Program Files\7-Zip\7z" a C:\Users\chrgu_000\Dropbox\aws\nemorino.zip *.h *.cpp syzygy\*.h syzygy\*.cpp syzygy\*.c
+REM copy /Y  "$(SolutionDir)\Nelson\*.cpp"  "$(USERPROFILE)\workspace\Nelson\*.*"
+REM copy /Y  "$(SolutionDir)\Nelson\*.h"  "$(USERPROFILE)\workspace\Nelson\*.*"
+REM copy /Y  "$(SolutionDir)\Nelson\syzygy\*.cpp"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
+REM copy /Y  "$(SolutionDir)\Nelson\syzygy\*.c"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
+REM copy /Y  "$(SolutionDir)\Nelson\syzygy\*.h"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
+"C:\Program Files\7-Zip\7z" a D:\Dropbox\aws\nemorino.zip *.h *.cpp syzygy\*.h syzygy\*.cpp syzygy\*.c
 robocopy "$(SolutionDir)Nelson" "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson" Makefile
 copy /Y  "$(SolutionDir)\Nelson\*.cpp" "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\*.*"
 copy /Y  "$(SolutionDir)\Nelson\*.h" "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\*.*"
