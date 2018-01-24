@@ -255,6 +255,8 @@ ValuatedMove Search::Think(Position &pos) {
 			}
 		}
 	}
+
+	SetRootMoveBoni();
 	//Initialize PV-Array
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
 	//SMP active => start helper threads (if not yet done)
@@ -431,6 +433,30 @@ bool Search::isQuiet(Position &pos) {
 Value Search::qscore(Position * pos)
 {
 	return QSearch<ThreadType::SINGLE>(-VALUE_MATE, VALUE_MATE, *pos, 0, threadLocalData);
+}
+
+void Search::SetRootMoveBoni()
+{
+	rootMoveBoni.clear();
+	for (auto rootMove : rootMoves) {
+		rootMoveBoni.insert({ rootMove.move, VALUE_ZERO });
+		if (type(rootMove.move) == MoveType::PROMOTION) rootMoveBoni[rootMove.move] = Value(-10 * (int)promotionType(rootMove.move));
+		//else if (type(rootMove.move) == MoveType::CASTLING) rootMoveBoni[rootMove.move] = Value(20);
+		//else if ((from(rootMove.move) >> 3) == 7 * (int)rootPosition.GetSideToMove()) {
+		//	PieceType pt = GetPieceType(rootPosition.GetPieceOnSquare(from(rootMove.move)));
+		//	if (pt == PieceType::BISHOP || pt == PieceType::KNIGHT) {
+		//		//check if piece has been developed before
+		//		bool devMove = true;
+		//		Position * pos = &rootPosition;
+		//		while (devMove && pos->GetLastAppliedMove()) {
+		//			devMove = from(pos->GetLastAppliedMove()) != from(rootMove.move);
+		//			pos = pos->Previous();
+		//		}
+		//		if (devMove) rootMoveBoni[rootMove.move] = Value(10);
+		//	}
+		//}
+			
+	}
 }
 
 void Search::updateCutoffStats(ThreadData& tlData, const Move cutoffMove, int depth, Position &pos, int moveIndex) {

@@ -6,6 +6,7 @@
 #include <vector>
 #include <atomic>
 #include <mutex>
+#include <unordered_map>
 #include "types.h"
 #include "book.h"
 #include "board.h"
@@ -127,7 +128,11 @@ private:
 	//Flag indicating whether TB probes shall be made during search
 	bool probeTB = true;
 
+	std::unordered_map<Move, Value> rootMoveBoni;
+
 	inline bool Stopped() { return Stop; }
+
+	void SetRootMoveBoni();
 
 	//Main recursive search method
 	template<ThreadType T> Value SearchMain(Value alpha, Value beta, Position &pos, int depth, Move * pv, ThreadData& tlData, bool cutNode, bool prune = true, Move excludeMove = MOVE_NONE);
@@ -172,23 +177,24 @@ template<ThreadType T> Value Search::SearchRoot(Value alpha, Value beta, Positio
 		//apply move
 		Position next(pos);
 		next.ApplyMove(moves[i].move);
+		Value bonus = rootMoveBoni[moves[i].move];
 		if (i > startWithMove) {
 			int reduction = 0;
 			//Lmr for root moves
 			if (lmr && i >= startWithMove + 5 && pos.IsQuietAndNoCastles(moves[i].move) && !next.Checked()) {
 				++reduction;
 			}
-			score = -SearchMain<T>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction, subpv, tlData, true);
+			score = bonus -SearchMain<T>(Value(bonus -alpha - 1), bonus -alpha, next, depth - 1 - reduction, subpv, tlData, true);
 			if (reduction > 0 && score > alpha && score < beta) {
-				score = -SearchMain<T>(Value(-alpha - 1), -alpha, next, depth - 1, subpv, tlData, true);
+				score = bonus -SearchMain<T>(Value(bonus -alpha - 1), bonus -alpha, next, depth - 1, subpv, tlData, true);
 			}
 			if (score > alpha && score < beta) {
 				//Research without reduction and with full alpha-beta window
-				score = -SearchMain<T>(-beta, -alpha, next, depth - 1, subpv, tlData, false);
+				score = bonus -SearchMain<T>(bonus -beta, bonus -alpha, next, depth - 1, subpv, tlData, false);
 			}
 		}
 		else {
-			score = -SearchMain<T>(-beta, -alpha, next, depth - 1, subpv, tlData, false);
+			score = bonus -SearchMain<T>(bonus -beta, bonus -alpha, next, depth - 1, subpv, tlData, false);
 		}
 		if (Stopped()) break;
 		moves[i].score = score;
