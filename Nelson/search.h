@@ -403,6 +403,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		++moveIndex;
 		if (move == excludeMove) continue;
 		int reducedDepth = lmr ? depth - settings::parameter.LMRReduction(depth, moveIndex) : depth;
+		reducedDepth = std::max(1, reducedDepth);
 		bool prunable = !PVNode && reducedDepth <= 4 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
 			&& !tlData.killerManager.isKiller(pos, move) && (pos.IsQuietAndNoCastles(move) || pos.GetMoveGenerationPhase() == MoveGenerationType::LOOSING_CAPTURES)
 			&& !pos.IsAdvancedPawnPush(move) && !pos.givesCheck(move);
@@ -445,6 +446,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 				reduction = settings::parameter.LMRReduction(depth, moveIndex);
 				if (cutNode) ++reduction;
 				if ((PVNode || extension) && reduction > 0) --reduction;
+				reduction = std::min(reduction, depth - 1);
 			}
 			if (ZWS) {
 				score = -SearchMain<T>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, subpv, tlData, !cutNode);
