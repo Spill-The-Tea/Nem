@@ -131,7 +131,7 @@ Eval evaluateKingSafety(const Position& pos) {
 		Bitboard bbSafe = (~pos.AttacksByColor(color) | (bbWeak & pos.dblAttacks(color_attacker))) & ~pos.ColorBB(color_attacker);
 		const Bitboard bbRookAttacks = RookTargets(pos.KingSquare(color), pos.OccupiedBB());
 		const Bitboard bbBishopAttacks = BishopTargets(pos.KingSquare(color), pos.OccupiedBB());
-		if ((bbRookAttacks | bbRookAttacks) & pos.AttacksByPieceType(color_attacker, QUEEN) & bbSafe)
+		if ((bbRookAttacks | bbBishopAttacks) & pos.AttacksByPieceType(color_attacker, QUEEN) & bbSafe)
 			attackScore[c] += settings::parameter.SAFE_CHECK[QUEEN];
 		bbSafe |= pos.dblAttacks(color_attacker) & ~(pos.dblAttacks(color) | pos.ColorBB(color_attacker)) & pos.AttacksByPieceType(color, QUEEN);
 		if (bbRookAttacks & pos.AttacksByPieceType(color_attacker, ROOK) & bbSafe)

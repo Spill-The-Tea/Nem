@@ -1,7 +1,7 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.26430.16
+VisualStudioVersion = 15.0.27130.2026
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Nemorino", "Nelson\Nelson.vcxproj", "{B23D2DB6-4387-478B-A153-4C34596B8C7E}"
 EndProject
@@ -21,6 +21,9 @@ Global
 		ReleaseNoPopcount|Any CPU = ReleaseNoPopcount|Any CPU
 		ReleaseNoPopcount|Win32 = ReleaseNoPopcount|Win32
 		ReleaseNoPopcount|x64 = ReleaseNoPopcount|x64
+		ReleaseW32|Any CPU = ReleaseW32|Any CPU
+		ReleaseW32|Win32 = ReleaseW32|Win32
+		ReleaseW32|x64 = ReleaseW32|x64
 		Tune|Any CPU = Tune|Any CPU
 		Tune|Win32 = Tune|Win32
 		Tune|x64 = Tune|x64
@@ -46,6 +49,11 @@ Global
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|Win32.Build.0 = ReleaseNoPopcount|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|x64.ActiveCfg = ReleaseNoPopcount|x64
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|x64.Build.0 = ReleaseNoPopcount|x64
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseW32|Any CPU.ActiveCfg = ReleaseW32|Win32
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseW32|Win32.ActiveCfg = ReleaseW32|Win32
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseW32|Win32.Build.0 = ReleaseW32|Win32
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseW32|x64.ActiveCfg = ReleaseW32|x64
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseW32|x64.Build.0 = ReleaseW32|x64
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Tune|Any CPU.ActiveCfg = Tune|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Tune|Win32.ActiveCfg = Tune|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.Tune|Win32.Build.0 = Tune|Win32
@@ -54,6 +62,9 @@ Global
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {8577AFC8-4F69-4CB1-A587-DEBB320A4E7D}
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

@@ -400,6 +400,7 @@ copy /Y  "$(SolutionDir)\Nelson\*.h" "\\DESKTOP1\Users\chrgu_000\Documents\Visua
 copy /Y  "$(SolutionDir)\Nelson\syzygy\*.cpp"  "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\syzygy\*.*"
 copy /Y  "$(SolutionDir)\Nelson\syzygy\*.c"  "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\syzygy\*.*"
 copy /Y  "$(SolutionDir)\Nelson\syzygy\*.h"  "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\syzygy\*.*"
+copy /Y "$(OutDir)Nemorino.exe" D:\Documents\EngineDev\Builds\
 copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\
 copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nemorino2.exe
 copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Tests\tune</Command>
