@@ -93,23 +93,21 @@ Nemorino is listed in several rating lists:
 
 Nemorino 4.00
 
-* [CCRL 40/40 **Elo 3046 #24**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%204.00%2064-bit#Nemorino_4_00_64-bit)
-* [CCRL 40/4 **Elo 3068 #24**](http://www.computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%204.00%2064-bit#Nemorino_4_00_64-bit)
-* [FastGM 10min **Elo 2923 #19**](http://www.fastgm.de/10min.html)
-* [CEGT 40/4 **Elo 2945 #24**](http://www.cegt.net/40_4_Ratinglist/40_4_single/rangliste.html)
-* [CEGT 40/20 **Elo 2963 #21**](http://www.cegt.net/40_40%20Rating%20List/40_40%20SingleVersion/rangliste.html)
+* [CCRL 40/40 (4 CPU) **Elo 3122 #24**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%204.00%2064-bit%204CPU#Nemorino_4_00_64-bit_4CPU)
+* [CCRL 40/40 **Elo 3051**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%204.00%2064-bit#Nemorino_4_00_64-bit)
+* [CCRL 40/4 (4 CPU) **Elo 3100**](http://www.computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%204.00%2064-bit%204CPU#Nemorino_4_00_64-bit_4CPU)
+* [CCRL 40/4 **Elo 3069 #33**](http://www.computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%204.00%2064-bit#Nemorino_4_00_64-bit)
 * [CCRL 40/4 (FRC) **Elo 3136 #10**](http://www.computerchess.org.uk/ccrl/404FRC/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%204.00%2064-bit#Nemorino_4_00_64-bit)
+* [FastGM Bullet **Elo 2882 #25**](http://www.fastgm.de/60-0.60.html)
+* [FastGM 10min **Elo 2924 #19**](http://www.fastgm.de/10min.html)
+* [CEGT 40/4 (2 CPU) **Elo 2984 #24**](http://www.cegt.net/40_4_Ratinglist/40_4_mp/rangliste.html)
+* [CEGT 40/4 **Elo 2944 #23**](http://www.cegt.net/40_4_Ratinglist/40_4_single/rangliste.html)
+* [CEGT 40/20 **Elo 2954 #22**](http://www.cegt.net/40_40%20Rating%20List/40_40%20SingleVersion/rangliste.html)
+* [Owl Chess **Elo 3144 #20**](http://chessowl.blogspot.de/p/rating-list_27.html)
 
 Nemorino 3.00
 
-* [CCRL 40/40 (4 CPU) **Elo 3083 #27**](http://www.computerchess.org.uk/ccrl/4040/cgi/engine_details.cgi?print=Details&each_game=1&eng=Nemorino%203.0%2064-bit%204CPU#Nemorino_3_0_64-bit_4CPU)
-* [FastGM Bullet **Elo 2835 #25**](http://www.fastgm.de/60-0.60.html)
-* [Owl Chess **Elo 3098 #19**](http://chessowl.blogspot.de/p/rating-list_27.html)
-* [CEGT 5+3 PB=ON **Elo 2843 #33**](http://www.cegt.net/5Plus3Rating/Purelist/rangliste.html)
-
-Nemorino 2.00 64-bit 4CPU
-
-* [CCRL 40/4 **Elo 3015**](http://www.computerchess.org.uk/ccrl/404/cgi/engine_details.cgi?match_length=30&each_game=1&print=Details&each_game=1&eng=Nemorino%202.00%2064-bit%204CPU#Nemorino_2_00_64-bit_4CPU)
+* [CEGT 5+3 PB=ON **Elo 2829 #29**](http://www.cegt.net/5Plus3Rating/Purelist/rangliste.html)
 
 
 ### Remarks ###
