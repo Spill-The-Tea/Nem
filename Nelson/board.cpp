@@ -734,6 +734,7 @@ void Initialize() {
 #ifndef QUIET
 	std::cout << "Initialization Time: " << runtime << "ms" << std::endl;
 #endif
+	testDotProduct();
 }
 
 #ifdef _DEBUG
@@ -776,4 +777,96 @@ Move parseMoveInUCINotation(const std::string& uciMove, const Position& pos) {
 	}
 	if (toSquare == pos.GetEPSquare() && GetPieceType(pos.GetPieceOnSquare(fromSquare)) == PAWN) return createMove<ENPASSANT>(fromSquare, toSquare);
 	return createMove(fromSquare, toSquare);
+}
+
+#include <emmintrin.h>
+
+int dotProduct(Bitboard bb, unsigned char weights[])
+{
+	Bitboard bit = 1;
+	int accu = 0;
+	for (int sq = 0; sq < 64; sq++, bit += bit) {
+		if (bb & bit) accu += weights[sq];
+		// accu += weights[sq] & -((  bb & bit) == bit); // branchless 1
+		// accu += weights[sq] & -(( ~bb & bit) == 0);   // branchless 2
+	}
+	return accu;
+}
+
+void testDotProduct()
+{
+	unsigned char weights[64];
+	for (int v = 63; v >= 0; --v) {
+		for (int i = 0; i < 64; ++i) {
+			weights[i] = v;
+		}
+		for (Square s = Square::A1; s <= Square::H8; ++s) {
+			Bitboard bb = ToBitboard(s);
+			assert(dotProduct(bb, weights) == v);
+			assert(dotProduct64(bb, weights) == v);
+		}
+	}
+	const Bitboard Halves[2] = { HALF_OF_WHITE, HALF_OF_BLACK };
+	for (int h = 0; h < 2; ++h) {
+		Bitboard half = Halves[h];
+		for (int v = 63; v >= 0; --v) {
+			for (int i = 0; i < 64; ++i) {
+				weights[i] = half & ToBitboard(i) ? v : 0;
+			}
+			for (Square s = Square::A1; s <= Square::H8; ++s) {
+				int expected = half & ToBitboard(s) ? v : 0;
+				Bitboard bb = ToBitboard(s);
+				assert(dotProduct(bb, weights) == expected);
+				assert(dotProduct64(bb, weights) == expected);
+			}
+		}
+
+	}
+	for (int i = 0; i < 64; ++i) weights[i] = 0;
+	weights[17] = 5; 
+	weights[53] = 17;
+	assert(dotProduct(ALL_SQUARES, weights) == 22);
+	assert(dotProduct64(ALL_SQUARES, weights) == 22);
+	assert(dotProduct(EMPTY, weights) == 0);
+	assert(dotProduct64(EMPTY, weights) == 0);
+}
+
+int dotProduct64(Bitboard bb, unsigned char weights[])
+{
+	static const Bitboard sbitmask[2] = {
+		Bitboard(0x8040201008040201),
+		Bitboard(0x8040201008040201)
+	};
+	__m128i x0, x1, x2, x3, bm;
+	__m128i* pW = (__m128i*) weights;
+	bm = _mm_load_si128((__m128i*) sbitmask);
+	x0 = _mm_cvtsi64x_si128(bb);        // 0000000000000000:8040201008040201
+										// extend bits to bytes
+	x0 = _mm_unpacklo_epi8(x0, x0);   // 8080404020201010:0808040402020101
+	x2 = _mm_unpackhi_epi16(x0, x0);   // 8080808040404040:2020202010101010
+	x0 = _mm_unpacklo_epi16(x0, x0);   // 0808080804040404:0202020201010101
+	x1 = _mm_unpackhi_epi32(x0, x0);   // 0808080808080808:0404040404040404
+	x0 = _mm_unpacklo_epi32(x0, x0);   // 0202020202020202:0101010101010101
+	x3 = _mm_unpackhi_epi32(x2, x2);   // 8080808080808080:4040404040404040
+	x2 = _mm_unpacklo_epi32(x2, x2);   // 2020202020202020:1010101010101010
+	x0 = _mm_and_si128(x0, bm);
+	x1 = _mm_and_si128(x1, bm);
+	x2 = _mm_and_si128(x2, bm);
+	x3 = _mm_and_si128(x3, bm);
+	x0 = _mm_cmpeq_epi8(x0, bm);
+	x1 = _mm_cmpeq_epi8(x1, bm);
+	x2 = _mm_cmpeq_epi8(x2, bm);
+	x3 = _mm_cmpeq_epi8(x3, bm);
+	// multiply by "and" with -1 or 0
+	x0 = _mm_and_si128(x0, pW[0]);
+	x1 = _mm_and_si128(x1, pW[1]);
+	x2 = _mm_and_si128(x2, pW[2]);
+	x3 = _mm_and_si128(x3, pW[3]);
+	// add all bytes (with saturation)
+	x0 = _mm_adds_epu8(x0, x1);
+	x0 = _mm_adds_epu8(x0, x2);
+	x0 = _mm_adds_epu8(x0, x3);
+	x0 = _mm_sad_epu8(x0, _mm_setzero_si128());
+	return _mm_cvtsi128_si32(x0)
+		+ _mm_extract_epi16(x0, 4);
 }

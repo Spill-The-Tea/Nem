@@ -253,7 +253,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	}
 	depth = std::min(depth, MAX_DEPTH - 1);
 	uint64_t hashKey = pos.GetHash();
-	if (excludeMove) hashKey ^= excludeMove * 14695981039346656037;
+	if (excludeMove) hashKey ^= excludeMove * 14695981039346656037ull;
 	//TT lookup
 	bool ttFound;
 	tt::Entry ttEntry;
@@ -374,7 +374,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	if ((!ttMove || ttEntry.depth() < iidDepth) && (PVNode ? depth > 3 : depth > 6)) {
 		Position next(pos);
 		next.copy(pos);
-		//If there is no hash move, we are looking for a move => therefore search should is called with prune = false
+		//If there is no hash move, we are looking for a move => therefore search should be called with prune = false
 		SearchMain<T>(alpha, beta, next, iidDepth, subpv, tlData, cutNode, ttMove != MOVE_NONE);
 		if (Stopped()) return VALUE_ZERO;
 		ttPointer = (T == ThreadType::SINGLE) ? tt::probe<tt::UNSAFE>(hashKey, ttFound, ttEntry) : tt::probe<tt::THREAD_SAFE>(hashKey, ttFound, ttEntry);

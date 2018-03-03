@@ -69,7 +69,7 @@ public:
 	//returns Zobrist Hash key of position
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
-	inline uint64_t GetMaterialHash() const { return MaterialKey *14695981039346656037; }
+	inline uint64_t GetMaterialHash() const { return MaterialKey *14695981039346656037ull; }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
 	inline Eval GetPsqEval() const { return PsqEval; }
 	/* The position struct provides staged move generation. To make use of it the staged move generation has to be initialized first by calling InitializeMoveIterator.

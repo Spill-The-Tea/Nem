@@ -21,7 +21,7 @@ namespace utils {
 
 	uint64_t MurmurHash2A(uint64_t input, uint64_t seed = 0x4f4863d5038ea3a3);
 
-	inline uint64_t Hash(uint64_t input) { return input * 14695981039346656037; }
+	inline uint64_t Hash(uint64_t input) { return input * 14695981039346656037ull; }
 
 	inline std::string bool2String(bool val) { if (val) return "true"; else return "false"; }
 
