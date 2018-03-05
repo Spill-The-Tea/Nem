@@ -123,10 +123,6 @@ inline Bitboard ToBitboard(Square square) { return SquareBB[square]; }
 inline Bitboard ToBitboard(int square) { return SquareBB[square]; }
 
 void Initialize();
-int dotProduct64(Bitboard bb, unsigned char weights[]);
-int dotProduct(Bitboard bb, unsigned char weights[]);
-
-void testDotProduct();
 
 inline std::string toString(Move move) {
 	Square fromSquare = from(move);

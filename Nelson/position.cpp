@@ -618,18 +618,9 @@ Bitboard Position::checkBlocker(Color colorOfBlocker, Color kingColor) {
 const Bitboard Position::AttacksOfField(const Square targetField, const Bitboard occupanyMask) const
 {
 	//sliding attacks
-	Bitboard attacksOfField = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
-	attacksOfField |= SlidingAttacksBishopTo[targetField] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
+	Bitboard attacksOfField = RookTargets(targetField, occupanyMask) & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
+	attacksOfField |= BishopTargets(targetField, occupanyMask) & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
 	attacksOfField &= occupanyMask;
-	//Check for blockers
-	Bitboard tmpAttacks = attacksOfField;
-	while (tmpAttacks != 0)
-	{
-		Square from = lsb(tmpAttacks);
-		Bitboard blocker = InBetweenFields[from][targetField] & occupanyMask;
-		if (blocker) attacksOfField &= ~ToBitboard(from);
-		tmpAttacks &= tmpAttacks - 1;
-	}
 	//non-sliding attacks
 	attacksOfField |= KnightAttacks[targetField] & OccupiedByPieceType[KNIGHT];
 	attacksOfField |= KingAttacks[targetField] & OccupiedByPieceType[KING];
