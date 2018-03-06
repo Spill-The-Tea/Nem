@@ -170,6 +170,7 @@ bool Position::ApplyMove(Move move) {
 	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	//assert((checkMaterialIsUnusual() && MaterialKey == MATERIAL_KEY_UNUSUAL) || MaterialKey == calculateMaterialKey());
 	//assert(PawnKey == calculatePawnKey());
+	CalculatePinnedPieces();
 	if (pawn->Key != PawnKey) pawn = pawn::probe(*this);
 	lastAppliedMove = move;
 	if (material->IsTheoreticalDraw()) result = Result::DRAW;
@@ -939,6 +940,7 @@ void Position::setFromFEN(const std::string& fen) {
 	}
 	attackedByThem = calculateAttacks(Color(SideToMove ^ 1));
 	attackedByUs = calculateAttacks(SideToMove);
+	CalculatePinnedPieces();
 	pliesFromRoot = 0;
 }
 
@@ -1430,21 +1432,22 @@ std::string Position::printEvaluation() {
 	}
 }
 
-Bitboard Position::PinnedPieces(Color colorOfKing) const {
-	if (bbPinned[colorOfKing] != ALL_SQUARES) return bbPinned[colorOfKing];
-	bbPinned[colorOfKing] = EMPTY;
-	bbPinner[colorOfKing] = EMPTY;
-	Square kingSquare = kingSquares[colorOfKing];
-	Bitboard pinner = (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]) & SlidingAttacksRookTo[kingSquare];
-	pinner |= (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]) & SlidingAttacksBishopTo[kingSquare];
-	pinner &= OccupiedByColor[colorOfKing ^ 1];
-	Bitboard occ = OccupiedBB();
-	while (pinner)
-	{
-		Bitboard blocker = InBetweenFields[lsb(pinner)][kingSquare] & occ;
-		if (popcount(blocker) == 1) bbPinned[colorOfKing] |= blocker;
-		bbPinner[colorOfKing] |= isolateLSB(pinner);
-		pinner &= pinner - 1;
+void Position::CalculatePinnedPieces()
+{
+	for (int colorOfKing = 0; colorOfKing < 2; ++colorOfKing) {
+		bbPinned[colorOfKing] = EMPTY;
+		bbPinner[colorOfKing] = EMPTY;
+		Square kingSquare = kingSquares[colorOfKing];
+		Bitboard pinner = (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]) & SlidingAttacksRookTo[kingSquare];
+		pinner |= (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]) & SlidingAttacksBishopTo[kingSquare];
+		pinner &= OccupiedByColor[colorOfKing ^ 1];
+		Bitboard occ = OccupiedBB();
+		while (pinner)
+		{
+			Bitboard blocker = InBetweenFields[lsb(pinner)][kingSquare] & occ;
+			if (popcount(blocker) == 1) bbPinned[colorOfKing] |= blocker;
+			bbPinner[colorOfKing] |= isolateLSB(pinner);
+			pinner &= pinner - 1;
+		}
 	}
-	return bbPinned[colorOfKing];
 }

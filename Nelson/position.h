@@ -187,7 +187,8 @@ public:
 	//Checks if a move gives check
 	bool givesCheck(Move move);
 	//Get Pinned Pieces
-	Bitboard PinnedPieces(Color colorOfKing) const;
+	inline Bitboard PinnedPieces(Color colorOfKing) const { return bbPinned[colorOfKing]; }
+	void CalculatePinnedPieces();
 	inline Square KingSquare(Color color) const { return kingSquares[color]; }
 	//Check for opposite colored bishops
 	bool oppositeColoredBishops() const;
@@ -245,8 +246,8 @@ private:
 	//Attack bitboard containing all attacks by a certain Piece Type
 	Bitboard attacksByPt[12];
 	//Bitboards of pieces pinned to king of given Color: bbPinned[0] contains white an black pieces "pinned" to white king
-	mutable Bitboard bbPinned[2] = { ALL_SQUARES, ALL_SQUARES };
-	mutable Bitboard bbPinner[2];
+	Bitboard bbPinned[2] = { EMPTY, EMPTY };
+	Bitboard bbPinner[2];
 
 	//indices needed to manage staged move generation
 	int moveIterationPointer;
