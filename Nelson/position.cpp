@@ -283,7 +283,7 @@ Move Position::NextMove() {
 			if (validateMove(hashMove)) return hashMove;
 			break;
 		case KILLER:
-			while (moveIterationPointer < killer::NB_KILLER) {
+			while (killerManager && moveIterationPointer < killer::NB_KILLER) {
 				Move killerMove = killerManager->getMove(*this, moveIterationPointer);
 				++moveIterationPointer;
 				//if (killerMove != MOVE_NONE && validateMove(killerMove))  return killerMove;

@@ -121,6 +121,10 @@ int main(int argc, const char* argv[]) {
 		else if (!arg1.compare("-e")) {
 			settings::parameter.extendedOptions = true;
 		}
+		else if (!arg1.compare("perft")) {
+			Initialize();
+			test::testPerft(test::PerftType::P3);
+		}
 	}
 	std::string input = "";
 	Position pos;

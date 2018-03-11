@@ -228,7 +228,7 @@ namespace settings {
 		int TBProbeDepth = 8;
 		int ATTACK_WEIGHT[4] = { 53, 82, 23, 17 }; //Indexed by Piece Type
 		int SAFE_CHECK[4] = { 800, 900, 450, 800 };
-		int KING_DANGER_SCALE = 1 << 14;
+		int KING_DANGER_SCALE = 14;
 		int KING_RING_ATTACK_FACTOR = 100;
 		int WEAK_SQUARES_FACTOR = 200;
 		int PINNED_FACTOR = 100;

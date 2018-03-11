@@ -1179,7 +1179,7 @@ namespace test {
 		perftNodes += expectedResult;
 		if (perftResult == expectedResult) {
 			if (runtime > 0) {
-				std::cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtime << " ms\t" << expectedResult / runtime / 1000 << " MNodes/s\t" << std::endl << "\t" << fen << std::endl;
+				std::cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtime << " ms\t" << expectedResult / runtime << " kNodes/s\t" << std::endl << "\t" << fen << std::endl;
 			}
 			else {
 				std::cout << testCount << "\t" << "OK\t" << depth << "\t" << perftResult << "\t" << runtime << " ms\t" << std::endl << "\t" << fen << std::endl;

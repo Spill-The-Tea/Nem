@@ -142,7 +142,7 @@ Eval evaluateKingSafety(const Position& pos) {
 		if (bbKnightAttacks & bbSafe)
 			attackScore[c] += settings::parameter.SAFE_CHECK[KNIGHT];
 		if (attackScore[c] > 0) {
-			attackVals[c] = static_cast<Value>(attackScore[c] * attackScore[c] / settings::parameter.KING_DANGER_SCALE);
+			attackVals[c] = static_cast<Value>(attackScore[c] * attackScore[c] >> settings::parameter.KING_DANGER_SCALE);
 		}
 	}
 	result.mgScore += attackVals[BLACK] - attackVals[WHITE];
