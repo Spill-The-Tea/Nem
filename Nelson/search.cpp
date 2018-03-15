@@ -8,6 +8,7 @@
 #include <chrono>
 #include "search.h"
 #include "hashtables.h"
+#include "evaluation.h"
 
 void Search::Reset() {
 	BestMove.move = MOVE_NONE;
@@ -255,8 +256,9 @@ ValuatedMove Search::Think(Position &pos) {
 			}
 		}
 	}
-
 	SetRootMoveBoni();
+	Contempt = pos.GetSideToMove() == WHITE ? Eval(settings::parameter.Contempt, settings::parameter.Contempt / 2)
+		: Eval(-settings::parameter.Contempt, -settings::parameter.Contempt / 2);
 	//Initialize PV-Array
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
 	//SMP active => start helper threads (if not yet done)

@@ -34,7 +34,7 @@ namespace settings {
 		int LMRReduction(int depth, int moveNumber);
 
 		int HelperThreads = 0;
-		Value Contempt = VALUE_ZERO;
+		Value Contempt = Value(10);
 		Color EngineSide = WHITE;
 		Protocol protocol = Protocol::NO_PROTOCOL;
 		int EmergencyTime = 0;

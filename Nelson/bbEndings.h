@@ -37,7 +37,7 @@ namespace kpk
 			result = VALUE_KNOWN_WIN + settings::parameter.PieceValues[PAWN].egScore + Value(pawnSquare >> 3);
 		}
 		else {
-			return pos.GetSideToMove() == settings::parameter.EngineSide ? -settings::parameter.Contempt : settings::parameter.Contempt;  //To force taking of the pawn (if possible)
+			return VALUE_DRAW;
 		}
 		return StrongerSide == pos.GetSideToMove() ? result : -result;
 	}

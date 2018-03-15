@@ -32,6 +32,8 @@ void writeWPF() {
 }
 #endif
 
+Eval Contempt(settings::parameter.Contempt, settings::parameter.Contempt / 2);
+
 Value evaluateDefault(const Position& pos) {
 	Evaluation result;
 	result.Material = pos.GetMaterialTableEntry()->Evaluation;
@@ -85,7 +87,7 @@ std::string printDefaultEvaluation(const Position& pos) {
 }
 
 Value evaluateDraw(const Position& pos) {
-	return pos.GetSideToMove() == settings::parameter.EngineSide ? -settings::parameter.Contempt : settings::parameter.Contempt;
+	return Contempt.getScore(pos.GetMaterialTableEntry()->Phase) * (1 - 2 * pos.GetSideToMove());;
 }
 
 Eval evaluateKingSafety(const Position& pos) {
@@ -363,7 +365,7 @@ Value evaluatePawnEnding(const Position& pos) {
 			ppEval += Value(11 *(distant[0]*distcount[0] - distant[1]*distcount[1])/5);
 		}
 	}
-	return Value((pos.GetMaterialScore() + pos.GetPawnEntry()->Score.egScore + pos.GetPsqEval().egScore + ppEval) * (1 - 2 * pos.GetSideToMove()));
+	return Value((pos.GetMaterialScore() + pos.GetPawnEntry()->Score.egScore + pos.GetPsqEval().egScore + ppEval + Contempt.egScore) * (1 - 2 * pos.GetSideToMove()));
 }
 
 Value evaluateKBPxKBPx(const Position& pos) {

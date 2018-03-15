@@ -11,6 +11,8 @@ int scaleEG(const Position& pos);
 void writeWPF();
 #endif
 
+extern Eval Contempt;
+
 struct Evaluation
 {
 public:
@@ -24,7 +26,7 @@ public:
 	Eval PawnStructure = EVAL_ZERO;
 
 	inline Value GetScore(const Position & pos) {
-		Eval total = Material + Mobility + KingSafety + Threats + Pieces + PawnStructure + PsqEval;
+		Eval total = Material + Mobility + KingSafety + Threats + Pieces + PawnStructure + PsqEval + Contempt;
 		total.egScore = Value((scaleEG(pos) * int(total.egScore)) / 128);
 		return total.getScore(pos.GetMaterialTableEntry()->Phase) * (1 - 2 * pos.GetSideToMove());
 	}
@@ -36,7 +38,7 @@ template<Color WinningSide> Value evaluateKBPK(const Position& pos);
 template<Color KBPSide> Value evaluateKBPKx(const Position& pos);
 template <Color WinningSide> Value easyMate(const Position& pos);
 template <Color WinningSide> Value evaluateKQKP(const Position& pos);
-template <Color StrongerSide> Value evaluateKRKP(const Position& pos);
+template <Color StrongerSide> Value evaluateKRKP(const Position& pos); 
 template <Color StrongerSide> Value evaluateKNKP(const Position& pos);
 template <Color StrongerSide> Value evaluateKBKP(const Position& pos);
 template <Color SideWithoutPawns> Value evaluateKNKPx(const Position& pos);

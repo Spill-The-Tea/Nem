@@ -386,12 +386,12 @@ inline Value Position::evaluate() {
 	if (GetResult() == Result::OPEN) {
 		return StaticEval = material->EvaluationFunction(*this) + settings::parameter.BONUS_TEMPO.getScore(material->Phase); 
 	}
-	else if (result == Result::DRAW) return StaticEval = SideToMove == settings::parameter.EngineSide ? -settings::parameter.Contempt : settings::parameter.Contempt;
+	else if (result == Result::DRAW) return StaticEval = VALUE_DRAW;
 	else return StaticEval = Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 
 inline Value Position::evaluateFinalPosition() {
-	if (result == Result::DRAW) return SideToMove == settings::parameter.EngineSide ? -settings::parameter.Contempt : settings::parameter.Contempt;
+	if (result == Result::DRAW) return VALUE_DRAW;
 	else return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 
