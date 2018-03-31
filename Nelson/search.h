@@ -429,7 +429,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			if (!extension && to(move) == recaptureSquare) {
 				++extension;
 			}
-			if (trySE &&  move == ttMove && !extension)
+			if (trySE && move == ttMove && !extension)
 			{
 				Value rBeta = ttValue - 2 * depth;
 				Position spos(pos);

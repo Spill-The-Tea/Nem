@@ -12,7 +12,7 @@ struct wpf_entry {
 	Phase_t phase;
 	Value score;
 	Evaluation evaluation;
-	};
+};
 
 std::vector<wpf_entry> wpf_data;
 
@@ -101,6 +101,8 @@ Eval evaluateKingSafety(const Position& pos) {
 		pos.PieceBB(KING, WHITE) & RANK1 ? kingRing[0] | (kingRing[0] << 8) : kingRing[0],
 		pos.PieceBB(KING, BLACK) & RANK8 ? kingRing[1] | (kingRing[1] >> 8) : kingRing[1]
 	};
+	if ((pos.KingSquare(WHITE) & 7) == 7) kingZone[0] |= kingRing[0] >> 1;  else if ((pos.KingSquare(WHITE) & 7) == 0)  kingZone[0] |= kingRing[0] << 1;
+	if ((pos.KingSquare(BLACK) & 7) == 7)  kingZone[1] |= kingRing[1] >> 1; else if ((pos.KingSquare(BLACK) & 7) == 0) kingZone[1] |= kingRing[1] << 1;
 	for (int c = static_cast<int>(Color::WHITE); c <= static_cast<int>(Color::BLACK); ++c) {
 		const Color color = static_cast<Color>(c);
 		for (PieceType pt = PieceType::QUEEN; pt <= PieceType::KNIGHT; ++pt) {
@@ -144,7 +146,7 @@ Eval evaluateKingSafety(const Position& pos) {
 		if (bbKnightAttacks & bbSafe)
 			attackScore[c] += settings::parameter.SAFE_CHECK[KNIGHT];
 		if (attackScore[c] > 0) {
-			attackVals[c] = static_cast<Value>(attackScore[c] * attackScore[c] >> settings::parameter.KING_DANGER_SCALE);
+			attackVals[c] = static_cast<Value>((attackScore[c] * attackScore[c]) >> settings::parameter.KING_DANGER_SCALE);
 		}
 	}
 	result.mgScore += attackVals[BLACK] - attackVals[WHITE];
@@ -322,7 +324,7 @@ Value evaluatePawnEnding(const Position& pos) {
 		int distant[2] = { 0, 0 };
 		int distcount[2] = { 0, 0 };
 		Bitboard wpassed = pos.GetPawnEntry()->passedPawns & pos.PieceBB(PAWN, WHITE);
-		while (wpassed) {			
+		while (wpassed) {
 			Square passedPawnSquare = lsb(wpassed);
 			Square convSquare = ConversionSquare<WHITE>(passedPawnSquare);
 			int distToConv = std::min(7 - (passedPawnSquare >> 3), 5);
@@ -362,7 +364,7 @@ Value evaluatePawnEnding(const Position& pos) {
 			ppEval -= Value(settings::parameter.PieceValues[QUEEN].egScore - 100 * minUnstoppable[1]);
 		}
 		else {
-			ppEval += Value(11 *(distant[0]*distcount[0] - distant[1]*distcount[1])/5);
+			ppEval += Value(11 * (distant[0] * distcount[0] - distant[1] * distcount[1]) / 5);
 		}
 	}
 	return Value((pos.GetMaterialScore() + pos.GetPawnEntry()->Score.egScore + pos.GetPsqEval().egScore + ppEval + Contempt.egScore) * (1 - 2 * pos.GetSideToMove()));
