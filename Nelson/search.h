@@ -402,18 +402,19 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	while ((move = pos.NextMove())) {
 		++moveIndex;
 		if (move == excludeMove) continue;
-		int reducedDepth = lmr ? depth - settings::parameter.LMRReduction(depth, moveIndex) : depth;
-		bool prunable = !PVNode && reducedDepth <= 4 && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
+
+		bool prunable = !PVNode && !checked && move != ttMove && move != counter && std::abs(int(bestScore)) <= VALUE_MATE_THRESHOLD
 			&& !tlData.killerManager.isKiller(pos, move) && (pos.IsQuietAndNoCastles(move) || pos.GetMoveGenerationPhase() == MoveGenerationType::LOOSING_CAPTURES)
 			&& !pos.IsAdvancedPawnPush(move) && !pos.givesCheck(move);
 		if (prunable) {
 			//assert(type(move) == MoveType::NORMAL && pos.GetPieceOnSquare(to(move)) == Piece::BLANK);
 			// late-move pruning II
-			if (moveIndex >= depth * 4) {
+			int reducedDepth = depth - settings::parameter.LMRReduction(depth, moveIndex);
+			if (reducedDepth <= 4 && moveIndex >= depth * 4) {
 				continue;
 			}
 			//SEE pruning 
-			if (pos.SEE_Sign(move) < 0) {
+			if ((pos.GetPliesFromRoot() > 10 || reducedDepth <= 4) && pos.SEE_Sign(move) < 0) {
 				continue;
 			}
 		}
