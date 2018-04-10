@@ -456,11 +456,7 @@ template <Color COL> Eval evaluatePieces(const Position& pos) {
 		Bitboard rooksOnSemiOpen = bbHalfOpen & rooks;
 		bonusRook += popcount(rooksOnSemiOpen) * settings::parameter.ROOK_ON_SEMIOPENFILE;
 		bonusRook += 2 * popcount(FileFill(pos.GetPawnEntry()->openFiles) & rooks) * settings::parameter.ROOK_ON_OPENFILE;
-		Bitboard bbRookRays = EMPTY;
-		while (rooks) {
-			bbRookRays |= FILES[lsb(rooks) & 7];
-			rooks &= rooks - 1;
-		}
+		Bitboard bbRookRays = FileFill(pos.PieceBB(ROOK, COL));
 		bonusRook += popcount(bbRookRays & (pos.PieceBB(QUEEN, OTHER) | pos.PieceBB(KING, OTHER))) * Eval(5, 0);
 	}
 	//Passed Pawns (passed pawn bonus is already assigned statically in pawn::probe. Nevertheless all aspects related to position of other pieces have to be 
