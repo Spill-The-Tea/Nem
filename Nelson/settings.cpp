@@ -51,6 +51,23 @@ namespace settings {
 		}
 		sync_cout << "option name HANGING_MG type spin default " << HANGING.mgScore << sync_endl;
 		sync_cout << "option name HANGING_EG type spin default " << HANGING.egScore << sync_endl;
+		const int mobilitySize[4] = { 28, 15, 14, 9 };
+		for (int mcount = 0; mcount < mobilitySize[static_cast<int>(QUEEN)]; ++mcount) {
+			sync_cout << "option name MOBILITY_Q_MG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_QUEEN[mcount].mgScore << sync_endl;
+			sync_cout << "option name MOBILITY_Q_EG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_QUEEN[mcount].egScore << sync_endl;
+		}
+		for (int mcount = 0; mcount < mobilitySize[static_cast<int>(ROOK)]; ++mcount) {
+			sync_cout << "option name MOBILITY_R_MG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_ROOK[mcount].mgScore << sync_endl;
+			sync_cout << "option name MOBILITY_R_EG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_ROOK[mcount].egScore << sync_endl;
+		}
+		for (int mcount = 0; mcount < mobilitySize[static_cast<int>(BISHOP)]; ++mcount) {
+			sync_cout << "option name MOBILITY_B_MG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_BISHOP[mcount].mgScore << sync_endl;
+			sync_cout << "option name MOBILITY_B_EG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_BISHOP[mcount].egScore << sync_endl;
+		}
+		for (int mcount = 0; mcount < mobilitySize[static_cast<int>(KNIGHT)]; ++mcount) {
+			sync_cout << "option name MOBILITY_N_MG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_KNIGHT[mcount].mgScore << sync_endl;
+			sync_cout << "option name MOBILITY_N_EG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_KNIGHT[mcount].egScore << sync_endl;
+		}
 	}
 
 	void Parameters::SetFromUCI(std::string name, std::string value)
@@ -61,24 +78,47 @@ namespace settings {
 		else if (!name.compare("PINNED_FACTOR")) PINNED_FACTOR = stoi(value);
 		else if (!name.compare("ATTACK_WITH_QUEEN")) ATTACK_WITH_QUEEN = stoi(value);
 		else if (name.find("SAFE_CHECK_") == 0) {
-			int index = stoi(name.substr(11));
+			int index = stoi(name.substr(11, std::string::npos));
 			SAFE_CHECK[index] = stoi(value);
 		}
 		else if (name.find("ATTACK_WEIGHT_") == 0) {
-			int index = stoi(name.substr(14));
+			int index = stoi(name.substr(14, std::string::npos));
 			ATTACK_WEIGHT[index] = stoi(value);
 		}
 		else if (name.find("PIECEVAL_MG_") == 0) {
-			int index = stoi(name.substr(12));
+			int index = stoi(name.substr(12, std::string::npos));
 			PieceValues[index].mgScore = static_cast<Value>(stoi(value));
 			InitializeMaterialTable();
 		}
 		else if (name.find("PIECEVAL_EG_") == 0) {
-			int index = stoi(name.substr(12));
+			int index = stoi(name.substr(12, std::string::npos));
 			PieceValues[index].egScore = static_cast<Value>(stoi(value));
 			InitializeMaterialTable();
-		} else if (!name.compare("HANGING_EG")) HANGING.egScore = static_cast<Value>(stoi(value));
+		}
+		else if (!name.compare("HANGING_EG")) HANGING.egScore = static_cast<Value>(stoi(value));
 		else if (!name.compare("HANGING_MG")) HANGING.mgScore = static_cast<Value>(stoi(value));
+		else if (name.find("MOBILITY_") == 0) {
+			char pt = name[9];
+			int index = stoi(name.substr(14, std::string::npos));
+			bool isMg = name[11] == 'M';
+			switch (pt)
+			{
+			case 'Q':
+				if (isMg) parameter.MOBILITY_BONUS_QUEEN[index].mgScore = static_cast<Value>(stoi(value)); else parameter.MOBILITY_BONUS_QUEEN[index].egScore = static_cast<Value>(stoi(value));
+				break;
+			case 'R':
+				if (isMg) parameter.MOBILITY_BONUS_ROOK[index].mgScore = static_cast<Value>(stoi(value)); else parameter.MOBILITY_BONUS_ROOK[index].egScore = static_cast<Value>(stoi(value));
+				break;
+			case 'B':
+				if (isMg) parameter.MOBILITY_BONUS_BISHOP[index].mgScore = static_cast<Value>(stoi(value)); else parameter.MOBILITY_BONUS_BISHOP[index].egScore = static_cast<Value>(stoi(value));
+				break;
+			case 'N':
+				if (isMg) parameter.MOBILITY_BONUS_KNIGHT[index].mgScore = static_cast<Value>(stoi(value)); else parameter.MOBILITY_BONUS_KNIGHT[index].egScore = static_cast<Value>(stoi(value));
+				break;
+			default:
+				break;
+			}
+		}
 	}
 
 #ifdef TUNE

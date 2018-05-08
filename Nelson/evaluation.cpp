@@ -112,12 +112,12 @@ Eval evaluateKingSafety(const Position& pos) {
 				if (pos.GetAttacksFrom(s) & kingZone[c ^ 1]) {
 					++attackerCount[c];
 					attackWeight[c] += settings::parameter.ATTACK_WEIGHT[pt];
-					kingRingAttacks[c] += popcount(pos.GetAttacksFrom(s) & kingRing[c ^ 1]);
+					kingRingAttacks[c] += popcount(pos.GetAttacksFrom(s) & kingZone[c ^ 1]);
 				}
 				pieceBB &= pieceBB - 1;
 			}
 		}
-		attackerCount[c] += popcount(kingRing[c ^ 1] & pos.AttacksByPieceType(color, PAWN));
+		attackerCount[c] += popcount(kingZone[c ^ 1] & pos.AttacksByPieceType(color, PAWN));
 	}
 	int attackScore[2] = { 0, 0 };
 	Value attackVals[2] = { VALUE_ZERO, VALUE_ZERO };

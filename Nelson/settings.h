@@ -225,7 +225,7 @@ namespace settings {
 		Eval BONUS_CANDIDATE = Eval(5);
 		Eval BONUS_LEVER = Eval(5);
 		Eval MALUS_DOUBLED_PAWN = Eval(0, 20);
-		int TBProbeDepth = 8;
+		int TBProbeDepth = 1;
 		int ATTACK_WEIGHT[4] = { 53, 82, 23, 17 }; //Indexed by Piece Type
 		int SAFE_CHECK[4] = { 800, 900, 450, 800 };
 		int KING_DANGER_SCALE = 14;
