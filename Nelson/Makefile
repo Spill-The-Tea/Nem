@@ -1,4 +1,8 @@
-EXE = nemorino
+ifeq ($(OS),Windows_NT)
+	EXE := nemorino_gcc.exe
+else
+	EXE := nemorino
+endif
 
 FILES = bbEndings.cpp board.cpp book.cpp evaluation.cpp hashtables.cpp Material.cpp \
     Nemorino.cpp position.cpp search.cpp settings.cpp tablebase.cpp test.cpp timemanager.cpp \

@@ -230,3 +230,5 @@ Nelson/Nelson.vcxproj.filters
 /Nelson/nemorino.html
 *.ruleset
 /Nelson/build_gcc.bat
+/Nelson/nemorino.exe
+/Nelson/nemorino_gcc.exe

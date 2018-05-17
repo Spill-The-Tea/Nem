@@ -30,7 +30,7 @@ namespace settings {
 
 	struct Parameters {
 	public:
-		void Initialize();
+		Parameters();
 		int LMRReduction(int depth, int moveNumber);
 
 		int HelperThreads = 0;
@@ -253,6 +253,7 @@ namespace settings {
 		inline void setValue(int & val, std::vector<int> & v) { val = Value(v[0]); };
 #endif 
 	private:
+		void Initialize();
 		int LMR_REDUCTION[64][64];
 	};
 
@@ -305,7 +306,7 @@ namespace settings {
 		std::string defaultValue;
 		std::string minValue;
 		std::string maxValue;
-		bool technical;
+		bool technical = false;
 	};
 
 

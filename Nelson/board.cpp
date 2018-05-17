@@ -728,7 +728,6 @@ void Initialize() {
 	InitializeShadowedFields();
 	pawn::initialize();
 	tt::InitializeTranspositionTable();
-	settings::Initialize();
 	int64_t end = now();
 	auto runtime = end - begin;
 #ifndef QUIET

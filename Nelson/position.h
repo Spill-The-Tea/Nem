@@ -51,8 +51,9 @@ public:
 	Bitboard ColorBB(const int c) const;
 	Bitboard PieceTypeBB(const PieceType pt) const;
 	Bitboard OccupiedBB() const;
-	//returns a bitboard of all non-pawn and non-King pieces of given Color
-	Bitboard NonPawnMaterial(const Color c) const;
+	inline Bitboard MajorPieceBB(const Color c) const { return (OccupiedByPieceType[QUEEN] | OccupiedByPieceType[ROOK]) & OccupiedByColor[static_cast<int>(c)];	}
+	inline Bitboard MinorPieceBB(const Color c) const { return (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[KNIGHT]) & OccupiedByColor[static_cast<int>(c)]; }
+	inline Bitboard NonPawnMaterial(const Color c) const { return (OccupiedByPieceType[QUEEN] | OccupiedByPieceType[ROOK] | OccupiedByPieceType[BISHOP] | OccupiedByPieceType[KNIGHT]) & OccupiedByColor[static_cast<int>(c)]; }
 	//debug helpers
 	std::string print();
 	std::string printGeneratedMoves();

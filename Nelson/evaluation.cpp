@@ -98,8 +98,8 @@ Eval evaluateKingSafety(const Position& pos) {
 	int kingZoneAttacks[2] = { 0, 0 };
 	Bitboard kingRing[2] = { pos.PieceBB(KING, WHITE) | KingAttacks[pos.KingSquare(WHITE)] , pos.PieceBB(KING, BLACK) | KingAttacks[pos.KingSquare(BLACK)] };
 	Bitboard kingZone[2] = {
-		pos.PieceBB(KING, WHITE) & RANK1 ? kingRing[0] | (kingRing[0] << 8) : kingRing[0],
-		pos.PieceBB(KING, BLACK) & RANK8 ? kingRing[1] | (kingRing[1] >> 8) : kingRing[1]
+		(pos.PieceBB(KING, WHITE) & RANK1) != EMPTY ? kingRing[0] | (kingRing[0] << 8) : kingRing[0],
+		(pos.PieceBB(KING, BLACK) & RANK8) != EMPTY ? kingRing[1] | (kingRing[1] >> 8) : kingRing[1]
 	};
 	if ((pos.KingSquare(WHITE) & 7) == 7) kingZone[0] |= kingRing[0] >> 1;  else if ((pos.KingSquare(WHITE) & 7) == 0)  kingZone[0] |= kingRing[0] << 1;
 	if ((pos.KingSquare(BLACK) & 7) == 7)  kingZone[1] |= kingRing[1] >> 1; else if ((pos.KingSquare(BLACK) & 7) == 0) kingZone[1] |= kingRing[1] << 1;

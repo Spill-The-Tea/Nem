@@ -10,13 +10,19 @@
 
 namespace settings {
 
+	Options options;
 	Parameters parameter;
+
+	Parameters::Parameters()
+	{
+		Initialize();
+	}
 
 	void Parameters::Initialize() {
 		if (HelperThreads == 0) {
 			HelperThreads = std::max(0, (int)std::thread::hardware_concurrency() - 1);
-			((OptionSpin *)options[OPTION_THREADS])->set(HelperThreads + 1);
-			((OptionSpin *)options[OPTION_THREADS])->setDefault(HelperThreads + 1);
+			static_cast<OptionSpin *>(options[OPTION_THREADS])->set(HelperThreads + 1);
+			static_cast<OptionSpin *>(options[OPTION_THREADS])->setDefault(HelperThreads + 1);
 		}
 		for (int depth = 0; depth < 64; depth++) {
 			for (int moves = 0; moves < 64; moves++) {
@@ -25,10 +31,6 @@ namespace settings {
 				else LMR_REDUCTION[depth][moves] = int(std::round(reduction));
 			}
 		}
-	}
-
-	void Initialize() {
-		parameter.Initialize();
 	}
 
 	int Parameters::LMRReduction(int depth, int moveNumber)
@@ -281,8 +283,6 @@ namespace settings {
 		//for (int i = 0; i < 7; ++i) sync_cout << "info string " << PieceValues[i].mgScore << " " << PieceValues[i].egScore << sync_endl;
 	}
 #endif
-
-	Options options;
 
 	Option::Option(std::string Name, OptionType Type, std::string DefaultValue, std::string MinValue, std::string MaxValue, bool Technical)
 	{
