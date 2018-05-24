@@ -103,16 +103,25 @@ Eval evaluateKingSafety(const Position& pos) {
 	};
 	if ((pos.KingSquare(WHITE) & 7) == 7) kingZone[0] |= kingRing[0] >> 1;  else if ((pos.KingSquare(WHITE) & 7) == 0)  kingZone[0] |= kingRing[0] << 1;
 	if ((pos.KingSquare(BLACK) & 7) == 7)  kingZone[1] |= kingRing[1] >> 1; else if ((pos.KingSquare(BLACK) & 7) == 0) kingZone[1] |= kingRing[1] << 1;
+	Bitboard bbExclQueen = pos.OccupiedBB() & ~pos.PieceTypeBB(QUEEN);
 	for (int c = static_cast<int>(Color::WHITE); c <= static_cast<int>(Color::BLACK); ++c) {
 		const Color color_attacker = static_cast<Color>(c);
 		for (PieceType pt = PieceType::QUEEN; pt <= PieceType::KNIGHT; ++pt) {
 			Bitboard pieceBB = pos.PieceBB(pt, color_attacker);
 			while (pieceBB) {
 				const Square s = lsb(pieceBB);
-				if (pos.GetAttacksFrom(s) & kingZone[c ^ 1]) {
+				Bitboard bbKingZoneAttacks = pos.GetAttacksFrom(s);
+				Bitboard bbPinned;
+				if (pt < KNIGHT &&
+					(bbPinned = pos.GetAttacksFrom(s) & pos.PinnedPieces(static_cast<Color>(c ^ 1))) != EMPTY &&
+					(InBetweenFields[s][pos.KingSquare(static_cast<Color>(c ^ 1))] & bbPinned) != EMPTY) {
+					bbKingZoneAttacks |= InBetweenFields[s][pos.KingSquare(static_cast<Color>(c ^ 1))];
+				}
+				bbKingZoneAttacks &= kingZone[c ^ 1];
+				if (bbKingZoneAttacks) {
 					++attackerCount[c];
 					attackWeight[c] += settings::parameter.ATTACK_WEIGHT[pt];
-					kingZoneAttacks[c] += popcount(pos.GetAttacksFrom(s) & kingZone[c ^ 1]);
+					kingZoneAttacks[c] += popcount(bbKingZoneAttacks);
 				}
 				pieceBB &= pieceBB - 1;
 			}
@@ -133,8 +142,8 @@ Eval evaluateKingSafety(const Position& pos) {
 		attackScore[c] -= settings::parameter.ATTACK_WITH_QUEEN * (pos.GetMaterialTableEntry()->GetMostExpensivePiece(color_attacker) != QUEEN);
 		//Safe checks
 		Bitboard bbSafe = (~pos.AttacksByColor(color_defender) | (bbWeak & pos.dblAttacks(color_attacker))) & ~pos.ColorBB(color_attacker);
-		const Bitboard bbRookAttacks = RookTargets(pos.KingSquare(color_defender), pos.OccupiedBB());
-		const Bitboard bbBishopAttacks = BishopTargets(pos.KingSquare(color_defender), pos.OccupiedBB()); 
+		const Bitboard bbRookAttacks = RookTargets(pos.KingSquare(color_defender), bbExclQueen);
+		const Bitboard bbBishopAttacks = BishopTargets(pos.KingSquare(color_defender), bbExclQueen); 
 		if ((bbRookAttacks | bbBishopAttacks) & pos.AttacksByPieceType(color_attacker, QUEEN) & bbSafe)
 			attackScore[c] += settings::parameter.SAFE_CHECK[QUEEN];
 		bbSafe |= pos.dblAttacks(color_attacker) & ~(pos.dblAttacks(color_defender) | pos.ColorBB(color_attacker)) & pos.AttacksByPieceType(color_defender, QUEEN);

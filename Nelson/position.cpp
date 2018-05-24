@@ -1428,7 +1428,12 @@ std::string Position::printEvaluation() {
 		return printDefaultEvaluation(*this);
 	}
 	else {
-		return "Special Evaluation Function used!";
+		std::stringstream ss;
+		ss << "Special Evaluation Function used!" << std::endl;
+		Value score = evaluate();
+		if (SideToMove == BLACK) score = -score;
+		ss << "Total evaluation: " << score << " (white side)" << std::endl;
+		return ss.str();
 	}
 }
 
