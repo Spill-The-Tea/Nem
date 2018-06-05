@@ -83,6 +83,9 @@ std::string printDefaultEvaluation(const Position& pos) {
 	ss << " Pieces (White): " << evaluatePieces<WHITE>(pos).print() << std::endl;
 	ss << " Pieces (Black): " << evaluatePieces<BLACK>(pos).print() << std::endl;
 	ss << "           PSQT: " << pos.GetPsqEval().print() << std::endl;
+	Value score = result.GetScore(pos);
+	if (pos.GetSideToMove() == BLACK) score = -score;
+	ss << "Total evaluation: " << score << " (white side)" << std::endl;
 	return ss.str();
 }
 
