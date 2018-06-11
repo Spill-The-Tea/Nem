@@ -382,14 +382,22 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	}
 	if (!checked && ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED && pos.GetStaticEval() == VALUE_NOTYETDETERMINED) pos.SetStaticEval(ttEntry.evalValue());
 	Move counter = pos.GetCounterMove(counterMove);
+	Value bestScore = -VALUE_MATE;
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
-	bool futilityPruning = pos.GetLastAppliedMove() != MOVE_NONE && !checked && depth <= settings::parameter.FULTILITY_PRUNING_DEPTH && beta < VALUE_MATE_THRESHOLD && pos.GetMaterialTableEntry()->DoNullmove(pos.GetSideToMove());
-	if (futilityPruning && alpha > (staticEvaluation + settings::parameter.FUTILITY_PRUNING_LIMIT[depth]))
+	bool futilityPruning = !PVNode
+		&& pos.GetLastAppliedMove() != MOVE_NONE
+		&& !checked
+		&& depth <= settings::parameter.FULTILITY_PRUNING_DEPTH
+		&& beta < VALUE_MATE_THRESHOLD
+		&& pos.GetMaterialTableEntry()->DoNullmove(pos.GetSideToMove())
+		&& alpha >(staticEvaluation + settings::parameter.FUTILITY_PRUNING_LIMIT[depth]);
+	if (futilityPruning) {
 		pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&tlData.History, &tlData.cmHistory, &tlData.followupHistory, nullptr, counter, ttMove);
+		bestScore = alpha;
+	}
 	else
 		pos.InitializeMoveIterator<MAIN_SEARCH>(&tlData.History, &tlData.cmHistory, &tlData.followupHistory, &tlData.killerManager, counter, ttMove);
 	Value score;
-	Value bestScore = -VALUE_MATE;
 	tt::NodeType nodeType = tt::UPPER_BOUND;
 	bool lmr = !checked && depth >= 3;
 	Move move;

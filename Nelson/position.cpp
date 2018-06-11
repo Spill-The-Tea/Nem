@@ -611,6 +611,26 @@ Bitboard Position::calculateAttacks(Color color) {
 	return bbAttacks;
 }
 
+//Battery attacks are squares attacked by rooks or queens backed by a Slider behind
+Bitboard Position::BatteryAttacks(Color attacking_color) const {
+	Bitboard bbXRay = EMPTY;
+	Bitboard bbRooks = OccupiedByColor[attacking_color] & (OccupiedByPieceType[QUEEN] | OccupiedByPieceType[ROOK]);
+	Bitboard bbExclRooks = OccupiedBB() & ~bbRooks;
+	while (bbRooks) {
+		Square s = lsb(bbRooks);
+		bbXRay |= RookTargets(s, bbExclRooks) & ~attacks[s];
+		bbRooks &= bbRooks - 1;
+	}
+	Bitboard bbBishops = OccupiedByColor[attacking_color] & (OccupiedByPieceType[QUEEN] | OccupiedByPieceType[BISHOP]);
+	Bitboard bbExclQueen = OccupiedBB() & ~PieceBB(QUEEN, attacking_color);
+	while (bbBishops) {
+		Square s = lsb(bbBishops);
+		bbXRay |= BishopTargets(s, bbExclQueen) & ~attacks[s];
+		bbBishops &= bbBishops - 1;
+	}
+	return bbXRay;
+}
+
 Bitboard Position::checkBlocker(Color colorOfBlocker, Color kingColor) {
 	return (PinnedPieces(kingColor) & OccupiedByColor[colorOfBlocker]);
 }
