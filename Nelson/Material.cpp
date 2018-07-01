@@ -4,7 +4,7 @@
 #include "evaluation.h"
 #include "bbEndings.h"
 #include "position.h"
-#include "tablebase.h"
+#include "tbprobe.h"
 
 
 
@@ -34,6 +34,7 @@ MaterialTableEntry * initUnusual(const Position & pos)
 	UnusualMaterial.Phase = 128;
 	UnusualMaterial.MostValuedPiece = 0;
 	UnusualMaterial.Flags = MaterialSearchFlags::MSF_DEFAULT;
+	if (popcount(pos.ColorBB(WHITE) | pos.ColorBB(BLACK)) <= tablebases::MaxCardinality) UnusualMaterial.Flags |= MaterialSearchFlags::MSF_TABLEBASE_ENTRY;
 	return &UnusualMaterial;
 }
 

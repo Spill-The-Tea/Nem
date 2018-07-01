@@ -35,6 +35,9 @@ struct MaterialTableEntry {
 	inline bool DoNullmove(Color col) const { return (Flags & (MaterialSearchFlags::MSF_NO_NULLMOVE_WHITE << col)) == 0; }
 	inline Value Score() const { return Evaluation.getScore(Phase); }
 	inline bool IsTablebaseEntry() const { return (Flags & MaterialSearchFlags::MSF_TABLEBASE_ENTRY) != 0; }
+	inline void SetIsTableBaseEntry(bool isTB) {
+		if (isTB) Flags |= MaterialSearchFlags::MSF_TABLEBASE_ENTRY; else Flags &= ~MaterialSearchFlags::MSF_TABLEBASE_ENTRY;
+	}
 	inline PieceType GetMostExpensivePiece(Color color) const { return PieceType((MostValuedPiece >> (4 * (int)color)) & 15); }
 	void setMostValuedPiece(Color color, PieceType pt) { 
 		MostValuedPiece &= color == BLACK ? 15 : 240;

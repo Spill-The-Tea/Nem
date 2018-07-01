@@ -5,8 +5,8 @@ else
 endif
 
 FILES = bbEndings.cpp board.cpp book.cpp evaluation.cpp hashtables.cpp Material.cpp \
-    Nemorino.cpp position.cpp search.cpp settings.cpp tablebase.cpp test.cpp timemanager.cpp \
-    uci.cpp utils.cpp xboard.cpp syzygy/tbprobe.c
+    Nemorino.cpp position.cpp search.cpp settings.cpp test.cpp timemanager.cpp \
+    uci.cpp utils.cpp xboard.cpp tbprobe.cpp
 
 FLAGS = -O3 -Wmain -std=c++11 -pthread -DNDEBUG
 

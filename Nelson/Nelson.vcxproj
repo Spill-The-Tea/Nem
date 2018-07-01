@@ -472,6 +472,7 @@
       <StructMemberAlignment>Default</StructMemberAlignment>
       <BufferSecurityCheck>true</BufferSecurityCheck>
       <FloatingPointModel>Fast</FloatingPointModel>
+      <InlineFunctionExpansion>Default</InlineFunctionExpansion>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -486,16 +487,10 @@
       <Command>if "%APPVEYOR%" == "True" EXIT
 REM copy /Y  "$(SolutionDir)\Nelson\*.cpp"  "$(USERPROFILE)\workspace\Nelson\*.*"
 REM copy /Y  "$(SolutionDir)\Nelson\*.h"  "$(USERPROFILE)\workspace\Nelson\*.*"
-REM copy /Y  "$(SolutionDir)\Nelson\syzygy\*.cpp"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
-REM copy /Y  "$(SolutionDir)\Nelson\syzygy\*.c"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
-REM copy /Y  "$(SolutionDir)\Nelson\syzygy\*.h"  "$(USERPROFILE)\workspace\Nelson\syzygy\*.*"
-"C:\Program Files\7-Zip\7z" a D:\Dropbox\aws\nemorino.zip *.h *.cpp syzygy\*.h syzygy\*.cpp syzygy\*.c
+"C:\Program Files\7-Zip\7z" a D:\Dropbox\aws\nemorino.zip *.h *.cpp
 robocopy "$(SolutionDir)Nelson" "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson" Makefile
 copy /Y  "$(SolutionDir)\Nelson\*.cpp" "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\*.*"
 copy /Y  "$(SolutionDir)\Nelson\*.h" "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\*.*"
-copy /Y  "$(SolutionDir)\Nelson\syzygy\*.cpp"  "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\syzygy\*.*"
-copy /Y  "$(SolutionDir)\Nelson\syzygy\*.c"  "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\syzygy\*.*"
-copy /Y  "$(SolutionDir)\Nelson\syzygy\*.h"  "\\DESKTOP1\Users\chrgu_000\Documents\Visual Studio 2015\Projects\nemorino\Nelson\syzygy\*.*"
 copy /Y "$(OutDir)Nemorino.exe" D:\Documents\EngineDev\Builds\
 copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\
 copy /Y "$(OutDir)Nemorino.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Builds\Nemorino2.exe
@@ -664,8 +659,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClCompile Include="board.cpp" />
     <ClCompile Include="book.cpp" />
     <ClCompile Include="evaluation.cpp" />
-    <ClCompile Include="syzygy\tbprobe.c" />
-    <ClCompile Include="tablebase.cpp" />
+    <ClCompile Include="tbprobe.cpp" />
     <ClCompile Include="utils.cpp" />
     <ClCompile Include="hashtables.cpp" />
     <ClCompile Include="bbEndings.cpp" />
@@ -683,8 +677,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClInclude Include="board.h" />
     <ClInclude Include="book.h" />
     <ClInclude Include="evaluation.h" />
-    <ClInclude Include="syzygy\tbprobe.h" />
-    <ClInclude Include="tablebase.h" />
+    <ClInclude Include="tbprobe.h" />
     <ClInclude Include="utils.h" />
     <ClInclude Include="hashtables.h" />
     <ClInclude Include="bbEndings.h" />

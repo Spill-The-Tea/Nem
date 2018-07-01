@@ -13,7 +13,6 @@
 #include "utils.h"
 #include "xboard.h"
 #include "test.h"
-#include "tablebase.h"
 
 #ifdef CRASH
 #include <Windows.h>

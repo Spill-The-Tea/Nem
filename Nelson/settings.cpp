@@ -24,13 +24,17 @@ namespace settings {
 			static_cast<OptionSpin *>(options[OPTION_THREADS])->set(HelperThreads + 1);
 			static_cast<OptionSpin *>(options[OPTION_THREADS])->setDefault(HelperThreads + 1);
 		}
-		for (int depth = 0; depth < 64; depth++) {
-			for (int moves = 0; moves < 64; moves++) {
+		for (int depth = 1; depth < 64; depth++) {
+			for (int moves = 1; moves < 64; moves++) {
 				double reduction = std::log(moves) * std::log(depth) / 2; //F
 				if (reduction < 0.8) LMR_REDUCTION[depth][moves] = 0;
 				else LMR_REDUCTION[depth][moves] = int(std::round(reduction));
+				assert(LMR_REDUCTION[depth][moves] < depth);
 			}
 		}
+		LMR_REDUCTION[0][0] = 0;
+		LMR_REDUCTION[1][0] = 0;
+		LMR_REDUCTION[0][1] = 0;
 	}
 
 	int Parameters::LMRReduction(int depth, int moveNumber)

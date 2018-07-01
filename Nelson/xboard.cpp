@@ -1,6 +1,7 @@
 #include <iostream>
 #include "xboard.h"
 #include "utils.h"
+#include "tbprobe.h"
 
 namespace cecp {
 

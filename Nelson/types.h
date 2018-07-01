@@ -66,6 +66,8 @@ inline PieceType GetPieceType(Piece piece) { return PieceType(piece >> 1); }
 inline Piece GetPiece(PieceType pieceType, Color color) { return Piece(2 * pieceType + color); }
 inline Color GetColor(Piece piece) { return Color(piece & 1); }
 
+inline Color& operator++(Color& d) { return d = Color(int(d) + 1); }
+
 enum Square : unsigned char {
 	A1, B1, C1, D1, E1, F1, G1, H1,
 	A2, B2, C2, D2, E2, F2, G2, H2,
@@ -131,11 +133,11 @@ typedef uint16_t Phase_t;
 
 //Operator overloads are copied from SF
 #define ENABLE_BASE_OPERATORS_ON(T)                                             \
-	inline T operator+(const T d1, const T d2) { return T(int(d1) + int(d2)); } \
-	inline T operator-(const T d1, const T d2) { return T(int(d1) - int(d2)); } \
+	constexpr T operator+(const T d1, const T d2) { return T(int(d1) + int(d2)); } \
+	constexpr T operator-(const T d1, const T d2) { return T(int(d1) - int(d2)); } \
 	inline T operator*(int i, const T d) { return T(i * int(d)); }              \
 	inline T operator*(const T d, int i) { return T(int(d) * i); }              \
-	inline T operator-(const T d) { return T(-int(d)); }                        \
+	constexpr T operator-(const T d) { return T(-int(d)); }                        \
 	inline T& operator+=(T& d1, const T d2) { return d1 = d1 + d2; }            \
 	inline T& operator-=(T& d1, const T d2) { return d1 = d1 - d2; }            \
 	inline T& operator*=(T& d, int i) { return d = T(int(d) * i); }
@@ -154,10 +156,10 @@ ENABLE_FULL_OPERATORS_ON(Value);
 ENABLE_FULL_OPERATORS_ON(PieceType);
 ENABLE_FULL_OPERATORS_ON(Piece);
 
-inline Value operator-(Value v, int i) { return Value(int(v) - i); }
+constexpr Value operator-(Value v, int i) { return Value(int(v) - i); }
 inline Value operator+=(Value v, int i) { return Value(int(v) + i); }
 inline Value operator-=(Value v, int i) { return Value(int(v) - i); }
-inline Value operator+(Value v, int i) { return Value(int(v) + i); }
+constexpr Value operator+(Value v, int i) { return Value(int(v) + i); }
 
 inline Square createSquare(Rank rank, File file) { return Square((rank << 3) + file); }
 inline char toChar(File f) { return char(f - FileA + 'a'); }

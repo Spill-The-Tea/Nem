@@ -9,6 +9,7 @@
 #include "search.h"
 #include "hashtables.h"
 #include "evaluation.h"
+#include "tbprobe.h"
 
 void Search::Reset() {
 	BestMove.move = MOVE_NONE;
@@ -240,20 +241,17 @@ ValuatedMove Search::Think(Position &pos) {
 	tbHits = 0;
 	probeTB = tablebases::MaxCardinality > 0;
 	if (pos.GetMaterialTableEntry()->IsTablebaseEntry()) {
-		std::vector<ValuatedMove> tbMoves(rootMoves, rootMoves + rootMoveCount);
-		bool tbHit = tablebases::root_probe(pos, tbMoves, score);
-		if (tbHit) {
-			tbHits++;
-			probeTB = false;
-			rootMoveCount = (int)tbMoves.size();
-			std::copy(tbMoves.begin(), tbMoves.end(), rootMoves);
-			if (rootMoveCount == 1) {
-				rootMoves[0].score = score;
-				BestMove = rootMoves[0]; //if tablebase probe only returns one move => play it and done!
-				info(pos, 0, SearchResultType::TABLEBASE_MOVE);
-				utils::debugInfo("Tablebase move", toString(BestMove.move));
-				goto END;
-			}
+		probeTB = false;
+		tablebases::RootMoves tbMoves;
+		for (int i = 0; i < rootMoveCount; ++i) tbMoves.emplace_back(rootMoves[i].move);
+		tablebases::rank_root_moves(pos, tbMoves);
+		for (int i = 0; i < rootMoveCount; ++i) {
+			rootMoves[i].move = tbMoves[i].pv[0];
+			rootMoves[i].score = tbMoves[i].tbScore;
+			BestMove = rootMoves[0]; //if tablebase probe only returns one move => play it and done!
+			info(pos, 0, SearchResultType::TABLEBASE_MOVE);
+			//utils::debugInfo("Tablebase move", toString(BestMove.move));
+			goto END;
 		}
 	}
 	SetRootMoveBoni();
@@ -333,7 +331,6 @@ ValuatedMove Search::Think(Position &pos) {
 			}
 			Time_t tNow = now();
 			_thinkTime = std::max(tNow - timeManager.GetStartTime(), int64_t(1));
-			Stop.load();
 			if (!Stopped()) {
 				//check if new deeper iteration shall be started
 				if (!timeManager.ContinueSearch(_depth, BestMove, NodeCount, tNow, PonderMode)) {

@@ -14,7 +14,7 @@
 #include "test.h"
 #include "settings.h"
 #include "timemanager.h"
-#include "tablebase.h"
+#include "tbprobe.h"
 #ifdef WPF
 #include "evaluation.h"
 #endif
@@ -578,6 +578,7 @@ void UCIInterface::dumpTT(std::vector<std::string>& tokens)
 }
 
 void UCIInterface::tb() {
+#ifdef TB
 	if (_position == nullptr) {
 		std::cout << "No position provided!" << std::endl;
 		return;
@@ -587,4 +588,5 @@ void UCIInterface::tb() {
 		return;
 	}
 	tablebases::probe(*_position);
+#endif
 }

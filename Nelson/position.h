@@ -70,7 +70,7 @@ public:
 	//returns Zobrist Hash key of position
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
-	inline uint64_t GetMaterialHash() const { return MaterialKey *14695981039346656037ull; }
+	inline uint64_t GetMaterialHash() const { return MaterialKey != MATERIAL_KEY_UNUSUAL ? MaterialKey *14695981039346656037ull : GetMaterialHashUnusual(); }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
 	inline Eval GetPsqEval() const { return PsqEval; }
 	/* The position struct provides staged move generation. To make use of it the staged move generation has to be initialized first by calling InitializeMoveIterator.
@@ -148,6 +148,7 @@ public:
 	//checks if a move is a tactical (cpture or promotion) move
 	inline bool IsTactical(const Move& move) const { return Board[to(move)] != BLANK || type(move) == ENPASSANT || type(move) == PROMOTION; }
 	inline bool IsTactical(const ValuatedMove& move) const { return IsTactical(move.move); }
+	inline bool IsCapture(const Move& move) const { return Board[to(move)] != BLANK || type(move) == ENPASSANT; }
 	//checks if a move is a winning capture (winning here includes equal captures and promotions, NxB and BxN are included as well) - Currently not used!
 	inline bool IsWinningCapture(const ValuatedMove& move) const;
 	//returns the current value of StaticEval - doesn't check if evaluate has been executed
@@ -200,6 +201,7 @@ public:
 	//CHeck if kings are on opposed wings 
 	inline bool KingOnOpposedWings() const { return std::abs((kingSquares[WHITE] & 7) - (kingSquares[BLACK] & 7)) > 2; }
 	Bitboard BatteryAttacks(Color attacking_color) const;
+	inline bool IsKvK() const { return MaterialKey == MATERIAL_KEY_KvK; }
 #ifdef TRACE
 	std::string printPath() const;
 #endif
@@ -275,6 +277,15 @@ private:
 	template<bool SquareIsEmpty> void set(const Piece piece, const Square square);
 	void remove(const Square square);
 
+	inline uint64_t GetMaterialHashUnusual() const {
+		uint64_t mhash = 0;
+		for (int c = 0;c <= 1; ++c) {
+			for (int pt = 0; pt <= 5; ++pt) {
+				mhash ^= ZobristKeys[2*pt+c][popcount(PieceBB(static_cast<PieceType>(pt), static_cast<Color>(c)))];
+			}
+		}
+		return mhash;
+	}
 	inline void AddCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions & 15]; CastlingOptions |= castleFlag; Hash ^= ZobristCastles[CastlingOptions & 15]; }
 	inline void RemoveCastlingOption(const CastleFlag castleFlag) { Hash ^= ZobristCastles[CastlingOptions & 15]; CastlingOptions &= ~castleFlag; Hash ^= ZobristCastles[CastlingOptions & 15]; }
 	inline void SetCastlingLost(const Color col) { CastlingOptions |= CastleFlag::W_LOST_CASTLING << (int)col; }

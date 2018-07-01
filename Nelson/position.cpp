@@ -14,6 +14,7 @@
 #include "settings.h"
 #include "hashtables.h"
 #include "evaluation.h"
+#include "tbprobe.h"
 
 static const std::string PieceToChar("QqRrBbNnPpKk ");
 
@@ -91,7 +92,10 @@ bool Position::ApplyMove(Move move) {
 		//Adjust material key
 		if (capturedInLastMove != BLANK) {
 			if (MaterialKey == MATERIAL_KEY_UNUSUAL) {
-				if (checkMaterialIsUnusual()) material->Evaluation = calculateMaterialEval(*this);
+				if (checkMaterialIsUnusual()) {
+					material->Evaluation = calculateMaterialEval(*this);
+					material->SetIsTableBaseEntry(popcount(OccupiedByColor[WHITE] | OccupiedByColor[BLACK]) <= tablebases::MaxCardinality);
+				}
 				else MaterialKey = calculateMaterialKey();
 			}
 			else MaterialKey -= materialKeyFactors[capturedInLastMove];
@@ -133,6 +137,7 @@ bool Position::ApplyMove(Move move) {
 			else
 				MaterialKey = MaterialKey - materialKeyFactors[WPAWN + SideToMove] - materialKeyFactors[capturedInLastMove] + materialKeyFactors[convertedTo];
 			material = probe(MaterialKey);
+			material->SetIsTableBaseEntry(popcount(OccupiedByColor[WHITE] | OccupiedByColor[BLACK]) <= tablebases::MaxCardinality);
 		}
 		break;
 	case CASTLING:

@@ -14,7 +14,7 @@
 #include "settings.h"
 #include "timemanager.h"
 #include "utils.h"
-#include "tablebase.h"
+#include "tbprobe.h"
 
 
 enum struct ThreadType { SINGLE, MASTER, SLAVE };
@@ -272,14 +272,14 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	// immediately
 	if (probeTB && pos.GetDrawPlyCount() == 0 && pos.GetMaterialTableEntry()->IsTablebaseEntry() && depth >= settings::parameter.TBProbeDepth)
 	{
-		int found;
-		int v = tablebases::probe_wdl(pos, &found);
-		if (found)
+		tablebases::ProbeState state;
+		tablebases::WDLScore wdl = tablebases::probe_wdl(pos, &state);
+		if (state != tablebases::ProbeState::FAIL)
 		{
 			if (T != ThreadType::SLAVE) tbHits++;
-			Value value = v < -1 ? -VALUE_MATE + MAX_DEPTH + pos.GetPliesFromRoot()
-				: v >  1 ? VALUE_MATE - MAX_DEPTH - pos.GetPliesFromRoot()
-				: VALUE_DRAW + 2 * v;
+			Value value = wdl == tablebases::WDLLoss ? -VALUE_MATE + MAX_DEPTH + pos.GetPliesFromRoot()
+				: wdl == tablebases::WDLWin ? VALUE_MATE - MAX_DEPTH - pos.GetPliesFromRoot()
+				: VALUE_DRAW + 2 * static_cast<int>(wdl);
 			if (T != ThreadType::SINGLE) ttPointer->update<tt::THREAD_SAFE>(hashKey, tt::toTT(value, pos.GetPliesFromRoot()), tt::EXACT, MAX_DEPTH - 1, MOVE_NONE, VALUE_NOTYETDETERMINED);
 			else ttPointer->update<tt::UNSAFE>(hashKey, tt::toTT(value, pos.GetPliesFromRoot()), tt::EXACT, MAX_DEPTH - 1, MOVE_NONE, VALUE_NOTYETDETERMINED);
 			return SCORE_TB(value);
@@ -384,8 +384,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	Move counter = pos.GetCounterMove(counterMove);
 	Value bestScore = -VALUE_MATE;
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
-	bool futilityPruning = !PVNode
-		&& pos.GetLastAppliedMove() != MOVE_NONE
+	bool futilityPruning = pos.GetLastAppliedMove() != MOVE_NONE
 		&& !checked
 		&& depth <= settings::parameter.FULTILITY_PRUNING_DEPTH
 		&& beta < VALUE_MATE_THRESHOLD
