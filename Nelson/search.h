@@ -417,7 +417,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			//assert(type(move) == MoveType::NORMAL && pos.GetPieceOnSquare(to(move)) == Piece::BLANK);
 			// late-move pruning II
 			int reducedDepth = depth - settings::parameter.LMRReduction(depth, moveIndex);
-			if ((reducedDepth <= 4 && moveIndex >= depth * 4) || ((pos.GetPliesFromRoot() > 10 || reducedDepth <= 4) && pos.SEE_Sign(move) < 0)) {
+			if (moveIndex >= depth * 4 || (reducedDepth <= 4 && pos.SEE_Sign(move) < 0)) {
 				if (!pos.givesCheck(move)) continue;
 			}
 		}
