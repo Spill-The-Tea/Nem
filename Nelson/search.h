@@ -381,6 +381,8 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		ttMove = ttFound ? ttEntry.move() : MOVE_NONE;
 	}
 	if (!checked && ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED && pos.GetStaticEval() == VALUE_NOTYETDETERMINED) pos.SetStaticEval(ttEntry.evalValue());
+	//bool regular = !checked && pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetLastAppliedMove() != MOVE_NONE && !pos.Previous()->Previous()->Checked();
+	//bool improving = regular && pos.Previous()->Previous()->GetStaticEval() < pos.GetStaticEval();
 	Move counter = pos.GetCounterMove(counterMove);
 	Value bestScore = -VALUE_MATE;
 	//Futility Pruning I: If quiet moves can't raise alpha, only generate tactical moves and moves which give check
@@ -414,8 +416,6 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			&& !tlData.killerManager.isKiller(pos, move) && (pos.IsQuietAndNoCastles(move) || pos.GetMoveGenerationPhase() == MoveGenerationType::LOOSING_CAPTURES)
 			&& !pos.IsAdvancedPawnPush(move);
 		if (prunable) {
-			//assert(type(move) == MoveType::NORMAL && pos.GetPieceOnSquare(to(move)) == Piece::BLANK);
-			// late-move pruning II
 			int reducedDepth = depth - settings::parameter.LMRReduction(depth, moveIndex);
 			if (moveIndex >= depth * 4 || (reducedDepth <= 4 && pos.SEE_Sign(move) < 0)) {
 				if (!pos.givesCheck(move)) continue;
@@ -501,7 +501,7 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 #endif
 		MaxDepth = std::max(MaxDepth, pos.GetPliesFromRoot());
 		if (!Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop.store(true);
-}
+	}
 	if (Stopped()) return VALUE_ZERO;
 	if (pos.GetResult() != Result::OPEN)  return SCORE_FINAL(pos.evaluateFinalPosition());
 	//Mate distance pruning
@@ -549,16 +549,16 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 		}
 #endif
 		//Delta Pruning
-		if (!checked && !pos.GetMaterialTableEntry()->IsLateEndgame()) {
+		if (!pos.GetMaterialTableEntry()->IsLateEndgame()) {
 			Value delta = settings::parameter.PieceValues[pos.GetMostValuableAttackedPieceType()].egScore + int(pos.PawnOn7thRank()) * (settings::parameter.PieceValues[QUEEN].egScore - settings::parameter.PieceValues[PAWN].egScore) + settings::parameter.DELTA_PRUNING_SAFETY_MARGIN;
 			if (standPat + delta < alpha) return SCORE_DP(alpha);
 		}
-		if (alpha < standPat) alpha = standPat;
+		alpha = std::max(alpha, standPat);
 	}
 	if (WithChecks) pos.InitializeMoveIterator<QSEARCH_WITH_CHECKS>(&tlData.History, &tlData.cmHistory, &tlData.followupHistory, nullptr, MOVE_NONE, ttMove);
 	else pos.InitializeMoveIterator<QSEARCH>(&tlData.History, &tlData.cmHistory, &tlData.followupHistory, nullptr, MOVE_NONE, ttMove);
 	Move move;
-	Value score;
+	Value score = standPat;
 	tt::NodeType nt = tt::UPPER_BOUND;
 	Move bestMove = MOVE_NONE;
 	while ((move = pos.NextMove())) {
