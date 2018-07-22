@@ -44,7 +44,6 @@ The engine requires 64-bit Windows.
 * Tapered Eval based on Material, Mobility, Threats, King Safety, and Pawn Structure
 * Special evaluation functions for some endgames
 * Copy/Make
-* Syzygy Tablebases accessed via [Fathom](https://github.com/basil00/Fathom)
 
 ### Version History ###
 
@@ -82,6 +81,11 @@ The engine requires 64-bit Windows.
 *          Some Improvements when running with many threads
 *          Some Evaluation Improvements (added some material imbalance terms, knight center mobility, ... and removed some useless terms)
 
+**5.00:**
+
+*          Several minor Improvements especially for King Safety 
+*          Several Bugfixes
+*          Replaced Syzygy probing code. Now instead of Fathom library, probing code from Stockfish is used
 
 ### License ###
 
