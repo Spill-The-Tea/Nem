@@ -244,14 +244,16 @@ ValuatedMove Search::Think(Position &pos) {
 		probeTB = false;
 		tablebases::RootMoves tbMoves;
 		for (int i = 0; i < rootMoveCount; ++i) tbMoves.emplace_back(rootMoves[i].move);
-		tablebases::rank_root_moves(pos, tbMoves);
-		for (int i = 0; i < rootMoveCount; ++i) {
-			rootMoves[i].move = tbMoves[i].pv[0];
-			rootMoves[i].score = tbMoves[i].tbScore;
-			BestMove = rootMoves[0]; //if tablebase probe only returns one move => play it and done!
-			info(pos, 0, SearchResultType::TABLEBASE_MOVE);
-			//utils::debugInfo("Tablebase move", toString(BestMove.move));
-			goto END;
+		if (tablebases::rank_root_moves(pos, tbMoves)) {
+			++tbHits;
+			for (int i = 0; i < rootMoveCount; ++i) {
+				rootMoves[i].move = tbMoves[i].pv[0];
+				rootMoves[i].score = tbMoves[i].tbScore;
+				BestMove = rootMoves[0]; //if tablebase probe only returns one move => play it and done!
+				info(pos, 0, SearchResultType::TABLEBASE_MOVE);
+				//utils::debugInfo("Tablebase move", toString(BestMove.move));
+				goto END;
+			}
 		}
 	}
 	SetRootMoveBoni();

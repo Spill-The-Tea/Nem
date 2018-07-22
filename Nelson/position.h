@@ -125,6 +125,7 @@ public:
 	inline Bitboard AttacksExcludingPieceType(Color color, PieceType excludedPieceType) const;
 	inline Bitboard AttacksByColor(Color color) const { return (SideToMove == color) * attackedByUs + (SideToMove != color) * attackedByThem; }
 	inline Bitboard AttackedByThem() const { return attackedByThem; }
+	inline Bitboard AttackedByUs() const { return attackedByUs; }
 	//checks if the position is already repeated (if one of the ancestors has the same zobrist hash). This is no check for 3-fold repetition!
 	bool checkRepetition() const;
 	//checks if there are any repetitions in prior moves
@@ -199,7 +200,7 @@ public:
 	//Bitboard of squares attacked by more than one piece
 	inline Bitboard dblAttacks(Color color) const { return dblAttacked[color]; }
 	//CHeck if kings are on opposed wings 
-	inline bool KingOnOpposedWings() const { return std::abs((kingSquares[WHITE] & 7) - (kingSquares[BLACK] & 7)) > 2; }
+	inline bool KingOnOpposedWings() const { return ((CastlingOptions & 15) == 0) && std::abs((kingSquares[WHITE] & 7) - (kingSquares[BLACK] & 7)) > 2; }
 	Bitboard BatteryAttacks(Color attacking_color) const;
 	inline bool IsKvK() const { return MaterialKey == MATERIAL_KEY_KvK; }
 #ifdef TRACE

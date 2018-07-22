@@ -43,7 +43,10 @@ Value evaluateDefault(const Position& pos) {
 	result.Threats = evaluateThreats<WHITE>(pos) - evaluateThreats<BLACK>(pos);
 	result.Pieces = evaluatePieces<WHITE>(pos) - evaluatePieces<BLACK>(pos);
 	result.PsqEval = pos.GetPsqEval();
-	//if (pos.KingOnOpposedWings()) result.KingSafety.mgScore *= 4 / 3;
+	//if (pos.KingOnOpposedWings()) {
+	//	result.KingSafety.mgScore = static_cast<Value>(static_cast<int>(result.KingSafety.mgScore) * 3 / 2);
+	//	result.Mobility.mgScore = static_cast<Value>(static_cast<int>(result.Mobility.mgScore) * 3 / 2);
+	//}
 	//result.Space = evaluateSpace<WHITE>(pos) -evaluateSpace<BLACK>(pos);
 #ifdef WPF
 	Value r = result.GetScore(pos);
@@ -146,7 +149,7 @@ Eval evaluateKingSafety(const Position& pos) {
 		//Safe checks
 		Bitboard bbSafe = (~pos.AttacksByColor(color_defender) | (bbWeak & pos.dblAttacks(color_attacker))) & ~pos.ColorBB(color_attacker);
 		const Bitboard bbRookAttacks = RookTargets(pos.KingSquare(color_defender), bbExclQueen);
-		const Bitboard bbBishopAttacks = BishopTargets(pos.KingSquare(color_defender), bbExclQueen); 
+		const Bitboard bbBishopAttacks = BishopTargets(pos.KingSquare(color_defender), bbExclQueen);
 		if ((bbRookAttacks | bbBishopAttacks) & pos.AttacksByPieceType(color_attacker, QUEEN) & bbSafe)
 			attackScore[c] += settings::parameter.SAFE_CHECK[QUEEN];
 		bbSafe |= pos.dblAttacks(color_attacker) & ~(pos.dblAttacks(color_defender) | pos.ColorBB(color_attacker)) & pos.AttacksByPieceType(color_defender, QUEEN);

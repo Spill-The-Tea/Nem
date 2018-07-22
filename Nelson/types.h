@@ -29,7 +29,7 @@
 #endif
 #endif
 
-const std::string VERSION_INFO = "Nemorino 4.17";
+const std::string VERSION_INFO = "Nemorino 5.00";
 
 typedef uint64_t Bitboard;
 typedef int64_t Time_t;
