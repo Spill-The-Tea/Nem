@@ -35,8 +35,8 @@ Nemorino doesn't bring it's own UI. So for running it, you need a GUI supporting
 The engine requires 64-bit Windows.</p>
 There are 2 executables:
 <ul>
-<li><b>Nemorino_4.00_win64.exe</b> is the default and should work on most PCs</li>
-<li><b>Nemorino_4.00_win64-no-popcount.exe</b> should only be used on older PCs with CPUs without POPCNT instruction</li>
+<li><b>Nemorino_5.00_win64.exe</b> is the default and should work on most PCs</li>
+<li><b>Nemorino_5.00_win64-no-popcount.exe</b> should only be used on older PCs with CPUs without POPCNT instruction</li>
 </ul>
 <h3>Internals</h3>
 <ul>
@@ -45,7 +45,6 @@ There are 2 executables:
 <li>Tapered Eval based on Material, Mobility, Threats, King Safety, and Pawn Structure</li>
 <li>Special evaluation functions for some endgames</li>
 <li>Copy/Make</li>
-<li>Syzygy Tablebases accessed via <a href="https://github.com/basil00/Fathom">Fathom</a></li>
 </ul>
 <h3>Version History</h3>
 <ul>
@@ -76,7 +75,7 @@ There are 2 executables:
     <li>
         <b>2.00a (only bugfixes relevant when running with more than one thread):</b>
         <ul>
-            <li>Fix for known issue with tablebase access (see <a href="https://github.com/basil00/Fathom/issues/15)">https://github.com/basil00/Fathom/issues/15</a></li>
+            <li>Fix for known issue with tablebase access (see <a href="https://github.com/basil00/Fathom/issues/15">https://github.com/basil00/Fathom/issues/15</a>)</li>
             <li>Fix for other (rare) crashes</li>
         </ul>
     </li>
@@ -93,6 +92,14 @@ There are 2 executables:
             <li>Improved King Safety evaluation</li>
             <li>Some Improvements when running with many threads</li>
             <li>Some Evaluation Improvements (added some material imbalance terms, knight center mobility, ... and removed some useless terms)</li>
+        </ul>
+    </li>
+	<li>
+        <b>5.00:</b>
+        <ul>
+            <li>Several minor Improvements especially for King Safety </li>
+            <li>Several Bugfixes</li>
+            <li>Replaced Syzygy probing code. Now instead of Fathom library, probing code from Stockfish is used</li>
         </ul>
     </li>
 </ul>

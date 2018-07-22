@@ -21,6 +21,9 @@ Global
 		ReleaseNoPopcount|Any CPU = ReleaseNoPopcount|Any CPU
 		ReleaseNoPopcount|Win32 = ReleaseNoPopcount|Win32
 		ReleaseNoPopcount|x64 = ReleaseNoPopcount|x64
+		ReleasePEXT|Any CPU = ReleasePEXT|Any CPU
+		ReleasePEXT|Win32 = ReleasePEXT|Win32
+		ReleasePEXT|x64 = ReleasePEXT|x64
 		ReleaseW32|Any CPU = ReleaseW32|Any CPU
 		ReleaseW32|Win32 = ReleaseW32|Win32
 		ReleaseW32|x64 = ReleaseW32|x64
@@ -49,6 +52,11 @@ Global
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|Win32.Build.0 = ReleaseNoPopcount|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|x64.ActiveCfg = ReleaseNoPopcount|x64
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseNoPopcount|x64.Build.0 = ReleaseNoPopcount|x64
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleasePEXT|Any CPU.ActiveCfg = ReleasePEXT|Win32
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleasePEXT|Win32.ActiveCfg = ReleasePEXT|Win32
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleasePEXT|Win32.Build.0 = ReleasePEXT|Win32
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleasePEXT|x64.ActiveCfg = ReleasePEXT|x64
+		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleasePEXT|x64.Build.0 = ReleasePEXT|x64
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseW32|Any CPU.ActiveCfg = ReleaseW32|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseW32|Win32.ActiveCfg = ReleaseW32|Win32
 		{B23D2DB6-4387-478B-A153-4C34596B8C7E}.ReleaseW32|Win32.Build.0 = ReleaseW32|Win32

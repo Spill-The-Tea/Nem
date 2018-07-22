@@ -147,7 +147,11 @@ int main(int argc, const char* argv[]) {
 #ifdef NO_POPCOUNT
 			std::cout << VERSION_INFO << " (No Popcount)" << std::endl;
 #else
+#ifdef PEXT
+			std::cout << VERSION_INFO << " (BMI2)" << std::endl;
+#else
 			std::cout << VERSION_INFO << std::endl;
+#endif
 #endif
 		}
 		else if (!input.compare(0, 8, "position")) {
