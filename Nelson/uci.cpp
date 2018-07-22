@@ -114,7 +114,15 @@ void UCIInterface::dispatch(std::string line) {
 
 void UCIInterface::uci() {
 	Engine->UciOutput = true;
-	sync_cout << "id name Nemorino" << sync_endl;
+#ifdef NO_POPCOUNT
+	sync_cout << "id name " << VERSION_INFO << " (No Popcount)" << sync_endl;
+#else
+#ifdef PEXT
+	sync_cout << "id name " << VERSION_INFO << " (BMI2)" << sync_endl;
+#else
+	sync_cout << "id name " << VERSION_INFO << sync_endl;
+#endif
+#endif
 	sync_cout << "id author Christian Guenther" << sync_endl;
 	//read ini file (if exists)
 	std::ifstream inifile("nemorino.ini");
