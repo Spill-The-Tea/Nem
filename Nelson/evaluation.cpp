@@ -221,12 +221,14 @@ Eval evaluateMobility(const Position& pos) {
 	Bitboard bbBlockedPawns[2] = { (pos.PieceBB(PAWN, WHITE) << 8) & pos.PieceBB(PAWN, BLACK), (pos.PieceBB(PAWN, BLACK) >> 8) & pos.PieceBB(PAWN, WHITE) };
 	Bitboard allowedWhite = ~((pos.PieceBB(PAWN, WHITE) & (RANK2 | RANK3)) | bbBlockedPawns[WHITE] | pos.PieceBB(KING, WHITE));
 	Bitboard allowedBlack = ~((pos.PieceBB(PAWN, BLACK) & (RANK6 | RANK7)) | bbBlockedPawns[BLACK] | pos.PieceBB(KING, BLACK));
+
+	//Bitboard bbBattery[2] = { pos.BatteryAttacks(WHITE), pos.BatteryAttacks(BLACK) };
 	//Now calculate Mobility
 	//Queens can move to all unattacked squares and if protected to all squares attacked by queens or kings
 	Bitboard pieceBB = pos.PieceBB(QUEEN, WHITE);
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
-		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite & ~pos.dblAttacks(BLACK);
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedWhite;
 		targets &= ~abbBRook;
 		result += settings::parameter.MOBILITY_BONUS_QUEEN[popcount(targets)];
 		pieceBB &= pieceBB - 1;
@@ -234,7 +236,7 @@ Eval evaluateMobility(const Position& pos) {
 	pieceBB = pos.PieceBB(QUEEN, BLACK);
 	while (pieceBB) {
 		const Square square = lsb(pieceBB);
-		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack & ~pos.dblAttacks(WHITE);
+		Bitboard targets = pos.GetAttacksFrom(square) & allowedBlack;
 		targets &= ~abbWRook;
 		result -= settings::parameter.MOBILITY_BONUS_QUEEN[popcount(targets)];
 		pieceBB &= pieceBB - 1;
