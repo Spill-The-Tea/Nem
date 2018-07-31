@@ -204,7 +204,11 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 	}
 	else if (!tokens[2].compare(settings::OPTION_SYZYGY_PATH)) {
 		if (settings::options.getString(settings::OPTION_SYZYGY_PATH).size() > 1) {
-			tablebases::init(settings::options.getString(settings::OPTION_SYZYGY_PATH));
+			if (!settings::options.getString(settings::OPTION_SYZYGY_PATH).compare("default")) {
+				tablebases::init("E:\\TB\\syzygy;E:\\TB\\dtz;E:\\TB\\wdl");
+			}
+			else 
+				tablebases::init(settings::options.getString(settings::OPTION_SYZYGY_PATH));
 			if (tablebases::MaxCardinality < 3) {
 				sync_cout << "Couldn't find any Tablebase files!!" << sync_endl;
 				exit(1);

@@ -40,7 +40,7 @@ Value evaluateDefault(const Position& pos) {
 	result.Mobility = evaluateMobility(pos);
 	result.KingSafety = evaluateKingSafety(pos);
 	result.PawnStructure = pos.PawnStructureScore();
-	result.Threats = evaluateThreats<WHITE>(pos) - evaluateThreats<BLACK>(pos);
+	result.Threats = 7 * (evaluateThreats<WHITE>(pos) - evaluateThreats<BLACK>(pos)) / 8;
 	result.Pieces = evaluatePieces<WHITE>(pos) - evaluatePieces<BLACK>(pos);
 	result.PsqEval = pos.GetPsqEval();
 	//if (pos.KingOnOpposedWings()) {
