@@ -1096,13 +1096,14 @@ Result Position::GetResult() {
 	//	else result = OPEN;
 	//}
 	if (result == Result::RESULT_UNKNOWN) {
-		if (DrawPlyCount > 100 || checkRepetition()) result = Result::DRAW;
-		else if (Checked()) {
+		if (Checked()) {
 			if (CheckValidMoveExists<true>()) result = Result::OPEN; else result = Result::MATE;
 		}
 		else {
 			if (CheckValidMoveExists<false>()) result = Result::OPEN; else result = Result::DRAW;
 		}
+		if (result == Result::OPEN && (DrawPlyCount >= 100 || checkRepetition())) 
+			result = Result::DRAW;
 	}
 	return result;
 }
