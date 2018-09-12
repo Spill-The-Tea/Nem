@@ -174,7 +174,7 @@ namespace utils {
 	}
 
 
-	std::vector<std::string> split(std::string str, char sep) {
+	std::vector<std::string> split(const std::string str, char sep) {
 		std::vector<std::string> tokens;
 		std::stringstream ss(str); // Turn the string into a stream.
 		std::string tok;

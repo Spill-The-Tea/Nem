@@ -395,6 +395,7 @@ namespace settings {
 	class Options : public std::map<std::string, Option *> {
 	public:
 		Options();
+		virtual ~Options();
 		void printUCI();
 		void printInfo();
 		void read(std::vector<std::string> &tokens);

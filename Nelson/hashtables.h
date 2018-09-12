@@ -215,6 +215,7 @@ namespace killer {
 
 	const int NB_SLOTS_KILLER = 2;
 	const int NB_KILLER = 2;
+	const int PLY_TABLE_SIZE = NB_SLOTS_KILLER * (MAX_DEPTH + 1) * 2;
 
 	class Manager {
 	public:
@@ -233,7 +234,7 @@ namespace killer {
 		int getIndex(const Position & pos) const;
 		//killer table has NB_SLOTS_KILLER (Slots) * MAX_DEPTH (maximum search depth) * 2 (SideToMove) entries
 		//Parity: due to null moves there might be entries with same plies from root, with white and with black to move
-		Move plyTable[NB_SLOTS_KILLER * (MAX_DEPTH + 1) * 2];
+		Move plyTable[PLY_TABLE_SIZE];
 	};
 
 }

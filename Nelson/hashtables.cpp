@@ -239,7 +239,7 @@ namespace killer {
 
 	void Manager::clear()
 	{
-		std::memset(plyTable, 0, NB_SLOTS_KILLER * (MAX_DEPTH + 1) * 2 * sizeof(Move));
+		std::memset(plyTable, 0, PLY_TABLE_SIZE * sizeof(Move));
 	}
 
 	int Manager::getIndex(const Position & pos) const
@@ -256,7 +256,8 @@ namespace killer {
 	void Manager::enterLevel(const Position & pos)
 	{
 		int index = getIndex(pos) + 2 * NB_SLOTS_KILLER;
-		if (pos.Previous()->Checked()) {
+		CHECK((index < (PLY_TABLE_SIZE - 1)) && ((index - 4 * NB_SLOTS_KILLER) >= 0))
+		if (pos.Previous() && pos.Previous()->Checked()) {
 			plyTable[index] = plyTable[index - 4 * NB_SLOTS_KILLER];
 			plyTable[index + 1] = plyTable[index - 4 * NB_SLOTS_KILLER + 1];
 		}

@@ -37,13 +37,14 @@ void UCIInterface::loop() {
 		if (cmds.size() > 100) cmds.pop();
 		cmds.emplace(line);
 #endif
-		dispatch(line);
+		if (!dispatch(line)) break;
 	}
 }
 
-void UCIInterface::dispatch(std::string line) {
+bool UCIInterface::dispatch(std::string line) {
+	if (line.size() == 0) return true;
 	std::vector<std::string> tokens = utils::split(line);
-	if (tokens.size() == 0) return;
+	if (tokens.size() == 0) return true;
 	std::string command = tokens[0];
 	if (!command.compare("stop"))
 		stop();
@@ -105,11 +106,14 @@ void UCIInterface::dispatch(std::string line) {
 	//	cout << printEvaluation(pos);
 	//else if (!strcmp(token, "qeval"))
 	//	cout << "QEval: " << Engine.QEval(pos) << std::endl;
-	else if (!command.compare("quit"))
+	else if (!command.compare("quit")) {
 		quit();
+		return false;
+	}
 #ifdef TRACE
 	else if (!command.compare("dumpTree")) utils::dumpSearchTreeToFile();
 #endif
+	return true;
 }
 
 void UCIInterface::uci() {
@@ -279,7 +283,7 @@ void UCIInterface::deleteThread() {
 	if (Mainthread != nullptr) {
 		if (Mainthread->joinable()) Mainthread->join();
 		else utils::debugInfo("Can't stop Engine Thread!");
-		free(Mainthread);
+		delete Mainthread;
 		Mainthread = nullptr;
 	}
 	Engine->Reset();

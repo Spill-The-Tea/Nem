@@ -96,8 +96,6 @@ public:
 	void startHelper();
 
 	std::mutex mtxSearch;
-	//slave threads
-	std::vector<std::thread> subThreads;
 	//Utility method (not used when thinking). Checks if a position is quiet (that's static evalution is about the same as QSearch result). Might be
 	//useful for tuning
 	bool isQuiet(Position &pos);
@@ -177,6 +175,7 @@ template<ThreadType T> Value Search::SearchRoot(Value alpha, Value beta, Positio
 		//apply move
 		Position next(pos);
 		next.ApplyMove(moves[i].move);
+		CHECK(next.GetPliesFromRoot() == 1);
 		Value bonus = rootMoveBoni[moves[i].move];
 		if (i > startWithMove) {
 			int reduction = 0;
@@ -422,8 +421,11 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			}
 		}
 		Position next(pos);
+		CHECK(next.GetPliesFromRoot() == pos.GetPliesFromRoot())
 		if (next.ApplyMove(move)) {
+			CHECK(next.GetPliesFromRoot() == pos.GetPliesFromRoot() + 1)
 			tlData.killerManager.enterLevel(next);
+			CHECK(next.GetPliesFromRoot() == pos.GetPliesFromRoot() + 1)
 			//critical = critical || GetPieceType(pos.GetPieceOnSquare(from(move))) == PAWN && ((pos.GetSideToMove() == WHITE && from(move) > H5) || (pos.GetSideToMove() == BLACK && from(move) < A4));
 			//Check extension
 			int extension;

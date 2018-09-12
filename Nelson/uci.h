@@ -15,7 +15,7 @@ private:
 	bool ponderActive = false;
 	bool initialized = false;
 
-	void dispatch(std::string line);
+	bool dispatch(std::string line);
 
 	// UCI command handlers
 	void uci();

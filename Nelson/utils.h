@@ -13,7 +13,7 @@ namespace utils {
 
 	void debugInfo(std::string info);
 	void debugInfo(std::string info1, std::string info2);
-	std::vector<std::string> split(std::string str, char sep = ' ');
+	std::vector<std::string> split(const std::string str, char sep = ' ');
 	void replaceExt(std::string& s, const std::string& newExt);
 	std::string TrimLeft(const std::string& s);
 	std::string TrimRight(const std::string& s);

@@ -31,6 +31,8 @@
 
 const std::string VERSION_INFO = "Nemorino 5.02";
 
+#define CHECK(x)
+
 typedef uint64_t Bitboard;
 typedef int64_t Time_t;
 

@@ -157,10 +157,6 @@ Search::Search() {
 }
 
 Search::~Search() {
-	//stop and delete Slave Threads
-	for (int i = 0; i < settings::parameter.HelperThreads; ++i) {
-		if (subThreads[i].joinable()) subThreads[i].join();
-	}
 	if (book != nullptr) {
 		delete book;
 		book = nullptr;
@@ -181,22 +177,24 @@ ValuatedMove Search::Think(Position &pos) {
 	//pos.move_history->clear();
 	utils::clearSearchTree();
 #endif
+	//slave threads
+	std::vector<std::thread> subThreads;
 	//Initialize Engine before starting the new search
 	_thinkTime = 1; //to avoid divide by 0 errors
 	ponderMove = MOVE_NONE;
 	Value score = VALUE_ZERO;
 	ValuatedMove lastBestMove = VALUATED_MOVE_NONE;
 	rootPosition = pos;
-	pos.ResetPliesFromRoot();
-	settings::parameter.EngineSide = pos.GetSideToMove();
+	rootPosition.ResetPliesFromRoot();
+	settings::parameter.EngineSide = rootPosition.GetSideToMove();
 	tt::newSearch();
 	//Get all root moves
-	ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
-	rootMoveCount = pos.GeneratedMoveCount();
+	ValuatedMove * generatedMoves = rootPosition.GenerateMoves<LEGAL>();
+	rootMoveCount = rootPosition.GeneratedMoveCount();
 	if (rootMoveCount == 0) {
 		BestMove.move = MOVE_NONE;
 		BestMove.score = VALUE_ZERO;
-		info(pos, 0, SearchResultType::UNIQUE_MOVE);
+		info(rootPosition, 0, SearchResultType::UNIQUE_MOVE);
 		utils::debugInfo("No valid move!");
 		return BestMove;
 	}
@@ -210,19 +208,19 @@ ValuatedMove Search::Think(Position &pos) {
 		if (book == nullptr) book = new polyglot::Book(*BookFile);
 		//Currently engine isn't looking for the best book move, but selects on of the available bookmoves by random, with entries weight used to define the
 		//probability 
-		Move bookMove = book->probe(pos, false, generatedMoves, rootMoveCount);
+		Move bookMove = book->probe(rootPosition, false, generatedMoves, rootMoveCount);
 		if (bookMove != MOVE_NONE) {
 			BestMove.move = bookMove;
 			BestMove.score = VALUE_ZERO;
 			utils::debugInfo("Book move");
 			//Try to find a suitable move for pondering
-			Position next(pos);
+			Position next(rootPosition);
 			if (next.ApplyMove(bookMove)) {
 				ValuatedMove* replies = next.GenerateMoves<LEGAL>();
 				ponderMove = book->probe(next, true, replies, next.GeneratedMoveCount());
 				if (ponderMove == MOVE_NONE && next.GeneratedMoveCount() > 0) ponderMove = replies->move;
 			}
-			info(pos, 0, SearchResultType::BOOK_MOVE);
+			info(rootPosition, 0, SearchResultType::BOOK_MOVE);
 			goto END;
 		}
 	}
@@ -240,24 +238,24 @@ ValuatedMove Search::Think(Position &pos) {
 	//the move which minimizes the number until drawPlyCount is reset without changing the result
 	tbHits = 0;
 	probeTB = tablebases::MaxCardinality > 0;
-	if (pos.GetMaterialTableEntry()->IsTablebaseEntry()) {
+	if (rootPosition.GetMaterialTableEntry()->IsTablebaseEntry()) {
 		probeTB = false;
 		tablebases::RootMoves tbMoves;
 		for (int i = 0; i < rootMoveCount; ++i) tbMoves.emplace_back(rootMoves[i].move);
-		if (tablebases::rank_root_moves(pos, tbMoves)) {
+		if (tablebases::rank_root_moves(rootPosition, tbMoves)) {
 			++tbHits;
 			for (int i = 0; i < rootMoveCount; ++i) {
 				rootMoves[i].move = tbMoves[i].pv[0];
 				rootMoves[i].score = tbMoves[i].tbScore;
 				BestMove = rootMoves[0]; //if tablebase probe only returns one move => play it and done!
-				info(pos, 0, SearchResultType::TABLEBASE_MOVE);
+				info(rootPosition, 0, SearchResultType::TABLEBASE_MOVE);
 				//utils::debugInfo("Tablebase move", toString(BestMove.move));
 				goto END;
 			}
 		}
 	}
 	SetRootMoveBoni();
-	Contempt = pos.GetSideToMove() == WHITE ? Eval(settings::parameter.Contempt, settings::parameter.Contempt / 2)
+	Contempt = rootPosition.GetSideToMove() == WHITE ? Eval(settings::parameter.Contempt, settings::parameter.Contempt / 2)
 		: Eval(-settings::parameter.Contempt, -settings::parameter.Contempt / 2);
 	//Initialize PV-Array
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
@@ -267,7 +265,7 @@ ValuatedMove Search::Think(Position &pos) {
 	//Special logic to get static evaluation via UCI: if go depth 0 is requested simply return static evaluation
 	if (timeManager.GetMaxDepth() == 0) {
 		BestMove.move = MOVE_NONE;
-		BestMove.score = pos.evaluate();
+		BestMove.score = rootPosition.evaluate();
 		if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD)) sync_cout << "info score cp " << (int)BestMove.score << sync_endl;
 		else {
 			int pliesToMate;
@@ -290,10 +288,12 @@ ValuatedMove Search::Think(Position &pos) {
 				beta = VALUE_MATE;
 			}
 			while (true) {
+				CHECK(rootPosition.GetPliesFromRoot() == 0)
 				if (settings::parameter.HelperThreads > 0)
-					score = SearchRoot<ThreadType::MASTER>(alpha, beta, pos, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
+					score = SearchRoot<ThreadType::MASTER>(alpha, beta, rootPosition, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
 				else
-					score = SearchRoot<ThreadType::SINGLE>(alpha, beta, pos, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
+					score = SearchRoot<ThreadType::SINGLE>(alpha, beta, rootPosition, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
+				CHECK(rootPosition.GetPliesFromRoot() == 0)
 				//Best move is already in first place, this is assured by SearchRoot
 				//therefore we sort only the other moves
 				std::stable_sort(rootMoves + pvIndx + 1, &rootMoves[rootMoveCount], sortByScore);
@@ -304,7 +304,7 @@ ValuatedMove Search::Think(Position &pos) {
 					//fail-low
 					beta = (alpha + beta) / 2;
 					alpha = std::max(score - delta, -VALUE_INFINITE);
-					info(pos, pvIndx, SearchResultType::FAIL_LOW);
+					info(rootPosition, pvIndx, SearchResultType::FAIL_LOW);
 					//inform timemanager to assigne more time
 					if (!PonderMode.load()) timeManager.reportFailLow();
 				}
@@ -317,7 +317,7 @@ ValuatedMove Search::Think(Position &pos) {
 					//fail-high
 					alpha = (alpha + beta) / 2;
 					beta = std::min(score + delta, VALUE_INFINITE);
-					info(pos, pvIndx, SearchResultType::FAIL_HIGH);
+					info(rootPosition, pvIndx, SearchResultType::FAIL_HIGH);
 				}
 				else {
 					//Iteration completed
@@ -341,7 +341,7 @@ ValuatedMove Search::Think(Position &pos) {
 			}
 			else debugInfo("Iteration cancelled!");
 			//send information to GUI
-			info(pos, pvIndx);
+			info(rootPosition, pvIndx);
 			if (Stopped()) break;
 		}
 		if (Stopped()) break;
@@ -391,7 +391,9 @@ void Search::startHelper() {
 			beta = VALUE_MATE;
 		}
 		while (true && !Stop.load()) {
+			CHECK(rootPosition.GetPliesFromRoot() == 0)
 			score = SearchRoot<ThreadType::SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, *h);
+			CHECK(rootPosition.GetPliesFromRoot() == 0)
 			if (score <= alpha) {
 				//fail-low
 				beta = (alpha + beta) / 2;

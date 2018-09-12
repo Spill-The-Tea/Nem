@@ -364,6 +364,17 @@ namespace settings {
 		initialize();
 	}
 
+	Options::~Options()
+	{
+		for (std::map<std::string, Option *>::iterator itr = this->begin(); itr != this->end(); itr++)
+		{
+			delete itr->second;
+		}
+	}
+
+
+
+
 	void Options::printUCI()
 	{
 		for (auto it = begin(); it != end(); ++it) {
