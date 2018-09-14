@@ -12,6 +12,7 @@
 #include "tbprobe.h"
 
 void Search::Reset() {
+	while (thread_pool != nullptr && Stop.load() && thread_pool->tasks_active() > 0);
 	BestMove.move = MOVE_NONE;
 	BestMove.score = VALUE_ZERO;
 	NodeCount = 0;
@@ -78,7 +79,7 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 			uint64_t effectiveTBHits = tbHits > 1 ? tbHits * (settings::parameter.HelperThreads + 1) : tbHits;
 			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
 				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score cp " << (int)BestMove.score << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
-                << " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime << " hashfull " << tt::GetHashFull()
+				<< " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime << " hashfull " << tt::GetHashFull()
 				<< " tbhits " << effectiveTBHits
 				<< " time " << _thinkTime
 				<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
@@ -86,7 +87,7 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 				int pliesToMate;
 				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score + 1; else pliesToMate = -BestMove.score - VALUE_MATE;
 				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
-                    << " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime << " hashfull " << tt::GetHashFull()
+					<< " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime << " hashfull " << tt::GetHashFull()
 					<< " tbhits " << effectiveTBHits
 					<< " time " << _thinkTime
 					<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
@@ -99,11 +100,11 @@ void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
 			if (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD)) {
 				if (int(BestMove.score) > 0) {
 					int pliesToMate = VALUE_MATE - BestMove.score + 1;
-					xscore = 100000 + pliesToMate/2;
+					xscore = 100000 + pliesToMate / 2;
 				}
 				else {
 					int pliesToMate = -BestMove.score - VALUE_MATE;
-					xscore = -100000 - pliesToMate/2;
+					xscore = -100000 - pliesToMate / 2;
 				}
 			}
 			sync_cout << _depth << " " << xscore << " " << _thinkTime / 10 << " " << NodeCount << " " /*<< std::max(MaxDepth, _depth) << " " << (NodeCount / _thinkTime) * 1000
@@ -259,9 +260,6 @@ ValuatedMove Search::Think(Position &pos) {
 		: Eval(-settings::parameter.Contempt, -settings::parameter.Contempt / 2);
 	//Initialize PV-Array
 	std::fill_n(PVMoves, PV_MAX_LENGTH, MOVE_NONE);
-	//SMP active => start helper threads (if not yet done)
-	for (int i = 0; i < settings::parameter.HelperThreads; ++i)
-		subThreads.push_back(std::thread(&Search::startHelper, this));
 	//Special logic to get static evaluation via UCI: if go depth 0 is requested simply return static evaluation
 	if (timeManager.GetMaxDepth() == 0) {
 		BestMove.move = MOVE_NONE;
@@ -274,6 +272,16 @@ ValuatedMove Search::Think(Position &pos) {
 		}
 		return BestMove;
 	}
+	if (settings::parameter.HelperThreads) {
+		if (thread_pool == nullptr) thread_pool = new ThreadPool(settings::parameter.HelperThreads);
+		else if (thread_pool->size() != settings::parameter.HelperThreads) {
+			delete thread_pool;
+			thread_pool = new ThreadPool(settings::parameter.HelperThreads);
+		}
+		for (int i = 0; i < settings::parameter.HelperThreads; ++i)
+			thread_pool->enqueue(std::bind(&Search::startHelper, this));
+	}
+
 	//Iterativ Deepening Loop
 	for (_depth = 1; _depth < timeManager.GetMaxDepth(); ++_depth) {
 		Value alpha, beta, delta = Value(20);
@@ -289,14 +297,14 @@ ValuatedMove Search::Think(Position &pos) {
 			}
 			while (true) {
 				CHECK(rootPosition.GetPliesFromRoot() == 0)
-				if (settings::parameter.HelperThreads > 0)
-					score = SearchRoot<ThreadType::MASTER>(alpha, beta, rootPosition, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
-				else
-					score = SearchRoot<ThreadType::SINGLE>(alpha, beta, rootPosition, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
+					if (settings::parameter.HelperThreads > 0)
+						score = SearchRoot<ThreadType::MASTER>(alpha, beta, rootPosition, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
+					else
+						score = SearchRoot<ThreadType::SINGLE>(alpha, beta, rootPosition, _depth, rootMoves, PVMoves, threadLocalData, pvIndx);
 				CHECK(rootPosition.GetPliesFromRoot() == 0)
-				//Best move is already in first place, this is assured by SearchRoot
-				//therefore we sort only the other moves
-				std::stable_sort(rootMoves + pvIndx + 1, &rootMoves[rootMoveCount], sortByScore);
+					//Best move is already in first place, this is assured by SearchRoot
+					//therefore we sort only the other moves
+					std::stable_sort(rootMoves + pvIndx + 1, &rootMoves[rootMoveCount], sortByScore);
 				if (Stopped()) {
 					break;
 				}
@@ -313,7 +321,8 @@ ValuatedMove Search::Think(Position &pos) {
 					BestMove = rootMoves[pvIndx];
 					score = BestMove.score;
 					break;
-				} else if (score >= beta) {
+				}
+				else if (score >= beta) {
 					//fail-high
 					alpha = (alpha + beta) / 2;
 					beta = std::min(score + delta, VALUE_INFINITE);
@@ -329,7 +338,7 @@ ValuatedMove Search::Think(Position &pos) {
 					alpha = -VALUE_MATE;
 					beta = VALUE_MATE;
 				}
-				else delta += delta * 2; 
+				else delta += delta * 2;
 			}
 			Time_t tNow = now();
 			_thinkTime = std::max(tNow - timeManager.GetStartTime(), int64_t(1));
@@ -363,14 +372,15 @@ END://when pondering engine must not return a best move before opponent moved =>
 	}
 	//If for some reason search did not find a best move return the  first one (to avoid loss and it's anyway the best guess then)
 	if (BestMove.move == MOVE_NONE) BestMove = rootMoves[0];
-	for (int i = 0; i < subThreads.size(); ++i) {
-		if (subThreads[i].joinable()) subThreads[i].join();
-	}
 	return BestMove;
 }
 
 //slave thread
 void Search::startHelper() {
+#ifdef _DEBUG
+	sync_cout << "Helper task started" << sync_endl;
+#endif // _DEBUG
+
 	int depth = 1;
 	Move * PVMovesLocal = new Move[PV_MAX_LENGTH];
 	ValuatedMove lastBestMove = VALUATED_MOVE_NONE;
@@ -392,28 +402,28 @@ void Search::startHelper() {
 		}
 		while (true && !Stop.load()) {
 			CHECK(rootPosition.GetPliesFromRoot() == 0)
-			score = SearchRoot<ThreadType::SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, *h);
+				score = SearchRoot<ThreadType::SLAVE>(alpha, beta, rootPosition, depth, moves, PVMovesLocal, *h);
 			CHECK(rootPosition.GetPliesFromRoot() == 0)
-			if (score <= alpha) {
-				//fail-low
-				beta = (alpha + beta) / 2;
-				alpha = std::max(score - delta, -VALUE_INFINITE);
-			}
-			else if (score >= beta && moves[0].move == lastBestMove.move) {
-				//Iteration completed
-				score = moves[0].score;
-				break;
-			}
-			else if (score >= beta) {
-				//fail-high
-				alpha = (alpha + beta) / 2;
-				beta = std::min(score + delta, VALUE_INFINITE);
-			}
-			else {
-				//Iteration completed
-				score = moves[0].score;
-				break;
-			}
+				if (score <= alpha) {
+					//fail-low
+					beta = (alpha + beta) / 2;
+					alpha = std::max(score - delta, -VALUE_INFINITE);
+				}
+				else if (score >= beta && moves[0].move == lastBestMove.move) {
+					//Iteration completed
+					score = moves[0].score;
+					break;
+				}
+				else if (score >= beta) {
+					//fail-high
+					alpha = (alpha + beta) / 2;
+					beta = std::min(score + delta, VALUE_INFINITE);
+				}
+				else {
+					//Iteration completed
+					score = moves[0].score;
+					break;
+				}
 			if (std::abs(int16_t(score)) >= VALUE_KNOWN_WIN) {
 				alpha = -VALUE_MATE;
 				beta = VALUE_MATE;
@@ -426,6 +436,9 @@ void Search::startHelper() {
 	delete h;
 	delete[] moves;
 	delete[] PVMovesLocal;
+#ifdef _DEBUG
+	sync_cout << "Helper task done" << sync_endl;
+#endif // _DEBUG
 }
 
 bool Search::isQuiet(Position &pos) {
@@ -458,7 +471,7 @@ void Search::SetRootMoveBoni()
 		//		if (devMove) rootMoveBoni[rootMove.move] = Value(10);
 		//	}
 		//}
-			
+
 	}
 }
 
@@ -489,7 +502,7 @@ void Search::updateCutoffStats(ThreadData& tlData, const Move cutoffMove, int de
 			if (pos.Previous() && (lastApplied2 = FixCastlingMove(pos.Previous()->GetLastAppliedMove())) != MOVE_NONE) {
 				prev2To = to(lastApplied2);
 				prev2Piece = pos.Previous()->GetPieceOnSquare(prev2To);
-				tlData.followupHistory.update(-depth *tlData.followupHistory.getValue(prev2Piece, prev2To, movingPiece, toSquare) / 64, prev2Piece, prev2To, movingPiece, toSquare);
+				tlData.followupHistory.update(-depth * tlData.followupHistory.getValue(prev2Piece, prev2To, movingPiece, toSquare) / 64, prev2Piece, prev2To, movingPiece, toSquare);
 				tlData.followupHistory.update(v, prev2Piece, prev2To, movingPiece, toSquare);
 			}
 		}
@@ -509,7 +522,7 @@ void Search::updateCutoffStats(ThreadData& tlData, const Move cutoffMove, int de
 						tlData.cmHistory.update(-v, prevPiece, prevTo, movingPiece, toSquare);
 					}
 					if (prev2To != Square::OUTSIDE) {
-						tlData.followupHistory.update(-depth *tlData.followupHistory.getValue(prev2Piece, prev2To, movingPiece, toSquare) / 64, prev2Piece, prev2To, movingPiece, toSquare);
+						tlData.followupHistory.update(-depth * tlData.followupHistory.getValue(prev2Piece, prev2To, movingPiece, toSquare) / 64, prev2Piece, prev2To, movingPiece, toSquare);
 						tlData.followupHistory.update(-v, prev2Piece, prev2To, movingPiece, toSquare);
 					}
 				}
@@ -520,4 +533,57 @@ void Search::updateCutoffStats(ThreadData& tlData, const Move cutoffMove, int de
 			}
 		}
 	}
+}
+
+ThreadPool::ThreadPool(size_t numberOfThreads)
+{
+	start(numberOfThreads);
+}
+
+ThreadPool::~ThreadPool()
+{
+	stop();
+}
+
+void ThreadPool::enqueue(Task t)
+{
+	{
+		std::unique_lock<std::mutex> lock(mtxEvent);
+		tasks.emplace(t);
+	}
+	cvEvent.notify_one();
+}
+
+void ThreadPool::start(size_t numberOfThreads)
+{
+	for (auto i = 0u; i < numberOfThreads; ++i) {
+		threads.emplace_back([=] {
+			while (true) {
+				Task task; 
+				{
+					std::unique_lock<std::mutex> lock(mtxEvent);
+					cvEvent.wait(lock, [=] { return shutdown || !tasks.empty(); });
+
+					if (shutdown) break;
+					task = std::move(tasks.front());
+					tasks.pop();
+				}
+				active.fetch_add(1);
+				task();
+				active.fetch_sub(1);
+			}
+		});
+	}
+}
+
+void ThreadPool::stop() noexcept
+{
+	{
+		std::unique_lock<std::mutex> lock(mtxEvent);
+		shutdown = true;
+	}
+	cvEvent.notify_all();
+
+	for (auto &th : threads) th.join();
+	threads.clear();
 }

@@ -7,6 +7,8 @@
 #include <atomic>
 #include <mutex>
 #include <unordered_map>
+#include <functional>
+#include <queue>
 #include "types.h"
 #include "book.h"
 #include "board.h"
@@ -19,6 +21,26 @@
 
 enum struct ThreadType { SINGLE, MASTER, SLAVE };
 enum struct SearchResultType { EXACT_RESULT, FAIL_LOW, FAIL_HIGH, TABLEBASE_MOVE, UNIQUE_MOVE, BOOK_MOVE };
+
+class ThreadPool {
+public:
+	using Task = std::function<void()>;
+	explicit ThreadPool(size_t numberOfThreads);
+	~ThreadPool();
+	void enqueue(Task t);
+	std::queue<Task> tasks;
+	inline size_t size() { return threads.size(); }
+	inline int tasks_active() { return active.load(); }
+private:
+	std::vector<std::thread> threads;
+	std::condition_variable cvEvent;
+	std::mutex mtxEvent;
+	bool shutdown = false;
+	std::atomic<int> active = 0;
+
+	void start(size_t numberOfThreads);
+	void stop() noexcept;
+};
 
 //Struct contains thread local data, which isn't shared among threads
 struct ThreadData {
@@ -127,6 +149,8 @@ private:
 	bool probeTB = true;
 
 	std::unordered_map<Move, Value> rootMoveBoni;
+
+	ThreadPool * thread_pool = nullptr;
 
 	inline bool Stopped() { return Stop; }
 
