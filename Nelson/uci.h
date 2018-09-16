@@ -1,6 +1,10 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <condition_variable>
+#include <thread>
+#include <mutex>
+#include <atomic>
 #include "search.h"
 
 class UCIInterface {
@@ -10,12 +14,17 @@ public:
 private:
 	Search * Engine = new Search;
 	Position * _position = nullptr;
-	std::thread * Mainthread = nullptr;
 	int64_t ponderStartTime = 0;
 	bool ponderActive = false;
 	bool initialized = false;
 
 	bool dispatch(std::string line);
+
+	std::condition_variable cvStartEngine;
+	std::mutex mtxEngineRunning;
+	std::thread main_thread;
+	std::atomic<bool> engine_active = false;
+	std::atomic<bool> exiting = false;
 
 	// UCI command handlers
 	void uci();

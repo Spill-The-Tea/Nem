@@ -548,10 +548,10 @@ ThreadPool::~ThreadPool()
 void ThreadPool::enqueue(Task t)
 {
 	{
-		std::unique_lock<std::mutex> lock(mtxEvent);
+		std::unique_lock<std::mutex> lock(mtxStartTask);
 		tasks.emplace(t);
 	}
-	cvEvent.notify_one();
+	cvStartTask.notify_one();
 }
 
 void ThreadPool::start(size_t numberOfThreads)
@@ -561,8 +561,8 @@ void ThreadPool::start(size_t numberOfThreads)
 			while (true) {
 				Task task; 
 				{
-					std::unique_lock<std::mutex> lock(mtxEvent);
-					cvEvent.wait(lock, [=] { return shutdown || !tasks.empty(); });
+					std::unique_lock<std::mutex> lock(mtxStartTask);
+					cvStartTask.wait(lock, [=] { return shutdown || !tasks.empty(); });
 
 					if (shutdown) break;
 					task = std::move(tasks.front());
@@ -579,10 +579,10 @@ void ThreadPool::start(size_t numberOfThreads)
 void ThreadPool::stop() noexcept
 {
 	{
-		std::unique_lock<std::mutex> lock(mtxEvent);
+		std::unique_lock<std::mutex> lock(mtxStartTask);
 		shutdown = true;
 	}
-	cvEvent.notify_all();
+	cvStartTask.notify_all();
 
 	for (auto &th : threads) th.join();
 	threads.clear();

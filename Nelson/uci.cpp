@@ -117,6 +117,7 @@ bool UCIInterface::dispatch(std::string line) {
 }
 
 void UCIInterface::uci() {
+	main_thread = std::thread{ &UCIInterface::thinkAsync, this };
 	Engine->UciOutput = true;
 #ifdef NO_POPCOUNT
 	sync_cout << "id name " << VERSION_INFO << " (No Popcount)" << sync_endl;
@@ -172,12 +173,12 @@ void UCIInterface::updateFromOptions() {
 void UCIInterface::setoption(std::vector<std::string> &tokens) {
 	if (tokens.size() < 4 || tokens[1].compare("name")) return;
 	settings::options.read(tokens);
-    if (!tokens[2].compare(settings::OPTION_BOOK_FILE)) {
+	if (!tokens[2].compare(settings::OPTION_BOOK_FILE)) {
 		if (tokens.size() < 5) {
 			settings::options.set(settings::OPTION_OWN_BOOK, false);
 		}
 	}
-	else if (!tokens[2].compare(settings::OPTION_PONDER)) 
+	else if (!tokens[2].compare(settings::OPTION_PONDER))
 		ponderActive = settings::options.getBool(settings::OPTION_PONDER);
 	else if (!tokens[2].compare(settings::OPTION_THREADS)) {
 	}
@@ -211,7 +212,7 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 			if (!settings::options.getString(settings::OPTION_SYZYGY_PATH).compare("default")) {
 				tablebases::init("E:\\TB\\syzygy;E:\\TB\\dtz;E:\\TB\\wdl");
 			}
-			else 
+			else
 				tablebases::init(settings::options.getString(settings::OPTION_SYZYGY_PATH));
 			if (tablebases::MaxCardinality < 3) {
 				sync_cout << "Couldn't find any Tablebase files!!" << sync_endl;
@@ -239,6 +240,7 @@ void UCIInterface::ucinewgame() {
 
 void UCIInterface::setPosition(std::vector<std::string> &tokens) {
 	if (!initialized) ucinewgame();
+	std::unique_lock<std::mutex> lock(mtxEngineRunning);
 	if (_position) {
 		_position->deleteParents();
 		delete(_position);
@@ -280,13 +282,12 @@ void UCIInterface::setPosition(std::vector<std::string> &tokens) {
 void UCIInterface::deleteThread() {
 	Engine->PonderMode.store(false);
 	Engine->StopThinking();
-	if (Mainthread != nullptr) {
-		if (Mainthread->joinable()) Mainthread->join();
-		else utils::debugInfo("Can't stop Engine Thread!");
-		delete Mainthread;
-		Mainthread = nullptr;
-	}
 	Engine->Reset();
+	{
+		std::unique_lock<std::mutex> lock(mtxEngineRunning);
+		exiting.store(true);
+	}
+	cvStartEngine.notify_all();
 }
 
 void UCIInterface::qscore(std::vector<std::string>& tokens)
@@ -298,7 +299,7 @@ void UCIInterface::qscore(std::vector<std::string>& tokens)
 	while ((pos = pos->Previous()) != nullptr) positions.push_back(pos);
 	double totalError = 0;
 	int totalPlies = (int)positions.size();
-	int plies = totalPlies+1;
+	int plies = totalPlies + 1;
 	int count = 0;
 	for (auto it = positions.rbegin(); it != positions.rend(); ++it)
 	{
@@ -404,103 +405,112 @@ double UCIInterface::ttWDL() {
 //}
 
 void UCIInterface::thinkAsync() {
-	ValuatedMove BestMove;
-	if (Engine == NULL) return;
-	BestMove = Engine->Think(*_position);
-	if (!ponderActive) sync_cout << "bestmove " << toString(BestMove.move) << sync_endl;
-	else {
-		//First try move from principal variation
-		Move ponderMove = Engine->PonderMove();
-		//Validate ponder move
-		Position next(*_position);
-		next.ApplyMove(BestMove.move);
-		ponderMove = next.validMove(ponderMove);
-		if (ponderMove == MOVE_NONE) sync_cout << "bestmove " << toString(BestMove.move) << sync_endl;
+	while (true) {
+		std::unique_lock<std::mutex> lock(mtxEngineRunning);
+		cvStartEngine.wait(lock, [=] { return exiting.load() || engine_active.load(); });
+		engine_active.store(false);
+		if (exiting.load()) break;
+		ValuatedMove BestMove;
+		if (Engine == NULL) return;
+		BestMove = Engine->Think(*_position);
+		if (!ponderActive) sync_cout << "bestmove " << toString(BestMove.move) << sync_endl;
 		else {
-			sync_cout << "bestmove " << toString(BestMove.move) << " ponder " << toString(ponderMove) << sync_endl;
+			//First try move from principal variation
+			Move ponderMove = Engine->PonderMove();
+			//Validate ponder move
+			Position next(*_position);
+			next.ApplyMove(BestMove.move);
+			ponderMove = next.validMove(ponderMove);
+			if (ponderMove == MOVE_NONE) sync_cout << "bestmove " << toString(BestMove.move) << sync_endl;
+			else {
+				sync_cout << "bestmove " << toString(BestMove.move) << " ponder " << toString(ponderMove) << sync_endl;
+			}
 		}
+		Engine->Reset();
 	}
-	Engine->Reset();
 }
 
 void UCIInterface::go(std::vector<std::string> &tokens) {
-	int64_t tnow = now();
-	if (!_position) _position = new Position();
-	int moveTime = 0;
-	int increment = 0;
-	int movestogo = 30;
-	bool ponder = false;
-	bool searchmoves = false;
-	unsigned int idx = 1;
-	int depth = MAX_DEPTH;
-	int64_t nodes = INT64_MAX;
-	TimeMode mode = UNDEF;
-	std::string time = _position->GetSideToMove() == WHITE ? "wtime" : "btime";
-	std::string inc = _position->GetSideToMove() == WHITE ? "winc" : "binc";
-	while (idx < tokens.size()) {
-		if (!tokens[idx].compare(time)) {
+	{
+		std::unique_lock<std::mutex> lock(mtxEngineRunning);
+		int64_t tnow = now();
+		if (!_position) _position = new Position();
+		int moveTime = 0;
+		int increment = 0;
+		int movestogo = 30;
+		bool ponder = false;
+		bool searchmoves = false;
+		unsigned int idx = 1;
+		int depth = MAX_DEPTH;
+		int64_t nodes = INT64_MAX;
+		TimeMode mode = UNDEF;
+		std::string time = _position->GetSideToMove() == WHITE ? "wtime" : "btime";
+		std::string inc = _position->GetSideToMove() == WHITE ? "winc" : "binc";
+		while (idx < tokens.size()) {
+			if (!tokens[idx].compare(time)) {
+				++idx;
+				moveTime = stoi(tokens[idx]);
+				searchmoves = false;
+			}
+			else if (!tokens[idx].compare(inc)) {
+				++idx;
+				increment = stoi(tokens[idx]);
+				searchmoves = false;
+			}
+			else if (!tokens[idx].compare("depth")) {
+				++idx;
+				depth = stoi(tokens[idx]);
+				searchmoves = false;
+			}
+			else if (!tokens[idx].compare("nodes")) {
+				++idx;
+				nodes = stoll(tokens[idx]);
+				searchmoves = false;
+			}
+			else if (!tokens[idx].compare("movestogo")) {
+				++idx;
+				movestogo = stoi(tokens[idx]);
+				searchmoves = false;
+			}
+			else if (!tokens[idx].compare("movetime")) {
+				++idx;
+				moveTime = stoi(tokens[idx]);
+				movestogo = 1;
+				searchmoves = false;
+				mode = FIXED_TIME_PER_MOVE;
+			}
+			else if (!tokens[idx].compare("ponder")) {
+				ponderStartTime = tnow;
+				ponder = true;
+				searchmoves = false;
+				//mode = INFINIT;
+			}
+			else if (!tokens[idx].compare("infinite")) {
+				moveTime = INT_MAX;
+				movestogo = 1;
+				searchmoves = false;
+				mode = INFINIT;
+			}
+			else if (!tokens[idx].compare("searchmoves")) {
+				searchmoves = true;
+			}
+			else if (searchmoves) {
+				Move m = parseMoveInUCINotation(tokens[idx], *_position);
+				Engine->searchMoves.push_back(m);
+			}
 			++idx;
-			moveTime = stoi(tokens[idx]);
-			searchmoves = false;
 		}
-		else if (!tokens[idx].compare(inc)) {
-			++idx;
-			increment = stoi(tokens[idx]);
-			searchmoves = false;
-		}
-		else if (!tokens[idx].compare("depth")) {
-			++idx;
-			depth = stoi(tokens[idx]);
-			searchmoves = false;
-		}
-		else if (!tokens[idx].compare("nodes")) {
-			++idx;
-			nodes = stoll(tokens[idx]);
-			searchmoves = false;
-		}
-		else if (!tokens[idx].compare("movestogo")) {
-			++idx;
-			movestogo = stoi(tokens[idx]);
-			searchmoves = false;
-		}
-		else if (!tokens[idx].compare("movetime")) {
-			++idx;
-			moveTime = stoi(tokens[idx]);
-			movestogo = 1;
-			searchmoves = false;
-			mode = FIXED_TIME_PER_MOVE;
-		}
-		else if (!tokens[idx].compare("ponder")) {
-			ponderStartTime = tnow;
-			ponder = true;
-			searchmoves = false;
-			//mode = INFINIT;
-		}
-		else if (!tokens[idx].compare("infinite")) {
-			moveTime = INT_MAX;
-			movestogo = 1;
-			searchmoves = false;
-			mode = INFINIT;
-		}
-		else if (!tokens[idx].compare("searchmoves")) {
-			searchmoves = true;
-		}
-		else if (searchmoves) {
-			Move m = parseMoveInUCINotation(tokens[idx], *_position);
-			Engine->searchMoves.push_back(m);
-		}
-		++idx;
-	}
-	//if (ponder) {
-	//	moveTime = pmoveTime;
-	//	increment = pincrement;
-	//}
-	if (mode == UNDEF && moveTime == 0 && increment == 0 && nodes < INT64_MAX) mode = NODES;
-	Engine->timeManager.initialize(mode, moveTime, depth, nodes, moveTime, increment, movestogo, tnow, ponder, settings::options.getInt(settings::OPTION_NODES_TIME));
+		//if (ponder) {
+		//	moveTime = pmoveTime;
+		//	increment = pincrement;
+		//}
+		if (mode == UNDEF && moveTime == 0 && increment == 0 && nodes < INT64_MAX) mode = NODES;
+		Engine->timeManager.initialize(mode, moveTime, depth, nodes, moveTime, increment, movestogo, tnow, ponder, settings::options.getInt(settings::OPTION_NODES_TIME));
 
-	deleteThread();
-	Engine->PonderMode.store(ponder);
-	Mainthread = new std::thread(&UCIInterface::thinkAsync, this);
+		Engine->PonderMode.store(ponder);
+		engine_active.store(true);
+	}
+	cvStartEngine.notify_all();
 }
 
 void UCIInterface::ponderhit() {
@@ -516,7 +526,8 @@ void UCIInterface::setvalue(std::vector<std::string> &tokens) {
 
 void UCIInterface::stop() {
 	utils::debugInfo("Trying to stop...");
-	deleteThread();
+	Engine->Stop.store(true);
+	Engine->PonderMode.store(false);
 }
 
 void UCIInterface::perft(std::vector<std::string> &tokens) {

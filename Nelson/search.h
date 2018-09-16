@@ -33,8 +33,8 @@ public:
 	inline int tasks_active() { return active.load(); }
 private:
 	std::vector<std::thread> threads;
-	std::condition_variable cvEvent;
-	std::mutex mtxEvent;
+	std::condition_variable cvStartTask;
+	std::mutex mtxStartTask;
 	bool shutdown = false;
 	std::atomic<int> active = 0;
 
