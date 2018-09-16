@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <functional>
 #include <queue>
+#include <condition_variable>
 #include "types.h"
 #include "book.h"
 #include "board.h"
@@ -36,7 +37,7 @@ private:
 	std::condition_variable cvStartTask;
 	std::mutex mtxStartTask;
 	bool shutdown = false;
-	std::atomic<int> active = 0;
+	std::atomic<int> active{ 0 };
 
 	void start(size_t numberOfThreads);
 	void stop() noexcept;

@@ -23,8 +23,8 @@ private:
 	std::condition_variable cvStartEngine;
 	std::mutex mtxEngineRunning;
 	std::thread main_thread;
-	std::atomic<bool> engine_active = false;
-	std::atomic<bool> exiting = false;
+	std::atomic<bool> engine_active{ false };
+	std::atomic<bool> exiting{ false };
 
 	// UCI command handlers
 	void uci();
