@@ -40,8 +40,6 @@ void Search::NewGame() {
 
 std::string Search::PrincipalVariation(Position & pos, int depth) {
 	std::stringstream ss;
-	//When pondering start PV with ponder move 
-	if (PonderMode.load() && pos.GetLastAppliedMove() != MOVE_NONE) ss << toString(pos.GetLastAppliedMove()) << " ";
 	int i = 0;
 	ponderMove = MOVE_NONE;
 	//First get PV from PV array...
