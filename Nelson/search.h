@@ -61,7 +61,7 @@ public:
 	bool XBoardOutput = false;
 	bool PrintCurrmove = true;
 	//Flag indicating the engine is currently pondering
-	std::atomic<bool> PonderMode;
+	std::atomic<bool> PonderMode{ false };
 	//The search's result (will be updated while searching)
 	ValuatedMove BestMove;
 	//Total Node Count (including nodes from Quiescence Search)
@@ -71,7 +71,7 @@ public:
 	//Maximum Depth reached during Search
 	int MaxDepth = 0;
 	//Flag, indicating that search shall stop as soon as possible 
-	std::atomic<bool> Stop;
+	std::atomic<bool> Stop{ false };
 	//Polyglot bookfile if provided
 	std::string * BookFile = nullptr;
 	int rootMoveCount = 0;

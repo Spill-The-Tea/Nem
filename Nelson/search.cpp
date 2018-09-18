@@ -18,7 +18,6 @@ void Search::Reset() {
 	NodeCount = 0;
 	QNodeCount = 0;
 	MaxDepth = 0;
-	Stop.store(false);
 	PonderMode.store(false);
 	threadLocalData.History.age();
 	searchMoves.clear();
@@ -141,8 +140,6 @@ std::string Search::GetXAnalysisOutput() {
 }
 
 Search::Search() {
-	PonderMode.store(false);
-	Stop.store(false);
 	for (int i = 0; i < 12; ++i)
 		for (int j = 0; j < 64; ++j)
 			counterMove[i][j] = MOVE_NONE;
@@ -270,6 +267,7 @@ ValuatedMove Search::Think(Position &pos) {
 		}
 		return BestMove;
 	}
+	Stop.store(false);
 	if (settings::parameter.HelperThreads) {
 		if (thread_pool == nullptr) thread_pool = new ThreadPool(settings::parameter.HelperThreads);
 		else if (thread_pool->size() != settings::parameter.HelperThreads) {

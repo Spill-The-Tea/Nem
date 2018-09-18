@@ -433,9 +433,9 @@ namespace test {
 		double avgBF = 0.0;
 		std::cout << std::setprecision(3) << std::left << std::setw(4) << "Nr" << std::setw(7) << "Time" << std::setw(10) << "Nodes" << std::setw(6) << "Speed" << std::setw(6) << "BF" << std::setw(6) << "TT[%]"
 			<< std::setw(40) << "PV" << std::endl;
+		Search * srch = new Search;
 		for (int i = 0; i < int(fens.size()); i++) {
 			Position* pos = new Position(fens[i]);
-			Search * srch = new Search;
 			srch->PrintCurrmove = false;
 			//srch.uciOutput = false;
 			srch->NewGame();
@@ -443,6 +443,8 @@ namespace test {
 			srch->Think(*pos);
 			int64_t endTime = now();
 			totalTime += endTime - srch->timeManager.GetStartTime();
+			srch->NodeCount *= settings::parameter.HelperThreads + 1;
+			srch->QNodeCount *= settings::parameter.HelperThreads + 1;
 			totalNodes += srch->NodeCount;
 			totalQNodes += srch->QNodeCount;
 			avgBF += srch->timeManager.GetEBF(depth) * (srch->NodeCount - srch->QNodeCount);
@@ -450,11 +452,11 @@ namespace test {
 			int64_t rt = runtime;
 			if (rt == 0) rt = 1;
 			std::cout << std::left << std::setw(4) << i << std::setw(7) << runtime << std::setw(10) << srch->NodeCount << std::setw(6)
-				<< srch->NodeCount / rt << std::setw(6) << srch->timeManager.GetEBF(depth) << std::setw(6) << 100.0 * tt::GetHitCounter() / tt::GetProbeCounter()
+				<< srch->NodeCount / rt << std::setw(6) << srch->timeManager.GetEBF(depth) << std::setw(6) << (settings::parameter.HelperThreads ? 0 : 100.0 * tt::GetHitCounter() / tt::GetProbeCounter())
 				<< std::setw(40) << srch->PrincipalVariation(*pos, depth) << std::endl;
-			delete(srch);
 			delete(pos);
 		}
+		delete(srch);
 		avgBF = avgBF / (totalNodes - totalQNodes);
 		std::cout << "------------------------------------------------------------------------" << std::endl;
 		std::cout << std::setprecision(5) << "Total:  Time: " << totalTime / 1000.0 << " s  Nodes: " << totalNodes / 1000000.0 << " - " << totalQNodes / 1000000.0 << " MNodes  Speed: " << totalNodes / totalTime << " kN/s  "

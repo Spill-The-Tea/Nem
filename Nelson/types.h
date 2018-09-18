@@ -29,7 +29,7 @@
 #endif
 #endif
 
-const std::string VERSION_INFO = "Nemorino 5.04";
+const std::string VERSION_INFO = "Nemorino 5.05";
 
 #define CHECK(x)
 

@@ -14,88 +14,9 @@
 #include "xboard.h"
 #include "test.h"
 
-#ifdef CRASH
-#include <Windows.h>
-#include <Dbghelp.h>
-#include <tchar.h>
-#include <strsafe.h>
-#include <shlobj.h>
-
-#pragma comment(lib, "DbgHelp")
-#define MAX_BUFF_SIZE 1024
-
-//Create dump coding copied from https://www.codeproject.com/Articles/708670/Part-Windows-Debugging-Techniques-Debugging-Appl
-void make_minidump(EXCEPTION_POINTERS* e)
-{
-	TCHAR tszFileName[MAX_BUFF_SIZE] = { 0 };
-	TCHAR tszPath[MAX_BUFF_SIZE] = { 0 };
-	SYSTEMTIME stTime = { 0 };
-	GetSystemTime(&stTime);
-	SHGetSpecialFolderPath(NULL, tszPath, CSIDL_APPDATA, FALSE);
-	StringCbPrintf(tszFileName,
-		_countof(tszFileName),
-		_T("%s\\%s__%4d%02d%02d_%02d%02d%02d.dmp"),
-		tszPath, _T("CrashDump"),
-		stTime.wYear,
-		stTime.wMonth,
-		stTime.wDay,
-		stTime.wHour,
-		stTime.wMinute,
-		stTime.wSecond);
-
-	HANDLE hFile = CreateFile(tszFileName, GENERIC_WRITE, FILE_SHARE_READ, 0, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, 0);
-	if (hFile == INVALID_HANDLE_VALUE)
-		return;
-
-	MINIDUMP_EXCEPTION_INFORMATION exceptionInfo;
-	exceptionInfo.ThreadId = GetCurrentThreadId();
-	exceptionInfo.ExceptionPointers = e;
-	exceptionInfo.ClientPointers = FALSE;
-
-	MiniDumpWriteDump(
-		GetCurrentProcess(),
-		GetCurrentProcessId(),
-		hFile,
-		MINIDUMP_TYPE(MiniDumpWithIndirectlyReferencedMemory | MiniDumpScanMemory | MiniDumpWithFullMemory),
-		e ? &exceptionInfo : NULL,
-		NULL,
-		NULL);
-
-	if (hFile)
-	{
-		CloseHandle(hFile);
-		hFile = NULL;
-	}
-	return;
-}
-
-LONG CALLBACK unhandled_handler(EXCEPTION_POINTERS* e)
-{
-	make_minidump(e);
-	return EXCEPTION_CONTINUE_SEARCH;
-}
-
-#if defined(_WIN64) && defined(_MSC_VER)
-std::exception seExc("Windows Exception");
-
-void exc_transl(unsigned int u, PEXCEPTION_POINTERS pExp)
-{
-	throw seExc;
-}
-
-#endif 
-#endif
-
-
 static bool popcountSupport();
 
 int main(int argc, const char* argv[]) {
-#ifdef CRASH
-	SetUnhandledExceptionFilter(unhandled_handler);
-#if defined(_WIN64) && defined(_MSC_VER)
-	_set_se_translator(exc_transl);
-#endif
-#endif
 #ifndef NO_POPCOUNT
 	if (!popcountSupport()) {
 		std::cout << "No Popcount support - Engine does't work on this hardware!" << std::endl;
@@ -104,6 +25,15 @@ int main(int argc, const char* argv[]) {
 #endif // !1
 	if (argc > 1 && argv[1]) {
 		std::string arg1(argv[1]);
+		if (!arg1.compare("bench4")) {
+			Initialize();
+			((settings::OptionSpin *)settings::options[settings::OPTION_THREADS])->set(4);
+			settings::parameter.HelperThreads = 3;
+			int depth = 13;
+			if (argc > 2) depth = std::atoi(argv[2]);
+			if (argc > 3) test::benchmark(argv[3], depth); else test::benchmark(depth);
+			return 0;
+		}
 		if (!arg1.compare("bench")) {
 			Initialize();
 			((settings::OptionSpin *)settings::options[settings::OPTION_THREADS])->set(1);

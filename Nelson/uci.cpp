@@ -29,14 +29,7 @@ void UCIInterface::copySettings(Search * source, Search * destination) {
 void UCIInterface::loop() {
 	uci();
 	std::string line;
-#ifdef CRASH
-	std::queue<std::string> cmds;
-#endif
 	while (std::getline(std::cin, line)) {
-#ifdef CRASH
-		if (cmds.size() > 100) cmds.pop();
-		cmds.emplace(line);
-#endif
 		if (!dispatch(line)) break;
 	}
 }
@@ -232,6 +225,7 @@ void UCIInterface::setoption(std::vector<std::string> &tokens) {
 void UCIInterface::ucinewgame() {
 	initialized = true;
 	Engine->StopThinking();
+	std::unique_lock<std::mutex> lock(mtxEngineRunning);
 	Engine->NewGame();
 	if (settings::options.getBool(settings::OPTION_OWN_BOOK)) Engine->BookFile = new std::string(settings::options.getString(settings::OPTION_BOOK_FILE)); else Engine->BookFile = nullptr;
 }
@@ -580,7 +574,7 @@ void UCIInterface::quit() {
 #ifdef WPF
 	writeWPF();
 #endif
-	//utils::logger::instance()->flush();
+	std::unique_lock<std::mutex> lock(mtxEngineRunning);
 	exit(EXIT_SUCCESS);
 }
 
