@@ -29,7 +29,7 @@
 #endif
 #endif
 
-const std::string VERSION_INFO = "Nemorino 5.05";
+const std::string VERSION_INFO = "Nemorino 5.06";
 
 #define CHECK(x)
 
@@ -212,7 +212,11 @@ inline int popcount(Bitboard bb) {
 	return (bb * 0x0101010101010101ULL) >> 56;
 }
 #else
+#ifdef __clang__
+inline int popcount(Bitboard bb) { return __builtin_popcountll(bb); }
+#else
 inline int popcount(Bitboard bb) { return (int)_mm_popcnt_u64(bb); }
+#endif
 #endif
 #else
 inline int popcount(Bitboard bb) {
@@ -468,7 +472,7 @@ public:
 			Table[p][fs][ts] += v;
 		}
 	}
-	inline Value const getValue(const Piece p, const Move m) { return Table[p][from(m)][to(m)]; }
+	inline Value getValue(const Piece p, const Move m) { return Table[p][from(m)][to(m)]; }
 	inline void initialize() { std::memset(Table, 0, sizeof(Table)); }
 	inline void age() {
 		for (int i = 0; i < 12; ++i) {
@@ -494,7 +498,7 @@ public:
 			Table[p1][s1][p2][s2] += v;
 		}
 	}
-	inline Value const getValue(const Piece p1, const Square s1, const Piece p2, const Square s2) { return Table[p1][s1][p2][s2]; }
+	inline Value getValue(const Piece p1, const Square s1, const Piece p2, const Square s2) { return Table[p1][s1][p2][s2]; }
 	inline void initialize() { std::memset(Table, 0, sizeof(Table)); }
 	inline void age() {
 		for (int i = 0; i < 12; ++i) {

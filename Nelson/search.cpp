@@ -270,14 +270,14 @@ ValuatedMove Search::Think(Position &pos) {
 	Stop.store(false);
 	if (settings::parameter.HelperThreads) {
 		if (thread_pool == nullptr) thread_pool = new ThreadPool(settings::parameter.HelperThreads);
-		else if (thread_pool->size() != settings::parameter.HelperThreads) {
+		else if (static_cast<int>(thread_pool->size()) != settings::parameter.HelperThreads) {
 			delete thread_pool;
 			thread_pool = new ThreadPool(settings::parameter.HelperThreads);
 		}
 		for (int i = 0; i < settings::parameter.HelperThreads; ++i)
-			thread_pool->enqueue(std::bind(&Search::startHelper, this));
+			thread_pool->enqueue(std::bind(&Search::startHelper, this, std::placeholders::_1));
 	}
-
+	threadLocalData.id = 0;
 	//Iterativ Deepening Loop
 	for (_depth = 1; _depth < timeManager.GetMaxDepth(); ++_depth) {
 		Value alpha, beta, delta = Value(20);
@@ -372,9 +372,9 @@ END://when pondering engine must not return a best move before opponent moved =>
 }
 
 //slave thread
-void Search::startHelper() {
+void Search::startHelper(int id) {
 #ifdef _DEBUG
-	sync_cout << "Helper task started" << sync_endl;
+	sync_cout << "Helper task " << id << " started" << sync_endl;
 #endif // _DEBUG
 
 	int depth = 1;
@@ -383,6 +383,7 @@ void Search::startHelper() {
 	ValuatedMove * moves = new ValuatedMove[MAX_MOVE_COUNT];
 	memcpy(moves, rootMoves, MAX_MOVE_COUNT * sizeof(ValuatedMove));
 	ThreadData * h = new ThreadData;
+	h->id = id;
 	//Iterative Deepening Loop
 	Value score = VALUE_ZERO;
 	while (!Stop.load() && depth < MAX_DEPTH) {
@@ -433,7 +434,7 @@ void Search::startHelper() {
 	delete[] moves;
 	delete[] PVMovesLocal;
 #ifdef _DEBUG
-	sync_cout << "Helper task done" << sync_endl;
+	sync_cout << "Helper task " << id << " done" << sync_endl;
 #endif // _DEBUG
 }
 
@@ -565,7 +566,7 @@ void ThreadPool::start(size_t numberOfThreads)
 					tasks.pop();
 				}
 				active.fetch_add(1);
-				task();
+				task(i+1);
 				active.fetch_sub(1);
 			}
 		});

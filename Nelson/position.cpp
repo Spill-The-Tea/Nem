@@ -641,7 +641,7 @@ Bitboard Position::checkBlocker(Color colorOfBlocker, Color kingColor) {
 }
 
 //Calculates a bitboard of attackers to a given square, but filtering pieces by occupancy mask 
-const Bitboard Position::AttacksOfField(const Square targetField, const Bitboard occupanyMask) const
+Bitboard Position::AttacksOfField(const Square targetField, const Bitboard occupanyMask) const
 {
 	//sliding attacks
 	Bitboard attacksOfField = RookTargets(targetField, occupanyMask) & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
@@ -658,7 +658,7 @@ const Bitboard Position::AttacksOfField(const Square targetField, const Bitboard
 	return attacksOfField & occupanyMask;
 }
 
-const Bitboard Position::AttacksOfField(const Square targetField, const Color attackingSide) const {
+Bitboard Position::AttacksOfField(const Square targetField, const Color attackingSide) const {
 	//sliding attacks
 	Bitboard attacksOfField = SlidingAttacksRookTo[targetField] & (OccupiedByPieceType[ROOK] | OccupiedByPieceType[QUEEN]);
 	attacksOfField |= SlidingAttacksBishopTo[targetField] & (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[QUEEN]);
@@ -685,7 +685,7 @@ const Bitboard Position::AttacksOfField(const Square targetField, const Color at
 }
 
 
-const PieceType Position::getAndResetLeastValuableAttacker(Square toSquare, Bitboard attackers, Bitboard& occupied, Bitboard& attadef, Bitboard& mayXray) const {
+PieceType Position::getAndResetLeastValuableAttacker(Square toSquare, Bitboard attackers, Bitboard& occupied, Bitboard& attadef, Bitboard& mayXray) const {
 	Bitboard leastAttackers = attackers & PieceTypeBB(PAWN);
 	if (!leastAttackers) leastAttackers = attackers & (PieceTypeBB(KNIGHT) | PieceTypeBB(BISHOP));
 	if (!leastAttackers) leastAttackers = attackers & PieceTypeBB(ROOK);
@@ -721,7 +721,7 @@ Value Position::SEE_Sign(Move move) const {
 
 //This SEE implementation is a mixture of stockfish and Computer chess sample implementation
 //(see https://chessprogramming.wikispaces.com/SEE+-+The+Swap+Algorithm)
-const Value Position::SEE(Move move) const
+Value Position::SEE(Move move) const
 {
 	if (type(move) == CASTLING) return VALUE_ZERO;
 
@@ -1458,7 +1458,7 @@ std::string Position::printEvaluation() {
 		ss << "Special Evaluation Function used!" << std::endl;
 		Value score = evaluate();
 		if (SideToMove == BLACK) score = -score;
-		ss << "Total evaluation: " << score << " (white side)" << std::endl;
+		ss << "Total evaluation: " << static_cast<int>(score) << " (white side)" << std::endl;
 		return ss.str();
 	}
 }

@@ -958,7 +958,7 @@ namespace test {
 				bool givesCheck = pos.givesCheck(moves[i].move);
 				Position next(pos);
 				next.ApplyMove(moves[i].move);
-				result == result && (givesCheck == next.Checked());
+				result = result && (givesCheck == next.Checked());
 				assert(result);
 			}
 		}
@@ -2003,7 +2003,7 @@ namespace test {
 			std::cout << tokens[0] << std::endl;
 			Value vsee = pos.SEE(move);
 			bool lresult = vsee == std::stoi(tokens[2]);
-			result == result && lresult;
+			result = result && lresult;
 			if (!lresult) std::cout << "ERROR ";
 			std::cout << tokens[1] << "\t" << (int)vsee << "\t" << tokens[2] << std::endl;
 		}

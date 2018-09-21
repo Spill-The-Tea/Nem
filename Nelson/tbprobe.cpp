@@ -1172,7 +1172,7 @@ namespace {
 		WDLScore value, bestValue = WDLLoss;
 
 		ValuatedMove * generatedMoves = pos.GenerateMoves<LEGAL>();
-		size_t totalCount = pos.GeneratedMoveCount(), moveCount = 0;
+		int totalCount = pos.GeneratedMoveCount(), moveCount = 0;
 #ifdef _DEBUG
 		std::sort(generatedMoves, generatedMoves+totalCount,
 			[](const ValuatedMove &a, const ValuatedMove &b) { return a.move > b.move; });

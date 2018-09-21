@@ -80,7 +80,7 @@ public:
 	//Get next move. If MOVE_NONE is returned end of move list is reached
 	Move NextMove();
 	//SEE (Static Exchange Evaluation): The implementation is copied from Chess Programming Wiki (https://chessprogramming.wikispaces.com/SEE+-+The+Swap+Algorithm)
-	const Value SEE(Move move) const;
+	Value SEE(Move move) const;
 	//SEE method, which returns without exact value, when it's sure that value is positive (then VALUE_KNOWN_WIN is returned)
 	Value SEE_Sign(Move move) const;
 	//returns true if SideTo Move is in check. Must not be called when it's unclear whether opponent's attack map is already determined
@@ -333,10 +333,10 @@ private:
 	Move getBestMove(int startIndex);
 	void insertionSort(ValuatedMove* begin, ValuatedMove* end);
 	void shellSort(ValuatedMove* vm, int count);
-	const PieceType getAndResetLeastValuableAttacker(Square toSquare, Bitboard stmAttackers, Bitboard& occupied, Bitboard& attackers, Bitboard& mayXray) const;
+	PieceType getAndResetLeastValuableAttacker(Square toSquare, Bitboard stmAttackers, Bitboard& occupied, Bitboard& attackers, Bitboard& mayXray) const;
 	//return a bitboard of squares with pieces attacking the targetField
-	const Bitboard AttacksOfField(const Square targetField, const Bitboard occupied) const;
-	const Bitboard AttacksOfField(const Square targetField, const Color attackingSide) const;
+	Bitboard AttacksOfField(const Square targetField, const Bitboard occupied) const;
+	Bitboard AttacksOfField(const Square targetField, const Color attackingSide) const;
 	//Checks is a oseudo-legal move is valid
 	inline bool isValid(Move move) { Position next(*this); return next.ApplyMove(move); }
 	//Checks if a move (e.g. from killer move list) is a valid move

@@ -282,6 +282,7 @@ void UCIInterface::deleteThread() {
 		exiting.store(true);
 	}
 	cvStartEngine.notify_all();
+	if (main_thread.joinable()) main_thread.join();
 }
 
 void UCIInterface::qscore(std::vector<std::string>& tokens)
@@ -403,7 +404,9 @@ void UCIInterface::thinkAsync() {
 		std::unique_lock<std::mutex> lock(mtxEngineRunning);
 		cvStartEngine.wait(lock, [=] { return exiting.load() || engine_active.load(); });
 		engine_active.store(false);
-		if (exiting.load()) break;
+		if (exiting.load()) {
+			break;
+		}
 		ValuatedMove BestMove;
 		if (Engine == NULL) return;
 		BestMove = Engine->Think(*_position);

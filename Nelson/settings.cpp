@@ -52,27 +52,27 @@ namespace settings {
 		sync_cout << "option name PINNED_FACTOR type spin default " << PINNED_FACTOR << sync_endl;
 		sync_cout << "option name ATTACK_WITH_QUEEN type spin default " << ATTACK_WITH_QUEEN << sync_endl;
 		for (PieceType pt = PieceType::QUEEN; pt <= PieceType::PAWN; ++pt) {
-			sync_cout << "option name PIECEVAL_MG_" << static_cast<int>(pt) << " type spin default " << PieceValues[pt].mgScore << sync_endl;
-			sync_cout << "option name PIECEVAL_EG_" << static_cast<int>(pt) << " type spin default " << PieceValues[pt].egScore << sync_endl;
+			sync_cout << "option name PIECEVAL_MG_" << static_cast<int>(pt) << " type spin default " << static_cast<int>(PieceValues[pt].mgScore) << sync_endl;
+			sync_cout << "option name PIECEVAL_EG_" << static_cast<int>(pt) << " type spin default " << static_cast<int>(PieceValues[pt].egScore) << sync_endl;
 		}
-		sync_cout << "option name HANGING_MG type spin default " << HANGING.mgScore << sync_endl;
-		sync_cout << "option name HANGING_EG type spin default " << HANGING.egScore << sync_endl;
+		sync_cout << "option name HANGING_MG type spin default " << static_cast<int>(HANGING.mgScore) << sync_endl;
+		sync_cout << "option name HANGING_EG type spin default " << static_cast<int>(HANGING.egScore) << sync_endl;
 		const int mobilitySize[4] = { 28, 15, 14, 9 };
 		for (int mcount = 0; mcount < mobilitySize[static_cast<int>(QUEEN)]; ++mcount) {
-			sync_cout << "option name MOBILITY_Q_MG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_QUEEN[mcount].mgScore << sync_endl;
-			sync_cout << "option name MOBILITY_Q_EG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_QUEEN[mcount].egScore << sync_endl;
+			sync_cout << "option name MOBILITY_Q_MG_" << mcount << " type spin default " << static_cast<int>(parameter.MOBILITY_BONUS_QUEEN[mcount].mgScore) << sync_endl;
+			sync_cout << "option name MOBILITY_Q_EG_" << mcount << " type spin default " << static_cast<int>(parameter.MOBILITY_BONUS_QUEEN[mcount].egScore) << sync_endl;
 		}
 		for (int mcount = 0; mcount < mobilitySize[static_cast<int>(ROOK)]; ++mcount) {
-			sync_cout << "option name MOBILITY_R_MG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_ROOK[mcount].mgScore << sync_endl;
-			sync_cout << "option name MOBILITY_R_EG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_ROOK[mcount].egScore << sync_endl;
+			sync_cout << "option name MOBILITY_R_MG_" << mcount << " type spin default " << static_cast<int>(parameter.MOBILITY_BONUS_ROOK[mcount].mgScore) << sync_endl;
+			sync_cout << "option name MOBILITY_R_EG_" << mcount << " type spin default " << static_cast<int>(parameter.MOBILITY_BONUS_ROOK[mcount].egScore) << sync_endl;
 		}
 		for (int mcount = 0; mcount < mobilitySize[static_cast<int>(BISHOP)]; ++mcount) {
-			sync_cout << "option name MOBILITY_B_MG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_BISHOP[mcount].mgScore << sync_endl;
-			sync_cout << "option name MOBILITY_B_EG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_BISHOP[mcount].egScore << sync_endl;
+			sync_cout << "option name MOBILITY_B_MG_" << mcount << " type spin default " << static_cast<int>(parameter.MOBILITY_BONUS_BISHOP[mcount].mgScore) << sync_endl;
+			sync_cout << "option name MOBILITY_B_EG_" << mcount << " type spin default " << static_cast<int>(parameter.MOBILITY_BONUS_BISHOP[mcount].egScore) << sync_endl;
 		}
 		for (int mcount = 0; mcount < mobilitySize[static_cast<int>(KNIGHT)]; ++mcount) {
-			sync_cout << "option name MOBILITY_N_MG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_KNIGHT[mcount].mgScore << sync_endl;
-			sync_cout << "option name MOBILITY_N_EG_" << mcount << " type spin default " << parameter.MOBILITY_BONUS_KNIGHT[mcount].egScore << sync_endl;
+			sync_cout << "option name MOBILITY_N_MG_" << mcount << " type spin default " << static_cast<int>(parameter.MOBILITY_BONUS_KNIGHT[mcount].mgScore) << sync_endl;
+			sync_cout << "option name MOBILITY_N_EG_" << mcount << " type spin default " << static_cast<int>(parameter.MOBILITY_BONUS_KNIGHT[mcount].egScore) << sync_endl;
 		}
 	}
 

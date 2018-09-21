@@ -25,7 +25,7 @@ enum struct SearchResultType { EXACT_RESULT, FAIL_LOW, FAIL_HIGH, TABLEBASE_MOVE
 
 class ThreadPool {
 public:
-	using Task = std::function<void()>;
+	using Task = std::function<void(int)>;
 	explicit ThreadPool(size_t numberOfThreads);
 	~ThreadPool();
 	void enqueue(Task t);
@@ -45,6 +45,7 @@ private:
 
 //Struct contains thread local data, which isn't shared among threads
 struct ThreadData {
+	int id;
 	//History tables used in move ordering during search
 	MoveSequenceHistoryManager cmHistory;
 	MoveSequenceHistoryManager followupHistory;
@@ -116,7 +117,7 @@ public:
 	//Main entry point 
 	ValuatedMove Think(Position &pos);
 	//In case of SMP, start Slave threads
-	void startHelper();
+	void startHelper(int id);
 
 	std::mutex mtxSearch;
 	//Utility method (not used when thinking). Checks if a position is quiet (that's static evalution is about the same as QSearch result). Might be

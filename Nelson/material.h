@@ -49,7 +49,7 @@ extern MaterialTableEntry MaterialTable[MATERIAL_KEY_MAX + 2];
 extern thread_local MaterialTableEntry UnusualMaterial;
 
 //Phase is 0 in starting position and grows up to 256 when only kings are left
-inline const Phase_t Phase(int nWQ, int nBQ, int nWR, int nBR, int nWB, int nBB, int nWN, int nBN) {
+inline Phase_t Phase(int nWQ, int nBQ, int nWR, int nBR, int nWB, int nBB, int nWN, int nBN) {
 	int phase = 24 - (nWQ + nBQ) * 4
 		- (nWR + nBR) * 2
 		- nWB - nBB - nWN - nBN;
