@@ -245,13 +245,7 @@ namespace settings {
 		void UCIExpose();
 		void SetFromUCI(std::string name, std::string value);
 
-#ifdef TUNE
-		bool parse(std::string input);
-		std::vector<int> parseValue(std::string input);
-		void setEval(Eval & e, std::vector<int> & v, int index);
-		inline void setValue(Value & val, std::vector<int> & v) { val = Value(v[0]); };
-		inline void setValue(int & val, std::vector<int> & v) { val = Value(v[0]); };
-#endif 
+		void setParam(std::string key, std::string value);
 	private:
 		void Initialize();
 		int LMR_REDUCTION[64][64];
@@ -260,9 +254,6 @@ namespace settings {
 	extern Parameters parameter;
 
 	void Initialize();
-#ifdef TUNE
-	void processParameter(std::vector<std::string> parameters);
-#endif
 
 	enum OptionType { SPIN, CHECK, BUTTON, STRING };
 
@@ -279,12 +270,6 @@ namespace settings {
 	const std::string OPTION_OPPONENT = "UCI_Opponent";
 	const std::string OPTION_EMERGENCY_TIME = "MoveOverhead";
 	const std::string OPTION_NODES_TIME = "Nodestime"; //Nodes per millisecond
-#ifdef TUNE
-	const std::string OPTION_TEXEL_TUNING_WINS = "TTWin"; //Path to file containing EPD records of won positions
-	const std::string OPTION_TEXEL_TUNING_DRAWS = "TTDraw"; //Path to file containing EPD records of drawn positions
-	const std::string OPTION_TEXEL_TUNING_LOSSES = "TTLoss"; //Path to file containing EPD records of lost positions
-	const std::string OPTION_TEXEL_TUNING_LABELLED = "TTLabeled"; //Path to file containing EPD records with WDL label
-#endif
 	const std::string OPTION_SYZYGY_PATH = "SyzygyPath";
 	const std::string OPTION_SYZYGY_PROBE_DEPTH = "SyzygyProbeDepth";
 

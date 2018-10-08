@@ -122,7 +122,7 @@ extern Bitboard SquareBB[64];
 inline Bitboard ToBitboard(Square square) { return SquareBB[square]; }
 inline Bitboard ToBitboard(int square) { return SquareBB[square]; }
 
-void Initialize();
+void Initialize(bool quiet = false);
 
 inline std::string toString(Move move) {
 	Square fromSquare = from(move);

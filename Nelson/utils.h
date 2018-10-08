@@ -27,7 +27,7 @@ namespace utils {
 
 	template <class T> T clamp(T value, T lowerBound, T upperBound) { return std::max(lowerBound, std::min(value, upperBound)); }
 
-	const double K = -1.13 / 400;
+	extern double K;
 	inline double sigmoid(Value score) { return 1 / (1 + std::pow(10, K * (int)score)); }
 
 	inline double interpolatedResult(double result, int ply, int totalPlies) {
@@ -38,6 +38,8 @@ namespace utils {
 	std::string mirrorFenVertical(std::string fen);
 
 	double TexelTuneError(const char* argv[], int argc);
+
+	double TexelTuneError(std::string data, std::string parameter);
 
 #ifdef TRACE
 	enum ScoreType { UNDEFINED,

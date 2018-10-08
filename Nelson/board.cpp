@@ -707,7 +707,7 @@ void InitializeMagic() {
 
 #endif
 
-void Initialize() {
+void Initialize(bool quiet) {
 	Chess960 = false;
 	int64_t begin = now();
 	InitializeSquareBB();
@@ -730,9 +730,7 @@ void Initialize() {
 	tt::InitializeTranspositionTable();
 	int64_t end = now();
 	auto runtime = end - begin;
-#ifndef QUIET
-	std::cout << "Initialization Time: " << runtime << "ms" << std::endl;
-#endif
+    if (!quiet) std::cout << "Initialization Time: " << runtime << "ms" << std::endl;
 }
 
 #ifdef _DEBUG

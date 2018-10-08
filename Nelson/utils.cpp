@@ -35,6 +35,8 @@ namespace utils {
 
 	const std::string WHITESPACE = " \n\r\t";
 
+	double K = -1.13 / 400;
+
 	std::string TrimLeft(const std::string& s)
 	{
 		size_t startpos = s.find_first_not_of(WHITESPACE);
@@ -121,9 +123,6 @@ namespace utils {
 		assert(argc > 3);
 		Initialize();
 		std::string filename(argv[2]);
-		//for (int i = 3; i < argc; ++i) settings::parameter.SAFE_CHECK[i] = std::atoi(argv[i]);
-		//settings::parameter.KING_DANGER_SCALE = std::atoi(argv[3]);
-		//settings::parameter.ATTACK_WITH_QUEEN = std::atoi(argv[3]);
 		int packageCount = (int)std::thread::hardware_concurrency() - 1;
 		std::vector<std::string> * packages = new std::vector<std::string>[packageCount];
 		std::ifstream infile(filename);
@@ -140,6 +139,48 @@ namespace utils {
 		}
 		for (int i = 0; i < packageCount; ++i) {
 			error += futures[i].get();
+		}
+		//for (int i = 0; i < packageCount; ++i) error += CalcErrorForPackage(packages[i]);
+		delete[] packages;
+		return error / n;
+	}
+
+	double TexelTuneError(std::string data, std::string parameter)
+	{
+		std::ifstream paramfile(parameter);
+		std::vector<std::string> vparam;
+		for (std::string line; getline(paramfile, line); )
+		{
+			std::size_t found = line.find("=");
+			if (found != std::string::npos) {
+				if (found == 1 && !line.substr(0, found).compare("K")) K = std::stod(line.substr(found + 1));
+				else
+				settings::parameter.setParam(line.substr(0, found), line.substr(found + 1));
+			}
+		}
+		InitializeMaterialTable();
+		settings::parameter.HelperThreads = 0;
+		int packageCount = (int)std::thread::hardware_concurrency() - 1;
+		//int packageCount = 1;
+		std::vector<std::string> * packages = new std::vector<std::string>[packageCount];
+		std::ifstream infile(data);
+		double error = 0.0;
+		int n = 0;
+		for (std::string line; getline(infile, line); )
+		{
+			packages[n % packageCount].push_back(line);
+			++n;
+		}
+		std::vector<std::future<double>> futures;
+		for (int i = 0; i < packageCount; ++i) {
+			futures.push_back(std::async(std::launch::async, CalcErrorForPackage, std::ref(packages[i])));
+		}
+		std::vector<double> results;
+		for (int i = 0; i < packageCount; ++i) {
+			results.push_back(futures[i].get());
+		}
+		for (auto d: results) {
+			error += d;
 		}
 		//for (int i = 0; i < packageCount; ++i) error += CalcErrorForPackage(packages[i]);
 		delete[] packages;

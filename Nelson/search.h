@@ -289,7 +289,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		&& ttEntry.depth() >= depth
 		&& ttValue != VALUE_NOTYETDETERMINED
 		&& ((ttEntry.type() == tt::EXACT) || (ttValue >= beta && ttEntry.type() == tt::LOWER_BOUND) || (ttValue <= alpha && ttEntry.type() == tt::UPPER_BOUND))) {
-		if (ttMove && pos.IsQuiet(ttMove) && pos.validateMove(ttMove)) updateCutoffStats(tlData, ttMove, depth, pos, -1);
+		if (ttMove && pos.IsQuiet(ttMove) && pos.validateMove(ttMove) && ttValue >= beta) updateCutoffStats(tlData, ttMove, depth, pos, -1);
 		return SCORE_TT(ttValue);
 	}
 	// Tablebase probe
@@ -563,7 +563,7 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 	}
 	else {
 #ifdef TUNE
-		standPat = pos.evaluate() + settings::parameter.BONUS_TEMPO;
+		standPat = pos.evaluate();
 #else
 		standPat = ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
 		//check if ttValue is better

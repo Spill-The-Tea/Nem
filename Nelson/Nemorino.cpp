@@ -54,6 +54,11 @@ int main(int argc, const char* argv[]) {
 			Initialize();
 			test::testPerft(test::PerftType::P3);
 		}
+		else if (!arg1.compare("tt") && argc > 3) {
+			Initialize(true);
+			std::cout << utils::TexelTuneError(std::string(argv[2]), std::string(argv[3])) << std::endl;
+			return 0;
+		}
 	}
 	std::string input = "";
 	Position pos;
@@ -136,12 +141,6 @@ int main(int argc, const char* argv[]) {
 				indx += 2;
 			}
 		}
-#ifdef TUNE
-		else if (!input.compare(0, 10, "parameters")) {
-			std::vector<std::string> token = utils::split(input);
-			settings::processParameter(token);
-		}
-#endif
 	}
 }
 
