@@ -209,17 +209,17 @@ template<ThreadType T> Value Search::SearchRoot(Value alpha, Value beta, Positio
 			if (lmr && i >= startWithMove + 5 && pos.IsQuietAndNoCastles(moves[i].move) && !next.Checked()) {
 				++reduction;
 			}
-			score = bonus -SearchMain<T>(Value(bonus -alpha - 1), bonus -alpha, next, depth - 1 - reduction, subpv, tlData, true);
+			score = bonus - SearchMain<T>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1 - reduction, subpv, tlData, true);
 			if (reduction > 0 && score > alpha && score < beta) {
-				score = bonus -SearchMain<T>(Value(bonus -alpha - 1), bonus -alpha, next, depth - 1, subpv, tlData, true);
+				score = bonus - SearchMain<T>(Value(bonus - alpha - 1), bonus - alpha, next, depth - 1, subpv, tlData, true);
 			}
 			if (score > alpha && score < beta) {
 				//Research without reduction and with full alpha-beta window
-				score = bonus -SearchMain<T>(bonus -beta, bonus -alpha, next, depth - 1, subpv, tlData, false);
+				score = bonus - SearchMain<T>(bonus - beta, bonus - alpha, next, depth - 1, subpv, tlData, false);
 			}
 		}
 		else {
-			score = bonus -SearchMain<T>(bonus -beta, bonus -alpha, next, depth - 1, subpv, tlData, false);
+			score = bonus - SearchMain<T>(bonus - beta, bonus - alpha, next, depth - 1, subpv, tlData, false);
 		}
 		if (Stopped()) break;
 		moves[i].score = score;
@@ -314,8 +314,14 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	Move subpv[PV_MAX_LENGTH];
 	pv[0] = MOVE_NONE;
 	bool checked = pos.Checked();
-	Value staticEvaluation = checked ? VALUE_NOTYETDETERMINED :
-		ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED ? ttEntry.evalValue() : pos.evaluate();
+	Value staticEvaluation;
+	if (checked) staticEvaluation = VALUE_NOTYETDETERMINED;
+	else if (ttFound && ttEntry.evalValue() != VALUE_NOTYETDETERMINED) {
+		staticEvaluation = ttEntry.evalValue();
+		pos.SetStaticEval(staticEvaluation);
+	}
+	else
+		staticEvaluation = pos.evaluate();
 	prune = prune && !PVNode && !checked && (pos.GetLastAppliedMove() != MOVE_NONE) && (!pos.GetMaterialTableEntry()->SkipPruning());
 
 	if (ttFound &&
@@ -431,7 +437,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	int bestMoveIndex = -1;
 	bool ZWS = !PVNode;
 	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
-	bool trySE = depth >= 8 && ttMove != MOVE_NONE &&  abs(ttValue) < VALUE_KNOWN_WIN
+	bool trySE = depth >= 8 && ttMove != MOVE_NONE && abs(ttValue) < VALUE_KNOWN_WIN
 		&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
 	while ((move = pos.NextMove())) {
 		++moveIndex;
@@ -447,11 +453,8 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			}
 		}
 		Position next(pos);
-		CHECK(next.GetPliesFromRoot() == pos.GetPliesFromRoot())
 		if (next.ApplyMove(move)) {
-			CHECK(next.GetPliesFromRoot() == pos.GetPliesFromRoot() + 1)
 			tlData.killerManager.enterLevel(next);
-			CHECK(next.GetPliesFromRoot() == pos.GetPliesFromRoot() + 1)
 			//critical = critical || GetPieceType(pos.GetPieceOnSquare(from(move))) == PAWN && ((pos.GetSideToMove() == WHITE && from(move) > H5) || (pos.GetSideToMove() == BLACK && from(move) < A4));
 			//Check extension
 			int extension;
@@ -622,4 +625,4 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 	}
 #endif
 	return SCORE_EXACT(alpha);
-	}
+}
