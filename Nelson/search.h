@@ -469,7 +469,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 				Value rBeta = ttValue - 2 * depth;
 				Position spos(pos);
 				spos.copy(pos);
-				if (SearchMain<T>(rBeta - 1, rBeta, spos, depth / 2, subpv, tlData, cutNode, true, move) < rBeta) ++extension;
+				if (SearchMain<T>(rBeta - 1, rBeta, spos, std::max(5, depth / 3), subpv, tlData, cutNode, true, move) < rBeta) ++extension;
 			}
 			if (!extension && moveIndex == 0 && pos.GeneratedMoveCount() == 1 && (pos.GetMoveGenerationPhase() == MoveGenerationType::CHECK_EVASION || pos.QuietMoveGenerationPhaseStarted())) {
 				++extension;
