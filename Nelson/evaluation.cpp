@@ -179,9 +179,14 @@ Eval evaluateKingSafety(const Position& pos) {
 		while (stormPawns) {
 			const Square sq = lsb(stormPawns);
 			stormPawns &= stormPawns - 1;
-			const Piece blocker = pos.GetPieceOnSquare(static_cast<Square>(sq - 8));
-			if ((blocker == WKING || GetPieceType(blocker) == PAWN) && (pos.GetAttacksFrom(sq) & pos.ColorBB(WHITE)) == EMPTY)
-				continue;//blocked
+			if ((pos.GetAttacksFrom(sq) & pos.PieceBB(PAWN, WHITE)) != EMPTY) {
+				int rank = sq >> 3;
+				if (rank > 1 && rank < 4) pawnStorm -= Eval(10,0); //lever
+			}
+			else {
+				const Piece blocker = pos.GetPieceOnSquare(static_cast<Square>(sq - 8));
+				if (blocker == WKING || GetPieceType(blocker) == PAWN) continue;
+			}
 			pawnStorm -= settings::parameter.PAWN_STORM[(sq >> 3) - 1];
 		}
 	}
@@ -195,9 +200,14 @@ Eval evaluateKingSafety(const Position& pos) {
 		while (stormPawns) {
 			const Square sq = lsb(stormPawns);
 			stormPawns &= stormPawns - 1;
-			const Piece blocker = pos.GetPieceOnSquare(static_cast<Square>(sq + 8));
-			if ((blocker == BKING || GetPieceType(blocker) == PAWN) && (pos.GetAttacksFrom(sq) & pos.ColorBB(BLACK)) == EMPTY)
-				continue; //blocked
+			if ((pos.GetAttacksFrom(sq) & pos.PieceBB(PAWN, BLACK)) != EMPTY) {
+				int rank = sq >> 3;
+				if (rank > 3 && rank < 6) pawnStorm += Eval(10, 0); //lever
+			}
+			else {
+				const Piece blocker = pos.GetPieceOnSquare(static_cast<Square>(sq + 8));
+				if (blocker == BKING || GetPieceType(blocker) == PAWN) continue;
+			}
 			pawnStorm += settings::parameter.PAWN_STORM[6 - (sq >> 3)];
 		}
 	}

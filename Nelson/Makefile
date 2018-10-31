@@ -8,7 +8,7 @@ FILES = bbEndings.cpp board.cpp book.cpp evaluation.cpp hashtables.cpp Material.
     Nemorino.cpp position.cpp search.cpp settings.cpp test.cpp timemanager.cpp \
     uci.cpp utils.cpp xboard.cpp tbprobe.cpp
 
-FLAGS = -O3 -Wmain -std=c++11 -pthread -DNDEBUG
+FLAGS = -O3 -Wmain -std=c++11 -flto -pthread -DNDEBUG
 
 FLAGS_VG = -O1 -g -Wmain -std=c++11 -pthread -DNDEBUG
 
