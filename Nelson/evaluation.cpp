@@ -181,7 +181,7 @@ Eval evaluateKingSafety(const Position& pos) {
 			stormPawns &= stormPawns - 1;
 			if ((pos.GetAttacksFrom(sq) & pos.PieceBB(PAWN, WHITE)) != EMPTY) {
 				int rank = sq >> 3;
-				if (rank > 1 && rank < 4) pawnStorm -= Eval(10,0); //lever
+				if (rank > 1 && rank < 4) pawnStorm -= Eval(settings::parameter.BONUS_LEVER_ON_KINGSIDE,0); //lever
 			}
 			else {
 				const Piece blocker = pos.GetPieceOnSquare(static_cast<Square>(sq - 8));
@@ -202,7 +202,7 @@ Eval evaluateKingSafety(const Position& pos) {
 			stormPawns &= stormPawns - 1;
 			if ((pos.GetAttacksFrom(sq) & pos.PieceBB(PAWN, BLACK)) != EMPTY) {
 				int rank = sq >> 3;
-				if (rank > 3 && rank < 6) pawnStorm += Eval(10, 0); //lever
+				if (rank > 3 && rank < 6) pawnStorm += Eval(settings::parameter.BONUS_LEVER_ON_KINGSIDE, 0); //lever
 			}
 			else {
 				const Piece blocker = pos.GetPieceOnSquare(static_cast<Square>(sq + 8));

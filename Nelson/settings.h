@@ -216,7 +216,7 @@ namespace settings {
 			{ { Eval(0, 0), Eval(0, 16), Eval(17, 21), Eval(16, 25), Eval(21, 50), Eval(18, 52) }, // Weak Minor
 			{ Eval(0, 0), Eval(0, 14), Eval(13, 29), Eval(13, 29), Eval(0, 22), Eval(12, 26) } } // Weak Major
 		};
-		Eval PASSED_PAWN_BONUS[6] = { Eval(0), Eval(0), Eval(23), Eval(39), Eval(81), Eval(101) };
+		Eval PASSED_PAWN_BONUS[6] = { Eval(0), Eval(0), Eval(8), Eval(35), Eval(81), Eval(140) };
 		Eval MALUS_BLOCKED[6] = { Eval(30), Eval(20), Eval(10), Eval(5), Eval(0), Eval(0) }; //indexed by distance to conversion
 		Eval BONUS_PROTECTED_PASSED_PAWN[6] = { Eval(0), Eval(0), Eval(0), Eval(30), Eval(30), Eval(30) };
         Eval MALUS_ISOLATED_PAWN = Eval(5);
@@ -233,6 +233,7 @@ namespace settings {
 		int WEAK_SQUARES_FACTOR = 200;
 		int PINNED_FACTOR = 100;
 		int ATTACK_WITH_QUEEN = 900;
+		int BONUS_LEVER_ON_KINGSIDE = 10;
 
 		const Eval MOBILITY_CENTER_KNIGHT = Eval(3, 0);
 		const Eval MOBILITY_CENTER_EXTENDED_KNIGHT = Eval(3, 0);

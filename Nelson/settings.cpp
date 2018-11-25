@@ -44,9 +44,16 @@ namespace settings {
 
 	void Parameters::UCIExpose()
 	{
-		sync_cout << "option name KING_DANGER_SCALE type spin default " << KING_DANGER_SCALE << sync_endl;
+		sync_cout << "option name BETA_PRUNING_FACTOR type spin default " << BETA_PRUNING_FACTOR << sync_endl;
+		sync_cout << "option name PAWN_SHELTER_2ND_RANK_MG type spin default " << PAWN_SHELTER_2ND_RANK.mgScore << sync_endl;
+		sync_cout << "option name PAWN_SHELTER_2ND_RANK_EG type spin default " << PAWN_SHELTER_2ND_RANK.egScore << sync_endl;
+		sync_cout << "option name PAWN_SHELTER_3RD_RANK_MG type spin default " << PAWN_SHELTER_3RD_RANK.mgScore << sync_endl;
+		sync_cout << "option name PAWN_SHELTER_3RD_RANK_EG type spin default " << PAWN_SHELTER_3RD_RANK.egScore << sync_endl;
+		sync_cout << "option name BETA_PRUNING_FACTOR type spin default " << BETA_PRUNING_FACTOR << sync_endl;
 		for (int i = 0; i < 4; ++i) sync_cout << "option name SAFE_CHECK_" << i << " type spin default " << SAFE_CHECK[i] << sync_endl;
 		for (int i = 0; i < 4; ++i) sync_cout << "option name ATTACK_WEIGHT_" << i << " type spin default " << ATTACK_WEIGHT[i] << sync_endl;
+		for (int i = 0; i < 6; ++i) sync_cout << "option name MALUS_BLOCKED_" << i << " type spin default " << MALUS_BLOCKED[i].mgScore << sync_endl;
+		for (int i = 0; i < 6; ++i) sync_cout << "option name PASSED_PAWN_BONUS_" << i << " type spin default " << PASSED_PAWN_BONUS[i].mgScore << sync_endl;
 		sync_cout << "option name KING_RING_ATTACK_FACTOR type spin default " << KING_RING_ATTACK_FACTOR << sync_endl;
 		sync_cout << "option name WEAK_SQUARES_FACTOR type spin default " << WEAK_SQUARES_FACTOR << sync_endl;
 		sync_cout << "option name PINNED_FACTOR type spin default " << PINNED_FACTOR << sync_endl;
@@ -74,15 +81,22 @@ namespace settings {
 			sync_cout << "option name MOBILITY_N_MG_" << mcount << " type spin default " << static_cast<int>(parameter.MOBILITY_BONUS_KNIGHT[mcount].mgScore) << sync_endl;
 			sync_cout << "option name MOBILITY_N_EG_" << mcount << " type spin default " << static_cast<int>(parameter.MOBILITY_BONUS_KNIGHT[mcount].egScore) << sync_endl;
 		}
+		sync_cout << "option name LEVER_ON_KING type spin default " << BONUS_LEVER_ON_KINGSIDE << sync_endl;
 	}
 
 	void Parameters::SetFromUCI(std::string name, std::string value)
 	{
-		if (!name.compare("KING_DANGER_SCALE")) KING_DANGER_SCALE = stoi(value);
+		if (!name.compare("KING_DANGER_SCALE")) KING_DANGER_SCALE = stoi(value);	
+		else if (!name.compare("PAWN_SHELTER_2ND_RANK_EG")) PAWN_SHELTER_2ND_RANK.egScore = static_cast<Value>(stoi(value));
+		else if (!name.compare("PAWN_SHELTER_2ND_RANK_MG")) PAWN_SHELTER_2ND_RANK.mgScore = static_cast<Value>(stoi(value));
+		else if (!name.compare("PAWN_SHELTER_3RD_RANK_EG")) PAWN_SHELTER_3RD_RANK.egScore = static_cast<Value>(stoi(value));
+		else if (!name.compare("PAWN_SHELTER_3RD_RANK_MG")) PAWN_SHELTER_3RD_RANK.mgScore = static_cast<Value>(stoi(value));
+		else if (!name.compare("BETA_PRUNING_FACTOR")) BETA_PRUNING_FACTOR = static_cast<Value>(stoi(value));
 		else if (!name.compare("KING_RING_ATTACK_FACTOR")) KING_RING_ATTACK_FACTOR = stoi(value);
 		else if (!name.compare("WEAK_SQUARES_FACTOR")) WEAK_SQUARES_FACTOR = stoi(value);
 		else if (!name.compare("PINNED_FACTOR")) PINNED_FACTOR = stoi(value);
 		else if (!name.compare("ATTACK_WITH_QUEEN")) ATTACK_WITH_QUEEN = stoi(value);
+		else if (!name.compare("LEVER_ON_KING")) BONUS_LEVER_ON_KINGSIDE = stoi(value);
 		else if (name.find("SAFE_CHECK_") == 0) {
 			int index = stoi(name.substr(11, std::string::npos));
 			SAFE_CHECK[index] = stoi(value);
@@ -90,6 +104,14 @@ namespace settings {
 		else if (name.find("ATTACK_WEIGHT_") == 0) {
 			int index = stoi(name.substr(14, std::string::npos));
 			ATTACK_WEIGHT[index] = stoi(value);
+		}
+		else if (name.find("MALUS_BLOCKED_") == 0) {
+			int index = stoi(name.substr(14, std::string::npos));
+			MALUS_BLOCKED[index] = Eval(stoi(value));
+		}
+		else if (name.find("PASSED_PAWN_BONUS_") == 0) {
+			int index = stoi(name.substr(18, std::string::npos));
+			PASSED_PAWN_BONUS[index] = Eval(stoi(value));
 		}
 		else if (name.find("PIECEVAL_MG_") == 0) {
 			int index = stoi(name.substr(12, std::string::npos));
