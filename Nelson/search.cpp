@@ -376,7 +376,7 @@ void Search::startHelper(int id) {
 #ifdef _DEBUG
 	sync_cout << "Helper task " << id << " started" << sync_endl;
 #endif // _DEBUG
-
+	WinProcGroup::bindThisThread(id);
 	int depth = 1;
 	Move * PVMovesLocal = new Move[PV_MAX_LENGTH];
 	ValuatedMove lastBestMove = VALUATED_MOVE_NONE;

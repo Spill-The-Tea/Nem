@@ -9,6 +9,15 @@ std::ostream& operator<<(std::ostream&, SyncCout);
 #define sync_cout std::cout << IO_LOCK
 #define sync_endl std::endl << IO_UNLOCK
 
+/// Under Windows it is not possible for a process to run on more than one
+/// logical processor group. This usually means to be limited to use max 64
+/// cores. To overcome this, some special platform specific API should be
+/// called to set group affinity for each thread. Original code from Texel by
+/// Peter Österlund.
+namespace WinProcGroup {
+	void bindThisThread(size_t idx);
+}
+
 namespace utils {
 
 	void debugInfo(std::string info);

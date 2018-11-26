@@ -307,6 +307,7 @@ void UCIInterface::qscore(std::vector<std::string>& tokens)
 //}
 
 void UCIInterface::thinkAsync() {
+	bool first = true;
 	while (true) {
 		std::unique_lock<std::mutex> lock(mtxEngineRunning);
 		cvStartEngine.wait(lock, [=] { return exiting.load() || engine_active.load(); });
@@ -316,6 +317,9 @@ void UCIInterface::thinkAsync() {
 		}
 		ValuatedMove BestMove;
 		if (Engine == NULL) return;
+		if (first && settings::parameter.HelperThreads > 0)
+			WinProcGroup::bindThisThread(0);
+		first = false;
 		BestMove = Engine->Think(*_position);
 		if (!ponderActive) sync_cout << "bestmove " << toString(BestMove.move) << sync_endl;
 		else {
