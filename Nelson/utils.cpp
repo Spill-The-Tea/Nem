@@ -61,6 +61,8 @@ namespace WinProcGroup {
 
 #else
 
+	std::mutex mtxBindThread;
+
 	/// best_group() retrieves logical processor information using Windows specific
 	/// API and returns the best group id for the thread with index idx. Original
 	/// code from Texel by Peter Österlund.
@@ -134,6 +136,8 @@ namespace WinProcGroup {
 	/// bindThisThread() set the group affinity of the current thread
 
 	void bindThisThread(size_t idx) {
+
+		std::lock_guard<std::mutex> lockBindThread(mtxBindThread);
 
 		// Use only local variables to be thread-safe
 		int group = best_group(idx);

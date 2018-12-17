@@ -51,7 +51,7 @@ public:
 	Bitboard ColorBB(const int c) const;
 	Bitboard PieceTypeBB(const PieceType pt) const;
 	Bitboard OccupiedBB() const;
-	inline Bitboard MajorPieceBB(const Color c) const { return (OccupiedByPieceType[QUEEN] | OccupiedByPieceType[ROOK]) & OccupiedByColor[static_cast<int>(c)];	}
+	inline Bitboard MajorPieceBB(const Color c) const { return (OccupiedByPieceType[QUEEN] | OccupiedByPieceType[ROOK]) & OccupiedByColor[static_cast<int>(c)]; }
 	inline Bitboard MinorPieceBB(const Color c) const { return (OccupiedByPieceType[BISHOP] | OccupiedByPieceType[KNIGHT]) & OccupiedByColor[static_cast<int>(c)]; }
 	inline Bitboard NonPawnMaterial(const Color c) const { return (OccupiedByPieceType[QUEEN] | OccupiedByPieceType[ROOK] | OccupiedByPieceType[BISHOP] | OccupiedByPieceType[KNIGHT]) & OccupiedByColor[static_cast<int>(c)]; }
 	//debug helpers
@@ -70,7 +70,7 @@ public:
 	//returns Zobrist Hash key of position
 	inline uint64_t GetHash() const { return Hash; }
 	inline MaterialKey_t GetMaterialKey() const { return MaterialKey; }
-	inline uint64_t GetMaterialHash() const { return MaterialKey != MATERIAL_KEY_UNUSUAL ? MaterialKey *14695981039346656037ull : GetMaterialHashUnusual(); }
+	inline uint64_t GetMaterialHash() const { return MaterialKey != MATERIAL_KEY_UNUSUAL ? MaterialKey * 14695981039346656037ull : GetMaterialHashUnusual(); }
 	inline PawnKey_t GetPawnKey() const { return PawnKey; }
 	inline Eval GetPsqEval() const { return PsqEval; }
 	/* The position struct provides staged move generation. To make use of it the staged move generation has to be initialized first by calling InitializeMoveIterator.
@@ -130,7 +130,7 @@ public:
 	bool checkRepetition() const;
 	//checks if there are any repetitions in prior moves
 	bool hasRepetition() const;
-	inline void SwitchSideToMove() { SideToMove = Color(SideToMove ^1); Hash ^= ZobristMoveColor; }
+	inline void SwitchSideToMove() { SideToMove = Color(SideToMove ^ 1); Hash ^= ZobristMoveColor; }
 	inline unsigned char GetDrawPlyCount() const { return DrawPlyCount; }
 	//applies a null move to the given position (there is no copy/make for null move), the EPSquare is the only information which has to be restored afterwards
 	void NullMove(Square epsquare = OUTSIDE, Move lastApplied = MOVE_NONE);
@@ -153,7 +153,7 @@ public:
 	//checks if a move is a winning capture (winning here includes equal captures and promotions, NxB and BxN are included as well) - Currently not used!
 	inline bool IsWinningCapture(const ValuatedMove& move) const;
 	//returns the current value of StaticEval - doesn't check if evaluate has been executed
-	inline Value GetStaticEval() { return StaticEval; }
+	inline Value GetStaticEval() const { return StaticEval; }
 	inline void SetStaticEval(Value evaluation) { StaticEval = evaluation; }
 	inline PieceType GetMostValuablePieceType(Color col) const;
 	inline PieceType GetMostValuableAttackedPieceType() const;
@@ -280,9 +280,9 @@ private:
 
 	inline uint64_t GetMaterialHashUnusual() const {
 		uint64_t mhash = 0;
-		for (int c = 0;c <= 1; ++c) {
+		for (int c = 0; c <= 1; ++c) {
 			for (int pt = 0; pt <= 5; ++pt) {
-				mhash ^= ZobristKeys[2*pt+c][popcount(PieceBB(static_cast<PieceType>(pt), static_cast<Color>(c)))];
+				mhash ^= ZobristKeys[2 * pt + c][popcount(PieceBB(static_cast<PieceType>(pt), static_cast<Color>(c)))];
 			}
 		}
 		return mhash;
@@ -398,16 +398,16 @@ inline Value Position::evaluate() {
 	if (StaticEval != VALUE_NOTYETDETERMINED)
 		return StaticEval;
 	if (GetResult() == Result::OPEN) {
-		return StaticEval = material->EvaluationFunction(*this) + settings::parameter.BONUS_TEMPO.getScore(material->Phase); 
+		 return StaticEval = material->EvaluationFunction(*this) + settings::parameter.BONUS_TEMPO.getScore(material->Phase);
 	}
 	else if (result == Result::DRAW) return StaticEval = VALUE_DRAW;
-	else 
+	else
 		return StaticEval = Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 
 inline Value Position::evaluateFinalPosition() {
 	if (result == Result::DRAW) return VALUE_DRAW;
-	else 
+	else
 		return Value((2 - int(result)) * (VALUE_MATE - pliesFromRoot));
 }
 

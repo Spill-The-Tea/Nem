@@ -54,6 +54,7 @@ namespace settings {
 		for (int i = 0; i < 4; ++i) sync_cout << "option name ATTACK_WEIGHT_" << i << " type spin default " << ATTACK_WEIGHT[i] << sync_endl;
 		for (int i = 0; i < 6; ++i) sync_cout << "option name MALUS_BLOCKED_" << i << " type spin default " << MALUS_BLOCKED[i].mgScore << sync_endl;
 		for (int i = 0; i < 6; ++i) sync_cout << "option name PASSED_PAWN_BONUS_" << i << " type spin default " << PASSED_PAWN_BONUS[i].mgScore << sync_endl;
+		for (int i = 0; i < 6; ++i) sync_cout << "option name BONUS_PROTECTED_PASSED_PAWN_" << i << " type spin default " << BONUS_PROTECTED_PASSED_PAWN[i].mgScore << sync_endl;
 		sync_cout << "option name KING_RING_ATTACK_FACTOR type spin default " << KING_RING_ATTACK_FACTOR << sync_endl;
 		sync_cout << "option name WEAK_SQUARES_FACTOR type spin default " << WEAK_SQUARES_FACTOR << sync_endl;
 		sync_cout << "option name PINNED_FACTOR type spin default " << PINNED_FACTOR << sync_endl;
@@ -82,6 +83,13 @@ namespace settings {
 			sync_cout << "option name MOBILITY_N_EG_" << mcount << " type spin default " << static_cast<int>(parameter.MOBILITY_BONUS_KNIGHT[mcount].egScore) << sync_endl;
 		}
 		sync_cout << "option name LEVER_ON_KING type spin default " << BONUS_LEVER_ON_KINGSIDE << sync_endl;
+		sync_cout << "option name KING_ON_ONE_MG type spin default " << KING_ON_ONE.mgScore << sync_endl;
+		sync_cout << "option name KING_ON_ONE_EG type spin default " << KING_ON_ONE.egScore << sync_endl;
+		sync_cout << "option name KING_ON_MANY_MG type spin default " << KING_ON_MANY.mgScore << sync_endl;
+		sync_cout << "option name KING_ON_MANY_EG type spin default " << KING_ON_MANY.egScore << sync_endl;
+		sync_cout << "option name BONUS_BISHOP_PAIR type spin default " << BONUS_BISHOP_PAIR.egScore << sync_endl;
+		sync_cout << "option name MALUS_BACKWARD_PAWN type spin default " << MALUS_BACKWARD_PAWN.egScore << sync_endl;
+
 	}
 
 	void Parameters::SetFromUCI(std::string name, std::string value)
@@ -97,6 +105,7 @@ namespace settings {
 		else if (!name.compare("PINNED_FACTOR")) PINNED_FACTOR = stoi(value);
 		else if (!name.compare("ATTACK_WITH_QUEEN")) ATTACK_WITH_QUEEN = stoi(value);
 		else if (!name.compare("LEVER_ON_KING")) BONUS_LEVER_ON_KINGSIDE = stoi(value);
+		else if (!name.compare("MALUS_BACKWARD_PAWN")) MALUS_BACKWARD_PAWN = Eval(stoi(value));
 		else if (name.find("SAFE_CHECK_") == 0) {
 			int index = stoi(name.substr(11, std::string::npos));
 			SAFE_CHECK[index] = stoi(value);
@@ -113,6 +122,10 @@ namespace settings {
 			int index = stoi(name.substr(18, std::string::npos));
 			PASSED_PAWN_BONUS[index] = Eval(stoi(value));
 		}
+		else if (name.find("BONUS_PROTECTED_PASSED_PAWN_") == 0) {
+			int index = stoi(name.substr(28, std::string::npos));
+			BONUS_PROTECTED_PASSED_PAWN[index] = Eval(stoi(value));
+		}
 		else if (name.find("PIECEVAL_MG_") == 0) {
 			int index = stoi(name.substr(12, std::string::npos));
 			PieceValues[index].mgScore = static_cast<Value>(stoi(value));
@@ -123,8 +136,16 @@ namespace settings {
 			PieceValues[index].egScore = static_cast<Value>(stoi(value));
 			InitializeMaterialTable();
 		}
+		else if (!name.compare("BONUS_BISHOP_PAIR")) {
+			BONUS_BISHOP_PAIR = Eval(static_cast<Value>(stoi(value)));
+			InitializeMaterialTable();
+		}
 		else if (!name.compare("HANGING_EG")) HANGING.egScore = static_cast<Value>(stoi(value));
 		else if (!name.compare("HANGING_MG")) HANGING.mgScore = static_cast<Value>(stoi(value));
+		else if (!name.compare("KING_ON_ONE_EG")) KING_ON_ONE.egScore = static_cast<Value>(stoi(value));
+		else if (!name.compare("KING_ON_ONE_MG")) KING_ON_ONE.mgScore = static_cast<Value>(stoi(value));
+		else if (!name.compare("KING_ON_MANY_EG")) KING_ON_MANY.egScore = static_cast<Value>(stoi(value));
+		else if (!name.compare("KING_ON_MANY_MG")) KING_ON_MANY.mgScore = static_cast<Value>(stoi(value));
 		else if (name.find("MOBILITY_") == 0) {
 			char pt = name[9];
 			int index = stoi(name.substr(14, std::string::npos));
