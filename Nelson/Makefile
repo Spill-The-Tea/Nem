@@ -19,7 +19,7 @@ make: $(FILES)
 	g++ $(FLAGS) $(FILES) -o $(EXE)
 
 bmi2: $(FILES)
-	g++ -g $(FLAGS_BMI2) $(FILES) -o $(EXE)
+	g++ $(FLAGS_BMI2) $(FILES) -o $(EXE)
 
 ccc: $(FILES)
-	g++ -g $(FLAGS_CCC) $(FILES) -o $(EXE)
+	g++ $(FLAGS_CCC) $(FILES) -o $(EXE)
