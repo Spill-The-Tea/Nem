@@ -590,14 +590,19 @@ namespace test {
 		ValuatedMove * moves = pos.GenerateMoves<ALL>();
 		ValuatedMove move;
 		uint64_t total = 0;
+		std::vector<ValuatedMove> vm;
 		while ((move = *moves).move) {
+			vm.push_back(move);
+			++moves;
+		}
+		std::sort(vm.begin(), vm.end(), [](ValuatedMove a, ValuatedMove b) {return toString(a.move) > toString(b.move); });
+		for (auto m : vm) {
 			Position next(pos);
-			if (next.ApplyMove(move.move)) {
+			if (next.ApplyMove(m.move)) {
 				uint64_t p = perft(next, depth - 1);
-				std::cout << toString(move.move) << "\t" << p << "\t" << next.fen() << std::endl;
+				std::cout << toString(m.move) << "\t" << p << "\t" << next.fen() << std::endl;
 				total += p;
 			}
-			++moves;
 		}
 		std::cout << "Total: " << total << std::endl;
 	}

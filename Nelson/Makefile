@@ -10,7 +10,9 @@ FILES = bbEndings.cpp board.cpp book.cpp evaluation.cpp hashtables.cpp Material.
 
 FLAGS = -O3 -Wmain -std=c++11 -flto -pthread -DNDEBUG
 
-FLAGS_BMI2 = -O3 -Wmain -std=c++11 -flto -pthread -DNDEBUG -DUSE_PEXT -mbmi2
+FLAGS_BMI2 = -O3 -Wmain -std=c++11 -flto -pthread -DNDEBUG -DUSE_PEXT -march=native
+
+FLAGS_CCC = -O3 -Wmain -std=c++11 -flto -pthread -DNDEBUG -march=native
 
 
 make: $(FILES)
@@ -18,3 +20,6 @@ make: $(FILES)
 
 bmi2: $(FILES)
 	g++ -g $(FLAGS_BMI2) $(FILES) -o $(EXE)
+
+ccc: $(FILES)
+	g++ -g $(FLAGS_CCC) $(FILES) -o $(EXE)
