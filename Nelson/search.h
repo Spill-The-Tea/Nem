@@ -361,7 +361,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 			Square epsquare = pos.GetEPSquare();
 			Move lastApplied = pos.GetLastAppliedMove();
 			pos.NullMove();
-			Value nullscore = -SearchMain<T>(-beta, -beta + 1, pos, depth - reduction, subpv, tlData, !cutNode);
+			Value nullscore = -SearchMain<T>(-beta, -beta + 1, pos, depth - reduction, subpv, tlData, !cutNode, false);
 			pos.NullMove(epsquare, lastApplied);
 			if (nullscore >= beta) {
 				if (nullscore >= VALUE_MATE_THRESHOLD) nullscore = beta;
