@@ -1266,31 +1266,6 @@ bool Position::oppositeColoredBishops() const
 	return popcount(PieceBB(BISHOP, WHITE)) == 1 && popcount(PieceBB(BISHOP, BLACK)) == 1 && popcount(PieceTypeBB(BISHOP) & DARKSQUARES) == 1;
 }
 
-#ifdef TRACE
-
-std::string Position::printPath() const
-{
-	std::vector<Move> move_list;
-	const Position * actPos = this;
-	Position * prevPos = previous;
-	if (actPos->nullMovePosition)
-		move_list.push_back(MOVE_NONE);
-	while (prevPos) {
-		move_list.push_back(actPos->lastAppliedMove);
-		if (prevPos->nullMovePosition)
-			move_list.push_back(MOVE_NONE);
-		actPos = prevPos;
-		prevPos = actPos->previous;
-	}
-	std::stringstream ss;
-	for (std::vector<Move>::reverse_iterator rit = move_list.rbegin(); rit != move_list.rend(); ++rit)
-	{
-		ss << toString(*rit) << " ";
-	}
-	return ss.str();
-}
-#endif
-
 bool Position::validateMove(ExtendedMove move) {
 	Square fromSquare = from(move.move);
 	return Board[fromSquare] == move.piece && validateMove(move.move);
@@ -1298,9 +1273,6 @@ bool Position::validateMove(ExtendedMove move) {
 
 
 void Position::NullMove(Square epsquare, Move lastApplied) {
-#ifdef TRACE
-	nullMovePosition = !nullMovePosition;
-#endif
 	SwitchSideToMove();
 	SetEPSquare(epsquare);
 	lastAppliedMove = lastApplied;

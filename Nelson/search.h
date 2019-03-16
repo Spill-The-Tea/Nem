@@ -53,6 +53,22 @@ struct ThreadData {
 	killer::Manager killerManager;
 };
 
+#ifdef TRACE
+struct NodeTrace {
+	uint64_t nodes = 0;
+	Position pos;
+	Move move;
+	Value alpha;
+	Value beta;
+	int moveIndex;
+	int depth;
+	Value staticEval;
+	Value bestScore;
+	Value score;
+	Move bestSoFar;
+};
+#endif
+
 class Search {
 public:
 	//the search itself issues the info output while thinking. To do is it needs to know whether it's running in xboard, or uci mode. 
@@ -85,6 +101,9 @@ public:
 	//The timemanager, which handles the time assignment and checks if a search shall be continued
 	Timemanager timeManager;
 
+#ifdef TRACE
+	NodeTrace worstNode;
+#endif
 	//Re-initialize BestMove, History, CounterMoveHistory, Killer, Node counters, ....
 	void Reset();
 	//Determines the Principal Variation (PV is stored during search in "triangular" array and is completed from hash table, if
@@ -261,12 +280,6 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		if (!Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop.store(true);
 	}
 	if (Stopped()) return VALUE_ZERO;
-#ifdef TRACE
-	size_t traceIndex;
-	if (depth > 0) {
-		traceIndex = utils::addTraceEntry(NodeCount, pos.printPath(), depth, pos.GetHash());
-	}
-#endif
 	if (pos.GetResult() != Result::OPEN)  return pos.evaluateFinalPosition();
 	//Mate distance pruning
 	alpha = Value(std::max(int(-VALUE_MATE) + pos.GetPliesFromRoot(), int(alpha)));
@@ -322,8 +335,8 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	}
 	else
 		staticEvaluation = pos.evaluate();
-	prune = prune && !PVNode && !checked && (pos.GetLastAppliedMove() != MOVE_NONE) && (!pos.GetMaterialTableEntry()->SkipPruning());
-
+	prune = prune && !PVNode && !checked && (pos.GetLastAppliedMove() != MOVE_NONE) && (!pos.GetMaterialTableEntry()->SkipPruning()); 
+	
 	if (ttFound &&
 		((ttValue > staticEvaluation && ttEntry.type() == tt::LOWER_BOUND)
 			|| (ttValue < staticEvaluation && ttEntry.type() == tt::UPPER_BOUND)
@@ -438,7 +451,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	bool ZWS = !PVNode;
 	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	bool trySE = depth >= 8 && ttMove != MOVE_NONE && abs(ttValue) < VALUE_KNOWN_WIN
-		&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
+		&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT);
 	while ((move = pos.NextMove())) {
 		++moveIndex;
 		if (move == excludeMove) continue;
@@ -481,6 +494,9 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 				if (cutNode) ++reduction;
 				if ((PVNode || extension) && reduction > 0) --reduction;
 			}
+#ifdef TRACE
+			uint64_t SubnodeCount = NodeCount;
+#endif
 			if (ZWS) {
 				score = -SearchMain<T>(Value(-alpha - 1), -alpha, next, depth - 1 - reduction + extension, subpv, tlData, !cutNode);
 				if (score > alpha && reduction)
@@ -513,10 +529,29 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 					bestMoveIndex = moveIndex;
 					memcpy(pv + 1, subpv, (PV_MAX_LENGTH - 1) * sizeof(Move));
 				}
+			} 
+#ifdef TRACE
+			else {
+				//Wasted
+				SubnodeCount = NodeCount - SubnodeCount;
+				if (SubnodeCount > worstNode.nodes) {
+					worstNode.nodes = SubnodeCount;
+					worstNode.alpha = alpha;
+					worstNode.beta = beta;
+					worstNode.depth = depth;
+					worstNode.move = move;
+					worstNode.moveIndex = moveIndex;
+					worstNode.pos = pos;
+					worstNode.staticEval = staticEvaluation;
+					worstNode.bestScore = bestScore;
+					worstNode.score = score;
+					worstNode.bestSoFar = pv[0];
+				}
 			}
+#endif
 		}
 	}
-	if (bestMoveIndex >= 0) updateCutoffStats(tlData, pv[0], depth, pos, bestMoveIndex);
+	if (bestMoveIndex >= 0 && pos.IsQuiet(pv[0])) updateCutoffStats(tlData, pv[0], depth, pos, bestMoveIndex);
 	//Update transposition table
 	if (T != ThreadType::SINGLE) ttPointer->update<tt::THREAD_SAFE>(hashKey, tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
 	else ttPointer->update<tt::UNSAFE>(hashKey, tt::toTT(bestScore, pos.GetPliesFromRoot()), nodeType, depth, pv[0], staticEvaluation);
@@ -527,9 +562,6 @@ template<ThreadType T> Value Search::QSearch(Value alpha, Value beta, Position &
 	if (T != ThreadType::SLAVE) {
 		++QNodeCount;
 		++NodeCount;
-#ifdef TRACE
-		size_t traceIndex = utils::addTraceEntry(NodeCount, pos.printPath(), depth, pos.GetHash());
-#endif
 		MaxDepth = std::max(MaxDepth, pos.GetPliesFromRoot());
 		if (!Stop && ((NodeCount & MASK_TIME_CHECK) == 0 && timeManager.ExitSearch(NodeCount))) Stop.store(true);
 	}

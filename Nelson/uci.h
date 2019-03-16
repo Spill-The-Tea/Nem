@@ -45,7 +45,6 @@ private:
 	void qscore(std::vector<std::string> &tokens);
 	void dumpTT(std::vector<std::string> &tokens);
 	void updateFromOptions();
-	void tb();
 	void copySettings(Search * source, Search * destination);
 };
 

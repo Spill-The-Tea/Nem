@@ -80,6 +80,7 @@
     <RootNamespace>Nelson</RootNamespace>
     <ProjectName>Nemorino</ProjectName>
     <WindowsTargetPlatformVersion>10.0.17134.0</WindowsTargetPlatformVersion>
+    <VcpkgConfiguration>Release</VcpkgConfiguration>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -723,6 +724,10 @@ copy /Y "$(OutDir)Nemorino.pdb" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\B
     <PostBuildEvent>
       <Message>Copy Exe to Test Server</Message>
     </PostBuildEvent>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Clang|x64'">
     <ClCompile>
@@ -1010,6 +1015,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClInclude Include="timemanager.h" />
     <ClInclude Include="types.h" />
     <ClInclude Include="uci.h" />
+    <ClInclude Include="version.h" />
     <ClInclude Include="xboard.h" />
   </ItemGroup>
   <ItemGroup>

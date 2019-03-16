@@ -203,9 +203,6 @@ public:
 	inline bool KingOnOpposedWings() const { return ((CastlingOptions & 15) == 0) && std::abs((kingSquares[WHITE] & 7) - (kingSquares[BLACK] & 7)) > 2; }
 	Bitboard BatteryAttacks(Color attacking_color) const;
 	inline bool IsKvK() const { return MaterialKey == MATERIAL_KEY_KvK; }
-#ifdef TRACE
-	std::string printPath() const;
-#endif
 
 private:
 	//These are the members, which are copied by the copy constructor and contain the full information
@@ -348,9 +345,6 @@ private:
 	//Generates quiet and tactical moves like forks
 	ValuatedMove* GenerateForks(bool withChecks);
 
-#ifdef TRACE
-	bool nullMovePosition = false;
-#endif
 };
 
 template<> inline ValuatedMove* Position::GenerateMoves<QUIET_CHECKS>();

@@ -14,6 +14,7 @@
 #include <cstring>
 #include <sstream>
 #include <iomanip>
+#include "version.h"
 
 #ifdef __arm__
 #define NO_POPCOUNT 1
@@ -29,7 +30,7 @@
 #endif
 #endif
 
-const std::string VERSION_INFO = "Nemorino 5.09";
+const std::string VERSION_INFO = "Nemorino 5.10";
 
 #define CHECK(x)
 

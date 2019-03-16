@@ -50,53 +50,7 @@ namespace utils {
 
 	double TexelTuneError(std::string data, std::string parameter);
 
-#ifdef TRACE
-	enum ScoreType { UNDEFINED,
-	                 MDP,   //Mate-Distance-Pruned
-					 TT,    //Cut-off by TT lookup
-		             EGTB,  //Cut-off by TB lookup
-		             RAZ,   //Razoring
-		             BP,    //Beta-Pruning
-		             NMP,   //Null-Move-Pruning
-		             PC,    //Probcut
-		             BC,    //Beta-Cutoff
-		             EXACT, //Exact (alpha-Cutoff)
-		             FINAL, //Position is final
-		             SP,    //Stand-Pat > beta
-		             DP     //Delta-Pruning
-	};
 
-	class TraceEntry {
-	public:
-		uint64_t NodeNumber;
-		std::string Path;
-		int Depth;
-		Value Score;
-		ScoreType Type;
-		uint64_t Hash;
-
-		TraceEntry(uint64_t nodeNumber, std::string path, int depth, uint64_t hash);
-	};
-
-	void clearSearchTree();
-	void dumpSearchTreeToFile();
-	size_t addTraceEntry(uint64_t nodeNumber, std::string path, int depth, uint64_t hash);
-	Value setScore(Value score, size_t index, ScoreType type = ScoreType::UNDEFINED);
-
-#define SCORE(score) utils::setScore(score, traceIndex);
-#define SCORE_MDP(score) utils::setScore(score, traceIndex, utils::ScoreType::MDP);
-#define SCORE_TT(score) utils::setScore(score, traceIndex, utils::ScoreType::TT);
-#define SCORE_TB(score) utils::setScore(score, traceIndex, utils::ScoreType::EGTB);
-#define SCORE_RAZ(score) utils::setScore(score, traceIndex, utils::ScoreType::RAZ);
-#define SCORE_BP(score) utils::setScore(score, traceIndex, utils::ScoreType::BP);
-#define SCORE_NMP(score) utils::setScore(score, traceIndex, utils::ScoreType::NMP);
-#define SCORE_PC(score) utils::setScore(score, traceIndex, utils::ScoreType::PC);
-#define SCORE_BC(score) utils::setScore(score, traceIndex, utils::ScoreType::BC);
-#define SCORE_EXACT(score) utils::setScore(score, traceIndex, utils::ScoreType::EXACT);
-#define SCORE_FINAL(score) utils::setScore(score, traceIndex, utils::ScoreType::FINAL);
-#define SCORE_SP(score) utils::setScore(score, traceIndex, utils::ScoreType::SP);
-#define SCORE_DP(score) utils::setScore(score, traceIndex, utils::ScoreType::DP);
-#else
 #define SCORE(score) score
 #define SCORE_MDP(score) score
 #define SCORE_TT(score) score
@@ -110,7 +64,7 @@ namespace utils {
 #define SCORE_FINAL(score) score
 #define SCORE_SP(score) score
 #define SCORE_DP(score) score
-#endif
+
 }
 
 

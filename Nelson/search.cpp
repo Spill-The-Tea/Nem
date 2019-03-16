@@ -25,6 +25,9 @@ void Search::Reset() {
 	threadLocalData.followupHistory.age();
 	threadLocalData.killerManager.clear();
 	for (int i = 0; i < PV_MAX_LENGTH; ++i) PVMoves[i] = MOVE_NONE;
+#ifdef TRACE
+	worstNode.nodes = 0;
+#endif
 }
 
 void Search::NewGame() {
@@ -169,10 +172,6 @@ Search::~Search() {
 
 ValuatedMove Search::Think(Position &pos) {
 	std::lock_guard<std::mutex> lgStart(mtxSearch);
-#ifdef TRACE
-	//pos.move_history->clear();
-	utils::clearSearchTree();
-#endif
 	//slave threads
 	std::vector<std::thread> subThreads;
 	//Initialize Engine before starting the new search

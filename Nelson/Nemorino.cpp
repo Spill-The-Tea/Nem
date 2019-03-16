@@ -80,12 +80,12 @@ int main(int argc, const char* argv[]) {
 		}
 		else if (!input.compare(0, 7, "version")) {
 #ifdef NO_POPCOUNT
-			std::cout << VERSION_INFO << " (No Popcount)" << std::endl;
+			std::cout << VERSION_INFO << "." << BUILD_NUMBER << " (No Popcount)" << std::endl;
 #else
 #ifdef PEXT
-			std::cout << VERSION_INFO << " (BMI2)" << std::endl;
+			std::cout << VERSION_INFO << "." << BUILD_NUMBER << " (BMI2)" << std::endl;
 #else
-			std::cout << VERSION_INFO << std::endl;
+			std::cout << VERSION_INFO << "." << BUILD_NUMBER << std::endl;
 #endif
 #endif
 		}
