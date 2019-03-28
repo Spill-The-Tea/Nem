@@ -170,9 +170,20 @@ Eval evaluateKingSafety(const Position& pos) {
 	//Pawn shelter/storm
 	Eval pawnStorm;
 	if (pos.PieceBB(KING, WHITE) & SaveSquaresForKing & HALF_OF_WHITE) { //Bonus only for castled king
-		pawnStorm += settings::parameter.PAWN_SHELTER_2ND_RANK * popcount(bbWhite & kingRing[0] & ShelterPawns2ndRank);
-		pawnStorm += settings::parameter.PAWN_SHELTER_3RD_RANK * popcount(bbWhite & kingZone[0] & ShelterPawns3rdRank);
-		pawnStorm += settings::parameter.PAWN_SHELTER_4TH_RANK * popcount(bbWhite & (kingZone[0] << 8) & ShelterPawns4thRank);
+		Bitboard bbShelter = bbWhite & ((kingRing[0] & ShelterPawns2ndRank) | (kingZone[0] & ShelterPawns3rdRank) | ((kingZone[0] << 8) & ShelterPawns4thRank));
+		Eval shelter;
+		while (bbShelter) {
+			Square s = lsb(bbShelter);
+			shelter += settings::parameter.PAWN_SHELTER[PawnShieldIndex[s]];
+			bbShelter &= bbShelter - 1;
+		}
+		pawnStorm += shelter;
+#ifndef NDEBUG
+		Eval shelterOld = settings::parameter.PAWN_SHELTER_2ND_RANK * popcount(bbWhite & kingRing[0] & ShelterPawns2ndRank);
+		shelterOld += settings::parameter.PAWN_SHELTER_3RD_RANK * popcount(bbWhite & kingZone[0] & ShelterPawns3rdRank);
+		shelterOld += settings::parameter.PAWN_SHELTER_4TH_RANK * popcount(bbWhite & (kingZone[0] << 8) & ShelterPawns4thRank);
+		assert(shelterOld.mgScore == shelter.mgScore && shelterOld.egScore == shelter.egScore);
+#endif
 		const bool kingSide = (pos.KingSquare(WHITE) & 7) > 3;
 		Bitboard pawnStormArea = kingSide ? bbKINGSIDE : bbQUEENSIDE;
 		Bitboard stormPawns = pos.PieceBB(PAWN, BLACK) & pawnStormArea & (HALF_OF_WHITE | RANK5);
@@ -191,9 +202,20 @@ Eval evaluateKingSafety(const Position& pos) {
 		}
 	}
 	if (pos.PieceBB(KING, BLACK) & SaveSquaresForKing & HALF_OF_BLACK) {
-		pawnStorm -= settings::parameter.PAWN_SHELTER_2ND_RANK * popcount(bbBlack & kingRing[1] & ShelterPawns2ndRank);
-		pawnStorm -= settings::parameter.PAWN_SHELTER_3RD_RANK * popcount(bbBlack & kingZone[1] & ShelterPawns3rdRank);
-		pawnStorm -= settings::parameter.PAWN_SHELTER_4TH_RANK * popcount(bbBlack & (kingZone[1] >> 8) & ShelterPawns4thRank);
+		Bitboard bbShelter = bbBlack & ((kingRing[1] & ShelterPawns2ndRank) | (kingZone[1] & ShelterPawns3rdRank) | ((kingZone[1] >> 8) & ShelterPawns4thRank));
+		Eval shelter;
+		while (bbShelter) {
+			Square s = lsb(bbShelter);
+			shelter += settings::parameter.PAWN_SHELTER[PawnShieldIndex[s]];
+			bbShelter &= bbShelter - 1;
+		}
+		pawnStorm -= shelter;
+#ifndef NDEBUG
+		Eval shelterOld = settings::parameter.PAWN_SHELTER_2ND_RANK * popcount(bbBlack & kingRing[1] & ShelterPawns2ndRank);
+		shelterOld += settings::parameter.PAWN_SHELTER_3RD_RANK * popcount(bbBlack & kingZone[1] & ShelterPawns3rdRank);
+		shelterOld += settings::parameter.PAWN_SHELTER_4TH_RANK * popcount(bbBlack & (kingZone[1] >> 8) & ShelterPawns4thRank);
+		assert(shelterOld.mgScore == shelter.mgScore && shelterOld.egScore == shelter.egScore);
+#endif
 		const bool kingSide = (pos.KingSquare(BLACK) & 7) > 3;
 		Bitboard pawnStormArea = kingSide ? bbKINGSIDE : bbQUEENSIDE;
 		Bitboard stormPawns = pos.PieceBB(PAWN, WHITE) & pawnStormArea & (HALF_OF_BLACK | RANK4);

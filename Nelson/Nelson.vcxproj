@@ -979,6 +979,7 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Text Include="CMakeLists.txt" />
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>

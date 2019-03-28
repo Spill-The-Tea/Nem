@@ -50,7 +50,7 @@ namespace settings {
 		Value RAZORING_OFFSET = Value(50);
 		inline Value RazoringMargin(int depth) { return Value(depth * RAZORING_FACTOR + RAZORING_OFFSET); }
 		int LIMIT_QSEARCH = -3;
-		int LIMIT_QSEARCH_TT = LIMIT_QSEARCH + 1;
+		int LIMIT_QSEARCH_TT = LIMIT_QSEARCH;
 		Eval HANGING = Eval(16, 13);
 		Eval KING_ON_ONE = Eval(1, 29);
 		Eval KING_ON_MANY = Eval(3, 63);
@@ -64,6 +64,9 @@ namespace settings {
         Eval PAWN_SHELTER_2ND_RANK = Eval(30, -10);
 		Eval PAWN_SHELTER_3RD_RANK = Eval(15, -8);
 		Eval PAWN_SHELTER_4TH_RANK = Eval(8, -4);
+		Eval PAWN_SHELTER[9] = { PAWN_SHELTER_2ND_RANK, PAWN_SHELTER_2ND_RANK, PAWN_SHELTER_2ND_RANK, 
+			                     PAWN_SHELTER_3RD_RANK, PAWN_SHELTER_3RD_RANK, PAWN_SHELTER_3RD_RANK, 
+			                     PAWN_SHELTER_4TH_RANK, Eval(0), Eval(0) };
         Value PROBCUT_MARGIN = Value(90);
 		Eval PieceValues[7]{ Eval(1025), Eval(490, 550), Eval(325), Eval(325), Eval(80, 100), Eval(VALUE_KNOWN_WIN), Eval(0) };
 		int FULTILITY_PRUNING_DEPTH = 3;

@@ -66,6 +66,16 @@ const Bitboard ShelterPawns3rdRank = 0xe70000e70000;
 const Bitboard ShelterPawns4thRank = 0x8181000000;
 //const Bitboard TrappedBishopSquares = 0x4281000000008142;
 
+const uint8_t PawnShieldIndex[64] = {
+	8, 8, 8, 8, 8, 8, 8, 8,
+	2, 1, 0, 8, 8, 0, 1, 2,
+	5, 4, 3, 8, 8, 3, 4, 5,
+	6, 7, 8, 8, 8, 8, 7, 6,
+	6, 7, 8, 8, 8, 8, 7, 6,
+	5, 4, 3, 8, 8, 3, 4, 5,
+	2, 1, 0, 8, 8, 0, 1, 2,
+	8, 8, 8, 8, 8, 8, 8, 8 };
+
 #ifdef USE_PEXT
 extern Bitboard ROOK_MASKS[64];
 extern Bitboard BISHOP_MASKS[64];

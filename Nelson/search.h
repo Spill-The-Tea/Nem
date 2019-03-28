@@ -451,7 +451,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	bool ZWS = !PVNode;
 	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	bool trySE = depth >= 8 && ttMove != MOVE_NONE && abs(ttValue) < VALUE_KNOWN_WIN
-		&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT);
+		&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
 	while ((move = pos.NextMove())) {
 		++moveIndex;
 		if (move == excludeMove) continue;
