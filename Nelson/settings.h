@@ -50,7 +50,6 @@ namespace settings {
 		Value RAZORING_OFFSET = Value(50);
 		inline Value RazoringMargin(int depth) { return Value(depth * RAZORING_FACTOR + RAZORING_OFFSET); }
 		int LIMIT_QSEARCH = -3;
-		int LIMIT_QSEARCH_TT = LIMIT_QSEARCH;
 		Eval HANGING = Eval(16, 13);
 		Eval KING_ON_ONE = Eval(1, 29);
 		Eval KING_ON_MANY = Eval(3, 63);
