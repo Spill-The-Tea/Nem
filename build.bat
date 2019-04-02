@@ -1,4 +1,4 @@
-call "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+call "D:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
 msbuild Nelson\Nelson.vcxproj -target:Clean -property:Configuration=PGO
 set /p Build=<buildnumber.txt
 set /a Build=%Build%+1
