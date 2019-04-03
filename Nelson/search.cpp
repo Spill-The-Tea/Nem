@@ -25,9 +25,6 @@ void Search::Reset() {
 	threadLocalData.followupHistory.age();
 	threadLocalData.killerManager.clear();
 	for (int i = 0; i < PV_MAX_LENGTH; ++i) PVMoves[i] = MOVE_NONE;
-#ifdef TRACE
-	worstNode.nodes = 0;
-#endif
 }
 
 void Search::NewGame() {

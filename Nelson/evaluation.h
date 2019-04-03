@@ -7,10 +7,6 @@
 
 int scaleEG(const Position& pos);
 
-#ifdef WPF
-void writeWPF();
-#endif
-
 extern Eval Contempt;
 
 struct Evaluation

@@ -15,9 +15,6 @@
 #include "settings.h"
 #include "timemanager.h"
 #include "tbprobe.h"
-#ifdef WPF
-#include "evaluation.h"
-#endif
 
 void UCIInterface::copySettings(Search * source, Search * destination) {
 	destination->UciOutput = source->UciOutput;
@@ -479,9 +476,6 @@ void UCIInterface::see(std::vector<std::string> &tokens) {
 
 void UCIInterface::quit() {
 	deleteThread();
-#ifdef WPF
-	writeWPF();
-#endif
 	std::unique_lock<std::mutex> lock(mtxEngineRunning);
 	exit(EXIT_SUCCESS);
 }
