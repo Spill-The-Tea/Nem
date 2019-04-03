@@ -328,22 +328,12 @@ namespace utils {
 
 	void debugInfo(std::string info)
 	{
-		switch (settings::parameter.protocol) {
-		case Protocol::UCI: sync_cout << "info string " << info << sync_endl; break;
-		case Protocol::XBOARD: sync_cout << "# " << info << sync_endl; break;
-		case Protocol::NO_PROTOCOL: sync_cout << info << sync_endl; break;
-		default: sync_cout << info << sync_endl; break;
-		}
+		sync_cout << "info string " << info << sync_endl;
 	}
 
 	void debugInfo(std::string info1, std::string info2)
 	{
-		switch (settings::parameter.protocol) {
-		case Protocol::UCI: sync_cout << "info string " << info1 << " " << info2 << sync_endl; break;
-		case Protocol::XBOARD: sync_cout << "# " << info1 << " " << info2 << sync_endl; break;
-		case Protocol::NO_PROTOCOL: sync_cout << info1 << " " << info2 << sync_endl; break;
-		default: sync_cout << info1 << " " << info2 << sync_endl; break;
-		}
+		sync_cout << "info string " << info1 << " " << info2 << sync_endl; 
 	}
 
 

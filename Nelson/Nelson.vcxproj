@@ -339,7 +339,7 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <CodeAnalysisRuleSet>AllRules.ruleset</CodeAnalysisRuleSet>
-    <PostBuildEventUseInBuild>true</PostBuildEventUseInBuild>
+    <PostBuildEventUseInBuild>false</PostBuildEventUseInBuild>
     <EnableCppCoreCheck>true</EnableCppCoreCheck>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='PGO|x64'">
@@ -998,7 +998,6 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClCompile Include="test.cpp" />
     <ClCompile Include="timemanager.cpp" />
     <ClCompile Include="uci.cpp" />
-    <ClCompile Include="xboard.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="board.h" />
@@ -1017,7 +1016,6 @@ copy /Y "$(OutDir)Nelson.exe" \\DESKTOP1\Users\chrgu_000\Documents\EngineDev\Bui
     <ClInclude Include="types.h" />
     <ClInclude Include="uci.h" />
     <ClInclude Include="version.h" />
-    <ClInclude Include="xboard.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Makefile" />

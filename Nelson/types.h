@@ -30,7 +30,7 @@
 #endif
 #endif
 
-const std::string VERSION_INFO = "Nemorino 5.11";
+const std::string VERSION_INFO = "Nemorino 5.12";
 
 #define CHECK(x)
 
@@ -423,8 +423,6 @@ typedef Value(*EvalFunction)(const Position&);
 
 Value evaluateDefault(const Position& pos);
 Value evaluatePawnEnding(const Position& pos);
-
-enum struct Protocol { NO_PROTOCOL, UCI, XBOARD };
 
 #ifdef _MSC_VER
 inline Time_t now() {

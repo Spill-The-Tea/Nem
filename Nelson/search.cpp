@@ -69,77 +69,42 @@ std::string Search::PrincipalVariation(Position & pos, int depth) {
 }
 
 //Creates the "thinking output" while running in UCI or XBoard mode
-void Search::info(Position &pos, int pvIndx, SearchResultType srt) {
-	if ((UciOutput || XBoardOutput)) {
+void Search::info(Position & pos, int pvIndx, SearchResultType srt) {
+	if (UciOutput) {
 		Position npos(pos);
 		npos.copy(pos);
-		if (UciOutput) {
-			std::string srtString;
-			if (srt == SearchResultType::FAIL_LOW) srtString = " upperbound"; else if (srt == SearchResultType::FAIL_HIGH) srtString = " lowerbound";
-			uint64_t effectiveTBHits = tbHits > 1 ? tbHits * (settings::parameter.HelperThreads + 1) : tbHits;
-			if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
-				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score cp " << (int)BestMove.score << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
+		std::string srtString;
+		if (srt == SearchResultType::FAIL_LOW) srtString = " upperbound"; else if (srt == SearchResultType::FAIL_HIGH) srtString = " lowerbound";
+		uint64_t effectiveTBHits = tbHits > 1 ? tbHits * (settings::parameter.HelperThreads + 1) : tbHits;
+		if (abs(int(BestMove.score)) <= int(VALUE_MATE_THRESHOLD))
+			sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score cp " << (int)BestMove.score << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
+			<< " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime << " hashfull " << tt::GetHashFull()
+			<< " tbhits " << effectiveTBHits
+			<< " time " << _thinkTime
+			<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
+		else {
+			int pliesToMate;
+			if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score + 1; else pliesToMate = -BestMove.score - VALUE_MATE;
+			sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
 				<< " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime << " hashfull " << tt::GetHashFull()
 				<< " tbhits " << effectiveTBHits
 				<< " time " << _thinkTime
 				<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
-			else {
-				int pliesToMate;
-				if (int(BestMove.score) > 0) pliesToMate = VALUE_MATE - BestMove.score + 1; else pliesToMate = -BestMove.score - VALUE_MATE;
-				sync_cout << "info depth " << _depth << " seldepth " << std::max(MaxDepth, _depth) << " multipv " << pvIndx + 1 << " score mate " << pliesToMate / 2 << srtString << " nodes " << (settings::parameter.HelperThreads + 1) * NodeCount
-					<< " nps " << (settings::parameter.HelperThreads + 1) * NodeCount * 1000 / _thinkTime << " hashfull " << tt::GetHashFull()
-					<< " tbhits " << effectiveTBHits
-					<< " time " << _thinkTime
-					<< " pv " << PrincipalVariation(npos, _depth) << sync_endl;
-			}
-		}
-		else if (XBoardOutput) {
-			if (_depth < 5) return;
-			const char srtChar[3] = { ' ', '?', '!' };
-			int xscore = BestMove.score;
-			if (abs(int(BestMove.score)) > int(VALUE_MATE_THRESHOLD)) {
-				if (int(BestMove.score) > 0) {
-					int pliesToMate = VALUE_MATE - BestMove.score + 1;
-					xscore = 100000 + pliesToMate / 2;
-				}
-				else {
-					int pliesToMate = -BestMove.score - VALUE_MATE;
-					xscore = -100000 - pliesToMate / 2;
-				}
-			}
-			sync_cout << _depth << " " << xscore << " " << _thinkTime / 10 << " " << NodeCount << " " /*<< std::max(MaxDepth, _depth) << " " << (NodeCount / _thinkTime) * 1000
-				<< " " << tbHits
-				<< "\t"*/ << PrincipalVariation(npos, _depth) << srtChar[static_cast<int>(srt)] << sync_endl;
 		}
 	}
 }
 
 void Search::debugInfo(std::string info)
 {
-	if (UciOutput) {
-		sync_cout << "info string " << info << sync_endl;
-	}
-	else if (XBoardOutput) {
-		sync_cout << "# " << info << sync_endl;
-	}
-	//else
-	//{
-	//	sync_cout << info << sync_endl;
-	//}
+	if (UciOutput) sync_cout << "info string " << info << sync_endl;
 }
 
-Move Search::GetBestBookMove(Position& pos, ValuatedMove * moves, int moveCount) {
+Move Search::GetBestBookMove(Position & pos, ValuatedMove * moves, int moveCount) {
 	if (settings::options.getBool(settings::OPTION_OWN_BOOK) && BookFile != nullptr) {
 		if (book == nullptr) book = new polyglot::Book(*BookFile);
 		book->probe(pos, true, moves, moveCount);
 	}
 	return MOVE_NONE;
-}
-
-std::string Search::GetXAnalysisOutput() {
-	std::lock_guard<std::mutex> lck(mtxXAnalysisOutput);
-	if (XAnalysisOutput == nullptr) XAnalysisOutput = new std::string();
-	return *XAnalysisOutput;
 }
 
 Search::Search() {
@@ -170,7 +135,7 @@ Search::~Search() {
 	}
 }
 
-ValuatedMove Search::Think(Position &pos) {
+ValuatedMove Search::Think(Position & pos) {
 	std::lock_guard<std::mutex> lgStart(mtxSearch);
 	//slave threads
 	std::vector<std::thread> subThreads;
@@ -184,7 +149,7 @@ ValuatedMove Search::Think(Position &pos) {
 	settings::parameter.EngineSide = rootPosition.GetSideToMove();
 	tt::newSearch();
 	//Get all root moves
-	ValuatedMove * generatedMoves = rootPosition.GenerateMoves<LEGAL>();
+	ValuatedMove* generatedMoves = rootPosition.GenerateMoves<LEGAL>();
 	rootMoveCount = rootPosition.GeneratedMoveCount();
 	if (rootMoveCount == 0) {
 		BestMove.move = MOVE_NONE;
@@ -377,11 +342,11 @@ void Search::startHelper(int id) {
 #endif // _DEBUG
 	WinProcGroup::bindThisThread(id);
 	int depth = 1;
-	Move * PVMovesLocal = new Move[PV_MAX_LENGTH];
+	Move* PVMovesLocal = new Move[PV_MAX_LENGTH];
 	ValuatedMove lastBestMove = VALUATED_MOVE_NONE;
-	ValuatedMove * moves = new ValuatedMove[MAX_MOVE_COUNT];
+	ValuatedMove* moves = new ValuatedMove[MAX_MOVE_COUNT];
 	memcpy(moves, rootMoves, MAX_MOVE_COUNT * sizeof(ValuatedMove));
-	ThreadData * h = new ThreadData;
+	ThreadData* h = new ThreadData;
 	h->id = id;
 	//Iterative Deepening Loop
 	Value score = VALUE_ZERO;
@@ -437,7 +402,7 @@ void Search::startHelper(int id) {
 #endif // _DEBUG
 }
 
-bool Search::isQuiet(Position &pos) {
+bool Search::isQuiet(Position & pos) {
 	Value evaluationDiff = pos.GetStaticEval() - QSearch<ThreadType::SINGLE>(-VALUE_MATE, VALUE_MATE, pos, 0, threadLocalData);
 	return std::abs(int16_t(evaluationDiff)) <= 30;
 }
@@ -471,7 +436,7 @@ void Search::SetRootMoveBoni()
 	}
 }
 
-void Search::updateCutoffStats(ThreadData& tlData, const Move cutoffMove, int depth, Position &pos, int moveIndex) {
+void Search::updateCutoffStats(ThreadData & tlData, const Move cutoffMove, int depth, Position & pos, int moveIndex) {
 	if (moveIndex == -1 || pos.IsQuiet(cutoffMove)) {
 		Piece movingPiece = pos.GetPieceOnSquare(from(cutoffMove));
 		Square toSquare = to(cutoffMove);
@@ -504,7 +469,7 @@ void Search::updateCutoffStats(ThreadData& tlData, const Move cutoffMove, int de
 		}
 		if (moveIndex > 0) {
 			int moveCount;
-			ValuatedMove * alreadyProcessedQuiets = pos.GetMoves(moveCount);
+			ValuatedMove* alreadyProcessedQuiets = pos.GetMoves(moveCount);
 			moveCount = std::min(moveIndex, moveCount);
 			for (int i = 0; i < moveCount; ++i) {
 				if (alreadyProcessedQuiets->move != cutoffMove && pos.IsQuiet(alreadyProcessedQuiets->move)) {
@@ -555,7 +520,7 @@ void ThreadPool::start(size_t numberOfThreads)
 	for (auto i = 0u; i < numberOfThreads; ++i) {
 		threads.emplace_back([=] {
 			while (true) {
-				Task task; 
+				Task task;
 				{
 					std::unique_lock<std::mutex> lock(mtxStartTask);
 					cvStartTask.wait(lock, [=] { return shutdown || !tasks.empty(); });
@@ -565,10 +530,10 @@ void ThreadPool::start(size_t numberOfThreads)
 					tasks.pop();
 				}
 				active.fetch_add(1);
-				task(i+1);
+				task(i + 1);
 				active.fetch_sub(1);
 			}
-		});
+			});
 	}
 }
 
@@ -580,6 +545,6 @@ void ThreadPool::stop() noexcept
 	}
 	cvStartTask.notify_all();
 
-	for (auto &th : threads) th.join();
+	for (auto& th : threads) th.join();
 	threads.clear();
 }

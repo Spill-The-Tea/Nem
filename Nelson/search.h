@@ -71,11 +71,7 @@ struct NodeTrace {
 
 class Search {
 public:
-	//the search itself issues the info output while thinking. To do is it needs to know whether it's running in xboard, or uci mode. 
-	//This is of course from OO perspective bad, and the output should be done in the resp. protocol drivers, but as long as the number
-	//of protocols will stay at 2, it's easier, than creating an generic info class/struct, which then can be handled by the different protocol drivers
 	bool UciOutput = false;
-	bool XBoardOutput = false;
 	bool PrintCurrmove = true;
 	//Flag indicating the engine is currently pondering
 	std::atomic<bool> PonderMode{ false };
@@ -124,8 +120,6 @@ public:
 	}
 	//Get's the "best" move from the polyglot opening book
 	Move GetBestBookMove(Position& pos, ValuatedMove * moves, int moveCount);
-	//returns the analysis output for xboard in thread-safe mode 
-	std::string GetXAnalysisOutput();
 	//handling of the thinking output for uci and xboard
 	void info(Position &pos, int pvIndx, SearchResultType srt = SearchResultType::EXACT_RESULT);
 
@@ -207,14 +201,6 @@ template<ThreadType T> Value Search::SearchRoot(Value alpha, Value beta, Positio
 			//Send information about the current move to GUI
 			if (UciOutput && PrintCurrmove && depth > 5 && (now() - timeManager.GetStartTime()) > 3000) {
 				sync_cout << "info depth " << depth << " currmove " << toString(moves[i].move) << " currmovenumber " << i + 1 << sync_endl;
-			}
-			else if (XBoardOutput && timeManager.Mode() == INFINIT) {
-				std::lock_guard<std::mutex> lck(mtxXAnalysisOutput);
-				std::stringstream ss;
-				ss << "stat01: " << (now() - timeManager.GetStartTime()) / 10 << " " << NodeCount << " "
-					<< depth << " " << rootMoveCount - i << " " << rootMoveCount + 1 << " " << toString(moves[i].move);
-				if (XAnalysisOutput != nullptr) delete(XAnalysisOutput);
-				XAnalysisOutput = new std::string(ss.str());
 			}
 		}
 		//apply move

@@ -11,7 +11,6 @@
 #include "test.h"
 #include "uci.h"
 #include "utils.h"
-#include "xboard.h"
 #include "test.h"
 
 static bool popcountSupport();
@@ -66,16 +65,8 @@ int main(int argc, const char* argv[]) {
 		std::getline(std::cin, input);
 		if (!input.compare(0, 3, "uci")) {
 			Initialize();
-			settings::parameter.protocol = Protocol::UCI;
 			UCIInterface uciInterface;
 			uciInterface.loop();
-			return 0;
-		}
-		else if (!input.compare(0, 6, "xboard")) {
-			Initialize();
-			settings::parameter.protocol = Protocol::XBOARD;
-			cecp::XBoard xb;
-			xb.loop();
 			return 0;
 		}
 		else if (!input.compare(0, 7, "version")) {
@@ -118,11 +109,10 @@ int main(int argc, const char* argv[]) {
 		}
 		else if (!input.compare(0, 4, "help")) {
 			int width = 20;
-			std::cout << "Nemorino is a chess engine supporting both UCI and XBoard protocol. To play" << std::endl;
+			std::cout << "Nemorino is a chess engine supporting UCI protocol. To play" << std::endl;
 			std::cout << "chess with it you need a GUI (like arena or winboard)" << std::endl;
 			std::cout << "License: GNU GENERAL PUBLIC LICENSE v3 (https://www.gnu.org/licenses/gpl.html)" << std::endl << std::endl;
 			std::cout << std::left << std::setw(width) << "uci" << "Starts engine in UCI mode" << std::endl;
-			std::cout << std::left << std::setw(width) << "xboard" << "Starts engine in XBoard mode" << std::endl;
 			std::cout << std::left << std::setw(width) << "version" << "Outputs the current version of the engine" << std::endl;
 			std::cout << std::left << std::setw(width) << "position <fen>" << "Sets the engine's position using the FEN-String <fen>" << std::endl;
 			std::cout << std::left << std::setw(width) << "perft <depth>" << "Calculates the Perft count of depth <depth> for the current position" << std::endl;
