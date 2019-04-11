@@ -1230,13 +1230,13 @@ bool Position::givesCheck(Move move)
 		if (PawnAttacks[SideToMove][toSquare] & ToBitboard(kingSquare)) return true;
 		break;
 	case BISHOP:
-		if (BishopTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1))) return true;
+		if (BishopTargets(toSquare, OccupiedBB() & ~ToBitboard(fromSquare)) & PieceBB(KING, Color(SideToMove ^ 1))) return true;
 		break;
 	case ROOK:
-		if (RookTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1))) return true;
+		if (RookTargets(toSquare, OccupiedBB() & ~ToBitboard(fromSquare)) & PieceBB(KING, Color(SideToMove ^ 1))) return true;
 		break;
 	case QUEEN:
-		if ((RookTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1))) || (BishopTargets(toSquare, OccupiedBB()) & PieceBB(KING, Color(SideToMove ^ 1)))) return true;
+		if ((RookTargets(toSquare, OccupiedBB() & ~ToBitboard(fromSquare)) & PieceBB(KING, Color(SideToMove ^ 1))) || (BishopTargets(toSquare, OccupiedBB() & ~ToBitboard(fromSquare)) & PieceBB(KING, Color(SideToMove ^ 1)))) return true;
 		break;
 	default:
 		break;
@@ -1252,6 +1252,7 @@ bool Position::givesCheck(Move move)
 			Square capturedPawnSquare = Square(toSquare - 8 + 16 * int(SideToMove));
 			if ((ToBitboard(capturedPawnSquare) & dc) == EMPTY) return false; //captured pawn isn't pinned
 			if ((ToBitboard(toSquare) & RaysBySquares[capturedPawnSquare][kingSquare]) != EMPTY) return false; //captured pawn was pinned, but capturing pawn is now blocking
+			return true;
 		}
 		else {
 			if (moveType == MoveType::CASTLING || (ToBitboard(fromSquare) & dc) == EMPTY) return false;

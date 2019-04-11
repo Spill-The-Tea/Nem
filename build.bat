@@ -1,4 +1,8 @@
+echo off
+if "%PATH%"=="%PATH:Visual=%" (
 call "D:\Program Files (x86)\Microsoft Visual Studio\2019\Community\VC\Auxiliary\Build\vcvarsall.bat" x64
+)
+echo on
 msbuild Nelson\Nelson.vcxproj -target:Clean -property:Configuration=PGO
 set /p Build=<buildnumber.txt
 set /a Build=%Build%+1
