@@ -228,10 +228,11 @@ namespace killer {
 		//checks if a move is a killer move
 		bool isKiller(const Position & pos, Move move) const;
 		//Clear killer moves for higher plies
-		void enterLevel(const Position & pos);
+		void enterLevel(const Position& pos);
 	private:
 		//index of the first killer relevant for the position
 		int getIndex(const Position & pos) const;
+		int getIndex2(const Position& pos) const;
 		//killer table has NB_SLOTS_KILLER (Slots) * MAX_DEPTH (maximum search depth) * 2 (SideToMove) entries
 		//Parity: due to null moves there might be entries with same plies from root, with white and with black to move
 		Move plyTable[PLY_TABLE_SIZE];

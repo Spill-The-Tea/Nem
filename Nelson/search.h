@@ -420,6 +420,7 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 	Square recaptureSquare = pos.GetLastAppliedMove() != MOVE_NONE && pos.Previous()->GetPieceOnSquare(to(pos.GetLastAppliedMove())) != BLANK ? to(pos.GetLastAppliedMove()) : OUTSIDE;
 	bool trySE = depth >= 8 && ttMove != MOVE_NONE && abs(ttValue) < VALUE_KNOWN_WIN
 		&& excludeMove == MOVE_NONE && (ttEntry.type() == tt::LOWER_BOUND || ttEntry.type() == tt::EXACT) && ttEntry.depth() >= depth - 3;
+	tlData.killerManager.enterLevel(pos);
 	while ((move = pos.NextMove())) {
 		++moveIndex;
 		if (move == excludeMove) continue;
@@ -435,7 +436,6 @@ template<ThreadType T> Value Search::SearchMain(Value alpha, Value beta, Positio
 		}
 		Position next(pos);
 		if (next.ApplyMove(move)) {
-			tlData.killerManager.enterLevel(next);
 			//critical = critical || GetPieceType(pos.GetPieceOnSquare(from(move))) == PAWN && ((pos.GetSideToMove() == WHITE && from(move) > H5) || (pos.GetSideToMove() == BLACK && from(move) < A4));
 			//Check extension
 			int extension;

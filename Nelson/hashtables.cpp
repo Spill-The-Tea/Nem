@@ -247,24 +247,29 @@ namespace killer {
 		return NB_SLOTS_KILLER * (2 * pos.GetPliesFromRoot() + int(pos.GetSideToMove()));
 	}
 
+	int Manager::getIndex2(const Position& pos) const
+	{
+		return NB_SLOTS_KILLER * (2 * (pos.GetPliesFromRoot() + 1) + static_cast<int>(pos.GetSideToMove())^1);
+	}
+
 	bool Manager::isKiller(const Position & pos, Move move) const
 	{
 		int index = getIndex(pos);
 		return (move == plyTable[index]) || (move == plyTable[index + 1]);
 	}
 
-	void Manager::enterLevel(const Position & pos)
+	void Manager::enterLevel(const Position& pos)
 	{
-		int index = getIndex(pos) + 2 * NB_SLOTS_KILLER;
+		int index = getIndex2(pos) + 2 * NB_SLOTS_KILLER;
 		CHECK((index < (PLY_TABLE_SIZE - 1)) && ((index - 4 * NB_SLOTS_KILLER) >= 0))
-		if (pos.Previous() && pos.Previous()->Checked()) {
-			plyTable[index] = plyTable[index - 4 * NB_SLOTS_KILLER];
-			plyTable[index + 1] = plyTable[index - 4 * NB_SLOTS_KILLER + 1];
-		}
-		else {
-			plyTable[index] = MOVE_NONE;
-			plyTable[index + 1] = MOVE_NONE;
-		}
+			if (pos.Checked()) {
+				plyTable[index] = plyTable[index - 4 * NB_SLOTS_KILLER];
+				plyTable[index + 1] = plyTable[index - 4 * NB_SLOTS_KILLER + 1];
+			}
+			else {
+				plyTable[index] = MOVE_NONE;
+				plyTable[index + 1] = MOVE_NONE;
+			}
 	}
 
 }
