@@ -41,7 +41,7 @@ namespace settings {
 	{
 		return LMR_REDUCTION[std::min(depth, 63)][std::min(moveNumber, 63)];
 	}
-
+/*
 	void Parameters::UCIExpose()
 	{
 		sync_cout << "option name BETA_PRUNING_FACTOR type spin default " << BETA_PRUNING_FACTOR << sync_endl;
@@ -91,7 +91,7 @@ namespace settings {
 		sync_cout << "option name MALUS_BACKWARD_PAWN type spin default " << MALUS_BACKWARD_PAWN.egScore << sync_endl;
 
 	}
-
+*/
 	void Parameters::SetFromUCI(std::string name, std::string value)
 	{
 		if (!name.compare("KING_DANGER_SCALE")) KING_DANGER_SCALE = stoi(value);	
