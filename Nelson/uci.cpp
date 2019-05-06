@@ -124,7 +124,7 @@ void UCIInterface::uci() {
 		}
 	}
 	settings::options.printUCI();
-	if (settings::parameter.extendedOptions) settings::parameter.UCIExpose();
+	// if (settings::parameter.extendedOptions) settings::parameter.UCIExpose();
 	sync_cout << "uciok" << sync_endl;
 }
 
